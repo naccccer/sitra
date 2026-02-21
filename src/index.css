@@ -1,0 +1,37 @@
+@import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@400;700;900&display=swap');
+@config "../tailwind.config.js";
+@import "tailwindcss";
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+@media print {
+  @page { size: A4 portrait; margin: 10mm; }
+  body { 
+    -webkit-print-color-adjust: exact; 
+    print-color-adjust: exact; 
+    background-color: white !important; 
+  }
+  .print-hide { display: none !important; }
+  .printable-area { 
+    display: block !important; 
+    position: absolute; 
+    left: 0; 
+    top: 0; 
+    width: 100%; 
+    min-height: 100vh; 
+    background: white; 
+    z-index: 9999; 
+  }
+  .break-inside-avoid { 
+    break-inside: avoid; 
+    page-break-inside: avoid; 
+  }
+}
