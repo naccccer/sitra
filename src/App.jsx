@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { LogOut } from 'lucide-react';
 
 // Data
@@ -25,7 +25,7 @@ export default function App() {
   const handleLogout = async () => {
     try {
       // درخواست به بک‌اند برای نابود کردن سشن
-      await fetch('http://localhost/api/logout.php', {
+      await fetch('/api/logout.php', {
         method: 'POST',
         credentials: 'include' // حتماً باشه تا کوکی سشن رو بفرسته
       });
@@ -104,3 +104,4 @@ export default function App() {
     </div>
   );
 }
+

@@ -2,6 +2,8 @@ import React, { useState, useRef } from 'react';
 import { X, CheckCircle2, UploadCloud, FileBox, MapPin, Plus, Trash2 } from 'lucide-react';
 import { toPN, FACTORY_ADDRESS } from '../../utils/helpers';
 
+const MAX_PATTERN_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+
 export const SettingsModal = ({ setModalMode, config, setConfig, catalog }) => {
   const [view, setView] = useState('main');
   const [selectedServices, setSelectedServices] = useState({ ...config.operations });
@@ -20,7 +22,7 @@ export const SettingsModal = ({ setModalMode, config, setConfig, catalog }) => {
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 700 * 1024) return alert('حجم فایل نباید بیشتر از 700 کیلوبایت باشد.');
+    if (file.size > MAX_PATTERN_FILE_SIZE_BYTES) return alert('حجم فایل نباید بیشتر از 5 مگابایت باشد.');
     const reader = new FileReader();
     reader.onload = () => setPattern({ type: 'upload', fileName: file.name, previewDataUrl: reader.result });
     reader.readAsDataURL(file);
