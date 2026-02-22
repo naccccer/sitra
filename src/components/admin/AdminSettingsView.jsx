@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Save, Plus, X, Trash2, Layers } from 'lucide-react';
 import { toPN } from '../../utils/helpers';
 import { PriceInput } from '../shared/PriceInput';
+import { api } from '../../services/api';
 
 export const AdminSettingsView = ({ catalog, setCatalog }) => {
   const [activeSettingsTab, setActiveSettingsTab] = useState('matrix');
@@ -9,9 +10,15 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
   const [newThickness, setNewThickness] = useState('');
   const [isAddingCol, setIsAddingCol] = useState(false);
 
-  const handleSaveSettings = () => {
-    setCatalog(draft);
-    alert('تنظیمات و قیمت‌ها با موفقیت در سیستم ثبت شد.');
+  const handleSaveSettings = async () => {
+    try {
+      const response = await api.saveCatalog(draft);
+      setCatalog(response?.catalog || draft);
+      alert('تنظیمات و قیمت‌ها با موفقیت ثبت شد.');
+    } catch (error) {
+      console.error('Failed to save catalog to backend.', error);
+      alert(error?.message || 'ذخیره تنظیمات روی سرور ناموفق بود.');
+    }
   };
 
   const handleMatrixUpdate = (id, field, value) => {

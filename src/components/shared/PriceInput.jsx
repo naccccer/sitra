@@ -1,12 +1,20 @@
 import React from 'react';
-import { toPN } from '../../utils/helpers';
+import { normalizeDigitsToLatin, toPN } from '../../utils/helpers';
 
 export const PriceInput = ({ value, onChange, placeholder = "-" }) => {
-  const displayValue = value ? value.toLocaleString() : '';
+  const hasValue = value !== undefined && value !== null && value !== '';
+  const numericValue = hasValue ? Number(value) : null;
+  const displayValue = Number.isFinite(numericValue) ? numericValue.toLocaleString() : '';
+
   const handleChange = (e) => {
-    const raw = e.target.value.replace(/,/g, '').replace(/\D/g, '');
+    const normalized = normalizeDigitsToLatin(e.target.value);
+    const raw = normalized
+      .replace(/[,\u066C\u060C\s]/g, '')
+      .replace(/[^\d]/g, '');
+
     onChange(raw ? parseInt(raw, 10) : '');
   };
+
   return (
     <input 
       type="text" 

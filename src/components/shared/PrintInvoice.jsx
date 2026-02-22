@@ -9,16 +9,18 @@ export const PrintInvoice = ({
   orderCode = '- در انتظار ثبت -', 
   date = new Date().toLocaleDateString('fa-IR'),
   grandTotal = 0,
-  type = 'customer' // 'customer' | 'factory'
+  type = 'customer', // 'customer' | 'factory'
+  preview = false
 }) => {
   
   if (!items || items.length === 0) return null;
 
   const isFactory = type === 'factory';
+  const rootClassName = preview ? 'printable-area bg-white p-6' : 'printable-area hidden print:block bg-white p-6';
   const title = isFactory ? 'برگه سفارش تولید (نسخه کارخانه)' : 'پیش‌فاکتور رسمی سفارش';
 
   return (
-    <div className="printable-area hidden print:block bg-white p-6" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+    <div className={rootClassName} dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
       {/* هدر فاکتور */}
       <div className="flex justify-between items-start border-b-[2px] border-slate-800 pb-3 mb-4">
         <div className="flex items-center gap-3">

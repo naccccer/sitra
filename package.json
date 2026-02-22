@@ -5,8 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
-    "lint": "eslint .",
+    "build": "npm run check:encoding && vite build",
+    "lint": "npm run check:encoding && eslint .",
+    "check:encoding": "node scripts/check-encoding.js",
     "preview": "vite preview"
   },
   "dependencies": {

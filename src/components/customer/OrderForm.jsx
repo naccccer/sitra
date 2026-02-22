@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { 
   Ruler, Plus, Settings, Layers, Flame, 
   Trash2, Edit3, Printer, CheckCircle2,
-  User, Phone, Save, Menu, ShieldAlert, ArrowRight
+  User, Phone, Save, Menu, ShieldAlert
 } from 'lucide-react';
 import { toPN, generateOrderCode } from '../../utils/helpers';
 import { usePricingCalculator } from '../../hooks/usePricingCalculator';
 import { StructureDetails } from '../shared/StructureDetails';
 import { SettingsModal } from './SettingsModal';
 import { PrintInvoice } from '../shared/PrintInvoice';
+import { api } from '../../services/api';
 
 // --- Sub-components (Moved OUTSIDE the main component to fix rendering bug) ---
 
@@ -68,7 +69,7 @@ const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, cat
 
 // --- Main Order Form ---
 
-export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onCancelEdit, onGoToLogin }) => {
+export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onCancelEdit, onGoToLogin, orderSource = 'customer', staffMode = false }) => {
   const [activeTab, setActiveTab] = useState('double');
   const [dimensions, setDimensions] = useState({ width: '100', height: '100', count: '1' });
   const [modalMode, setModalMode] = useState(null);
@@ -77,8 +78,6 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
   
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [customerInfo, setCustomerInfo] = useState({ name: editingOrder ? editingOrder.customerName : '', phone: editingOrder ? editingOrder.phone : '' });
-  
-  const [showPrintPreview, setShowPrintPreview] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const pvbLogicSuggest = (totalThick) => {
@@ -140,39 +139,71 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
     setEditingItemId(item.id);
   };
 
-  const submitOrderToServer = () => {
-    if (!customerInfo.name || !customerInfo.phone) return alert('لطفاً نام و شماره تماس را وارد کنید.');
-    
-    if (editingOrder) {
-       setOrders(prev => prev.map(o => o.id === editingOrder.id ? { ...o, customerName: customerInfo.name, phone: customerInfo.phone, items: orderItems, total: grandTotal } : o));
-       alert('سفارش ویرایش شد.');
-       onCancelEdit();
-       return;
+  const submitOrderToServer = async () => {
+    if (!customerInfo.name || !customerInfo.phone) {
+      alert('\u0644\u0637\u0641\u0627\u064b \u0646\u0627\u0645 \u0648 \u0634\u0645\u0627\u0631\u0647 \u062a\u0645\u0627\u0633 \u0631\u0627 \u0648\u0627\u0631\u062f \u06a9\u0646\u06cc\u062f.');
+      return;
     }
 
-    const code = generateOrderCode(orderItems, 'customer', orders.length + 1);
-    const newOrder = {
-      id: Math.floor(Math.random() * 10000).toString(),
-      orderCode: code,
-      customerName: customerInfo.name,
-      phone: customerInfo.phone,
-      date: new Date().toLocaleDateString('fa-IR'),
-      total: grandTotal,
-      status: 'pending',
-      items: [...orderItems]
-    };
+    try {
+      if (editingOrder) {
+        const updatePayload = {
+          id: Number(editingOrder.id),
+          customerName: customerInfo.name,
+          phone: customerInfo.phone,
+          date: editingOrder.date,
+          total: grandTotal,
+          status: editingOrder.status || 'pending',
+          items: [...orderItems],
+        };
 
-    setOrders(prev => [newOrder, ...prev]);
-    alert(`سفارش با موفقیت ثبت شد! کد پیگیری: ${code}`);
-    
-    setOrderItems([]);
-    setIsCheckoutOpen(false);
-    setCustomerInfo({ name: '', phone: '' });
+        const response = await api.updateOrder(updatePayload);
+        const updatedOrder = response?.order ?? {
+          ...editingOrder,
+          customerName: customerInfo.name,
+          phone: customerInfo.phone,
+          items: [...orderItems],
+          total: grandTotal,
+        };
+
+        setOrders(prev => prev.map(o => o.id === editingOrder.id ? updatedOrder : o));
+        alert('\u0633\u0641\u0627\u0631\u0634 \u0628\u0627 \u0645\u0648\u0641\u0642\u06cc\u062a \u0648\u06cc\u0631\u0627\u06cc\u0634 \u0634\u062f.');
+        onCancelEdit();
+        return;
+      }
+
+      const code = generateOrderCode(orderItems, orderSource, orders.length + 1);
+      const createPayload = {
+        orderCode: code,
+        customerName: customerInfo.name,
+        phone: customerInfo.phone,
+        date: new Date().toLocaleDateString('fa-IR'),
+        total: grandTotal,
+        status: 'pending',
+        items: [...orderItems],
+      };
+
+      const response = await api.createOrder(createPayload);
+      const createdOrder = response?.order ?? {
+        id: code,
+        ...createPayload,
+      };
+
+      setOrders(prev => [createdOrder, ...prev]);
+      alert(`\u0633\u0641\u0627\u0631\u0634 \u062b\u0628\u062a \u0634\u062f. \u06a9\u062f \u067e\u06cc\u06af\u06cc\u0631\u06cc: ${createdOrder.orderCode || code}`);
+
+      setOrderItems([]);
+      setIsCheckoutOpen(false);
+      setCustomerInfo({ name: '', phone: '' });
+    } catch (error) {
+      console.error('Failed to submit order to backend.', error);
+      alert(error?.message || '\u062b\u0628\u062a \u0633\u0641\u0627\u0631\u0634 \u0628\u0627 \u062e\u0637\u0627 \u0645\u0648\u0627\u062c\u0647 \u0634\u062f.');
+    }
   };
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
-      {!editingOrder && (
+      {!editingOrder && !staffMode && (
         <header className="bg-slate-900 text-white p-4 shadow-md flex justify-between items-center print-hide mb-6 rounded-2xl mx-auto border border-slate-800">
             <div className="flex items-center gap-3">
                 <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center font-black text-xl border border-white/20">S</div>
@@ -263,7 +294,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
       <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-4 print-hide">
         <div className="bg-slate-900 p-3 text-white flex justify-between items-center">
             <span className="text-sm font-black pl-2">سبد سفارش مشتری</span>
-            <button onClick={() => setShowPrintPreview(true)} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all shadow-md">
+            <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all shadow-md">
               <Printer size={14}/> چاپ پیش‌فاکتور
             </button>
         </div>
@@ -382,31 +413,11 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
               </div>
           </div>
       )}
-
-      {/* نمایش پیش‌نمایش چاپ برای مشتری */}
-      {showPrintPreview && (
-          <div className="fixed inset-0 z-[100] bg-slate-500 overflow-y-auto print:bg-white print:p-0" dir="rtl">
-              <div className="sticky top-0 z-50 bg-slate-900 text-white p-3 shadow-xl flex justify-between items-center print-hide">
-                  <button onClick={() => setShowPrintPreview(false)} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-lg text-sm font-bold transition-colors"><ArrowRight size={16} /> بازگشت</button>
-                  <div className="font-black text-sm flex-1 text-center">پیش‌نمایش چاپ فاکتور مشتری</div>
-                  <button onClick={() => window.print()} className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-lg text-sm font-bold shadow-md transition-colors"><Printer size={16} /> چاپ فاکتور</button>
-              </div>
-              
-              <PrintInvoice 
-                items={orderItems} 
-                catalog={catalog} 
-                grandTotal={grandTotal} 
-                type="customer" 
-              />
-          </div>
-      )}
-      
-      {/* این بخش برای زمانی است که کاربر مستقیم دکمه چاپ مرورگر را می‌زند */}
       <PrintInvoice 
         items={orderItems} 
         catalog={catalog} 
         grandTotal={grandTotal} 
-        type="customer" 
+        type="customer"
       />
 
     </div>

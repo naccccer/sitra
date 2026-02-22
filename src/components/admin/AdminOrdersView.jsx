@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronUp, Edit3, Archive, Printer } from 'lucide-
 import { toPN } from '../../utils/helpers';
 import { StructureDetails } from '../shared/StructureDetails';
 import { PrintInvoice } from '../shared/PrintInvoice';
+import { api } from '../../services/api';
 
 export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => {
   const [activeOrdersTab, setActiveOrdersTab] = useState('all'); 
@@ -10,8 +11,22 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
 
-  const updateOrderStatus = (id, status) => {
+  const updateOrderStatus = async (id, status) => {
+    const previousOrder = orders.find(o => o.id === id);
+    if (!previousOrder) return;
+
     setOrders(prev => prev.map(o => o.id === id ? { ...o, status } : o));
+
+    try {
+      const response = await api.updateOrderStatus(id, status);
+      if (response?.order) {
+        setOrders(prev => prev.map(o => o.id === id ? response.order : o));
+      }
+    } catch (error) {
+      console.error('Failed to update order status.', error);
+      setOrders(prev => prev.map(o => o.id === id ? previousOrder : o));
+      alert(error?.message || 'به‌روزرسانی وضعیت سفارش ناموفق بود.');
+    }
   };
 
   const handleArchiveOrder = (id) => {

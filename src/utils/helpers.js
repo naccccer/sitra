@@ -6,6 +6,13 @@ export const toPN = (num) => {
   return num.toString().replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
 };
 
+export const normalizeDigitsToLatin = (value) => {
+  if (value === undefined || value === null) return '';
+  return String(value)
+    .replace(/[\u06F0-\u06F9]/g, (char) => String(char.charCodeAt(0) - 0x06F0))
+    .replace(/[\u0660-\u0669]/g, (char) => String(char.charCodeAt(0) - 0x0660));
+};
+
 export const generateOrderCode = (items, source = 'customer', dailySeq = 1) => {
   const d = new Date();
   const formatter = new Intl.DateTimeFormat('en-US-u-ca-persian', { year: '2-digit', month: '2-digit', day: '2-digit' });
