@@ -34,4 +34,23 @@
     break-inside: avoid; 
     page-break-inside: avoid; 
   }
+  .page-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+  .appendix-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8mm;
+  }
+  .appendix-card {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .pattern-preview-thumb {
+    display: block;
+    width: 100%;
+    min-height: 40mm;
+    max-height: 70mm;
+  }
 }

@@ -45,8 +45,8 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
   });
 
   return (
-    <div className="space-y-4 print-hide animate-in slide-in-from-left-4">
-      <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+    <div className="space-y-4 animate-in slide-in-from-left-4">
+      <div className="print-hide flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
         <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto overflow-x-auto hide-scrollbar gap-1">
            {[
              {id: 'all', label: 'همه سفارش‌ها'}, 
@@ -64,7 +64,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <div className="print-hide bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
@@ -174,6 +174,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
           customerName={viewingOrder.customerName}
           orderCode={viewingOrder.orderCode}
           date={viewingOrder.date}
+          grandTotal={Number(viewingOrder.total || 0)}
           type="factory" 
         />
       )}

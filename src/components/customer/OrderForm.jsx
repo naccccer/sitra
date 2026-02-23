@@ -13,26 +13,45 @@ import { api } from '../../services/api';
 
 // --- Sub-components (Moved OUTSIDE the main component to fix rendering bug) ---
 
-const GlassRow = ({ data, onChange, catalog }) => (
-  <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-11 relative mx-1">
-    <div className="bg-slate-900 w-8 flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{ writingMode: 'vertical-rl' }}><span className="rotate-180">شیشه</span></div>
-    <div className="flex-1 p-1 flex gap-1.5 items-center bg-white">
-      <select value={data.glassId} onChange={e => onChange('glassId', e.target.value)} className="flex-[2] bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 h-full">
-        {catalog.glasses.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
-      </select>
-      <select value={data.thick} onChange={e => onChange('thick', parseInt(e.target.value))} className="w-20 bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 text-center h-full">
-        {catalog.thicknesses.map(t => <option key={t} value={t}>{toPN(t)} میل</option>)}
-      </select>
-      <label className={`flex-[1] h-full rounded-lg flex items-center justify-center gap-1 text-[10px] font-black border cursor-pointer ${data.isSekurit ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-400'}`}>
-        <input type="checkbox" checked={data.isSekurit} onChange={e => onChange('isSekurit', e.target.checked)} className="hidden"/><Flame size={12}/> سکوریت
-      </label>
-      <label className={`flex-[1] h-full rounded-lg flex items-center justify-center gap-1 text-[10px] font-black border cursor-pointer ${data.hasEdge ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-400'}`}>
-        <input type="checkbox" checked={data.hasEdge} onChange={e => onChange('hasEdge', e.target.checked)} className="hidden"/><Ruler size={12}/> ابزار
-      </label>
-    </div>
-  </div>
-);
+const normalizeGlassTitle = (title) => (title || '').toString().trim().toLowerCase();
+const glassProcess = (glass) => glass?.process || 'raw';
 
+const findMatchingGlassByTitleAndProcess = (currentGlassId, targetProcess, catalog) => {
+  const currentGlass = catalog.glasses.find(g => g.id === currentGlassId);
+  if (!currentGlass) return null;
+  if (glassProcess(currentGlass) === targetProcess) return currentGlass;
+
+  const currentTitle = normalizeGlassTitle(currentGlass.title);
+  return catalog.glasses.find(g => normalizeGlassTitle(g.title) === currentTitle && glassProcess(g) === targetProcess) || null;
+};
+
+const GlassRow = ({ data, onChange, catalog }) => {
+  const targetProcess = data.isSekurit ? 'sekurit' : 'raw';
+  const glassOptions = catalog.glasses.filter(g => glassProcess(g) === targetProcess);
+  const selectedGlass = catalog.glasses.find(g => g.id === data.glassId);
+  const selectedExistsInOptions = glassOptions.some(g => g.id === data.glassId);
+
+  return (
+    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-11 relative mx-1">
+      <div className="bg-slate-900 w-8 flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{ writingMode: 'vertical-rl' }}><span className="rotate-180">شیشه</span></div>
+      <div className="flex-1 p-1 flex gap-1.5 items-center bg-white">
+        <select value={data.glassId} onChange={e => onChange('glassId', e.target.value)} className="flex-[2] bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 h-full">
+          {!selectedExistsInOptions && selectedGlass && <option value={selectedGlass.id}>{selectedGlass.title} (نامعتبر)</option>}
+          {glassOptions.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
+        </select>
+        <select value={data.thick} onChange={e => onChange('thick', parseInt(e.target.value, 10))} className="w-20 bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 text-center h-full">
+          {catalog.thicknesses.map(t => <option key={t} value={t}>{toPN(t)} میل</option>)}
+        </select>
+        <label className={`flex-[1] h-full rounded-lg flex items-center justify-center gap-1 text-[10px] font-black border cursor-pointer ${data.isSekurit ? 'bg-rose-50 border-rose-200 text-rose-600' : 'bg-white border-slate-200 text-slate-400'}`}>
+          <input type="checkbox" checked={data.isSekurit} onChange={e => onChange('isSekurit', e.target.checked)} className="hidden"/><Flame size={12}/> سکوریت
+        </label>
+        <label className={`flex-[1] h-full rounded-lg flex items-center justify-center gap-1 text-[10px] font-black border cursor-pointer ${data.hasEdge ? 'bg-indigo-50 border-indigo-200 text-indigo-700' : 'bg-white border-slate-200 text-slate-400'}`}>
+          <input type="checkbox" checked={data.hasEdge} onChange={e => onChange('hasEdge', e.target.checked)} className="hidden"/><Ruler size={12}/> ابزار
+        </label>
+      </div>
+    </div>
+  );
+};
 const ConnectorRow = ({ value, onChange, type, catalog }) => {
   if (type === 'interlayer') return <div className="flex justify-center py-1"><div className="w-24 h-1.5 bg-indigo-200 rounded-full opacity-60"></div></div>;
   return (
@@ -104,6 +123,20 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
       if (innerField) newConfig[assembly][paneKey][subField][innerField] = v;
       else if (subField) newConfig[assembly][paneKey][subField] = v;
       else newConfig[assembly][paneKey] = v;
+
+      const isSekuritToggle = innerField === 'isSekurit' || subField === 'isSekurit' || (assembly === 'single' && paneKey === 'isSekurit');
+      if (isSekuritToggle) {
+        let glassLayer = null;
+        if (assembly === 'single') glassLayer = newConfig.single;
+        else if (assembly === 'laminate' && (paneKey === 'glass1' || paneKey === 'glass2')) glassLayer = newConfig.laminate[paneKey];
+        else if (assembly === 'double' && (subField === 'glass1' || subField === 'glass2')) glassLayer = newConfig.double[paneKey][subField];
+
+        if (glassLayer) {
+          const targetProcess = glassLayer.isSekurit ? 'sekurit' : 'raw';
+          const matchedGlass = findMatchingGlassByTitleAndProcess(glassLayer.glassId, targetProcess, catalog);
+          if (matchedGlass) glassLayer.glassId = matchedGlass.id;
+        }
+      }
       
       if ((innerField === 'thick' || subField === 'thick') && (assembly === 'laminate' || (assembly === 'double' && newConfig.double[paneKey].isLaminated))) {
         let t1 = 0, t2 = 0;
@@ -246,9 +279,9 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
             {activeTab === 'single' && <div className="max-w-2xl mx-auto"><GlassRow data={config.single} onChange={(f, v) => updateConfigLayer('single', f, null, v)} catalog={catalog} /></div>}
             {activeTab === 'laminate' && (
               <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-3 shadow-inner">
-                <GlassRow data={config.laminate.glass1} onChange={(f, v) => updateConfigLayer('laminate', 'glass1', v, f)} catalog={catalog} />
+                <GlassRow data={config.laminate.glass1} onChange={(f, v) => updateConfigLayer('laminate', 'glass1', f, v)} catalog={catalog} />
                 <ConnectorRow type="interlayer" />
-                <GlassRow data={config.laminate.glass2} onChange={(f, v) => updateConfigLayer('laminate', 'glass2', v, f)} catalog={catalog} />
+                <GlassRow data={config.laminate.glass2} onChange={(f, v) => updateConfigLayer('laminate', 'glass2', f, v)} catalog={catalog} />
               </div>
             )}
             {activeTab === 'double' && (
@@ -423,3 +456,4 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
     </div>
   );
 };
+

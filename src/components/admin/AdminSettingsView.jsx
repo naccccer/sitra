@@ -4,16 +4,30 @@ import { toPN } from '../../utils/helpers';
 import { PriceInput } from '../shared/PriceInput';
 import { api } from '../../services/api';
 
+const ensureCatalogDefaults = (source) => {
+  const next = JSON.parse(JSON.stringify(source || {}));
+  if (!next.fees) next.fees = {};
+  if (!next.fees.edgeWork) next.fees.edgeWork = { unit: 'm_length', price: 0 };
+  else {
+    next.fees.edgeWork = {
+      unit: next.fees.edgeWork.unit || 'm_length',
+      price: next.fees.edgeWork.price ?? 0,
+    };
+  }
+  return next;
+};
+
 export const AdminSettingsView = ({ catalog, setCatalog }) => {
   const [activeSettingsTab, setActiveSettingsTab] = useState('matrix');
-  const [draft, setDraft] = useState(JSON.parse(JSON.stringify(catalog)));
+  const [draft, setDraft] = useState(ensureCatalogDefaults(catalog));
   const [newThickness, setNewThickness] = useState('');
   const [isAddingCol, setIsAddingCol] = useState(false);
 
   const handleSaveSettings = async () => {
     try {
-      const response = await api.saveCatalog(draft);
-      setCatalog(response?.catalog || draft);
+      const safeDraft = ensureCatalogDefaults(draft);
+      const response = await api.saveCatalog(safeDraft);
+      setCatalog(ensureCatalogDefaults(response?.catalog || safeDraft));
       alert('تنظیمات و قیمت‌ها با موفقیت ثبت شد.');
     } catch (error) {
       console.error('Failed to save catalog to backend.', error);
@@ -100,7 +114,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
                     <td className="p-2 text-slate-400 font-black tabular-nums">{toPN(index + 1)}</td>
                     <td className="p-2"><input type="text" value={row.title} onChange={e => handleMatrixUpdate(row.id, 'title', e.target.value)} className="w-full bg-transparent outline-none text-center font-black focus:bg-slate-100 py-1.5 rounded-lg"/></td>
                     <td className="p-2">
-                      <select value={row.process} onChange={e => handleMatrixUpdate(row.id, 'process', e.target.value)} className={`w-full outline-none text-center font-black py-1.5 rounded-lg border ${row.process === 'raw' ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
+                      <select value={row.process || 'raw'} onChange={e => handleMatrixUpdate(row.id, 'process', e.target.value)} className={`w-full outline-none text-center font-black py-1.5 rounded-lg border ${(row.process || 'raw') === 'raw' ? 'bg-slate-50 border-slate-200' : 'bg-rose-50 border-rose-200 text-rose-700'}`}>
                         <option value="raw">خام</option><option value="sekurit">سکوریت</option>
                       </select>
                     </td>
@@ -150,7 +164,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
 
         {/* SETTINGS: FEES */}
         {activeSettingsTab === 'fees' && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
             <div className="border border-slate-200 p-4 rounded-xl space-y-4">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">اجرت دوجداره</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
@@ -166,6 +180,13 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
               </div>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><PriceInput value={draft.fees.laminating.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, price: v}}}))} /></div>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><PriceInput value={draft.fees.laminating.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, fixedOrderPrice: v}}}))} /></div>
+            </div>
+            <div className="border border-slate-200 p-4 rounded-xl space-y-4">
+              <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه ابزار</h3>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
+                 <select value={draft.fees.edgeWork?.unit || 'm_length'} onChange={e => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_length">متر طول (محیط)</option><option value="m_square">مساحت (مترمربع)</option><option value="fixed">قیمت ثابت</option></select>
+              </div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">نرخ ابزار (تومان)</label><PriceInput value={draft.fees.edgeWork?.price ?? 0} onChange={v => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), price: v}}}))} /></div>
             </div>
             <div className="border border-slate-200 p-4 rounded-xl space-y-4">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه الگوکشی</h3>
@@ -287,3 +308,4 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
     </div>
   );
 };
+

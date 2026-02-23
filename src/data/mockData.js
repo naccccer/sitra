@@ -30,6 +30,7 @@ export const initialCatalog = {
   fees: {
     doubleGlazing: { price: 80000, unit: 'm_square', fixedOrderPrice: 50000 },
     laminating: { price: 120000, unit: 'm_square', fixedOrderPrice: 70000 },
+    edgeWork: { unit: 'm_length', price: 0 },
     pattern: { price: 150000, unit: 'order' }
   },
   pvbLogic: [
