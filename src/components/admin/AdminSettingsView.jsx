@@ -165,7 +165,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
         {/* SETTINGS: FEES */}
         {activeSettingsTab === 'fees' && (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-            <div className="border border-slate-200 p-4 rounded-xl space-y-4">
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">اجرت دوجداره</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
                  <select value={draft.fees.doubleGlazing.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
@@ -173,7 +173,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><PriceInput value={draft.fees.doubleGlazing.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, price: v}}}))} /></div>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><PriceInput value={draft.fees.doubleGlazing.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, fixedOrderPrice: v}}}))} /></div>
             </div>
-            <div className="border border-slate-200 p-4 rounded-xl space-y-4">
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">اجرت لمینت</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
                  <select value={draft.fees.laminating.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, laminating: {...p.fees.laminating, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
@@ -181,14 +181,14 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><PriceInput value={draft.fees.laminating.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, price: v}}}))} /></div>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><PriceInput value={draft.fees.laminating.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, fixedOrderPrice: v}}}))} /></div>
             </div>
-            <div className="border border-slate-200 p-4 rounded-xl space-y-4">
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه ابزار</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
                  <select value={draft.fees.edgeWork?.unit || 'm_length'} onChange={e => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_length">متر طول (محیط)</option><option value="m_square">مساحت (مترمربع)</option><option value="fixed">قیمت ثابت</option></select>
               </div>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">نرخ ابزار (تومان)</label><PriceInput value={draft.fees.edgeWork?.price ?? 0} onChange={v => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), price: v}}}))} /></div>
             </div>
-            <div className="border border-slate-200 p-4 rounded-xl space-y-4">
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه الگوکشی</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
                  <select value={draft.fees.pattern.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, pattern: {...p.fees.pattern, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="order">کل سفارش (ثابت)</option><option value="qty">به ازای هر عدد</option></select>
