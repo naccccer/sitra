@@ -25,18 +25,19 @@ const findMatchingGlassByTitleAndProcess = (currentGlassId, targetProcess, catal
   return catalog.glasses.find(g => normalizeGlassTitle(g.title) === currentTitle && glassProcess(g) === targetProcess) || null;
 };
 
-const GlassRow = ({ data, onChange, catalog }) => {
+const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) => {
   const targetProcess = data.isSekurit ? 'sekurit' : 'raw';
   const glassOptions = catalog.glasses.filter(g => glassProcess(g) === targetProcess);
   const selectedGlass = catalog.glasses.find(g => g.id === data.glassId);
   const selectedExistsInOptions = glassOptions.some(g => g.id === data.glassId);
+  const layerLabel = isUnavailable ? 'ناموجود' : 'شیشه';
 
   return (
-    <div className="flex bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm h-11 relative mx-1">
-      <div className="bg-slate-900 w-8 flex items-center justify-center text-[10px] font-black text-white shrink-0" style={{ writingMode: 'vertical-rl' }}><span className="rotate-180">شیشه</span></div>
-      <div className="flex-1 p-1 flex gap-1.5 items-center bg-white">
-        <select value={data.glassId} onChange={e => onChange('glassId', e.target.value)} className="flex-[2] bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 h-full">
-          {!selectedExistsInOptions && selectedGlass && <option value={selectedGlass.id}>{selectedGlass.title} (نامعتبر)</option>}
+    <div data-layer-key={layerKey} className={`flex border rounded-xl overflow-hidden shadow-sm h-11 relative mx-1 ${isUnavailable ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
+      <div className={`${isUnavailable ? 'bg-red-600' : 'bg-slate-900'} w-8 flex items-center justify-center text-[10px] font-black text-white shrink-0`} style={{ writingMode: 'vertical-rl' }}><span className="rotate-180">{layerLabel}</span></div>
+      <div className={`flex-1 p-1 flex gap-1.5 items-center ${isUnavailable ? 'bg-red-50/20' : 'bg-white'}`}>
+        <select value={data.glassId} onChange={e => onChange('glassId', e.target.value)} className={`flex-[2] bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border h-full ${isUnavailable ? 'border-red-300 text-red-700' : 'border-slate-200'}`}>
+          {!selectedExistsInOptions && selectedGlass && <option value={selectedGlass.id}>{selectedGlass.title} (ناموجود)</option>}
           {glassOptions.map(g => <option key={g.id} value={g.id}>{g.title}</option>)}
         </select>
         <select value={data.thick} onChange={e => onChange('thick', parseInt(e.target.value, 10))} className="w-20 bg-slate-50 text-[11px] font-black px-2 py-1.5 rounded-lg outline-none border border-slate-200 text-center h-full">
@@ -66,8 +67,10 @@ const ConnectorRow = ({ value, onChange, type, catalog }) => {
   );
 };
 
-const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, catalog }) => {
+const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, catalog, unavailableLayers = {} }) => {
   const pData = config[assembly][paneKey];
+  const layer1Key = `${assembly}.${paneKey}.glass1`;
+  const layer2Key = `${assembly}.${paneKey}.glass2`;
   return (
     <div className="relative z-10 bg-white border border-slate-200 rounded-xl shadow-sm mb-1.5 overflow-hidden">
       <div className="flex justify-between items-center bg-slate-50 px-4 py-2 border-b border-slate-200">
@@ -79,8 +82,8 @@ const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, cat
         </label>
       </div>
       <div className={`p-2.5 bg-slate-50/50 ${pData.isLaminated ? 'space-y-1.5' : ''}`}>
-        <GlassRow data={pData.glass1} onChange={(f, v) => updateConfigLayer(assembly, paneKey, 'glass1', v, f)} catalog={catalog} />
-        {pData.isLaminated && <><ConnectorRow type="interlayer" /><GlassRow data={pData.glass2} onChange={(f, v) => updateConfigLayer(assembly, paneKey, 'glass2', v, f)} catalog={catalog} /></>}
+        <GlassRow layerKey={layer1Key} isUnavailable={Boolean(unavailableLayers[layer1Key])} data={pData.glass1} onChange={(f, v) => updateConfigLayer(assembly, paneKey, 'glass1', v, f)} catalog={catalog} />
+        {pData.isLaminated && <><ConnectorRow type="interlayer" /><GlassRow layerKey={layer2Key} isUnavailable={Boolean(unavailableLayers[layer2Key])} data={pData.glass2} onChange={(f, v) => updateConfigLayer(assembly, paneKey, 'glass2', v, f)} catalog={catalog} /></>}
       </div>
     </div>
   );
@@ -147,7 +150,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
     });
   };
 
-  const { validationErrors, pricingDetails } = usePricingCalculator(dimensions, activeTab, config, catalog);
+  const { validationErrors, summaryErrors, unavailableLayers, pricingDetails } = usePricingCalculator(dimensions, activeTab, config, catalog);
 
   const grandTotal = orderItems.reduce((acc, item) => acc + item.totalPrice, 0);
 
@@ -276,19 +279,19 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
         </div>
         <div className="p-6 flex flex-col lg:flex-row gap-8 items-start">
           <div className="flex-1 w-full">
-            {activeTab === 'single' && <div className="max-w-2xl mx-auto"><GlassRow data={config.single} onChange={(f, v) => updateConfigLayer('single', f, null, v)} catalog={catalog} /></div>}
+            {activeTab === 'single' && <div className="max-w-2xl mx-auto"><GlassRow layerKey="single.glass1" isUnavailable={Boolean(unavailableLayers['single.glass1'])} data={config.single} onChange={(f, v) => updateConfigLayer('single', f, null, v)} catalog={catalog} /></div>}
             {activeTab === 'laminate' && (
               <div className="max-w-2xl mx-auto bg-slate-50 border border-slate-200 rounded-2xl p-3 shadow-inner">
-                <GlassRow data={config.laminate.glass1} onChange={(f, v) => updateConfigLayer('laminate', 'glass1', f, v)} catalog={catalog} />
+                <GlassRow layerKey="laminate.glass1" isUnavailable={Boolean(unavailableLayers['laminate.glass1'])} data={config.laminate.glass1} onChange={(f, v) => updateConfigLayer('laminate', 'glass1', f, v)} catalog={catalog} />
                 <ConnectorRow type="interlayer" />
-                <GlassRow data={config.laminate.glass2} onChange={(f, v) => updateConfigLayer('laminate', 'glass2', f, v)} catalog={catalog} />
+                <GlassRow layerKey="laminate.glass2" isUnavailable={Boolean(unavailableLayers['laminate.glass2'])} data={config.laminate.glass2} onChange={(f, v) => updateConfigLayer('laminate', 'glass2', f, v)} catalog={catalog} />
               </div>
             )}
             {activeTab === 'double' && (
               <div className="max-w-2xl mx-auto flex flex-col gap-1.5">
-                <LaminatedPaneEditor assembly="double" paneKey="pane1" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} />
+                <LaminatedPaneEditor assembly="double" paneKey="pane1" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} unavailableLayers={unavailableLayers} />
                 <ConnectorRow type="spacer" value={config.double.spacerId} onChange={v => updateConfigLayer('double', 'spacerId', null, v)} catalog={catalog} />
-                <LaminatedPaneEditor assembly="double" paneKey="pane2" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} />
+                <LaminatedPaneEditor assembly="double" paneKey="pane2" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} unavailableLayers={unavailableLayers} />
               </div>
             )}
           </div>
@@ -302,10 +305,10 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
               ))}
             </div>
             
-            {validationErrors.length > 0 && (
+            {summaryErrors.length > 0 && (
               <div className="bg-red-50 border border-red-200 p-2.5 rounded-lg text-[10px] text-red-700 font-bold flex gap-2 items-start shadow-inner">
                  <ShieldAlert size={14} className="shrink-0 mt-0.5"/>
-                 <ul className="list-disc list-inside">{validationErrors.map((e,i)=><li key={i}>{e}</li>)}</ul>
+                 <ul className="list-disc list-inside">{summaryErrors.map((e,i)=><li key={i}>{e}</li>)}</ul>
               </div>
             )}
 

@@ -130,7 +130,7 @@ export const PrintInvoice = ({
   preview = false,
   includeAppendix = true
 }) => {
-  if (!items || items.length === 0) return null;
+  const hasItems = Array.isArray(items) && items.length > 0;
 
   const isFactory = type === 'factory';
   const normalizedGrandTotal = Math.max(0, Number(grandTotal) || 0);
@@ -175,6 +175,8 @@ export const PrintInvoice = ({
       })
       .filter(Boolean);
   }, [catalog, includeAppendix, items]);
+
+  if (!hasItems) return null;
 
   return (
     <div className={rootClassName} dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>

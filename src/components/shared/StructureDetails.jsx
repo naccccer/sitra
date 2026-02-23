@@ -27,7 +27,7 @@ export const StructureDetails = ({ item, catalog }) => {
     return catalog?.connectors?.interlayers?.find((x) => x.id === interlayerId)?.title || 'PVB';
   };
 
-  const GlassLayerRow = ({ marker, layer }) => (
+  const renderGlassLayerRow = (marker, layer = {}) => (
     <div className="flex items-center gap-1 text-[11px]">
       <span className="text-slate-400 font-black">{toPN(marker)}</span>
       <span className={layer?.isSekurit ? 'text-rose-600 font-black' : 'text-slate-700 font-black'}>
@@ -38,19 +38,19 @@ export const StructureDetails = ({ item, catalog }) => {
     </div>
   );
 
-  const LaminatedBlock = ({ prefix = '1', title = 'لمینت', config = {} }) => (
+  const renderLaminatedBlock = ({ prefix = '1', title = 'لمینت', config = {} }) => (
     <div className="space-y-1">
       <div className="flex items-center gap-1 text-[11px]">
         <span className="text-slate-400 font-black">{toPN(`${prefix}-`)}</span>
         <span className="text-slate-700 font-black">{title}</span>
       </div>
       <div className="pr-4 space-y-1">
-        <GlassLayerRow marker={`${prefix}.1-`} layer={config?.glass1 || {}} />
+        {renderGlassLayerRow(`${prefix}.1-`, config?.glass1 || {})}
         <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 py-0.5">
           <Layers size={10} className="opacity-50" />
           {getInterlayerLabel(config?.interlayerId)}
         </div>
-        <GlassLayerRow marker={`${prefix}.2-`} layer={config?.glass2 || {}} />
+        {renderGlassLayerRow(`${prefix}.2-`, config?.glass2 || {})}
       </div>
     </div>
   );
@@ -67,14 +67,14 @@ export const StructureDetails = ({ item, catalog }) => {
 
   return (
     <div className="space-y-1">
-      {item.activeTab === 'single' && <GlassLayerRow marker="1-" layer={item?.config || {}} />}
+      {item.activeTab === 'single' && renderGlassLayerRow('1-', item?.config || {})}
 
       {item.activeTab === 'double' && (
         <>
           {item?.config?.pane1?.isLaminated ? (
-            <LaminatedBlock prefix="1" title="جداره بیرونی (لمینت)" config={item.config.pane1} />
+            renderLaminatedBlock({ prefix: '1', title: 'جداره بیرونی (لمینت)', config: item.config.pane1 })
           ) : (
-            <GlassLayerRow marker="1-" layer={item?.config?.pane1?.glass1 || {}} />
+            renderGlassLayerRow('1-', item?.config?.pane1?.glass1 || {})
           )}
 
           <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 py-0.5 pr-5">
@@ -83,14 +83,14 @@ export const StructureDetails = ({ item, catalog }) => {
           </div>
 
           {item?.config?.pane2?.isLaminated ? (
-            <LaminatedBlock prefix="2" title="جداره داخلی (لمینت)" config={item.config.pane2} />
+            renderLaminatedBlock({ prefix: '2', title: 'جداره داخلی (لمینت)', config: item.config.pane2 })
           ) : (
-            <GlassLayerRow marker="2-" layer={item?.config?.pane2?.glass1 || {}} />
+            renderGlassLayerRow('2-', item?.config?.pane2?.glass1 || {})
           )}
         </>
       )}
 
-      {item.activeTab === 'laminate' && <LaminatedBlock prefix="1" title="شیشه لمینت" config={item?.config || {}} />}
+      {item.activeTab === 'laminate' && renderLaminatedBlock({ prefix: '1', title: 'شیشه لمینت', config: item?.config || {} })}
 
       {hasServices && (
         <div className="pt-1.5 mt-1.5 border-t border-slate-200/70 border-dashed text-amber-600/90 text-[10px] space-y-0.5 flex flex-wrap gap-2">
