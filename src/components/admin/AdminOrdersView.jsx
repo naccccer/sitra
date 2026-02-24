@@ -3,6 +3,7 @@ import { Search, ChevronDown, ChevronUp, Edit3, Archive, Printer, FileText, X, U
 import { toPN } from '../../utils/helpers';
 import { StructureDetails } from '../shared/StructureDetails';
 import { PrintInvoice } from '../shared/PrintInvoice';
+import { PriceInput } from '../shared/PriceInput';
 import { PatternFilesModal } from './PatternFilesModal';
 import { api } from '../../services/api';
 import {
@@ -581,16 +582,16 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                                   </div>
                                   <div className="space-y-1">
                                     <label className="text-[10px] font-black text-slate-600">مبلغ (تومان)</label>
-                                    <input
-                                      type="number"
-                                      value={paymentDraft.amount}
-                                      onChange={(e) => {
-                                        updateOrderPaymentDraft(o.id, 'amount', e.target.value);
-                                        markOrderPaymentTouched(o.id, true);
-                                      }}
-                                      className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
-                                      dir="ltr"
-                                    />
+                                    <div className="h-9 w-full bg-white border border-slate-200 rounded-lg">
+                                      <PriceInput
+                                        value={paymentDraft.amount}
+                                        onChange={(value) => {
+                                          updateOrderPaymentDraft(o.id, 'amount', value);
+                                          markOrderPaymentTouched(o.id, true);
+                                        }}
+                                        placeholder="0"
+                                      />
+                                    </div>
                                     {paymentDraftTouched && !paymentAmountValid && (
                                       <div className="text-[10px] font-bold text-rose-600">مبلغ باید بیشتر از صفر باشد.</div>
                                     )}
@@ -783,13 +784,13 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                                               </td>
                                               <td className="p-2 text-left font-black tabular-nums text-slate-900">
                                                 {isEditing ? (
-                                                  <input
-                                                    type="number"
-                                                    value={rowDraft.amount ?? ''}
-                                                    onChange={(e) => updateEditPaymentField(o.id, payment.id, 'amount', e.target.value)}
-                                                    className="h-8 w-24 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
-                                                    dir="ltr"
-                                                  />
+                                                  <div className="h-8 w-24 bg-white border border-slate-200 rounded-lg">
+                                                    <PriceInput
+                                                      value={rowDraft.amount ?? ''}
+                                                      onChange={(value) => updateEditPaymentField(o.id, payment.id, 'amount', value)}
+                                                      placeholder="0"
+                                                    />
+                                                  </div>
                                                 ) : (
                                                   toPN(payment.amount.toLocaleString())
                                                 )}
@@ -932,14 +933,15 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-600">مقدار تخفیف کل</label>
-                      <input
-                        type="number"
-                        value={paymentManagerInvoiceDraft.discountValue}
-                        onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'discountValue', e.target.value)}
-                        disabled={paymentManagerInvoiceDraft.discountType === 'none'}
-                        className={`h-9 w-full border rounded-lg px-2 text-xs font-bold ${paymentManagerInvoiceDraft.discountType === 'none' ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-white border-slate-200'}`}
-                        dir="ltr"
-                      />
+                      <div className={`h-9 w-full border rounded-lg ${paymentManagerInvoiceDraft.discountType === 'none' ? 'bg-slate-100 border-slate-100' : 'bg-white border-slate-200'}`}>
+                        <PriceInput
+                          value={paymentManagerInvoiceDraft.discountValue}
+                          onChange={(value) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'discountValue', value)}
+                          disabled={paymentManagerInvoiceDraft.discountType === 'none'}
+                          placeholder="0"
+                          className={paymentManagerInvoiceDraft.discountType === 'none' ? 'text-slate-400' : ''}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-600">مالیات</label>
@@ -998,16 +1000,16 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                     </div>
                     <div className="space-y-1">
                       <label className="text-[10px] font-black text-slate-600">مبلغ (تومان)</label>
-                      <input
-                        type="number"
-                        value={paymentManagerPaymentDraft.amount}
-                        onChange={(e) => {
-                          updateOrderPaymentDraft(paymentManagerOrder.id, 'amount', e.target.value);
-                          markOrderPaymentTouched(paymentManagerOrder.id, true);
-                        }}
-                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
-                        dir="ltr"
-                      />
+                      <div className="h-9 w-full bg-white border border-slate-200 rounded-lg">
+                        <PriceInput
+                          value={paymentManagerPaymentDraft.amount}
+                          onChange={(value) => {
+                            updateOrderPaymentDraft(paymentManagerOrder.id, 'amount', value);
+                            markOrderPaymentTouched(paymentManagerOrder.id, true);
+                          }}
+                          placeholder="0"
+                        />
+                      </div>
                       {paymentManagerPaymentTouched && !paymentManagerPaymentAmountValid && (
                         <div className="text-[10px] font-bold text-rose-600">مبلغ باید بیشتر از صفر باشد.</div>
                       )}
@@ -1178,13 +1180,13 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                                 </td>
                                 <td className="p-2 text-left font-black tabular-nums text-slate-900">
                                   {isEditing ? (
-                                    <input
-                                      type="number"
-                                      value={rowDraft.amount ?? ''}
-                                      onChange={(e) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'amount', e.target.value)}
-                                      className="h-8 w-24 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
-                                      dir="ltr"
-                                    />
+                                    <div className="h-8 w-24 bg-white border border-slate-200 rounded-lg">
+                                      <PriceInput
+                                        value={rowDraft.amount ?? ''}
+                                        onChange={(value) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'amount', value)}
+                                        placeholder="0"
+                                      />
+                                    </div>
                                   ) : (
                                     toPN(payment.amount.toLocaleString())
                                   )}
