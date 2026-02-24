@@ -140,6 +140,22 @@ function app_normalize_order_meta_payload(array $payload, int $total): array
     ];
 }
 
+function app_orders_date_column_candidates(PDO $pdo): array
+{
+    $primary = app_orders_date_column($pdo);
+    $secondary = $primary === 'order_date' ? 'date' : 'order_date';
+    return array_values(array_unique([$primary, $secondary]));
+}
+
+function app_is_unknown_column_exception(Throwable $e, string $column): bool
+{
+    if (!$e instanceof PDOException) {
+        return false;
+    }
+
+    return str_contains($e->getMessage(), "Unknown column '" . $column . "'");
+}
+
 app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 app_ensure_orders_table($pdo);
@@ -229,29 +245,50 @@ if ($method === 'POST') {
     $itemsColumn = app_orders_items_column($pdo);
     $metaColumn = app_orders_meta_column($pdo);
 
-    if ($metaColumn !== null) {
-        $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, order_date, total, status, ' . $itemsColumn . ', ' . $metaColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json, :order_meta_json)');
-        $stmt->execute([
-            'order_code' => $orderCode,
-            'customer_name' => $customerName,
-            'phone' => $phone,
-            'order_date' => $orderDate,
-            'total' => max(0, $total),
-            'status' => $status,
-            'items_json' => $itemsJson,
-            'order_meta_json' => $orderMetaJson,
-        ]);
-    } else {
-        $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, order_date, total, status, ' . $itemsColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json)');
-        $stmt->execute([
-            'order_code' => $orderCode,
-            'customer_name' => $customerName,
-            'phone' => $phone,
-            'order_date' => $orderDate,
-            'total' => max(0, $total),
-            'status' => $status,
-            'items_json' => $itemsJson,
-        ]);
+    $inserted = false;
+    $lastInsertError = null;
+    foreach (app_orders_date_column_candidates($pdo) as $dateColumn) {
+        try {
+            if ($metaColumn !== null) {
+                $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, ' . $dateColumn . ', total, status, ' . $itemsColumn . ', ' . $metaColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json, :order_meta_json)');
+                $stmt->execute([
+                    'order_code' => $orderCode,
+                    'customer_name' => $customerName,
+                    'phone' => $phone,
+                    'order_date' => $orderDate,
+                    'total' => max(0, $total),
+                    'status' => $status,
+                    'items_json' => $itemsJson,
+                    'order_meta_json' => $orderMetaJson,
+                ]);
+            } else {
+                $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, ' . $dateColumn . ', total, status, ' . $itemsColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json)');
+                $stmt->execute([
+                    'order_code' => $orderCode,
+                    'customer_name' => $customerName,
+                    'phone' => $phone,
+                    'order_date' => $orderDate,
+                    'total' => max(0, $total),
+                    'status' => $status,
+                    'items_json' => $itemsJson,
+                ]);
+            }
+
+            $inserted = true;
+            break;
+        } catch (Throwable $e) {
+            $lastInsertError = $e;
+            if (!app_is_unknown_column_exception($e, $dateColumn)) {
+                throw $e;
+            }
+        }
+    }
+
+    if (!$inserted) {
+        if ($lastInsertError instanceof Throwable) {
+            throw $lastInsertError;
+        }
+        throw new RuntimeException('Unable to insert order row.');
     }
 
     $id = (int)$pdo->lastInsertId();
@@ -322,29 +359,50 @@ if ($method === 'PUT') {
     $itemsColumn = app_orders_items_column($pdo);
     $metaColumn = app_orders_meta_column($pdo);
 
-    if ($metaColumn !== null) {
-        $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, order_date = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json, ' . $metaColumn . ' = :order_meta_json WHERE id = :id');
-        $stmt->execute([
-            'id' => $id,
-            'customer_name' => $customerName,
-            'phone' => $phone,
-            'order_date' => $orderDate,
-            'total' => max(0, $total),
-            'status' => $status,
-            'items_json' => $itemsJson,
-            'order_meta_json' => $orderMetaJson,
-        ]);
-    } else {
-        $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, order_date = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json WHERE id = :id');
-        $stmt->execute([
-            'id' => $id,
-            'customer_name' => $customerName,
-            'phone' => $phone,
-            'order_date' => $orderDate,
-            'total' => max(0, $total),
-            'status' => $status,
-            'items_json' => $itemsJson,
-        ]);
+    $updated = false;
+    $lastUpdateError = null;
+    foreach (app_orders_date_column_candidates($pdo) as $dateColumn) {
+        try {
+            if ($metaColumn !== null) {
+                $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, ' . $dateColumn . ' = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json, ' . $metaColumn . ' = :order_meta_json WHERE id = :id');
+                $stmt->execute([
+                    'id' => $id,
+                    'customer_name' => $customerName,
+                    'phone' => $phone,
+                    'order_date' => $orderDate,
+                    'total' => max(0, $total),
+                    'status' => $status,
+                    'items_json' => $itemsJson,
+                    'order_meta_json' => $orderMetaJson,
+                ]);
+            } else {
+                $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, ' . $dateColumn . ' = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json WHERE id = :id');
+                $stmt->execute([
+                    'id' => $id,
+                    'customer_name' => $customerName,
+                    'phone' => $phone,
+                    'order_date' => $orderDate,
+                    'total' => max(0, $total),
+                    'status' => $status,
+                    'items_json' => $itemsJson,
+                ]);
+            }
+
+            $updated = true;
+            break;
+        } catch (Throwable $e) {
+            $lastUpdateError = $e;
+            if (!app_is_unknown_column_exception($e, $dateColumn)) {
+                throw $e;
+            }
+        }
+    }
+
+    if (!$updated) {
+        if ($lastUpdateError instanceof Throwable) {
+            throw $lastUpdateError;
+        }
+        throw new RuntimeException('Unable to update order row.');
     }
 
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');

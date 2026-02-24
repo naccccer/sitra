@@ -14,6 +14,13 @@ function app_install_exception_handler(): void
 
     set_exception_handler(static function (Throwable $e): void {
         $isDebug = app_env_get('APP_DEBUG', '0') === '1';
+        error_log(sprintf(
+            '[sitra] Uncaught exception: %s: %s in %s:%d',
+            get_class($e),
+            $e->getMessage(),
+            $e->getFile(),
+            $e->getLine()
+        ));
         app_json([
             'success' => false,
             'error' => 'Internal server error.',
@@ -426,6 +433,26 @@ function app_ensure_system_settings_table(PDO $pdo): void
     );
 }
 
+function app_table_is_queryable(PDO $pdo, string $table): bool
+{
+    try {
+        $pdo->query('SELECT 1 FROM `' . $table . '` LIMIT 1');
+        return true;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
+function app_column_is_queryable(PDO $pdo, string $table, string $column): bool
+{
+    try {
+        $pdo->query('SELECT `' . $column . '` FROM `' . $table . '` LIMIT 1');
+        return true;
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 function app_ensure_orders_table(PDO $pdo): void
 {
     static $ensured = false;
@@ -434,24 +461,27 @@ function app_ensure_orders_table(PDO $pdo): void
     }
     $ensured = true;
 
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS orders (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            order_code VARCHAR(64) NOT NULL,
-            customer_name VARCHAR(200) NOT NULL,
-            phone VARCHAR(40) NOT NULL,
-            order_date VARCHAR(40) NOT NULL,
-            total BIGINT NOT NULL DEFAULT 0,
-            status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
-            items_json LONGTEXT NOT NULL,
-            order_meta_json LONGTEXT NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_orders_status (status),
-            KEY idx_orders_created_at (created_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    );
+    $ordersTableExists = app_table_is_queryable($pdo, 'orders');
+    if (!$ordersTableExists) {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS orders (
+                id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                order_code VARCHAR(64) NOT NULL,
+                customer_name VARCHAR(200) NOT NULL,
+                phone VARCHAR(40) NOT NULL,
+                order_date VARCHAR(40) NOT NULL,
+                total BIGINT NOT NULL DEFAULT 0,
+                status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
+                items_json LONGTEXT NOT NULL,
+                order_meta_json LONGTEXT NULL,
+                created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                KEY idx_orders_status (status),
+                KEY idx_orders_created_at (created_at)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    }
 
     try {
         $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
@@ -487,6 +517,16 @@ function app_detect_orders_items_column(PDO $pdo): string
         // Fall through to default to preserve behavior when metadata lookup fails.
     }
 
+    if (app_column_is_queryable($pdo, 'orders', 'items_json')) {
+        $detected = 'items_json';
+        return $detected;
+    }
+
+    if (app_column_is_queryable($pdo, 'orders', 'items')) {
+        $detected = 'items';
+        return $detected;
+    }
+
     $detected = 'items_json';
     return $detected;
 }
@@ -514,6 +554,11 @@ function app_detect_orders_meta_column(PDO $pdo): ?string
         // Fall through to no-meta fallback.
     }
 
+    if (app_column_is_queryable($pdo, 'orders', 'order_meta_json')) {
+        $detected = 'order_meta_json';
+        return $detected;
+    }
+
     $detected = '';
     return null;
 }
@@ -523,17 +568,62 @@ function app_orders_meta_column(PDO $pdo): ?string
     return app_detect_orders_meta_column($pdo);
 }
 
+function app_detect_orders_date_column(PDO $pdo): string
+{
+    static $detected = null;
+    if ($detected !== null) {
+        return $detected;
+    }
+
+    try {
+        app_ensure_orders_table($pdo);
+
+        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_date'");
+        if ($stmt && $stmt->fetch()) {
+            $detected = 'order_date';
+            return $detected;
+        }
+
+        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'date'");
+        if ($stmt && $stmt->fetch()) {
+            $detected = 'date';
+            return $detected;
+        }
+    } catch (Throwable $e) {
+        // Fall through to default for compatibility.
+    }
+
+    if (app_column_is_queryable($pdo, 'orders', 'order_date')) {
+        $detected = 'order_date';
+        return $detected;
+    }
+
+    if (app_column_is_queryable($pdo, 'orders', 'date')) {
+        $detected = 'date';
+        return $detected;
+    }
+
+    $detected = 'order_date';
+    return $detected;
+}
+
+function app_orders_date_column(PDO $pdo): string
+{
+    return app_detect_orders_date_column($pdo);
+}
+
 function app_orders_select_fields(PDO $pdo): string
 {
     $itemsColumn = app_detect_orders_items_column($pdo);
     $metaColumn = app_detect_orders_meta_column($pdo);
+    $dateColumn = app_detect_orders_date_column($pdo);
     $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
 
     if ($itemsColumn === 'items') {
-        return 'id, order_code, customer_name, phone, order_date, total, status, items AS items_json, ' . $metaSelect;
+        return 'id, order_code, customer_name, phone, ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $metaSelect;
     }
 
-    return 'id, order_code, customer_name, phone, order_date, total, status, items_json, ' . $metaSelect;
+    return 'id, order_code, customer_name, phone, ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $metaSelect;
 }
 
 function app_orders_sort_clause(PDO $pdo): string
