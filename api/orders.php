@@ -156,8 +156,8 @@ function app_is_unknown_column_exception(Throwable $e, string $column): bool
     return str_contains($e->getMessage(), "Unknown column '" . $column . "'");
 }
 
-app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH']);
-$method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
+app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+$method = app_require_method(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 app_ensure_orders_table($pdo);
 
 if ($method === 'GET') {
@@ -419,6 +419,46 @@ if ($method === 'PUT') {
     app_json([
         'success' => true,
         'order' => app_order_from_row($row),
+    ]);
+}
+
+if ($method === 'DELETE') {
+    app_require_auth(['admin', 'manager']);
+    $payload = app_read_json_body();
+
+    $id = (int)($payload['id'] ?? 0);
+    if ($id <= 0) {
+        app_json([
+            'success' => false,
+            'error' => 'Valid order id is required.',
+        ], 400);
+    }
+
+    $statusStmt = $pdo->prepare('SELECT status FROM orders WHERE id = :id LIMIT 1');
+    $statusStmt->execute(['id' => $id]);
+    $statusRow = $statusStmt->fetch();
+
+    if (!$statusRow) {
+        app_json([
+            'success' => false,
+            'error' => 'Order not found.',
+        ], 404);
+    }
+
+    $status = (string)($statusRow['status'] ?? '');
+    if ($status !== 'archived') {
+        app_json([
+            'success' => false,
+            'error' => 'Only archived orders can be deleted.',
+        ], 400);
+    }
+
+    $deleteStmt = $pdo->prepare('DELETE FROM orders WHERE id = :id');
+    $deleteStmt->execute(['id' => $id]);
+
+    app_json([
+        'success' => true,
+        'id' => (string)$id,
     ]);
 }
 

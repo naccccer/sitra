@@ -146,6 +146,28 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
     if (expandedOrderId === id) setExpandedOrderId(null);
   };
 
+  const deleteArchivedOrder = async (order) => {
+    if (!order || order.status !== 'archived') return;
+
+    const confirmed = window.confirm(`سفارش ${order.orderCode || ''} برای همیشه حذف شود؟ این عمل قابل بازگشت نیست.`);
+    if (!confirmed) return;
+
+    const orderId = order.id;
+    const previousOrders = orders;
+
+    setOrders((prev) => prev.filter((candidate) => candidate.id !== orderId));
+    if (expandedOrderId === orderId) setExpandedOrderId(null);
+    if (paymentManagerOrderId === orderId) setPaymentManagerOrderId(null);
+
+    try {
+      await api.deleteOrder(orderId);
+    } catch (error) {
+      console.error('Failed to delete archived order.', error);
+      setOrders(previousOrders);
+      alert(error?.message || 'حذف سفارش ناموفق بود.');
+    }
+  };
+
   const toggleOrderExpansion = (id) => {
     setExpandedOrderId((prev) => (prev === id ? null : id));
   };
@@ -530,7 +552,13 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                               </>
                             )}
                             {o.status === 'archived' && (
-                              <button onClick={() => updateOrderStatus(o.id, 'pending')} className="text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 p-1.5 rounded text-[10px] font-bold transition-colors">بازیابی</button>
+                              <>
+                                <button onClick={() => updateOrderStatus(o.id, 'pending')} className="text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 p-1.5 rounded text-[10px] font-bold transition-colors">بازیابی</button>
+                                <button onClick={() => deleteArchivedOrder(o)} className="text-slate-500 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 p-1.5 rounded text-[10px] font-bold transition-colors inline-flex items-center gap-1" title="حذف دائمی">
+                                  <Trash2 size={12} />
+                                  حذف
+                                </button>
+                              </>
                             )}
                           </div>
                         </td>

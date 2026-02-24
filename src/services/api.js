@@ -62,6 +62,13 @@ export const api = {
     })
   },
 
+  async deleteOrder(id) {
+    return request('/api/orders.php', {
+      method: 'DELETE',
+      body: JSON.stringify({ id }),
+    })
+  },
+
   async saveCatalog(catalog) {
     return request('/api/catalog.php', {
       method: 'POST',
