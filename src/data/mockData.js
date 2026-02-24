@@ -40,7 +40,13 @@ export const initialCatalog = {
   jumboRules: [
     { id: 'j1', minDim: 250, maxDim: 320, type: 'percentage', value: 15 },
     { id: 'j2', minDim: 321, maxDim: 0, type: 'fixed', value: 500000 }
-  ]
+  ],
+  billing: {
+    priceFloorPercent: 90,
+    taxDefaultEnabled: false,
+    taxRate: 10,
+    paymentMethods: ['cash', 'card', 'transfer']
+  }
 };
 
 export const initialOrders = [

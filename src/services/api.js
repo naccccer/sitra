@@ -1,6 +1,7 @@
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) }
-  if (options.body && !headers['Content-Type']) {
+  const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
+  if (options.body && !headers['Content-Type'] && !isFormData) {
     headers['Content-Type'] = 'application/json'
   }
 
@@ -65,6 +66,24 @@ export const api = {
     return request('/api/catalog.php', {
       method: 'POST',
       body: JSON.stringify(catalog),
+    })
+  },
+
+  async uploadPatternFile(file) {
+    const formData = new FormData()
+    formData.append('patternFile', file)
+    return request('/api/upload.php', {
+      method: 'POST',
+      body: formData,
+    })
+  },
+
+  async uploadReceiptFile(file) {
+    const formData = new FormData()
+    formData.append('patternFile', file)
+    return request('/api/upload.php', {
+      method: 'POST',
+      body: formData,
     })
   },
 }

@@ -166,6 +166,61 @@ function app_valid_order_status(string $status): bool
     return in_array($status, ['pending', 'processing', 'delivered', 'archived'], true);
 }
 
+function app_payment_method_defaults(): array
+{
+    return ['card', 'check', 'cash', 'other'];
+}
+
+function app_normalize_payment_method($method): string
+{
+    $raw = trim((string)$method);
+    if ($raw === '') {
+        return 'cash';
+    }
+
+    $lower = strtolower($raw);
+    $aliases = [
+        'card' => 'card',
+        'transfer' => 'card',
+        'کارت به کارت' => 'card',
+        'check' => 'check',
+        'cheque' => 'check',
+        'چک' => 'check',
+        'cash' => 'cash',
+        'نقد' => 'cash',
+        'other' => 'other',
+        'سایر' => 'other',
+    ];
+
+    if (isset($aliases[$raw])) {
+        return $aliases[$raw];
+    }
+    if (isset($aliases[$lower])) {
+        return $aliases[$lower];
+    }
+
+    return 'other';
+}
+
+function app_normalize_payment_receipt($receipt): ?array
+{
+    if (!is_array($receipt)) {
+        return null;
+    }
+
+    $filePath = trim((string)($receipt['filePath'] ?? ''));
+    if ($filePath === '') {
+        return null;
+    }
+
+    return [
+        'filePath' => $filePath,
+        'originalName' => trim((string)($receipt['originalName'] ?? '')),
+        'mimeType' => trim((string)($receipt['mimeType'] ?? '')),
+        'size' => max(0, (int)($receipt['size'] ?? 0)),
+    ];
+}
+
 function app_generate_order_code(int $sequence = 1): string
 {
     $date = date('ymd');
@@ -182,6 +237,86 @@ function app_generate_order_code(int $sequence = 1): string
     return $date . '-00-' . $seq . '-' . $checksum;
 }
 
+function app_order_meta_defaults(int $grandTotal = 0): array
+{
+    $safeGrandTotal = max(0, $grandTotal);
+
+    return [
+        'financials' => [
+            'subTotal' => $safeGrandTotal,
+            'itemDiscountTotal' => 0,
+            'invoiceDiscountType' => 'none',
+            'invoiceDiscountValue' => 0,
+            'invoiceDiscountAmount' => 0,
+            'taxEnabled' => false,
+            'taxRate' => 10,
+            'taxAmount' => 0,
+            'grandTotal' => $safeGrandTotal,
+            'paidTotal' => 0,
+            'dueAmount' => $safeGrandTotal,
+            'paymentStatus' => $safeGrandTotal > 0 ? 'unpaid' : 'paid',
+        ],
+        'payments' => [],
+        'invoiceNotes' => '',
+    ];
+}
+
+function app_normalize_item_for_response($item): array
+{
+    if (!is_array($item)) {
+        return [];
+    }
+
+    $itemType = (string)($item['itemType'] ?? 'catalog');
+    if ($itemType !== 'manual') {
+        $itemType = 'catalog';
+    }
+
+    $count = (int)($item['dimensions']['count'] ?? 1);
+    if ($count <= 0) {
+        $count = 1;
+    }
+
+    $unitPrice = (int)($item['unitPrice'] ?? 0);
+    $totalPrice = (int)($item['totalPrice'] ?? 0);
+    if ($totalPrice <= 0 && $unitPrice > 0) {
+        $totalPrice = $unitPrice * $count;
+    }
+
+    $pricingMeta = is_array($item['pricingMeta'] ?? null) ? $item['pricingMeta'] : [];
+    $pricingMeta = array_merge([
+        'catalogUnitPrice' => $unitPrice,
+        'catalogLineTotal' => max(0, $totalPrice),
+        'overrideUnitPrice' => null,
+        'overrideReason' => '',
+        'floorUnitPrice' => max(0, $unitPrice),
+        'isBelowFloor' => false,
+        'itemDiscountType' => 'none',
+        'itemDiscountValue' => 0,
+        'itemDiscountAmount' => 0,
+        'finalUnitPrice' => max(0, $unitPrice),
+        'finalLineTotal' => max(0, $totalPrice),
+    ], $pricingMeta);
+
+    $item['itemType'] = $itemType;
+    $item['pricingMeta'] = $pricingMeta;
+    $item['unitPrice'] = max(0, (int)($pricingMeta['finalUnitPrice'] ?? $unitPrice));
+    $item['totalPrice'] = max(0, (int)($pricingMeta['finalLineTotal'] ?? $totalPrice));
+
+    if ($itemType === 'manual') {
+        $manual = is_array($item['manual'] ?? null) ? $item['manual'] : [];
+        $item['manual'] = array_merge([
+            'qty' => $count,
+            'unitLabel' => 'عدد',
+            'description' => '',
+            'taxable' => true,
+            'productionImpact' => false,
+        ], $manual);
+    }
+
+    return $item;
+}
+
 function app_order_from_row(array $row): array
 {
     $itemsPayload = (string)($row['items_json'] ?? $row['items'] ?? '[]');
@@ -189,6 +324,74 @@ function app_order_from_row(array $row): array
     if (!is_array($items)) {
         $items = [];
     }
+    $items = array_values(array_map('app_normalize_item_for_response', $items));
+
+    $metaPayload = (string)($row['order_meta_json'] ?? '');
+    $metaDecoded = $metaPayload !== '' ? json_decode($metaPayload, true) : null;
+    if (!is_array($metaDecoded)) {
+        $metaDecoded = [];
+    }
+
+    $baseTotal = max(0, (int)$row['total']);
+    $metaDefaults = app_order_meta_defaults($baseTotal);
+    $financials = is_array($metaDecoded['financials'] ?? null) ? $metaDecoded['financials'] : [];
+    $financials = array_merge($metaDefaults['financials'], $financials);
+
+    $payments = is_array($metaDecoded['payments'] ?? null) ? $metaDecoded['payments'] : [];
+    $payments = array_values(array_filter(array_map(static function ($payment) {
+        if (!is_array($payment)) {
+            return null;
+        }
+
+        $receipt = app_normalize_payment_receipt($payment['receipt'] ?? null);
+        return [
+            'id' => (string)($payment['id'] ?? uniqid('pay_', true)),
+            'date' => (string)($payment['date'] ?? date('Y/m/d')),
+            'amount' => max(0, (int)($payment['amount'] ?? 0)),
+            'method' => app_normalize_payment_method($payment['method'] ?? 'cash'),
+            'reference' => (string)($payment['reference'] ?? ''),
+            'note' => (string)($payment['note'] ?? ''),
+            'receipt' => $receipt,
+        ];
+    }, $payments)));
+
+    $paidTotalFromPayments = 0;
+    foreach ($payments as $payment) {
+        $paidTotalFromPayments += (int)($payment['amount'] ?? 0);
+    }
+
+    $grandTotal = max(0, (int)($financials['grandTotal'] ?? $baseTotal));
+    if ($grandTotal === 0 && $baseTotal > 0) {
+        $grandTotal = $baseTotal;
+    }
+
+    $paidTotal = max((int)($financials['paidTotal'] ?? 0), $paidTotalFromPayments);
+    $dueAmount = max(0, $grandTotal - $paidTotal);
+    $paymentStatus = (string)($financials['paymentStatus'] ?? '');
+    if ($paymentStatus === '') {
+        if ($dueAmount <= 0) {
+            $paymentStatus = 'paid';
+        } elseif ($paidTotal > 0) {
+            $paymentStatus = 'partial';
+        } else {
+            $paymentStatus = 'unpaid';
+        }
+    }
+
+    $financials['grandTotal'] = $grandTotal;
+    $financials['paidTotal'] = $paidTotal;
+    $financials['dueAmount'] = $dueAmount;
+    $financials['paymentStatus'] = $paymentStatus;
+    $financials['subTotal'] = max(0, (int)($financials['subTotal'] ?? $grandTotal));
+    $financials['itemDiscountTotal'] = max(0, (int)($financials['itemDiscountTotal'] ?? 0));
+    $financials['invoiceDiscountValue'] = max(0, (int)($financials['invoiceDiscountValue'] ?? 0));
+    $financials['invoiceDiscountAmount'] = max(0, (int)($financials['invoiceDiscountAmount'] ?? 0));
+    $financials['taxRate'] = max(0, (int)($financials['taxRate'] ?? 10));
+    $financials['taxAmount'] = max(0, (int)($financials['taxAmount'] ?? 0));
+    $financials['taxEnabled'] = (bool)($financials['taxEnabled'] ?? false);
+    $financials['invoiceDiscountType'] = (string)($financials['invoiceDiscountType'] ?? 'none');
+
+    $invoiceNotes = (string)($metaDecoded['invoiceNotes'] ?? '');
 
     return [
         'id' => (string)$row['id'],
@@ -196,9 +399,12 @@ function app_order_from_row(array $row): array
         'customerName' => (string)$row['customer_name'],
         'phone' => (string)$row['phone'],
         'date' => (string)$row['order_date'],
-        'total' => (int)$row['total'],
+        'total' => $grandTotal,
         'status' => (string)$row['status'],
         'items' => $items,
+        'financials' => $financials,
+        'payments' => $payments,
+        'invoiceNotes' => $invoiceNotes,
     ];
 }
 
@@ -238,6 +444,7 @@ function app_ensure_orders_table(PDO $pdo): void
             total BIGINT NOT NULL DEFAULT 0,
             status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
             items_json LONGTEXT NOT NULL,
+            order_meta_json LONGTEXT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -245,6 +452,15 @@ function app_ensure_orders_table(PDO $pdo): void
             KEY idx_orders_created_at (created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
+        if (!$stmt || !$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE orders ADD COLUMN order_meta_json LONGTEXT NULL AFTER items_json");
+        }
+    } catch (Throwable $e) {
+        // Keep runtime compatibility if alter is not possible.
+    }
 }
 
 function app_detect_orders_items_column(PDO $pdo): string
@@ -280,14 +496,44 @@ function app_orders_items_column(PDO $pdo): string
     return app_detect_orders_items_column($pdo);
 }
 
+function app_detect_orders_meta_column(PDO $pdo): ?string
+{
+    static $detected = false;
+    if ($detected !== false) {
+        return $detected === '' ? null : $detected;
+    }
+
+    try {
+        app_ensure_orders_table($pdo);
+        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
+        if ($stmt && $stmt->fetch()) {
+            $detected = 'order_meta_json';
+            return $detected;
+        }
+    } catch (Throwable $e) {
+        // Fall through to no-meta fallback.
+    }
+
+    $detected = '';
+    return null;
+}
+
+function app_orders_meta_column(PDO $pdo): ?string
+{
+    return app_detect_orders_meta_column($pdo);
+}
+
 function app_orders_select_fields(PDO $pdo): string
 {
     $itemsColumn = app_detect_orders_items_column($pdo);
+    $metaColumn = app_detect_orders_meta_column($pdo);
+    $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
+
     if ($itemsColumn === 'items') {
-        return 'id, order_code, customer_name, phone, order_date, total, status, items AS items_json';
+        return 'id, order_code, customer_name, phone, order_date, total, status, items AS items_json, ' . $metaSelect;
     }
 
-    return 'id, order_code, customer_name, phone, order_date, total, status, items_json';
+    return 'id, order_code, customer_name, phone, order_date, total, status, items_json, ' . $metaSelect;
 }
 
 function app_orders_sort_clause(PDO $pdo): string
@@ -327,6 +573,24 @@ function app_read_catalog(PDO $pdo)
     }
 
     $decoded = json_decode((string)$row['setting_value'], true);
-    return is_array($decoded) ? $decoded : null;
+    if (!is_array($decoded)) {
+        return null;
+    }
+
+    $billing = is_array($decoded['billing'] ?? null) ? $decoded['billing'] : [];
+    $rawPaymentMethods = is_array($billing['paymentMethods'] ?? null) ? $billing['paymentMethods'] : app_payment_method_defaults();
+    $paymentMethods = array_values(array_unique(array_map('app_normalize_payment_method', $rawPaymentMethods)));
+    if ($paymentMethods === []) {
+        $paymentMethods = app_payment_method_defaults();
+    }
+
+    $decoded['billing'] = [
+        'priceFloorPercent' => max(1, min(100, (int)($billing['priceFloorPercent'] ?? 90))),
+        'taxDefaultEnabled' => (bool)($billing['taxDefaultEnabled'] ?? false),
+        'taxRate' => max(0, min(100, (int)($billing['taxRate'] ?? 10))),
+        'paymentMethods' => $paymentMethods,
+    ];
+
+    return $decoded;
 }
 

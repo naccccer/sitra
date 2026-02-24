@@ -3,6 +3,23 @@ import { Layers } from 'lucide-react';
 import { toPN } from '../../utils/helpers';
 
 export const StructureDetails = ({ item, catalog }) => {
+  if ((item?.itemType || 'catalog') === 'manual') {
+    const manual = item?.manual || {};
+    return (
+      <div className="space-y-1">
+        <div className="text-[11px] font-black text-amber-700">آیتم دستی</div>
+        <div className="text-[10px] font-bold text-slate-600">
+          {toPN(manual.qty ?? item?.dimensions?.count ?? 1)} {manual.unitLabel || 'عدد'}
+        </div>
+        {manual.description && <div className="text-[10px] font-bold text-slate-500">{manual.description}</div>}
+        <div className="text-[10px] font-bold text-slate-500 flex flex-wrap gap-2">
+          <span>{manual.taxable ? 'مشمول مالیات' : 'معاف از مالیات'}</span>
+          <span>{manual.productionImpact ? 'تولیدی' : 'غیرتولیدی'}</span>
+        </div>
+      </div>
+    );
+  }
+
   const ops = item?.operations && typeof item.operations === 'object' ? item.operations : {};
   const opsKeys = Object.keys(ops);
   const hasPattern = item?.pattern?.type && item.pattern.type !== 'none';

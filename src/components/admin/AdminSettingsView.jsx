@@ -3,6 +3,7 @@ import { Save, Plus, X, Trash2, Layers } from 'lucide-react';
 import { toPN } from '../../utils/helpers';
 import { PriceInput } from '../shared/PriceInput';
 import { api } from '../../services/api';
+import { ensureBillingSettings, PAYMENT_METHOD_OPTIONS } from '../../utils/invoice';
 
 const ensureCatalogDefaults = (source) => {
   const next = JSON.parse(JSON.stringify(source || {}));
@@ -14,6 +15,7 @@ const ensureCatalogDefaults = (source) => {
       price: next.fees.edgeWork.price ?? 0,
     };
   }
+  next.billing = ensureBillingSettings(next);
   return next;
 };
 
@@ -53,12 +55,13 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
   };
 
   const settingsTabs = [
-    { id: 'matrix', label: 'ماتریس شیشه‌ها' },
-    { id: 'pvbLogic', label: 'قوانین طلق (لمینت)' },
-    { id: 'fees', label: 'اجرت‌ها و الگو' },
-    { id: 'connectors', label: 'متعلقات (اسپیسر/طلق)' },
-    { id: 'operations', label: 'خدمات (CNC/جاساز)' },
-    { id: 'jumbo', label: 'تنظیمات جامبو و کارخانه' },
+    { id: 'matrix', label: 'Glass Matrix' },
+    { id: 'pvbLogic', label: 'Laminated Rules' },
+    { id: 'fees', label: 'Fees & Pattern' },
+    { id: 'billing', label: 'Billing' },
+    { id: 'connectors', label: 'Connectors' },
+    { id: 'operations', label: 'Operations' },
+    { id: 'jumbo', label: 'Jumbo & Factory' },
   ];
 
   return (
@@ -168,32 +171,117 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
             <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">اجرت دوجداره</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
-                 <select value={draft.fees.doubleGlazing.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
+                 <select value={draft.fees.doubleGlazing.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, unit: e.target.value}}}))} className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
               </div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><PriceInput value={draft.fees.doubleGlazing.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, price: v}}}))} /></div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><PriceInput value={draft.fees.doubleGlazing.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, fixedOrderPrice: v}}}))} /></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.doubleGlazing.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, price: v}}}))} /></div></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.doubleGlazing.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, doubleGlazing: {...p.fees.doubleGlazing, fixedOrderPrice: v}}}))} /></div></div>
             </div>
             <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">اجرت لمینت</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
-                 <select value={draft.fees.laminating.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, laminating: {...p.fees.laminating, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
+                 <select value={draft.fees.laminating.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, laminating: {...p.fees.laminating, unit: e.target.value}}}))} className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-bold"><option value="m_square">مساحت (مترمربع)</option><option value="m_length">متر طول (محیط)</option><option value="qty">عدد</option></select>
               </div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><PriceInput value={draft.fees.laminating.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, price: v}}}))} /></div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><PriceInput value={draft.fees.laminating.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, fixedOrderPrice: v}}}))} /></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت متغیر (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.laminating.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, price: v}}}))} /></div></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">اجرت ثابت هر سفارش (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.laminating.fixedOrderPrice} onChange={v => setDraft(p => ({...p, fees: {...p.fees, laminating: {...p.fees.laminating, fixedOrderPrice: v}}}))} /></div></div>
             </div>
             <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه ابزار</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
-                 <select value={draft.fees.edgeWork?.unit || 'm_length'} onChange={e => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="m_length">متر طول (محیط)</option><option value="m_square">مساحت (مترمربع)</option><option value="fixed">قیمت ثابت</option></select>
+                 <select value={draft.fees.edgeWork?.unit || 'm_length'} onChange={e => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), unit: e.target.value}}}))} className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-bold"><option value="m_length">متر طول (محیط)</option><option value="m_square">مساحت (مترمربع)</option><option value="fixed">قیمت ثابت</option></select>
               </div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">نرخ ابزار (تومان)</label><PriceInput value={draft.fees.edgeWork?.price ?? 0} onChange={v => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), price: v}}}))} /></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">نرخ ابزار (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.edgeWork?.price ?? 0} onChange={v => setDraft(p => ({...p, fees: {...p.fees, edgeWork: {...(p.fees.edgeWork || { unit: 'm_length', price: 0 }), price: v}}}))} /></div></div>
             </div>
             <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)]">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">هزینه الگوکشی</h3>
               <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبنای محاسبه</label>
-                 <select value={draft.fees.pattern.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, pattern: {...p.fees.pattern, unit: e.target.value}}}))} className="w-full border p-2 rounded text-xs font-bold"><option value="order">کل سفارش (ثابت)</option><option value="qty">به ازای هر عدد</option></select>
+                 <select value={draft.fees.pattern.unit} onChange={e => setDraft(p=>({...p, fees: {...p.fees, pattern: {...p.fees.pattern, unit: e.target.value}}}))} className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-bold"><option value="order">کل سفارش (ثابت)</option><option value="qty">به ازای هر عدد</option></select>
               </div>
-              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبلغ الگو (تومان)</label><PriceInput value={draft.fees.pattern.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, pattern: {...p.fees.pattern, price: v}}}))} /></div>
+              <div><label className="text-[10px] text-slate-500 font-bold block mb-1">مبلغ الگو (تومان)</label><div className="bg-white border border-slate-300 rounded-lg"><PriceInput value={draft.fees.pattern.price} onChange={v => setDraft(p => ({...p, fees: {...p.fees, pattern: {...p.fees.pattern, price: v}}}))} /></div></div>
+            </div>
+          </div>
+        )}
+
+        {activeSettingsTab === 'billing' && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl">
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4">
+              <h3 className="font-black text-sm text-slate-800 border-b pb-2">قوانین قیمت‌گذاری</h3>
+              <div>
+                <label className="text-[10px] text-slate-500 font-bold block mb-1">درصد کف قیمت نسبت به کاتالوگ</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="100"
+                  value={draft.billing?.priceFloorPercent ?? 90}
+                  onChange={(e) => {
+                    const floor = Math.max(1, Math.min(100, parseInt(e.target.value, 10) || 1));
+                    setDraft((p) => ({ ...p, billing: { ...ensureBillingSettings(p), priceFloorPercent: floor } }));
+                  }}
+                  className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-black text-center"
+                  dir="ltr"
+                />
+              </div>
+            </div>
+
+            <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4">
+              <h3 className="font-black text-sm text-slate-800 border-b pb-2">مالیات و روش‌های پرداخت</h3>
+              <label className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={Boolean(draft.billing?.taxDefaultEnabled)}
+                  onChange={(e) => setDraft((p) => ({ ...p, billing: { ...ensureBillingSettings(p), taxDefaultEnabled: e.target.checked } }))}
+                />
+                اعمال مالیات به‌صورت پیش‌فرض
+              </label>
+              <div>
+                <label className="text-[10px] text-slate-500 font-bold block mb-1">نرخ مالیات (%)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={draft.billing?.taxRate ?? 10}
+                  onChange={(e) => {
+                    const taxRate = Math.max(0, Math.min(100, parseInt(e.target.value, 10) || 0));
+                    setDraft((p) => ({ ...p, billing: { ...ensureBillingSettings(p), taxRate } }));
+                  }}
+                  className="w-full bg-white border border-slate-300 p-2 rounded text-xs font-black text-center"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] text-slate-500 font-bold block mb-2">روش‌های پرداخت فعال</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PAYMENT_METHOD_OPTIONS.map((option) => {
+                    const currentMethods = draft.billing?.paymentMethods || ensureBillingSettings(draft).paymentMethods;
+                    const checked = currentMethods.includes(option.value);
+
+                    return (
+                      <label key={option.value} className="h-9 px-2 rounded-lg bg-white border border-slate-200 text-xs font-black text-slate-700 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setDraft((p) => {
+                              const billing = ensureBillingSettings(p);
+                              const methods = new Set(billing.paymentMethods || []);
+                              if (e.target.checked) methods.add(option.value);
+                              else methods.delete(option.value);
+                              const nextMethods = Array.from(methods);
+                              return {
+                                ...p,
+                                billing: {
+                                  ...billing,
+                                  paymentMethods: nextMethods.length > 0 ? nextMethods : [PAYMENT_METHOD_OPTIONS[0].value],
+                                },
+                              };
+                            });
+                          }}
+                        />
+                        {option.label}
+                      </label>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -308,4 +396,5 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
     </div>
   );
 };
+
 
