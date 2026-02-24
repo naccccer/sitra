@@ -196,7 +196,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
   const [itemPricing, setItemPricing] = useState({ overrideUnitPrice: '', overrideReason: '', discountType: 'none', discountValue: '' });
   const [manualDraft, setManualDraft] = useState(createEmptyManualDraft);
   const [manualTouched, setManualTouched] = useState({});
-  const [invoiceAdjustments, setInvoiceAdjustments] = useState({
+  const [invoiceAdjustments] = useState({
     discountType: editingOrder?.financials?.invoiceDiscountType || 'none',
     discountValue: String(editingOrder?.financials?.invoiceDiscountValue ?? ''),
     taxEnabled: Boolean(editingOrder?.financials?.taxEnabled ?? billing.taxDefaultEnabled),
@@ -312,18 +312,11 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
   }), [manualDraft]);
 
   const manualCanSubmit = Object.keys(manualErrors).length === 0;
-  const paymentStatusMeta = financials.paymentStatus === 'paid'
-    ? { label: 'تسویه کامل', className: 'bg-emerald-100 text-emerald-700' }
-    : financials.paymentStatus === 'partial'
-      ? { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' }
-      : { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
-
   const grandTotal = financials.grandTotal;
-  const canAddCatalogItem = pricingDetails.total > 0 && validationErrors.length === 0 && (!catalogPricingPreview.isBelowFloor || catalogPricingPreview.overrideReason.trim() !== '');
+  const canAddCatalogItem = pricingDetails.total > 0 && validationErrors.length === 0;
 
   const handleAddToCart = () => {
     if (!canAddCatalogItem) return;
-    if (catalogPricingPreview.isBelowFloor && !catalogPricingPreview.overrideReason.trim()) return;
 
     const newItem = {
       id: editingItemType === 'catalog' && editingItemId ? editingItemId : Date.now(),
@@ -392,10 +385,12 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
     setEditingItemType('catalog');
     setManualTouched({});
     setManualDraft(createEmptyManualDraft());
+    setModalMode(null);
   };
 
   const handleEditItemClick = (item) => {
     if (item?.itemType === 'manual') {
+      setModalMode('manualItem');
       setEditingItemId(item.id);
       setEditingItemType('manual');
       setManualTouched({});
@@ -420,9 +415,9 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
     setEditingItemType('catalog');
     setItemPricing({
       overrideUnitPrice: item?.pricingMeta?.overrideUnitPrice ?? '',
-      overrideReason: item?.pricingMeta?.overrideReason || '',
-      discountType: item?.pricingMeta?.itemDiscountType || 'none',
-      discountValue: String(item?.pricingMeta?.itemDiscountValue ?? ''),
+      overrideReason: '',
+      discountType: 'none',
+      discountValue: '',
     });
   };
 
@@ -595,18 +590,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
 
             {isStaffContext && (
               <div className="bg-white border border-slate-200 rounded-xl p-2.5 space-y-2">
-                <div className="grid grid-cols-2 gap-2">
-                  <input type="number" value={itemPricing.overrideUnitPrice} onChange={(e) => setItemPricing((p) => ({ ...p, overrideUnitPrice: e.target.value }))} placeholder="فی توافقی" className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" dir="ltr" />
-                  <input type="text" value={itemPricing.overrideReason} onChange={(e) => setItemPricing((p) => ({ ...p, overrideReason: e.target.value }))} placeholder="دلیل توافق" className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" />
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <select value={itemPricing.discountType} onChange={(e) => setItemPricing((p) => ({ ...p, discountType: e.target.value }))} className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold">
-                    <option value="none">بدون تخفیف</option>
-                    <option value="percent">درصدی</option>
-                    <option value="fixed">ثابت</option>
-                  </select>
-                  <input type="number" value={itemPricing.discountValue} onChange={(e) => setItemPricing((p) => ({ ...p, discountValue: e.target.value }))} placeholder="مقدار تخفیف" className="bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" dir="ltr" />
-                </div>
+                <input type="number" value={itemPricing.overrideUnitPrice} onChange={(e) => setItemPricing((p) => ({ ...p, overrideUnitPrice: e.target.value }))} placeholder="فی توافقی" className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold" dir="ltr" />
                 <div className={`text-[10px] font-bold ${catalogPricingPreview.isBelowFloor ? 'text-red-600' : 'text-slate-500'}`}>
                   کف مجاز: {toPN(catalogPricingPreview.floorUnitPrice.toLocaleString())} تومان
                 </div>
@@ -623,16 +607,120 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
         </div>
       </div>
 
-      {isStaffContext && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 print-hide">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-sm font-black text-slate-800">آیتم دستی فاکتور</h3>
-              {editingItemId && editingItemType === 'manual' ? (
-                <span className="rounded-full bg-amber-100 text-amber-700 px-2.5 py-1 text-[10px] font-black">در حال ویرایش</span>
-              ) : null}
+      {/* COMPACT BASKET */}
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-4 print-hide">
+        <div className="bg-slate-900 p-3 text-white flex justify-between items-center">
+            <span className="text-sm font-black pl-2">سبد سفارش مشتری</span>
+            <div className="flex items-center gap-2">
+              {isStaffContext && (
+                <button onClick={() => setModalMode('manualItem')} className="bg-white/10 hover:bg-white/20 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all border border-white/20">
+                  <Plus size={14}/> آیتم دستی
+                  {editingItemId && editingItemType === 'manual' && <span className="bg-amber-500 text-white text-[9px] px-1.5 rounded-full">در حال ویرایش</span>}
+                </button>
+              )}
+              <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all shadow-md">
+                <Printer size={14}/> چاپ پیش‌فاکتور
+              </button>
             </div>
-            <div className="space-y-4">
+        </div>
+        
+        {orderItems.length === 0 ? (
+            <div className="p-8 text-center text-xs text-slate-400 font-bold bg-slate-50/50">آیتمی در سفارش ثبت نشده است.</div>
+        ) : (
+            <>
+              <div className="hidden lg:block overflow-x-auto p-2">
+                  <table className="w-full text-right text-xs border-collapse">
+                      <thead className="bg-slate-50 text-slate-500 text-[11px] border-y border-slate-200 rounded-lg">
+                          <tr>
+                              <th className="p-2 font-bold w-10 text-center border-l border-slate-200/50">ردیف</th>
+                              <th className="p-2 font-bold w-32 border-l border-slate-200/50">نوع ساختار</th>
+                              <th className="p-2 font-bold border-l border-slate-200/50">پیکربندی و خدمات</th>
+                              <th className="p-2 font-bold w-24 text-center border-l border-slate-200/50">ابعاد (cm)</th>
+                              <th className="p-2 font-bold w-12 text-center border-l border-slate-200/50">تعداد</th>
+                              <th className="p-2 font-bold w-24 text-center border-l border-slate-200/50">فی (تومان)</th>
+                              <th className="p-2 font-bold w-28 text-left border-l border-slate-200/50 pl-3">مبلغ کل</th>
+                              <th className="p-2 font-bold w-16 text-center">عملیات</th>
+                          </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                          {orderItems.map((item, i) => (
+                              <tr key={item.id} className="hover:bg-blue-50/20 transition-colors even:bg-slate-50/50">
+                                  <td className="p-2 text-center font-bold text-slate-400 border-l border-slate-100 tabular-nums">{toPN(i+1)}</td>
+                                  <td className="p-2 border-l border-slate-100">
+                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black whitespace-nowrap shadow-sm border ${item.itemType === 'manual' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-700'}`}>{item.title}</span>
+                                  </td>
+                                  <td className="p-2 border-l border-slate-100"><StructureDetails item={item} catalog={catalog} /></td>
+                                  <td className="p-2 text-center font-bold text-slate-600 border-l border-slate-100 tabular-nums" dir="ltr">{item.itemType === 'manual' ? '-' : `${toPN(item.dimensions.width)} × ${toPN(item.dimensions.height)}`}</td>
+                                  <td className="p-2 text-center font-black text-slate-800 border-l border-slate-100 tabular-nums">{toPN(item.dimensions.count)}</td>
+                                  <td className="p-2 text-center font-bold text-slate-500 border-l border-slate-100 tabular-nums">{toPN(item.unitPrice.toLocaleString())}</td>
+                                  <td className="p-2 text-left pl-3 font-black text-slate-900 border-l border-slate-100 tabular-nums bg-blue-50/30 text-sm">{toPN(item.totalPrice.toLocaleString())}</td>
+                                  <td className="p-2 text-center">
+                                      <div className="flex items-center justify-center gap-1.5">
+                                          <button onClick={() => handleEditItemClick(item)} className="text-slate-400 hover:text-amber-600 bg-white border border-slate-200 p-1 rounded shadow-sm transition-colors"><Edit3 size={12}/></button>
+                                          <button onClick={() => handleRemoveItem(item.id)} className="text-slate-400 hover:text-red-600 bg-white border border-slate-200 p-1 rounded shadow-sm transition-colors"><Trash2 size={12}/></button>
+                                      </div>
+                                  </td>
+                              </tr>
+                          ))}
+                      </tbody>
+                  </table>
+              </div>
+
+              <div className="divide-y divide-slate-100 lg:hidden">
+                  {orderItems.map((item, i) => (
+                      <div key={item.id} className="p-3 flex justify-between items-start hover:bg-slate-50 transition-colors">
+                          <div className="flex gap-2 w-[75%]">
+                              <span className="text-[10px] font-black text-slate-400 bg-slate-100 w-5 h-5 flex items-center justify-center rounded shrink-0 mt-0.5">{toPN(i+1)}</span>
+                              <div>
+                                  <div className="text-[11px] font-black text-slate-800 leading-tight">
+                                      {item.title} <span className="text-[9px] text-slate-400 font-bold tracking-wider tabular-nums">({item.itemType === 'manual' ? 'آیتم دستی' : `${toPN(item.dimensions.width)}×${toPN(item.dimensions.height)}`} - {toPN(item.dimensions.count)}عدد)</span>
+                                  </div>
+                                  <div className="mt-1"><StructureDetails item={item} catalog={catalog} /></div>
+                              </div>
+                          </div>
+                          <div className="flex flex-col items-end justify-between h-full gap-2">
+                              <div className="font-black text-xs text-blue-600 shrink-0 tabular-nums">{toPN(item.totalPrice.toLocaleString())}</div>
+                              <div className="flex gap-1.5 mt-1">
+                                  <button onClick={() => handleEditItemClick(item)} className="text-slate-400 hover:text-amber-500 bg-white border border-slate-200 p-1 rounded shadow-sm"><Edit3 size={12}/></button>
+                                  <button onClick={() => handleRemoveItem(item.id)} className="text-slate-400 hover:text-red-500 bg-white border border-slate-200 p-1 rounded shadow-sm"><Trash2 size={12}/></button>
+                              </div>
+                          </div>
+                      </div>
+                  ))}
+              </div>
+
+              <div className="p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-center border-t border-slate-200 gap-4">
+                  <div className="flex items-center gap-2">
+                      <span className="text-xs font-black text-slate-500">مبلغ نهایی فاکتور:</span>
+                      <span className="text-lg lg:text-xl font-black text-slate-900 tabular-nums">{toPN(grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
+                  </div>
+                  
+                  <button onClick={() => setIsCheckoutOpen(true)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95">
+                      <CheckCircle2 size={16}/> {editingOrder ? 'ثبت نهایی ویرایش سفارش' : 'تایید و ورود مشخصات'}
+                  </button>
+              </div>
+            </>
+        )}
+      </div>
+
+      {modalMode === 'settings' && (
+        <SettingsModal 
+            setModalMode={setModalMode} 
+            config={config} 
+            setConfig={setConfig} 
+            catalog={catalog} 
+        />
+      )}
+
+      {isStaffContext && modalMode === 'manualItem' && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[70] flex items-center justify-center p-4 animate-in fade-in duration-200 print-hide">
+          <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="bg-slate-900 px-5 py-4 text-white flex items-center justify-between">
+              <div className="text-sm font-black">آیتم دستی فاکتور</div>
+              <button onClick={() => setModalMode(null)} className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-xs font-black">بستن</button>
+            </div>
+
+            <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
               {editingItemId && editingItemType === 'manual' && (
                 <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-black text-amber-700 flex items-center justify-between gap-2">
                   <span>در حال ویرایش آیتم دستی</span>
@@ -765,188 +853,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
               </div>
             </div>
           </div>
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2">
-              <h3 className="text-sm font-black text-slate-800">تنظیمات مالی فاکتور</h3>
-              <span className="text-[10px] font-bold text-slate-500">پرداخت‌ها در مدیریت سفارشات ثبت می‌شود.</span>
-            </div>
-            <div className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-600">نوع تخفیف فاکتور</label>
-                  <select
-                    value={invoiceAdjustments.discountType}
-                    onChange={(e) => setInvoiceAdjustments((p) => ({ ...p, discountType: e.target.value }))}
-                    className="h-10 w-full bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold"
-                  >
-                    <option value="none">بدون تخفیف کل</option>
-                    <option value="percent">تخفیف درصدی</option>
-                    <option value="fixed">تخفیف ثابت</option>
-                  </select>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-600">مقدار تخفیف کل</label>
-                  <input
-                    type="number"
-                    value={invoiceAdjustments.discountValue}
-                    onChange={(e) => setInvoiceAdjustments((p) => ({ ...p, discountValue: e.target.value }))}
-                    disabled={invoiceAdjustments.discountType === 'none'}
-                    className={`h-10 w-full border rounded-lg px-3 text-xs font-bold ${invoiceAdjustments.discountType === 'none' ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-slate-50 border-slate-200'}`}
-                    dir="ltr"
-                  />
-                  <div className="text-[10px] font-bold text-slate-400">در حالت «بدون تخفیف»، این فیلد غیرفعال است.</div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-600">مالیات</label>
-                  <label className="h-10 flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 text-xs font-bold text-slate-700">
-                    <input
-                      type="checkbox"
-                      checked={invoiceAdjustments.taxEnabled}
-                      onChange={(e) => setInvoiceAdjustments((p) => ({ ...p, taxEnabled: e.target.checked }))}
-                    />
-                    اعمال مالیات
-                  </label>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-[11px] font-black text-slate-600">نرخ مالیات (%)</label>
-                  <input
-                    type="number"
-                    value={invoiceAdjustments.taxRate}
-                    onChange={(e) => setInvoiceAdjustments((p) => ({ ...p, taxRate: e.target.value }))}
-                    disabled={!invoiceAdjustments.taxEnabled}
-                    className={`h-10 w-full border rounded-lg px-3 text-xs font-bold ${!invoiceAdjustments.taxEnabled ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-slate-50 border-slate-200'}`}
-                    dir="ltr"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="text-[11px] font-black text-slate-600 block mb-1">یادداشت فاکتور</label>
-                <textarea
-                  value={invoiceNotes}
-                  onChange={(e) => setInvoiceNotes(e.target.value)}
-                  placeholder="یادداشت داخلی یا توضیح برای مشتری"
-                  className="w-full min-h-20 bg-slate-50 border border-slate-200 rounded-lg p-2 text-xs font-bold"
-                />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">جمع قبل از تخفیف: {toPN(financials.subTotal.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">تخفیف سطری: {toPN(financials.itemDiscountTotal.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">تخفیف کل: {toPN(financials.invoiceDiscountAmount.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">مالیات: {toPN(financials.taxAmount.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-900">جمع نهایی: {toPN(financials.grandTotal.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-900">پرداخت‌شده: {toPN(financials.paidTotal.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-rose-700">مانده: {toPN(financials.dueAmount.toLocaleString())}</div>
-                <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-900">
-                  وضعیت پرداخت:
-                  <span className={`mr-2 inline-flex rounded px-2 py-0.5 ${paymentStatusMeta.className}`}>{paymentStatusMeta.label}</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-      )}
-
-      {/* COMPACT BASKET */}
-      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm mb-4 print-hide">
-        <div className="bg-slate-900 p-3 text-white flex justify-between items-center">
-            <span className="text-sm font-black pl-2">سبد سفارش مشتری</span>
-            <button onClick={() => window.print()} className="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-[11px] font-bold flex items-center gap-2 transition-all shadow-md">
-              <Printer size={14}/> چاپ پیش‌فاکتور
-            </button>
-        </div>
-        
-        {orderItems.length === 0 ? (
-            <div className="p-8 text-center text-xs text-slate-400 font-bold bg-slate-50/50">آیتمی در سفارش ثبت نشده است.</div>
-        ) : (
-            <>
-              <div className="hidden lg:block overflow-x-auto p-2">
-                  <table className="w-full text-right text-xs border-collapse">
-                      <thead className="bg-slate-50 text-slate-500 text-[11px] border-y border-slate-200 rounded-lg">
-                          <tr>
-                              <th className="p-2 font-bold w-10 text-center border-l border-slate-200/50">ردیف</th>
-                              <th className="p-2 font-bold w-32 border-l border-slate-200/50">نوع ساختار</th>
-                              <th className="p-2 font-bold border-l border-slate-200/50">پیکربندی و خدمات</th>
-                              <th className="p-2 font-bold w-24 text-center border-l border-slate-200/50">ابعاد (cm)</th>
-                              <th className="p-2 font-bold w-12 text-center border-l border-slate-200/50">تعداد</th>
-                              <th className="p-2 font-bold w-24 text-center border-l border-slate-200/50">فی (تومان)</th>
-                              <th className="p-2 font-bold w-28 text-left border-l border-slate-200/50 pl-3">مبلغ کل</th>
-                              <th className="p-2 font-bold w-16 text-center">عملیات</th>
-                          </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100">
-                          {orderItems.map((item, i) => (
-                              <tr key={item.id} className="hover:bg-blue-50/20 transition-colors even:bg-slate-50/50">
-                                  <td className="p-2 text-center font-bold text-slate-400 border-l border-slate-100 tabular-nums">{toPN(i+1)}</td>
-                                  <td className="p-2 border-l border-slate-100">
-                                    <span className={`px-2 py-1 rounded-full text-[10px] font-black whitespace-nowrap shadow-sm border ${item.itemType === 'manual' ? 'bg-amber-50 border-amber-200 text-amber-700' : 'bg-white border-slate-200 text-slate-700'}`}>{item.title}</span>
-                                  </td>
-                                  <td className="p-2 border-l border-slate-100"><StructureDetails item={item} catalog={catalog} /></td>
-                                  <td className="p-2 text-center font-bold text-slate-600 border-l border-slate-100 tabular-nums" dir="ltr">{item.itemType === 'manual' ? '-' : `${toPN(item.dimensions.width)} × ${toPN(item.dimensions.height)}`}</td>
-                                  <td className="p-2 text-center font-black text-slate-800 border-l border-slate-100 tabular-nums">{toPN(item.dimensions.count)}</td>
-                                  <td className="p-2 text-center font-bold text-slate-500 border-l border-slate-100 tabular-nums">{toPN(item.unitPrice.toLocaleString())}</td>
-                                  <td className="p-2 text-left pl-3 font-black text-slate-900 border-l border-slate-100 tabular-nums bg-blue-50/30 text-sm">{toPN(item.totalPrice.toLocaleString())}</td>
-                                  <td className="p-2 text-center">
-                                      <div className="flex items-center justify-center gap-1.5">
-                                          <button onClick={() => handleEditItemClick(item)} className="text-slate-400 hover:text-amber-600 bg-white border border-slate-200 p-1 rounded shadow-sm transition-colors"><Edit3 size={12}/></button>
-                                          <button onClick={() => handleRemoveItem(item.id)} className="text-slate-400 hover:text-red-600 bg-white border border-slate-200 p-1 rounded shadow-sm transition-colors"><Trash2 size={12}/></button>
-                                      </div>
-                                  </td>
-                              </tr>
-                          ))}
-                      </tbody>
-                  </table>
-              </div>
-
-              <div className="divide-y divide-slate-100 lg:hidden">
-                  {orderItems.map((item, i) => (
-                      <div key={item.id} className="p-3 flex justify-between items-start hover:bg-slate-50 transition-colors">
-                          <div className="flex gap-2 w-[75%]">
-                              <span className="text-[10px] font-black text-slate-400 bg-slate-100 w-5 h-5 flex items-center justify-center rounded shrink-0 mt-0.5">{toPN(i+1)}</span>
-                              <div>
-                                  <div className="text-[11px] font-black text-slate-800 leading-tight">
-                                      {item.title} <span className="text-[9px] text-slate-400 font-bold tracking-wider tabular-nums">({item.itemType === 'manual' ? 'آیتم دستی' : `${toPN(item.dimensions.width)}×${toPN(item.dimensions.height)}`} - {toPN(item.dimensions.count)}عدد)</span>
-                                  </div>
-                                  <div className="mt-1"><StructureDetails item={item} catalog={catalog} /></div>
-                              </div>
-                          </div>
-                          <div className="flex flex-col items-end justify-between h-full gap-2">
-                              <div className="font-black text-xs text-blue-600 shrink-0 tabular-nums">{toPN(item.totalPrice.toLocaleString())}</div>
-                              <div className="flex gap-1.5 mt-1">
-                                  <button onClick={() => handleEditItemClick(item)} className="text-slate-400 hover:text-amber-500 bg-white border border-slate-200 p-1 rounded shadow-sm"><Edit3 size={12}/></button>
-                                  <button onClick={() => handleRemoveItem(item.id)} className="text-slate-400 hover:text-red-500 bg-white border border-slate-200 p-1 rounded shadow-sm"><Trash2 size={12}/></button>
-                              </div>
-                          </div>
-                      </div>
-                  ))}
-              </div>
-
-              <div className="p-4 bg-slate-50 flex flex-col sm:flex-row justify-between items-center border-t border-slate-200 gap-4">
-                  <div className="flex items-center gap-2">
-                      <span className="text-xs font-black text-slate-500">مبلغ نهایی فاکتور:</span>
-                      <span className="text-lg lg:text-xl font-black text-slate-900 tabular-nums">{toPN(grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
-                  </div>
-                  
-                  <button onClick={() => setIsCheckoutOpen(true)} className="w-full sm:w-auto bg-green-600 hover:bg-green-500 text-white px-6 py-2.5 rounded-lg text-sm font-black flex items-center justify-center gap-2 shadow-md transition-all active:scale-95">
-                      <CheckCircle2 size={16}/> {editingOrder ? 'ثبت نهایی ویرایش سفارش' : 'تایید و ورود مشخصات'}
-                  </button>
-              </div>
-            </>
-        )}
-      </div>
-
-      {modalMode === 'settings' && (
-        <SettingsModal 
-            setModalMode={setModalMode} 
-            config={config} 
-            setConfig={setConfig} 
-            catalog={catalog} 
-        />
       )}
 
       {isCheckoutOpen && (

@@ -55,13 +55,13 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
   };
 
   const settingsTabs = [
-    { id: 'matrix', label: 'Glass Matrix' },
-    { id: 'pvbLogic', label: 'Laminated Rules' },
-    { id: 'fees', label: 'Fees & Pattern' },
-    { id: 'billing', label: 'Billing' },
-    { id: 'connectors', label: 'Connectors' },
-    { id: 'operations', label: 'Operations' },
-    { id: 'jumbo', label: 'Jumbo & Factory' },
+    { id: 'matrix', label: 'ماتریس شیشه' },
+    { id: 'pvbLogic', label: 'قوانین لمینت' },
+    { id: 'fees', label: 'اجرت و الگو' },
+    { id: 'billing', label: 'مالی و پرداخت' },
+    { id: 'connectors', label: 'اسپیسر و طلق' },
+    { id: 'operations', label: 'خدمات جانبی' },
+    { id: 'jumbo', label: 'جامبو و کارخانه' },
   ];
 
   return (
@@ -333,7 +333,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
                     <select value={op.unit || 'qty'} onChange={e => { const newOps = [...draft.operations]; newOps[i].unit = e.target.value; setDraft(p => ({...p, operations: newOps})); }} className="bg-white border border-slate-200 text-xs p-1 rounded font-bold"><option value="qty">عدد</option><option value="m_length">متر طول</option><option value="m_square">مساحت (مترمربع)</option></select>
                   </div>
                   <div className="flex justify-between items-center mt-1 border-t pt-2">
-                    <input type="text" value={op.iconFile} onChange={e => { const newOps = [...draft.operations]; newOps[i].iconFile = e.target.value; setDraft(p => ({...p, operations: newOps})); }} className="text-[10px] font-mono bg-white border rounded px-1 py-0.5 w-24" placeholder="icon.svg"/>
+                    <input type="text" value={op.iconFile} onChange={e => { const newOps = [...draft.operations]; newOps[i].iconFile = e.target.value; setDraft(p => ({...p, operations: newOps})); }} className="text-[10px] font-mono bg-white border rounded px-1 py-0.5 w-24" placeholder="نام فایل آیکن"/>
                     <button onClick={() => setDraft(p => ({...p, operations: p.operations.filter(x => x.id !== op.id)}))} className="text-red-500 hover:bg-red-100 p-1 rounded"><Trash2 size={12}/></button>
                   </div>
                 </div>

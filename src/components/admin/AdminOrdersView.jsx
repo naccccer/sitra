@@ -5,7 +5,13 @@ import { StructureDetails } from '../shared/StructureDetails';
 import { PrintInvoice } from '../shared/PrintInvoice';
 import { PatternFilesModal } from './PatternFilesModal';
 import { api } from '../../services/api';
-import { getPaymentMethodLabel, normalizePayment, PAYMENT_METHOD_OPTIONS } from '../../utils/invoice';
+import {
+  computeInvoiceFinancials,
+  ensureBillingSettings,
+  getPaymentMethodLabel,
+  normalizePayment,
+  PAYMENT_METHOD_OPTIONS,
+} from '../../utils/invoice';
 
 const PRINTABLE_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const PRINTABLE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
@@ -58,7 +64,6 @@ const createPaymentDraft = () => ({
   date: new Date().toLocaleDateString('fa-IR'),
   amount: '',
   method: defaultPaymentMethod,
-  reference: '',
   note: '',
   receipt: null,
 });
@@ -78,29 +83,30 @@ const paymentStatusPill = (status) => {
   return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
 };
 
-const buildFinancialsFromPayments = (order = {}, payments = []) => {
-  const currentFinancials = order?.financials && typeof order.financials === 'object' ? order.financials : {};
-  const normalizedPayments = (Array.isArray(payments) ? payments : []).map(normalizePayment);
-  const total = toSafeAmount(currentFinancials?.grandTotal ?? order?.total);
-  const paid = normalizedPayments.reduce((acc, payment) => acc + toSafeAmount(payment?.amount), 0);
-  const due = Math.max(0, total - paid);
-  const paymentStatus = due <= 0 ? 'paid' : paid > 0 ? 'partial' : 'unpaid';
+const normalizeDiscountType = (type) => (type === 'percent' || type === 'fixed' ? type : 'none');
 
+const createInvoiceAdjustmentsDraft = (order = {}, catalog = {}) => {
+  const billing = ensureBillingSettings(catalog);
+  const currentFinancials = order?.financials && typeof order.financials === 'object' ? order.financials : {};
   return {
-    ...currentFinancials,
-    subTotal: toSafeAmount(currentFinancials?.subTotal ?? total),
-    itemDiscountTotal: toSafeAmount(currentFinancials?.itemDiscountTotal ?? 0),
-    invoiceDiscountType: String(currentFinancials?.invoiceDiscountType || 'none'),
-    invoiceDiscountValue: toSafeAmount(currentFinancials?.invoiceDiscountValue ?? 0),
-    invoiceDiscountAmount: toSafeAmount(currentFinancials?.invoiceDiscountAmount ?? 0),
-    taxEnabled: Boolean(currentFinancials?.taxEnabled ?? false),
-    taxRate: toSafeAmount(currentFinancials?.taxRate ?? 10),
-    taxAmount: toSafeAmount(currentFinancials?.taxAmount ?? 0),
-    grandTotal: total,
-    paidTotal: paid,
-    dueAmount: due,
-    paymentStatus,
+    discountType: normalizeDiscountType(currentFinancials?.invoiceDiscountType),
+    discountValue: String(toSafeAmount(currentFinancials?.invoiceDiscountValue ?? 0)),
+    taxEnabled: Boolean(currentFinancials?.taxEnabled ?? billing.taxDefaultEnabled),
+    taxRate: String(toSafeAmount(currentFinancials?.taxRate ?? billing.taxRate)),
+    invoiceNotes: String(order?.invoiceNotes || ''),
   };
+};
+
+const buildFinancialsForOrder = (order = {}, payments = [], invoiceDraft = null, catalog = {}) => {
+  const draft = invoiceDraft || createInvoiceAdjustmentsDraft(order, catalog);
+  return computeInvoiceFinancials({
+    items: Array.isArray(order?.items) ? order.items : [],
+    invoiceDiscountType: draft.discountType,
+    invoiceDiscountValue: draft.discountValue,
+    taxEnabled: draft.taxEnabled,
+    taxRate: draft.taxRate,
+    payments,
+  });
 };
 
 export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => {
@@ -108,11 +114,12 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
-  const [factoryPrintContext, setFactoryPrintContext] = useState(null);
   const [patternFilesContext, setPatternFilesContext] = useState(null);
   const [paymentDraftsByOrder, setPaymentDraftsByOrder] = useState({});
   const [paymentTouchedByOrder, setPaymentTouchedByOrder] = useState({});
   const [paymentEditDrafts, setPaymentEditDrafts] = useState({});
+  const [invoiceDraftsByOrder, setInvoiceDraftsByOrder] = useState({});
+  const [paymentManagerOrderId, setPaymentManagerOrderId] = useState(null);
   const [uploadingReceiptKey, setUploadingReceiptKey] = useState('');
 
   const updateOrderStatus = async (id, status) => {
@@ -154,26 +161,42 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
     });
   };
 
-  const openFactoryPrintModal = (order) => {
-    setFactoryPrintContext({
-      order,
-      includeNonProductionManual: true,
-    });
-  };
-
-  const confirmFactoryPrint = () => {
-    if (!factoryPrintContext?.order) return;
+  const printFactoryOrder = (order) => {
+    if (!order) return;
     const nextOrder = {
-      ...factoryPrintContext.order,
-      factoryIncludeNonProductionManual: Boolean(factoryPrintContext.includeNonProductionManual),
+      ...order,
+      factoryIncludeNonProductionManual: true,
     };
     setViewingOrder(nextOrder);
-    setFactoryPrintContext(null);
     setTimeout(() => window.print(), 100);
   };
 
   const getOrderPaymentDraft = (orderId) => paymentDraftsByOrder[orderId] || createPaymentDraft();
   const getOrderPaymentTouched = (orderId) => Boolean(paymentTouchedByOrder[orderId]);
+  const getOrderInvoiceDraft = (order) => {
+    if (!order?.id) return createInvoiceAdjustmentsDraft({}, catalog);
+    return invoiceDraftsByOrder[order.id] || createInvoiceAdjustmentsDraft(order, catalog);
+  };
+
+  const updateOrderInvoiceDraft = (orderId, field, value) => {
+    const currentOrder = orders.find((candidate) => candidate.id === orderId);
+    setInvoiceDraftsByOrder((prev) => ({
+      ...prev,
+      [orderId]: { ...(prev[orderId] || createInvoiceAdjustmentsDraft(currentOrder, catalog)), [field]: value },
+    }));
+  };
+
+  const openPaymentManager = (order) => {
+    if (!order?.id) return;
+    setPaymentManagerOrderId(order.id);
+    setInvoiceDraftsByOrder((prev) => (
+      prev[order.id]
+        ? prev
+        : { ...prev, [order.id]: createInvoiceAdjustmentsDraft(order, catalog) }
+    ));
+  };
+
+  const closePaymentManager = () => setPaymentManagerOrderId(null);
 
   const updateOrderPaymentDraft = (orderId, field, value) => {
     setPaymentDraftsByOrder((prev) => ({
@@ -186,16 +209,19 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
     setPaymentTouchedByOrder((prev) => ({ ...prev, [orderId]: touched }));
   };
 
-  const upsertOrderPayments = async (order, nextPaymentsInput) => {
+  const upsertOrderPayments = async (order, nextPaymentsInput, invoiceDraftInput = null) => {
     const previousOrder = orders.find((candidate) => candidate.id === order.id);
     if (!previousOrder) return;
 
     const nextPayments = (Array.isArray(nextPaymentsInput) ? nextPaymentsInput : []).map(normalizePayment);
-    const nextFinancials = buildFinancialsFromPayments(previousOrder, nextPayments);
+    const invoiceDraft = invoiceDraftInput || getOrderInvoiceDraft(previousOrder);
+    const nextFinancials = buildFinancialsForOrder(previousOrder, nextPayments, invoiceDraft, catalog);
+    const nextInvoiceNotes = String(invoiceDraft?.invoiceNotes || '');
     const optimisticOrder = {
       ...previousOrder,
       payments: nextPayments,
       financials: nextFinancials,
+      invoiceNotes: nextInvoiceNotes,
       total: nextFinancials.grandTotal,
     };
 
@@ -212,17 +238,24 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
         items: Array.isArray(previousOrder.items) ? previousOrder.items : [],
         financials: nextFinancials,
         payments: nextPayments,
-        invoiceNotes: previousOrder.invoiceNotes || '',
+        invoiceNotes: nextInvoiceNotes,
       };
       const response = await api.updateOrder(payload);
       if (response?.order) {
         setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? response.order : candidate)));
+        setInvoiceDraftsByOrder((prev) => ({ ...prev, [previousOrder.id]: createInvoiceAdjustmentsDraft(response.order, catalog) }));
       }
     } catch (error) {
       console.error('Failed to update order payments.', error);
       setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? previousOrder : candidate)));
+      setInvoiceDraftsByOrder((prev) => ({ ...prev, [previousOrder.id]: createInvoiceAdjustmentsDraft(previousOrder, catalog) }));
       alert(error?.message || 'به‌روزرسانی پرداخت‌ها ناموفق بود.');
     }
+  };
+
+  const saveInvoiceAdjustmentsForOrder = async (order) => {
+    const existing = (Array.isArray(order?.payments) ? order.payments : []).map(normalizePayment);
+    await upsertOrderPayments(order, existing, getOrderInvoiceDraft(order));
   };
 
   const addPaymentForOrder = async (order) => {
@@ -359,6 +392,25 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
     return matchesTab && matchesSearch;
   }), [orders, activeOrdersTab, searchQuery]);
 
+  const paymentManagerOrder = paymentManagerOrderId
+    ? orders.find((candidate) => candidate.id === paymentManagerOrderId) || null
+    : null;
+  const paymentManagerPayments = paymentManagerOrder
+    ? (Array.isArray(paymentManagerOrder.payments) ? paymentManagerOrder.payments : []).map(normalizePayment)
+    : [];
+  const paymentManagerPaymentDraft = paymentManagerOrder
+    ? getOrderPaymentDraft(paymentManagerOrder.id)
+    : createPaymentDraft();
+  const paymentManagerPaymentTouched = paymentManagerOrder ? getOrderPaymentTouched(paymentManagerOrder.id) : false;
+  const paymentManagerPaymentAmountValid = Number(paymentManagerPaymentDraft.amount) > 0;
+  const paymentManagerInvoiceDraft = paymentManagerOrder ? getOrderInvoiceDraft(paymentManagerOrder) : null;
+  const paymentManagerFinancials = paymentManagerOrder && paymentManagerInvoiceDraft
+    ? buildFinancialsForOrder(paymentManagerOrder, paymentManagerPayments, paymentManagerInvoiceDraft, catalog)
+    : null;
+  const paymentManagerStatusPill = paymentManagerFinancials
+    ? paymentStatusPill(paymentManagerFinancials.paymentStatus)
+    : { label: '-', className: 'bg-slate-100 text-slate-500' };
+
   return (
     <div className="space-y-4 animate-in slide-in-from-left-4">
       <div className="print-hide flex flex-col md:flex-row gap-4 justify-between items-start md:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
@@ -443,7 +495,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                               {paymentPill.label}
                             </span>
                             <button
-                              onClick={() => setExpandedOrderId(o.id)}
+                              onClick={() => openPaymentManager(o)}
                               className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
                             >
                               مدیریت پرداخت
@@ -497,7 +549,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                                     <FileText size={12} />
                                     فایل‌های الگو
                                   </button>
-                                  <button onClick={() => openFactoryPrintModal(o)} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors">
+                                  <button onClick={() => printFactoryOrder(o)} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors">
                                     <Printer size={12} />
                                     چاپ برای تولید
                                   </button>
@@ -511,7 +563,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                                 <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs font-black text-slate-700">وضعیت مالی: {paymentPill.label}</div>
                               </div>
 
-                              <div className="mb-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-3">
+                              <div className="hidden mb-4 rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-3">
                                 <div className="flex flex-wrap gap-2 justify-between items-center">
                                   <h4 className="text-xs font-black text-slate-800">مدیریت پرداخت‌ها</h4>
                                   <span className="text-[10px] font-bold text-slate-500">روش‌ها: کارت به کارت، چک، نقد، سایر</span>
@@ -837,25 +889,351 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
         </div>
       </div>
 
-      {factoryPrintContext && (
-        <div className="fixed inset-0 bg-slate-900/50 z-[80] flex items-center justify-center p-4 print-hide">
-          <div className="w-full max-w-md bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
+      {paymentManagerOrder && paymentManagerInvoiceDraft && paymentManagerFinancials && (
+        <div className="fixed inset-0 bg-slate-900/60 z-[90] flex items-center justify-center p-4 print-hide">
+          <div className="w-full max-w-6xl bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden">
             <div className="px-4 py-3 bg-slate-900 text-white flex items-center justify-between">
-              <div className="text-sm font-black">گزینه‌های چاپ کارخانه</div>
-              <button onClick={() => setFactoryPrintContext(null)} className="p-1 rounded hover:bg-white/10"><X size={16} /></button>
+              <div className="text-sm font-black">مدیریت پرداخت - سفارش {toPN(paymentManagerOrder.orderCode)}</div>
+              <button onClick={closePaymentManager} className="p-1 rounded hover:bg-white/10"><X size={16} /></button>
             </div>
-            <div className="p-4 space-y-4">
-              <label className="flex items-start gap-2 text-xs font-bold text-slate-700">
-                <input
-                  type="checkbox"
-                  checked={Boolean(factoryPrintContext.includeNonProductionManual)}
-                  onChange={(e) => setFactoryPrintContext((prev) => ({ ...prev, includeNonProductionManual: e.target.checked }))}
-                />
-                <span>نمایش آیتم‌های دستی غیرتولیدی در نسخه کارخانه</span>
-              </label>
-              <div className="flex gap-2">
-                <button onClick={() => setFactoryPrintContext(null)} className="flex-1 bg-slate-100 text-slate-600 rounded-lg py-2 text-xs font-black">انصراف</button>
-                <button onClick={confirmFactoryPrint} className="flex-1 bg-blue-600 text-white rounded-lg py-2 text-xs font-black">چاپ</button>
+
+            <div className="p-4 space-y-4 max-h-[85vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs font-black text-slate-700">کل فاکتور: {toPN(paymentManagerFinancials.grandTotal.toLocaleString())}</div>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs font-black text-slate-700">پرداخت‌شده: {toPN(paymentManagerFinancials.paidTotal.toLocaleString())}</div>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs font-black text-rose-700">مانده: {toPN(paymentManagerFinancials.dueAmount.toLocaleString())}</div>
+                <div className="rounded-lg bg-slate-50 border border-slate-200 p-2 text-xs font-black text-slate-700">وضعیت مالی: <span className={`mr-2 px-1.5 py-0.5 rounded ${paymentManagerStatusPill.className}`}>{paymentManagerStatusPill.label}</span></div>
+              </div>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h4 className="text-xs font-black text-slate-800">تنظیمات مالی فاکتور</h4>
+                    <button
+                      onClick={() => saveInvoiceAdjustmentsForOrder(paymentManagerOrder)}
+                      className="h-8 px-3 rounded-lg text-[11px] font-black bg-slate-900 text-white hover:bg-slate-800"
+                    >
+                      ذخیره تنظیمات مالی
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">نوع تخفیف فاکتور</label>
+                      <select
+                        value={paymentManagerInvoiceDraft.discountType}
+                        onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'discountType', e.target.value)}
+                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
+                      >
+                        <option value="none">بدون تخفیف کل</option>
+                        <option value="percent">تخفیف درصدی</option>
+                        <option value="fixed">تخفیف ثابت</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">مقدار تخفیف کل</label>
+                      <input
+                        type="number"
+                        value={paymentManagerInvoiceDraft.discountValue}
+                        onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'discountValue', e.target.value)}
+                        disabled={paymentManagerInvoiceDraft.discountType === 'none'}
+                        className={`h-9 w-full border rounded-lg px-2 text-xs font-bold ${paymentManagerInvoiceDraft.discountType === 'none' ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-white border-slate-200'}`}
+                        dir="ltr"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">مالیات</label>
+                      <label className="h-9 flex items-center gap-2 bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold text-slate-700">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(paymentManagerInvoiceDraft.taxEnabled)}
+                          onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'taxEnabled', e.target.checked)}
+                        />
+                        اعمال مالیات
+                      </label>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">نرخ مالیات (%)</label>
+                      <input
+                        type="number"
+                        value={paymentManagerInvoiceDraft.taxRate}
+                        onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'taxRate', e.target.value)}
+                        disabled={!paymentManagerInvoiceDraft.taxEnabled}
+                        className={`h-9 w-full border rounded-lg px-2 text-xs font-bold ${!paymentManagerInvoiceDraft.taxEnabled ? 'bg-slate-100 border-slate-100 text-slate-400' : 'bg-white border-slate-200'}`}
+                        dir="ltr"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-black text-slate-600">یادداشت فاکتور</label>
+                    <textarea
+                      value={paymentManagerInvoiceDraft.invoiceNotes}
+                      onChange={(e) => updateOrderInvoiceDraft(paymentManagerOrder.id, 'invoiceNotes', e.target.value)}
+                      className="mt-1 w-full min-h-20 bg-white border border-slate-200 rounded-lg p-2 text-xs font-bold"
+                      placeholder="یادداشت داخلی یا توضیح برای مشتری"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700">جمع قبل از تخفیف: {toPN(paymentManagerFinancials.subTotal.toLocaleString())}</div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700">تخفیف سطری: {toPN(paymentManagerFinancials.itemDiscountTotal.toLocaleString())}</div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700">تخفیف کل: {toPN(paymentManagerFinancials.invoiceDiscountAmount.toLocaleString())}</div>
+                    <div className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700">مالیات: {toPN(paymentManagerFinancials.taxAmount.toLocaleString())}</div>
+                  </div>
+                </div>
+
+                <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-3 space-y-3">
+                  <h4 className="text-xs font-black text-slate-800">مدیریت پرداخت‌ها</h4>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-2">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">تاریخ</label>
+                      <input
+                        type="text"
+                        value={paymentManagerPaymentDraft.date}
+                        onChange={(e) => updateOrderPaymentDraft(paymentManagerOrder.id, 'date', e.target.value)}
+                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">مبلغ (تومان)</label>
+                      <input
+                        type="number"
+                        value={paymentManagerPaymentDraft.amount}
+                        onChange={(e) => {
+                          updateOrderPaymentDraft(paymentManagerOrder.id, 'amount', e.target.value);
+                          markOrderPaymentTouched(paymentManagerOrder.id, true);
+                        }}
+                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
+                        dir="ltr"
+                      />
+                      {paymentManagerPaymentTouched && !paymentManagerPaymentAmountValid && (
+                        <div className="text-[10px] font-bold text-rose-600">مبلغ باید بیشتر از صفر باشد.</div>
+                      )}
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">روش پرداخت</label>
+                      <select
+                        value={paymentManagerPaymentDraft.method}
+                        onChange={(e) => updateOrderPaymentDraft(paymentManagerOrder.id, 'method', e.target.value)}
+                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
+                      >
+                        {PAYMENT_METHOD_OPTIONS.map((option) => (
+                          <option key={option.value} value={option.value}>{option.label}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">یادداشت</label>
+                      <input
+                        type="text"
+                        value={paymentManagerPaymentDraft.note}
+                        onChange={(e) => updateOrderPaymentDraft(paymentManagerOrder.id, 'note', e.target.value)}
+                        className="h-9 w-full bg-white border border-slate-200 rounded-lg px-2 text-xs font-bold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black text-slate-600">رسید واریزی (اختیاری)</label>
+                      <div className="flex gap-1.5">
+                        <label htmlFor={`payment-receipt-${paymentManagerOrder.id}`} className="h-9 px-2 rounded-lg text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 cursor-pointer inline-flex items-center gap-1.5 hover:bg-slate-200">
+                          <Upload size={12} />
+                          {uploadingReceiptKey === `draft:${paymentManagerOrder.id}` ? 'در حال آپلود...' : 'آپلود رسید'}
+                        </label>
+                        <input
+                          id={`payment-receipt-${paymentManagerOrder.id}`}
+                          type="file"
+                          accept="application/pdf,image/jpeg,image/png"
+                          className="hidden"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            uploadDraftReceipt(paymentManagerOrder.id, file);
+                            e.target.value = '';
+                          }}
+                        />
+                        {paymentManagerPaymentDraft.receipt?.filePath && (
+                          <button
+                            onClick={() => updateOrderPaymentDraft(paymentManagerOrder.id, 'receipt', null)}
+                            className="h-9 px-2 rounded-lg text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200"
+                          >
+                            حذف
+                          </button>
+                        )}
+                      </div>
+                      {paymentManagerPaymentDraft.receipt?.originalName && (
+                        <div className="text-[10px] font-bold text-slate-500 truncate">{paymentManagerPaymentDraft.receipt.originalName}</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <button
+                      onClick={() => addPaymentForOrder(paymentManagerOrder)}
+                      disabled={!paymentManagerPaymentAmountValid}
+                      className={`h-9 px-3 rounded-lg text-xs font-black ${paymentManagerPaymentAmountValid ? 'bg-slate-900 text-white hover:bg-slate-800' : 'bg-slate-200 text-slate-400 cursor-not-allowed'}`}
+                    >
+                      افزودن پرداخت
+                    </button>
+                  </div>
+
+                  {paymentManagerPayments.length === 0 ? (
+                    <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-xs font-bold text-slate-500">هنوز پرداختی ثبت نشده است.</div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-xs min-w-[860px]">
+                        <thead className="bg-white text-slate-500 border-y border-slate-200">
+                          <tr>
+                            <th className="p-2 text-right font-black">تاریخ</th>
+                            <th className="p-2 text-right font-black">روش</th>
+                            <th className="p-2 text-right font-black">یادداشت</th>
+                            <th className="p-2 text-right font-black">رسید</th>
+                            <th className="p-2 text-left font-black">مبلغ</th>
+                            <th className="p-2 text-center font-black">عملیات</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {paymentManagerPayments.map((payment) => {
+                            const rowDraft = paymentEditDrafts?.[paymentManagerOrder.id]?.[payment.id];
+                            const isEditing = Boolean(rowDraft);
+                            const rowAmountValid = Number(rowDraft?.amount) > 0;
+
+                            return (
+                              <tr key={payment.id}>
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <input
+                                      type="text"
+                                      value={rowDraft.date || ''}
+                                      onChange={(e) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'date', e.target.value)}
+                                      className="h-8 w-full bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
+                                    />
+                                  ) : (
+                                    <span className="font-bold text-slate-700">{toPN(payment.date)}</span>
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <select
+                                      value={rowDraft.method || defaultPaymentMethod}
+                                      onChange={(e) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'method', e.target.value)}
+                                      className="h-8 w-full bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
+                                    >
+                                      {PAYMENT_METHOD_OPTIONS.map((option) => (
+                                        <option key={option.value} value={option.value}>{option.label}</option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <span className="font-bold text-slate-700">{getPaymentMethodLabel(payment.method)}</span>
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <input
+                                      type="text"
+                                      value={rowDraft.note || ''}
+                                      onChange={(e) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'note', e.target.value)}
+                                      className="h-8 w-full bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
+                                    />
+                                  ) : (
+                                    <span className="font-bold text-slate-500">{payment.note || '-'}</span>
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  {isEditing ? (
+                                    <div className="flex items-center gap-1.5">
+                                      <label htmlFor={`edit-receipt-${paymentManagerOrder.id}-${payment.id}`} className="h-8 px-2 rounded-lg text-[10px] font-black bg-slate-100 text-slate-700 border border-slate-200 cursor-pointer inline-flex items-center gap-1">
+                                        <Upload size={11} />
+                                        {uploadingReceiptKey === `edit:${paymentManagerOrder.id}:${payment.id}` ? 'در حال آپلود...' : 'آپلود'}
+                                      </label>
+                                      <input
+                                        id={`edit-receipt-${paymentManagerOrder.id}-${payment.id}`}
+                                        type="file"
+                                        accept="application/pdf,image/jpeg,image/png"
+                                        className="hidden"
+                                        onChange={(e) => {
+                                          const file = e.target.files?.[0];
+                                          if (!file) return;
+                                          uploadEditedReceipt(paymentManagerOrder.id, payment.id, file);
+                                          e.target.value = '';
+                                        }}
+                                      />
+                                      {rowDraft.receipt?.filePath && (
+                                        <button
+                                          onClick={() => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'receipt', null)}
+                                          className="h-8 px-2 rounded-lg text-[10px] font-black bg-rose-50 text-rose-700 border border-rose-200"
+                                        >
+                                          حذف
+                                        </button>
+                                      )}
+                                    </div>
+                                  ) : payment.receipt?.filePath ? (
+                                    <a href={payment.receipt.filePath} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 font-black">
+                                      <Link2 size={12} />
+                                      {payment.receipt.originalName || 'مشاهده'}
+                                    </a>
+                                  ) : (
+                                    <span className="font-bold text-slate-400">-</span>
+                                  )}
+                                </td>
+                                <td className="p-2 text-left font-black tabular-nums text-slate-900">
+                                  {isEditing ? (
+                                    <input
+                                      type="number"
+                                      value={rowDraft.amount ?? ''}
+                                      onChange={(e) => updateEditPaymentField(paymentManagerOrder.id, payment.id, 'amount', e.target.value)}
+                                      className="h-8 w-24 bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
+                                      dir="ltr"
+                                    />
+                                  ) : (
+                                    toPN(payment.amount.toLocaleString())
+                                  )}
+                                </td>
+                                <td className="p-2">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    {isEditing ? (
+                                      <>
+                                        <button
+                                          onClick={() => saveEditedPayment(paymentManagerOrder, payment.id)}
+                                          disabled={!rowAmountValid}
+                                          className={`px-2 py-1 rounded text-[10px] font-black ${rowAmountValid ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-400 cursor-not-allowed'}`}
+                                        >
+                                          ذخیره
+                                        </button>
+                                        <button
+                                          onClick={() => cancelEditPayment(paymentManagerOrder.id, payment.id)}
+                                          className="px-2 py-1 rounded text-[10px] font-black bg-slate-100 text-slate-600"
+                                        >
+                                          انصراف
+                                        </button>
+                                      </>
+                                    ) : (
+                                      <>
+                                        <button
+                                          onClick={() => beginEditPayment(paymentManagerOrder.id, payment)}
+                                          className="px-2 py-1 rounded text-[10px] font-black bg-blue-100 text-blue-700"
+                                        >
+                                          ویرایش
+                                        </button>
+                                        <button
+                                          onClick={() => removePayment(paymentManagerOrder, payment.id)}
+                                          className="px-2 py-1 rounded text-[10px] font-black bg-rose-100 text-rose-700 inline-flex items-center gap-1"
+                                        >
+                                          <Trash2 size={11} />
+                                          حذف
+                                        </button>
+                                      </>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>

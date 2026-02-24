@@ -298,7 +298,7 @@ export const PrintInvoice = ({
           )}
         </div>
 
-        <div className="md:w-72 border-[1.5px] border-slate-800 p-4 rounded-2xl bg-slate-900 text-white">
+        <div className="md:w-72 border border-slate-300 p-4 rounded-2xl bg-white text-slate-900">
           {!isFactory && (
             <div className="mb-2">
               <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black ${paymentStatusMeta.className}`}>
@@ -308,23 +308,23 @@ export const PrintInvoice = ({
           )}
 
           {!isFactory && (
-            <div className="space-y-1 border-b border-slate-700 pb-2 mb-2 text-[11px]">
-              <div className="flex justify-between"><span className="text-slate-300">جمع قبل از تخفیف:</span><span className="tabular-nums">{toPN(normalizedFinancials.subTotal.toLocaleString())}</span></div>
-              <div className="flex justify-between"><span className="text-slate-300">تخفیف سطری:</span><span className="tabular-nums">{toPN(normalizedFinancials.itemDiscountTotal.toLocaleString())}</span></div>
-              <div className="flex justify-between"><span className="text-slate-300">تخفیف فاکتور:</span><span className="tabular-nums">{toPN(normalizedFinancials.invoiceDiscountAmount.toLocaleString())}</span></div>
-              <div className="flex justify-between"><span className="text-slate-300">مالیات:</span><span className="tabular-nums">{toPN(normalizedFinancials.taxAmount.toLocaleString())}</span></div>
+            <div className="space-y-1 border-b border-slate-200 pb-2 mb-2 text-[11px]">
+              <div className="flex justify-between"><span className="text-slate-600">جمع قبل از تخفیف:</span><span className="tabular-nums">{toPN(normalizedFinancials.subTotal.toLocaleString())}</span></div>
+              <div className="flex justify-between"><span className="text-slate-600">تخفیف سطری:</span><span className="tabular-nums">{toPN(normalizedFinancials.itemDiscountTotal.toLocaleString())}</span></div>
+              <div className="flex justify-between"><span className="text-slate-600">تخفیف فاکتور:</span><span className="tabular-nums">{toPN(normalizedFinancials.invoiceDiscountAmount.toLocaleString())}</span></div>
+              <div className="flex justify-between"><span className="text-slate-600">مالیات:</span><span className="tabular-nums">{toPN(normalizedFinancials.taxAmount.toLocaleString())}</span></div>
             </div>
           )}
 
           <div className="flex justify-between text-lg font-black tabular-nums items-center">
-            <span className="text-slate-300 text-xs">{isFactory ? 'جمع کل سفارش:' : 'جمع کل فاکتور:'}</span>
-            <span>{toPN(normalizedFinancials.grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-400">تومان</span></span>
+            <span className="text-slate-600 text-xs">{isFactory ? 'جمع کل سفارش:' : 'جمع کل فاکتور:'}</span>
+            <span>{toPN(normalizedFinancials.grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
           </div>
 
           {!isFactory && (
-            <div className="space-y-1 mt-2 pt-2 border-t border-slate-700 text-[11px] tabular-nums">
-              <div className="flex justify-between"><span className="text-slate-300">پرداخت‌شده:</span><span>{toPN(normalizedFinancials.paidTotal.toLocaleString())}</span></div>
-              <div className="flex justify-between font-black"><span className="text-slate-300">مانده:</span><span>{toPN(normalizedFinancials.dueAmount.toLocaleString())}</span></div>
+            <div className="space-y-1 mt-2 pt-2 border-t border-slate-200 text-[11px] tabular-nums">
+              <div className="flex justify-between"><span className="text-slate-600">پرداخت‌شده:</span><span>{toPN(normalizedFinancials.paidTotal.toLocaleString())}</span></div>
+              <div className="flex justify-between font-black"><span className="text-slate-600">مانده:</span><span>{toPN(normalizedFinancials.dueAmount.toLocaleString())}</span></div>
             </div>
           )}
         </div>
@@ -338,7 +338,6 @@ export const PrintInvoice = ({
               <tr>
                 <th className="p-2 text-right font-black">تاریخ</th>
                 <th className="p-2 text-right font-black">روش</th>
-                <th className="p-2 text-right font-black">مرجع</th>
                 <th className="p-2 text-right font-black">رسید</th>
                 <th className="p-2 text-left font-black">مبلغ (تومان)</th>
               </tr>
@@ -348,7 +347,6 @@ export const PrintInvoice = ({
                 <tr key={payment.id}>
                   <td className="p-2 font-bold text-slate-600">{toPN(payment.date)}</td>
                   <td className="p-2 font-bold text-slate-700">{getPaymentMethodLabel(payment.method)}</td>
-                  <td className="p-2 font-bold text-slate-500">{payment.reference || '-'}</td>
                   <td className="p-2 font-bold text-slate-500">{payment.receipt?.originalName || '-'}</td>
                   <td className="p-2 text-left font-black tabular-nums text-slate-900">{toPN(payment.amount.toLocaleString())}</td>
                 </tr>
