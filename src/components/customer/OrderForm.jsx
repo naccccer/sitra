@@ -177,7 +177,7 @@ const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, cat
 
 // --- Main Order Form ---
 
-export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onCancelEdit, onGoToLogin, orderSource = 'customer', staffMode = false }) => {
+export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = null, onCancelEdit, onGoToLogin, orderSource = 'customer', staffMode = false }) => {
   const isStaffContext = staffMode || Boolean(editingOrder);
   const billing = ensureBillingSettings(catalog);
 
@@ -887,6 +887,7 @@ export const OrderForm = ({ catalog, orders, setOrders, editingOrder = null, onC
       <PrintInvoice 
         items={orderItems} 
         catalog={catalog} 
+        profile={profile}
         grandTotal={grandTotal} 
         financials={financials}
         payments={payments}

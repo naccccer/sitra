@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Search, ChevronDown, ChevronUp, Edit3, Archive, Printer, FileText, X, Upload, Link2, Trash2 } from 'lucide-react';
+import { Search, ChevronDown, ChevronUp, Edit3, Archive, Printer, FileText, X, Upload, Link2, Trash2, Cog } from 'lucide-react';
 import { toPN } from '../../utils/helpers';
 import { StructureDetails } from '../shared/StructureDetails';
 import { PrintInvoice } from '../shared/PrintInvoice';
@@ -90,6 +90,33 @@ const paymentStatusPill = (status) => {
   return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
 };
 
+const ORDER_STAGE_OPTIONS = [
+  { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-slate-100 text-slate-700' },
+  { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-amber-100 text-amber-700' },
+  { id: 'in_production', label: 'در حال تولید', status: 'processing', className: 'bg-blue-100 text-blue-700' },
+  { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-indigo-100 text-indigo-700' },
+  { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-emerald-100 text-emerald-700' },
+];
+
+const ORDER_STAGE_MAP = ORDER_STAGE_OPTIONS.reduce((acc, option) => {
+  acc[option.id] = option;
+  return acc;
+}, {});
+
+const FALLBACK_STAGE_BY_STATUS = {
+  pending: 'registered',
+  processing: 'in_production',
+  delivered: 'delivered',
+  archived: 'delivered',
+};
+
+const resolveOrderStageId = (order = {}) => {
+  const rawStage = String(order?.financials?.orderStage || '').trim();
+  if (ORDER_STAGE_MAP[rawStage]) return rawStage;
+  const status = String(order?.status || '').trim();
+  return FALLBACK_STAGE_BY_STATUS[status] || 'registered';
+};
+
 const normalizeDiscountType = (type) => (type === 'percent' || type === 'fixed' ? type : 'none');
 
 const createInvoiceAdjustmentsDraft = (order = {}, catalog = {}) => {
@@ -116,7 +143,7 @@ const buildFinancialsForOrder = (order = {}, payments = [], invoiceDraft = null,
   });
 };
 
-export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => {
+export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrder }) => {
   const [activeOrdersTab, setActiveOrdersTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
@@ -148,9 +175,49 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
     }
   };
 
-  const handleArchiveOrder = (id) => {
-    updateOrderStatus(id, 'archived');
-    if (expandedOrderId === id) setExpandedOrderId(null);
+  const buildOrderUpdatePayload = (order, nextStatus, nextFinancials) => ({
+    id: Number(order.id),
+    customerName: order.customerName,
+    phone: order.phone,
+    date: order.date,
+    total: toSafeAmount(nextFinancials?.grandTotal ?? order.total),
+    status: nextStatus,
+    items: Array.isArray(order.items) ? order.items : [],
+    financials: nextFinancials,
+    payments: (Array.isArray(order.payments) ? order.payments : []).map(normalizePayment),
+    invoiceNotes: String(order.invoiceNotes || ''),
+  });
+
+  const updateOrderWorkflowStage = async (order, stageId) => {
+    const selectedStage = ORDER_STAGE_MAP[stageId] || ORDER_STAGE_MAP.registered;
+    const previousOrder = orders.find((candidate) => candidate.id === order?.id);
+    if (!previousOrder) return;
+
+    const nextFinancials = {
+      ...(previousOrder.financials && typeof previousOrder.financials === 'object' ? previousOrder.financials : {}),
+      orderStage: selectedStage.id,
+    };
+    const optimisticOrder = { ...previousOrder, status: selectedStage.status, financials: nextFinancials };
+    const payload = buildOrderUpdatePayload(previousOrder, selectedStage.status, nextFinancials);
+
+    setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? optimisticOrder : candidate)));
+
+    try {
+      const response = await api.updateOrder(payload);
+      if (response?.order) {
+        setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? response.order : candidate)));
+      }
+    } catch (error) {
+      console.error('Failed to update order workflow stage.', error);
+      setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? previousOrder : candidate)));
+      alert(error?.message || 'به‌روزرسانی وضعیت سفارش ناموفق بود.');
+    }
+  };
+
+  const handleArchiveOrder = (order) => {
+    if (!order?.id) return;
+    updateOrderStatus(order.id, 'archived');
+    if (expandedOrderId === order.id) setExpandedOrderId(null);
   };
 
   const deleteArchivedOrder = async (order) => {
@@ -249,7 +316,11 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
 
     const nextPayments = (Array.isArray(nextPaymentsInput) ? nextPaymentsInput : []).map(normalizePayment);
     const invoiceDraft = invoiceDraftInput || getOrderInvoiceDraft(previousOrder);
-    const nextFinancials = buildFinancialsForOrder(previousOrder, nextPayments, invoiceDraft, catalog);
+    const computedFinancials = buildFinancialsForOrder(previousOrder, nextPayments, invoiceDraft, catalog);
+    const nextFinancials = {
+      ...computedFinancials,
+      orderStage: String(previousOrder?.financials?.orderStage || resolveOrderStageId(previousOrder)),
+    };
     const nextInvoiceNotes = String(invoiceDraft?.invoiceNotes || '');
     const optimisticOrder = {
       ...previousOrder,
@@ -470,8 +541,8 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
         <div className="flex bg-slate-100 p-1 rounded-lg w-full md:w-auto overflow-x-auto hide-scrollbar gap-1">
           {[
             { id: 'all', label: 'همه سفارش‌ها' },
-            { id: 'pending', label: 'در انتظار' },
-            { id: 'processing', label: 'در حال تولید' },
+            { id: 'pending', label: 'ثبت شده / پیگیری' },
+            { id: 'processing', label: 'تولید / آماده تحویل' },
             { id: 'delivered', label: 'تحویل شده' },
             { id: 'archived', label: 'آرشیو' },
           ].map((t) => (
@@ -507,7 +578,6 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                 <th className="p-3 font-black border-l border-slate-100">موبایل</th>
                 <th className="p-3 font-black text-center border-l border-slate-100">تاریخ ثبت</th>
                 <th className="p-3 font-black text-center border-l border-slate-100">مبلغ کل</th>
-                <th className="p-3 font-black text-center border-l border-slate-100">پرداخت‌شده</th>
                 <th className="p-3 font-black text-center border-l border-slate-100">مانده</th>
                 <th className="p-3 font-black text-center border-l border-slate-100">وضعیت مالی</th>
                 <th className="p-3 font-black text-center border-l border-slate-100">وضعیت سفارش</th>
@@ -517,12 +587,14 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
             <tbody className="divide-y divide-slate-100">
               {filteredOrders.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="p-8 text-center text-slate-400 font-bold">هیچ سفارشی یافت نشد.</td>
+                  <td colSpan="10" className="p-8 text-center text-slate-400 font-bold">هیچ سفارشی یافت نشد.</td>
                 </tr>
               ) : (
                 filteredOrders.map((o, index) => {
                   const financialSummary = deriveFinancialSummary(o);
                   const paymentPill = paymentStatusPill(financialSummary.status);
+                  const orderStageId = resolveOrderStageId(o);
+                  const orderStage = ORDER_STAGE_MAP[orderStageId] || ORDER_STAGE_MAP.registered;
 
                   return (
                     <React.Fragment key={o.id}>
@@ -536,35 +608,38 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                         <td className="p-3 font-bold text-slate-600 tabular-nums border-l border-slate-50" dir="ltr">{toPN(o.phone)}</td>
                         <td className="p-3 text-center font-bold text-slate-500 border-l border-slate-50">{toPN(o.date)}</td>
                         <td className="p-3 text-center font-black text-slate-900 tabular-nums border-l border-slate-50">{toPN(financialSummary.total.toLocaleString())}</td>
-                        <td className="p-3 text-center font-black text-slate-700 tabular-nums border-l border-slate-50">{toPN(financialSummary.paid.toLocaleString())}</td>
                         <td className="p-3 text-center font-black text-rose-600 tabular-nums border-l border-slate-50">{toPN(financialSummary.due.toLocaleString())}</td>
                         <td className="p-3 text-center border-l border-slate-50">
                           <div className="flex flex-col items-center gap-1.5">
                             <span className={`text-[10px] font-black px-2 py-1 rounded ${paymentPill.className}`}>
                               {paymentPill.label}
                             </span>
-                            <button
-                              onClick={() => openPaymentManager(o)}
-                              className="text-[10px] font-black text-blue-700 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
-                            >
-                              مدیریت پرداخت
-                            </button>
                           </div>
                         </td>
                         <td className="p-3 text-center border-l border-slate-50">
-                          {o.status === 'archived' ? (
-                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">آرشیو شده</span>
-                          ) : (
-                            <select
-                              value={o.status}
-                              onChange={(e) => updateOrderStatus(o.id, e.target.value)}
-                              className={`text-[10px] font-black px-2 py-1.5 rounded-md outline-none cursor-pointer appearance-none text-center ${o.status === 'pending' ? 'bg-amber-100 text-amber-700' : o.status === 'processing' ? 'bg-blue-100 text-blue-700' : 'bg-emerald-100 text-emerald-700'}`}
+                          <div className="flex items-center justify-center gap-1.5">
+                            {o.status === 'archived' ? (
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">آرشیو شده</span>
+                            ) : (
+                              <select
+                                value={orderStageId}
+                                onChange={(e) => updateOrderWorkflowStage(o, e.target.value)}
+                                className={`h-8 min-w-[130px] text-[10px] font-black px-2 py-1.5 rounded-md outline-none cursor-pointer appearance-none text-center ${orderStage.className}`}
+                              >
+                                {ORDER_STAGE_OPTIONS.map((stageOption) => (
+                                  <option key={stageOption.id} value={stageOption.id}>{stageOption.label}</option>
+                                ))}
+                              </select>
+                            )}
+                            <button
+                              onClick={() => openPaymentManager(o)}
+                              className="h-8 w-8 inline-flex items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-blue-700"
+                              title="مدیریت پرداخت"
+                              type="button"
                             >
-                              <option value="pending">در انتظار</option>
-                              <option value="processing">در حال تولید</option>
-                              <option value="delivered">تحویل شده</option>
-                            </select>
-                          )}
+                              <Cog size={14} />
+                            </button>
+                          </div>
                         </td>
                         <td className="p-3 text-center">
                           <div className="flex items-center justify-center gap-1.5">
@@ -574,12 +649,12 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
                             {o.status !== 'archived' && (
                               <>
                                 <button onClick={() => onEditOrder(o)} className="text-slate-500 hover:text-amber-600 bg-slate-100 hover:bg-amber-50 p-1.5 rounded transition-colors" title="ویرایش سفارش"><Edit3 size={14} /></button>
-                                <button onClick={() => handleArchiveOrder(o.id)} className="text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-1.5 rounded transition-colors" title="بایگانی"><Archive size={14} /></button>
+                                <button onClick={() => handleArchiveOrder(o)} className="text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 p-1.5 rounded transition-colors" title="بایگانی"><Archive size={14} /></button>
                               </>
                             )}
                             {o.status === 'archived' && (
                               <>
-                                <button onClick={() => updateOrderStatus(o.id, 'pending')} className="text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 p-1.5 rounded text-[10px] font-bold transition-colors">بازیابی</button>
+                                <button onClick={() => updateOrderWorkflowStage(o, 'registered')} className="text-slate-500 hover:text-emerald-600 bg-slate-100 hover:bg-emerald-50 p-1.5 rounded text-[10px] font-bold transition-colors">بازیابی</button>
                                 <button onClick={() => deleteArchivedOrder(o)} className="text-slate-500 hover:text-rose-700 bg-slate-100 hover:bg-rose-50 p-1.5 rounded text-[10px] font-bold transition-colors inline-flex items-center gap-1" title="حذف دائمی">
                                   <Trash2 size={12} />
                                   حذف
@@ -592,7 +667,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
 
                       {expandedOrderId === o.id && (
                         <tr className="bg-slate-50/80 animate-in fade-in">
-                          <td colSpan="11" className="p-0 border-b-2 border-slate-200">
+                          <td colSpan="10" className="p-0 border-b-2 border-slate-200">
                             <div className="p-4 m-3 bg-white rounded-xl shadow-inner border border-slate-200">
                               <div className="flex flex-wrap gap-2 justify-between items-center mb-3 border-b border-slate-100 pb-2">
                                 <span className="font-black text-sm text-slate-800">ریز اقلام سفارش</span>
@@ -1068,6 +1143,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, onEditOrder }) => 
         <PrintInvoice
           items={viewingOrder.items}
           catalog={catalog}
+          profile={profile}
           customerName={viewingOrder.customerName}
           orderCode={viewingOrder.orderCode}
           date={viewingOrder.date}

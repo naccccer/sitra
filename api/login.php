@@ -6,6 +6,8 @@ require_once __DIR__ . '/../config/db.php';
 
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
+app_ensure_users_table($pdo);
+$hasIsActive = app_users_is_active_column($pdo);
 
 $data = app_read_json_body();
 $username = trim((string)($data['username'] ?? ''));
@@ -18,7 +20,8 @@ if ($username === '' || $password === '') {
     ], 400);
 }
 
-$stmt = $pdo->prepare('SELECT id, username, password, role FROM users WHERE username = :username LIMIT 1');
+$activeSelect = $hasIsActive ? ', is_active' : ', 1 AS is_active';
+$stmt = $pdo->prepare('SELECT id, username, password, role' . $activeSelect . ' FROM users WHERE username = :username LIMIT 1');
 $stmt->execute(['username' => $username]);
 $user = $stmt->fetch();
 
@@ -44,6 +47,13 @@ if ($user) {
 }
 
 if (!$user || !$validCredentials) {
+    app_json([
+        'success' => false,
+        'error' => 'Invalid username or password.',
+    ], 401);
+}
+
+if (((int)($user['is_active'] ?? 1)) !== 1) {
     app_json([
         'success' => false,
         'error' => 'Invalid username or password.',

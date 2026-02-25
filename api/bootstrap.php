@@ -21,6 +21,13 @@ try {
     $catalog = null;
 }
 
+$profile = null;
+try {
+    $profile = app_read_profile($pdo);
+} catch (Throwable $e) {
+    $profile = app_profile_defaults();
+}
+
 $orders = [];
 
 if ($user !== null) {
@@ -43,5 +50,6 @@ app_json([
         'username' => $user['username'] ?? null,
     ],
     'catalog' => $catalog,
+    'profile' => $profile,
     'orders' => $orders,
 ]);

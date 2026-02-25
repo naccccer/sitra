@@ -72,8 +72,30 @@ async function request(path, options = {}) {
 }
 
 export const api = {
+  async login(username, password) {
+    return request('/api/login.php', {
+      method: 'POST',
+      body: JSON.stringify({ username, password }),
+    })
+  },
+
+  async logout() {
+    return request('/api/logout.php', { method: 'POST' })
+  },
+
   async bootstrap() {
     return request('/api/bootstrap.php', { method: 'GET' })
+  },
+
+  async fetchProfile() {
+    return request('/api/profile.php', { method: 'GET' })
+  },
+
+  async saveProfile(profile) {
+    return request('/api/profile.php', {
+      method: 'POST',
+      body: JSON.stringify(profile),
+    })
   },
 
   async fetchOrders() {
@@ -112,6 +134,40 @@ export const api = {
     return request('/api/catalog.php', {
       method: 'POST',
       body: JSON.stringify(catalog),
+    })
+  },
+
+  async fetchUsers() {
+    return request('/api/users.php', { method: 'GET' })
+  },
+
+  async createUser(payload) {
+    return request('/api/users.php', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async updateUser(payload) {
+    return request('/api/users.php', {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async setUserActive(id, isActive) {
+    return request('/api/users.php', {
+      method: 'PATCH',
+      body: JSON.stringify({ id, isActive }),
+    })
+  },
+
+  async uploadLogo(file) {
+    const formData = new FormData()
+    formData.append('logoFile', file)
+    return request('/api/upload_logo.php', {
+      method: 'POST',
+      body: formData,
     })
   },
 

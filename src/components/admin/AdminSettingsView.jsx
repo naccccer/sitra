@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useEffect, useState } from 'react';
 import { Save, Plus, X, Trash2, Layers } from 'lucide-react';
 import { toPN } from '../../utils/helpers';
 import { PriceInput } from '../shared/PriceInput';
@@ -24,6 +24,10 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
   const [draft, setDraft] = useState(ensureCatalogDefaults(catalog));
   const [newThickness, setNewThickness] = useState('');
   const [isAddingCol, setIsAddingCol] = useState(false);
+
+  useEffect(() => {
+    setDraft(ensureCatalogDefaults(catalog));
+  }, [catalog]);
 
   const handleSaveSettings = async () => {
     try {

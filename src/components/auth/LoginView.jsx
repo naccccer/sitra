@@ -1,42 +1,36 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { api } from '../../services/api';
+import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
 
-export const LoginView = ({ onLogin, onGoToCustomer }) => {
+export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
+  const [failedLogoSrc, setFailedLogoSrc] = useState('');
+
+  const normalizedProfile = normalizeProfile(profile);
+  const logoSrc = profileLogoSrc(normalizedProfile.logoPath);
+  const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc;
+  const fallbackLetter = profileBrandInitial(normalizedProfile);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setErrorMsg('');
 
     if (!username || !password) {
-      setErrorMsg('لطفاً نام کاربری و رمز عبور را وارد کنید.');
+      setErrorMsg('لطفا نام کاربری و رمز عبور را وارد کنید.');
       return;
     }
 
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/login.php', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify({ username, password }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok && data.success) {
-        onLogin(data.role);
-      } else {
-        setErrorMsg(data.error || 'خطا در ورود به سیستم.');
-      }
-    } catch {
-      setErrorMsg('ارتباط با سرور برقرار نشد.');
+      const data = await api.login(username, password);
+      await onLogin(data?.role || null);
+    } catch (error) {
+      setErrorMsg(error?.message || 'ارتباط با سرور برقرار نشد.');
     } finally {
       setIsLoading(false);
     }
@@ -45,9 +39,20 @@ export const LoginView = ({ onLogin, onGoToCustomer }) => {
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
       <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm border border-slate-100 animate-in fade-in zoom-in-95">
-        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto mb-4">S</div>
-        <h1 className="text-xl font-black text-center text-slate-800 mb-2">ورود به سیستم همکاران</h1>
-        <p className="text-xs text-center text-slate-500 font-bold mb-8">لطفاً مشخصات دسترسی خود را وارد کنید.</p>
+        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 overflow-hidden">
+          {showLogo ? (
+            <img
+              src={logoSrc}
+              alt={normalizedProfile.brandName}
+              onError={() => setFailedLogoSrc(logoSrc)}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            fallbackLetter
+          )}
+        </div>
+        <h1 className="text-xl font-black text-center text-slate-800 mb-2">{normalizedProfile.brandName}</h1>
+        <p className="text-xs text-center text-slate-500 font-bold mb-8">{normalizedProfile.panelSubtitle}</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

@@ -1,7 +1,8 @@
-import React, { useMemo, useState } from 'react';
-import { FACTORY_ADDRESS, FACTORY_PHONES, toPN } from '../../utils/helpers';
+﻿import React, { useMemo, useState } from 'react';
+import { toPN } from '../../utils/helpers';
 import { StructureDetails } from './StructureDetails';
 import { getPaymentMethodLabel, normalizePaymentMethod } from '../../utils/invoice';
+import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
 
 const OPERATION_ICON_BASE_PATH = '/icons/operations';
 
@@ -136,6 +137,7 @@ const PatternPreview = ({ pattern }) => {
 export const PrintInvoice = ({
   items = [],
   catalog,
+  profile,
   customerName = '',
   orderCode = '- در انتظار ثبت -',
   date = new Date().toLocaleDateString('fa-IR'),
@@ -148,6 +150,12 @@ export const PrintInvoice = ({
   includeAppendix = true,
   factoryIncludeNonProductionManual = true,
 }) => {
+  const normalizedProfile = normalizeProfile(profile);
+  const logoSrc = profileLogoSrc(normalizedProfile.logoPath);
+  const fallbackLetter = profileBrandInitial(normalizedProfile);
+  const [failedLogoSrc, setFailedLogoSrc] = useState('');
+  const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc;
+
   const isFactory = type === 'factory';
   const normalizedGrandTotal = Math.max(0, Number(grandTotal) || 0);
   const printableItems = useMemo(() => {
@@ -176,7 +184,7 @@ export const PrintInvoice = ({
   const normalizedPayments = (Array.isArray(payments) ? payments : []).map((payment, index) => normalizePayment(payment, index));
   const paymentStatusMeta = getPaymentStatusMeta(normalizedFinancials.paymentStatus);
   const rootClassName = preview ? 'printable-area bg-white p-6' : 'printable-area hidden print:block bg-white p-6';
-  const title = isFactory ? 'برگه سفارش تولید (نسخه کارخانه)' : 'پیش‌فاکتور رسمی سفارش';
+  const title = isFactory ? normalizedProfile.invoiceTitleFactory : normalizedProfile.invoiceTitleCustomer;
 
   const appendixEntries = useMemo(() => {
     if (!includeAppendix) return [];
@@ -223,9 +231,20 @@ export const PrintInvoice = ({
     <div className={rootClassName} dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
       <div className="flex justify-between items-start border-b-[2px] border-slate-800 pb-3 mb-4">
         <div className="flex items-center gap-3">
-          <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl">S</div>
+          <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl overflow-hidden">
+            {showLogo ? (
+              <img
+                src={logoSrc}
+                alt={normalizedProfile.brandName}
+                onError={() => setFailedLogoSrc(logoSrc)}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              fallbackLetter
+            )}
+          </div>
           <div>
-            <h1 className="text-2xl font-black tracking-tight text-slate-900">گلس دیزاین <span className="text-slate-400 font-normal">| Sitra</span></h1>
+            <h1 className="text-2xl font-black tracking-tight text-slate-900">{normalizedProfile.brandName}</h1>
             <p className="text-xs font-bold mt-1 text-slate-600">{title}</p>
           </div>
         </div>
@@ -358,10 +377,10 @@ export const PrintInvoice = ({
 
       <div className="break-inside-avoid mb-4 pt-2 border-t border-slate-300 text-[10px] font-bold text-slate-600 flex flex-wrap items-center gap-2">
         <span className="text-slate-800">آدرس کارخانه:</span>
-        <span>{FACTORY_ADDRESS}</span>
+        <span>{normalizedProfile.address}</span>
         <span className="text-slate-300">|</span>
         <span className="text-slate-800">شماره تماس:</span>
-        <span className="tabular-nums" dir="ltr">{FACTORY_PHONES}</span>
+        <span className="tabular-nums" dir="ltr">{normalizedProfile.phones}</span>
       </div>
 
       {includeAppendix && appendixEntries.length > 0 && (

@@ -6,11 +6,16 @@ import process from 'node:process'
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
   const rawTarget = (env.VITE_DEV_API_TARGET || 'http://127.0.0.1:8000').trim()
+  const rawBase = (env.VITE_APP_BASE || '/').trim()
   const normalizedTarget = rawTarget.replace(/\/+$/, '').replace(/\/api$/, '')
+  const normalizedBase =
+    rawBase === '/' || rawBase === './'
+      ? '/'
+      : `/${rawBase.replace(/^\/+|\/+$/g, '')}/`
 
   return {
     plugins: [react(), tailwindcss()],
-    base: './',
+    base: normalizedBase,
     server: {
       host: '127.0.0.1', // Use IPv4 explicitly.
       port: 5173,
