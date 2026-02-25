@@ -47,13 +47,22 @@ function app_parse_database_url(?string $url): array
     ];
 }
 
-function app_build_mysql_dsn(string $host, int $port, string $db, string $charset, ?string $socket = null): string
+function app_build_mysql_dsn(
+    string $host,
+    int $port,
+    string $db,
+    string $charset,
+    ?string $socket = null,
+    int $connectTimeout = 0
+): string
 {
+    $timeoutPart = $connectTimeout > 0 ? ";connect_timeout={$connectTimeout}" : '';
+
     if ($socket !== null && $socket !== '') {
-        return "mysql:unix_socket={$socket};dbname={$db};charset={$charset}";
+        return "mysql:unix_socket={$socket};dbname={$db};charset={$charset}{$timeoutPart}";
     }
 
-    return "mysql:host={$host};port={$port};dbname={$db};charset={$charset}";
+    return "mysql:host={$host};port={$port};dbname={$db};charset={$charset}{$timeoutPart}";
 }
 
 $parsedUrl = app_parse_database_url(app_env_first(['DB_DSN', 'DATABASE_URL']));
@@ -65,6 +74,7 @@ $user = app_env_first(['DB_USER', 'MYSQL_USER', 'MYSQLUSERNAME', 'DATABASE_USER'
 $pass = app_env_first(['DB_PASS', 'DB_PASSWORD', 'MYSQL_PASSWORD', 'MYSQLPASS', 'DATABASE_PASSWORD'], null);
 $charset = app_env_first(['DB_CHARSET', 'MYSQL_CHARSET'], null);
 $socket = app_env_first(['DB_SOCKET', 'MYSQL_SOCKET', 'MYSQL_UNIX_PORT'], null);
+$connectTimeoutRaw = app_env_first(['DB_CONNECT_TIMEOUT', 'MYSQL_CONNECT_TIMEOUT', 'DATABASE_CONNECT_TIMEOUT'], null);
 
 $host = $host ?? (($parsedUrl['host'] ?? '') !== '' ? (string)$parsedUrl['host'] : '127.0.0.1');
 $portRaw = $portRaw ?? (($parsedUrl['port'] ?? '') !== '' ? (string)$parsedUrl['port'] : '3306');
@@ -78,17 +88,22 @@ if ($port <= 0) {
     $port = 3306;
 }
 
+$connectTimeout = (int)$connectTimeoutRaw;
+if ($connectTimeout <= 0) {
+    $connectTimeout = 5;
+}
+
 $dsnCandidates = [
-    app_build_mysql_dsn($host, $port, $db, $charset, $socket),
+    app_build_mysql_dsn($host, $port, $db, $charset, $socket, $connectTimeout),
 ];
 
 if (($socket === null || $socket === '') && $host === '127.0.0.1') {
-    $dsnCandidates[] = app_build_mysql_dsn('localhost', $port, $db, $charset);
-    $dsnCandidates[] = "mysql:host=localhost;dbname={$db};charset={$charset}";
+    $dsnCandidates[] = app_build_mysql_dsn('localhost', $port, $db, $charset, null, $connectTimeout);
+    $dsnCandidates[] = "mysql:host=localhost;dbname={$db};charset={$charset};connect_timeout={$connectTimeout}";
 }
 
 if (($socket === null || $socket === '') && $host === 'localhost') {
-    $dsnCandidates[] = app_build_mysql_dsn('127.0.0.1', $port, $db, $charset);
+    $dsnCandidates[] = app_build_mysql_dsn('127.0.0.1', $port, $db, $charset, null, $connectTimeout);
 }
 
 $dsnCandidates = array_values(array_unique($dsnCandidates));
@@ -96,6 +111,7 @@ $options = [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     PDO::ATTR_EMULATE_PREPARES => false,
+    PDO::ATTR_TIMEOUT => $connectTimeout,
 ];
 
 /** @var PDO|null $pdo */

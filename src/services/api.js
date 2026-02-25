@@ -1,3 +1,6 @@
+const parsedTimeoutMs = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS ?? '10000', 10)
+const REQUEST_TIMEOUT_MS = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 10000
+
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) }
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
@@ -5,11 +8,47 @@ async function request(path, options = {}) {
     headers['Content-Type'] = 'application/json'
   }
 
-  const response = await fetch(path, {
-    credentials: 'include',
-    ...options,
-    headers,
-  })
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+  let timeoutId = null
+
+  if (controller && options.signal) {
+    if (options.signal.aborted) {
+      controller.abort(options.signal.reason)
+    } else {
+      options.signal.addEventListener(
+        'abort',
+        () => {
+          controller.abort(options.signal.reason)
+        },
+        { once: true },
+      )
+    }
+  }
+
+  if (controller) {
+    timeoutId = setTimeout(() => {
+      controller.abort()
+    }, REQUEST_TIMEOUT_MS)
+  }
+
+  let response
+  try {
+    response = await fetch(path, {
+      credentials: 'include',
+      ...options,
+      signal: controller ? controller.signal : options.signal,
+      headers,
+    })
+  } catch (error) {
+    if (error instanceof DOMException && error.name === 'AbortError') {
+      throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`)
+    }
+    throw error
+  } finally {
+    if (timeoutId !== null) {
+      clearTimeout(timeoutId)
+    }
+  }
 
   const text = await response.text()
   let data = null
