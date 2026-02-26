@@ -8,6 +8,9 @@
     "build": "npm run check:encoding && vite build",
     "lint": "npm run check:encoding && eslint .",
     "check:encoding": "node scripts/check-encoding.js",
+    "env:home": "node scripts/switch-env.js home",
+    "env:office": "node scripts/switch-env.js office",
+    "env:status": "node scripts/switch-env.js status",
     "preview": "vite preview"
   },
   "dependencies": {

@@ -31,14 +31,9 @@ function app_install_exception_handler(): void
 
 app_install_exception_handler();
 
-function app_env(string $name, ?string $default = null): ?string
-{
-    return app_env_get($name, $default);
-}
-
 function app_allowed_origins(): array
 {
-    $fromEnv = app_env('CORS_ALLOWED_ORIGINS');
+    $fromEnv = app_env_get('CORS_ALLOWED_ORIGINS');
     if ($fromEnv !== null) {
         $origins = array_values(array_filter(array_map('trim', explode(',', $fromEnv))));
         if ($origins !== []) {
@@ -529,41 +524,40 @@ function app_ensure_orders_table(PDO $pdo): void
     }
 }
 
+/**
+ * Returns the first candidate column that exists in the orders table, or null if none found.
+ * Tries SHOW COLUMNS first, then falls back to a live query probe.
+ */
+function app_find_orders_column(PDO $pdo, array $candidates): ?string
+{
+    try {
+        app_ensure_orders_table($pdo);
+        foreach ($candidates as $col) {
+            $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE '{$col}'");
+            if ($stmt && $stmt->fetch()) {
+                return $col;
+            }
+        }
+    } catch (Throwable $e) {
+        // Fall through to queryable probe.
+    }
+
+    foreach ($candidates as $col) {
+        if (app_column_is_queryable($pdo, 'orders', $col)) {
+            return $col;
+        }
+    }
+
+    return null;
+}
+
 function app_detect_orders_items_column(PDO $pdo): string
 {
     static $detected = null;
     if ($detected !== null) {
         return $detected;
     }
-
-    try {
-        app_ensure_orders_table($pdo);
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'items_json'");
-        if ($stmt && $stmt->fetch()) {
-            $detected = 'items_json';
-            return $detected;
-        }
-
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'items'");
-        if ($stmt && $stmt->fetch()) {
-            $detected = 'items';
-            return $detected;
-        }
-    } catch (Throwable $e) {
-        // Fall through to default to preserve behavior when metadata lookup fails.
-    }
-
-    if (app_column_is_queryable($pdo, 'orders', 'items_json')) {
-        $detected = 'items_json';
-        return $detected;
-    }
-
-    if (app_column_is_queryable($pdo, 'orders', 'items')) {
-        $detected = 'items';
-        return $detected;
-    }
-
-    $detected = 'items_json';
+    $detected = app_find_orders_column($pdo, ['items_json', 'items']) ?? 'items_json';
     return $detected;
 }
 
@@ -578,25 +572,9 @@ function app_detect_orders_meta_column(PDO $pdo): ?string
     if ($detected !== false) {
         return $detected === '' ? null : $detected;
     }
-
-    try {
-        app_ensure_orders_table($pdo);
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
-        if ($stmt && $stmt->fetch()) {
-            $detected = 'order_meta_json';
-            return $detected;
-        }
-    } catch (Throwable $e) {
-        // Fall through to no-meta fallback.
-    }
-
-    if (app_column_is_queryable($pdo, 'orders', 'order_meta_json')) {
-        $detected = 'order_meta_json';
-        return $detected;
-    }
-
-    $detected = '';
-    return null;
+    $found = app_find_orders_column($pdo, ['order_meta_json']);
+    $detected = $found ?? '';
+    return $found;
 }
 
 function app_orders_meta_column(PDO $pdo): ?string
@@ -610,36 +588,7 @@ function app_detect_orders_date_column(PDO $pdo): string
     if ($detected !== null) {
         return $detected;
     }
-
-    try {
-        app_ensure_orders_table($pdo);
-
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_date'");
-        if ($stmt && $stmt->fetch()) {
-            $detected = 'order_date';
-            return $detected;
-        }
-
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'date'");
-        if ($stmt && $stmt->fetch()) {
-            $detected = 'date';
-            return $detected;
-        }
-    } catch (Throwable $e) {
-        // Fall through to default for compatibility.
-    }
-
-    if (app_column_is_queryable($pdo, 'orders', 'order_date')) {
-        $detected = 'order_date';
-        return $detected;
-    }
-
-    if (app_column_is_queryable($pdo, 'orders', 'date')) {
-        $detected = 'date';
-        return $detected;
-    }
-
-    $detected = 'order_date';
+    $detected = app_find_orders_column($pdo, ['order_date', 'date']) ?? 'order_date';
     return $detected;
 }
 

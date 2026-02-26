@@ -86,7 +86,7 @@ export default function App() {
 
         setSession(normalizeSession(data?.session));
       } catch (error) {
-        console.error('Failed to load bootstrap data from backend.', error);
+        if (import.meta.env.DEV) console.error('Failed to load bootstrap data from backend.', error);
       } finally {
         if (!cancelled) {
           setIsHydrating(false);
@@ -115,7 +115,7 @@ export default function App() {
       if (Array.isArray(data?.orders)) setOrders(data.orders);
       setSession(normalizeSession(data?.session, role));
     } catch (error) {
-      console.error('Failed to refresh admin data after login.', error);
+      if (import.meta.env.DEV) console.error('Failed to refresh admin data after login.', error);
     }
   };
 
@@ -123,7 +123,7 @@ export default function App() {
     try {
       await api.logout();
     } catch (error) {
-      console.error('Failed to logout from backend.', error);
+      if (import.meta.env.DEV) console.error('Failed to logout from backend.', error);
     } finally {
       setSession(EMPTY_SESSION);
       setOrders([]);

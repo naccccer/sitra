@@ -245,72 +245,74 @@ if ($method === 'PUT') {
     ]);
 }
 
-$payload = app_read_json_body();
-$id = (int)($payload['id'] ?? 0);
-$isActiveRaw = $payload['isActive'] ?? null;
+if ($method === 'PATCH') {
+    $payload = app_read_json_body();
+    $id = (int)($payload['id'] ?? 0);
+    $isActiveRaw = $payload['isActive'] ?? null;
 
-if ($id <= 0) {
-    app_json([
-        'success' => false,
-        'error' => 'Valid user id is required.',
-    ], 400);
-}
-
-if (!array_key_exists('isActive', $payload)) {
-    app_json([
-        'success' => false,
-        'error' => 'isActive is required.',
-    ], 400);
-}
-
-$nextActive = app_users_parse_bool($isActiveRaw);
-if ($nextActive === null) {
-    app_json([
-        'success' => false,
-        'error' => 'isActive must be a boolean.',
-    ], 400);
-}
-
-if (!$hasIsActive) {
-    app_json([
-        'success' => false,
-        'error' => 'users.is_active column is unavailable.',
-    ], 500);
-}
-
-$target = app_users_fetch_one($pdo, $id, $hasIsActive);
-if ($target === null) {
-    app_json([
-        'success' => false,
-        'error' => 'User not found.',
-    ], 404);
-}
-
-$targetIsActive = ((int)($target['is_active'] ?? 1)) === 1;
-if (!$nextActive) {
-    if ((string)$currentUser['id'] === (string)$id) {
+    if ($id <= 0) {
         app_json([
             'success' => false,
-            'error' => 'You cannot deactivate your own account.',
+            'error' => 'Valid user id is required.',
         ], 400);
     }
 
-    if ($targetIsActive && (string)$target['role'] === 'admin' && app_users_count_active_admins($pdo, $hasIsActive) <= 1) {
+    if (!array_key_exists('isActive', $payload)) {
         app_json([
             'success' => false,
-            'error' => 'The last active admin cannot be deactivated.',
+            'error' => 'isActive is required.',
         ], 400);
     }
+
+    $nextActive = app_users_parse_bool($isActiveRaw);
+    if ($nextActive === null) {
+        app_json([
+            'success' => false,
+            'error' => 'isActive must be a boolean.',
+        ], 400);
+    }
+
+    if (!$hasIsActive) {
+        app_json([
+            'success' => false,
+            'error' => 'users.is_active column is unavailable.',
+        ], 500);
+    }
+
+    $target = app_users_fetch_one($pdo, $id, $hasIsActive);
+    if ($target === null) {
+        app_json([
+            'success' => false,
+            'error' => 'User not found.',
+        ], 404);
+    }
+
+    $targetIsActive = ((int)($target['is_active'] ?? 1)) === 1;
+    if (!$nextActive) {
+        if ((string)$currentUser['id'] === (string)$id) {
+            app_json([
+                'success' => false,
+                'error' => 'You cannot deactivate your own account.',
+            ], 400);
+        }
+
+        if ($targetIsActive && (string)$target['role'] === 'admin' && app_users_count_active_admins($pdo, $hasIsActive) <= 1) {
+            app_json([
+                'success' => false,
+                'error' => 'The last active admin cannot be deactivated.',
+            ], 400);
+        }
+    }
+
+    $stmt = $pdo->prepare('UPDATE users SET is_active = :is_active WHERE id = :id');
+    $stmt->execute([
+        'id' => $id,
+        'is_active' => $nextActive ? 1 : 0,
+    ]);
+
+    $updated = app_users_fetch_one($pdo, $id, $hasIsActive);
+    app_json([
+        'success' => true,
+        'user' => $updated ? app_users_to_response($updated) : null,
+    ]);
 }
-
-$stmt = $pdo->prepare('UPDATE users SET is_active = :is_active WHERE id = :id');
-$stmt->execute([
-    'id' => $id,
-    'is_active' => $nextActive ? 1 : 0,
-]);
-
-$updated = app_users_fetch_one($pdo, $id, $hasIsActive);
-app_json([
-    'success' => true,
-    'user' => $updated ? app_users_to_response($updated) : null,
-]);

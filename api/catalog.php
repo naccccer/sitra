@@ -18,7 +18,7 @@ if ($method === 'GET') {
 app_require_auth(['admin', 'manager']);
 app_require_csrf();
 $catalog = app_read_json_body();
-if (!is_array($catalog) || count($catalog) === 0) {
+if (count($catalog) === 0) {
     app_json([
         'success' => false,
         'error' => 'Catalog payload is required.',

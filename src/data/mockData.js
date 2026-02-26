@@ -48,18 +48,3 @@ export const initialCatalog = {
     paymentMethods: ['cash', 'card', 'transfer']
   }
 };
-
-export const initialOrders = [
-  { 
-    id: '1001', 
-    orderCode: '021105-00-001-4',
-    customerName: 'محمد رضایی', 
-    phone: '09121112222', 
-    date: '1402/11/05', 
-    total: 2150000, 
-    status: 'pending', 
-    items: [
-      { id: '1', title: 'شیشه تک جداره', dimensions: { width: 100, height: 100, count: 2 }, totalPrice: 2150000, unitPrice: 1075000, activeTab: 'single', config: { thick: 6, isSekurit: true, hasEdge: true, glassId: '2' }, operations: {'op_hole1': 1}, pattern: {type: 'none'} }
-    ]
-  }
-];

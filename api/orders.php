@@ -253,30 +253,24 @@ if ($method === 'POST') {
     $lastInsertError = null;
     foreach (app_orders_date_column_candidates($pdo) as $dateColumn) {
         try {
+            $insertCols = "order_code, customer_name, phone, {$dateColumn}, total, status, {$itemsColumn}";
+            $insertVals = ':order_code, :customer_name, :phone, :order_date, :total, :status, :items_json';
+            $insertParams = [
+                'order_code' => $orderCode,
+                'customer_name' => $customerName,
+                'phone' => $phone,
+                'order_date' => $orderDate,
+                'total' => max(0, $total),
+                'status' => $status,
+                'items_json' => $itemsJson,
+            ];
             if ($metaColumn !== null) {
-                $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, ' . $dateColumn . ', total, status, ' . $itemsColumn . ', ' . $metaColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json, :order_meta_json)');
-                $stmt->execute([
-                    'order_code' => $orderCode,
-                    'customer_name' => $customerName,
-                    'phone' => $phone,
-                    'order_date' => $orderDate,
-                    'total' => max(0, $total),
-                    'status' => $status,
-                    'items_json' => $itemsJson,
-                    'order_meta_json' => $orderMetaJson,
-                ]);
-            } else {
-                $stmt = $pdo->prepare('INSERT INTO orders (order_code, customer_name, phone, ' . $dateColumn . ', total, status, ' . $itemsColumn . ') VALUES (:order_code, :customer_name, :phone, :order_date, :total, :status, :items_json)');
-                $stmt->execute([
-                    'order_code' => $orderCode,
-                    'customer_name' => $customerName,
-                    'phone' => $phone,
-                    'order_date' => $orderDate,
-                    'total' => max(0, $total),
-                    'status' => $status,
-                    'items_json' => $itemsJson,
-                ]);
+                $insertCols .= ", {$metaColumn}";
+                $insertVals .= ', :order_meta_json';
+                $insertParams['order_meta_json'] = $orderMetaJson;
             }
+            $stmt = $pdo->prepare("INSERT INTO orders ({$insertCols}) VALUES ({$insertVals})");
+            $stmt->execute($insertParams);
 
             $inserted = true;
             break;
@@ -367,30 +361,22 @@ if ($method === 'PUT') {
     $lastUpdateError = null;
     foreach (app_orders_date_column_candidates($pdo) as $dateColumn) {
         try {
+            $setClause = "customer_name = :customer_name, phone = :phone, {$dateColumn} = :order_date, total = :total, status = :status, {$itemsColumn} = :items_json";
+            $updateParams = [
+                'id' => $id,
+                'customer_name' => $customerName,
+                'phone' => $phone,
+                'order_date' => $orderDate,
+                'total' => max(0, $total),
+                'status' => $status,
+                'items_json' => $itemsJson,
+            ];
             if ($metaColumn !== null) {
-                $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, ' . $dateColumn . ' = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json, ' . $metaColumn . ' = :order_meta_json WHERE id = :id');
-                $stmt->execute([
-                    'id' => $id,
-                    'customer_name' => $customerName,
-                    'phone' => $phone,
-                    'order_date' => $orderDate,
-                    'total' => max(0, $total),
-                    'status' => $status,
-                    'items_json' => $itemsJson,
-                    'order_meta_json' => $orderMetaJson,
-                ]);
-            } else {
-                $stmt = $pdo->prepare('UPDATE orders SET customer_name = :customer_name, phone = :phone, ' . $dateColumn . ' = :order_date, total = :total, status = :status, ' . $itemsColumn . ' = :items_json WHERE id = :id');
-                $stmt->execute([
-                    'id' => $id,
-                    'customer_name' => $customerName,
-                    'phone' => $phone,
-                    'order_date' => $orderDate,
-                    'total' => max(0, $total),
-                    'status' => $status,
-                    'items_json' => $itemsJson,
-                ]);
+                $setClause .= ", {$metaColumn} = :order_meta_json";
+                $updateParams['order_meta_json'] = $orderMetaJson;
             }
+            $stmt = $pdo->prepare("UPDATE orders SET {$setClause} WHERE id = :id");
+            $stmt->execute($updateParams);
 
             $updated = true;
             break;
@@ -466,37 +452,38 @@ if ($method === 'DELETE') {
     ]);
 }
 
-// PATCH
-app_require_auth(['admin', 'manager']);
-$payload = app_read_json_body();
+if ($method === 'PATCH') {
+    app_require_auth(['admin', 'manager']);
+    $payload = app_read_json_body();
 
-$id = (int)($payload['id'] ?? 0);
-$status = trim((string)($payload['status'] ?? ''));
-if ($id <= 0 || !app_valid_order_status($status)) {
+    $id = (int)($payload['id'] ?? 0);
+    $status = trim((string)($payload['status'] ?? ''));
+    if ($id <= 0 || !app_valid_order_status($status)) {
+        app_json([
+            'success' => false,
+            'error' => 'Valid id and status are required.',
+        ], 400);
+    }
+
+    $stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
+    $stmt->execute([
+        'id' => $id,
+        'status' => $status,
+    ]);
+
+    $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
+    $select->execute(['id' => $id]);
+    $row = $select->fetch();
+
+    if (!$row) {
+        app_json([
+            'success' => false,
+            'error' => 'Order not found.',
+        ], 404);
+    }
+
     app_json([
-        'success' => false,
-        'error' => 'Valid id and status are required.',
-    ], 400);
+        'success' => true,
+        'order' => app_order_from_row($row),
+    ]);
 }
-
-$stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
-$stmt->execute([
-    'id' => $id,
-    'status' => $status,
-]);
-
-$select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
-$select->execute(['id' => $id]);
-$row = $select->fetch();
-
-if (!$row) {
-    app_json([
-        'success' => false,
-        'error' => 'Order not found.',
-    ], 404);
-}
-
-app_json([
-    'success' => true,
-    'order' => app_order_from_row($row),
-]);

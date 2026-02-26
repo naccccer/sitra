@@ -9,6 +9,22 @@ function app_load_env_local(): void
     }
     $loaded = true;
 
+    // Keep server-injected env immutable, but allow later env files (like
+    // .env.local) to override earlier file-loaded values.
+    $lockedNames = [];
+    $systemEnv = getenv();
+    if (is_array($systemEnv)) {
+        foreach (array_keys($systemEnv) as $name) {
+            $lockedNames[(string)$name] = true;
+        }
+    }
+    foreach (array_keys($_ENV) as $name) {
+        $lockedNames[(string)$name] = true;
+    }
+    foreach (array_keys($_SERVER) as $name) {
+        $lockedNames[(string)$name] = true;
+    }
+
     $root = dirname(__DIR__);
     $envFiles = [
         $root . DIRECTORY_SEPARATOR . '.env',
@@ -32,13 +48,13 @@ function app_load_env_local(): void
         }
 
         foreach ($lines as $line) {
+            // Strip UTF-8 BOM if present.
+            $line = preg_replace('/^\x{FEFF}/u', '', $line) ?? $line;
+
             $line = trim($line);
             if ($line === '' || str_starts_with($line, '#')) {
                 continue;
             }
-
-            // Strip UTF-8 BOM if present.
-            $line = preg_replace('/^\xEF\xBB\xBF/u', '', $line) ?? $line;
 
             if (str_starts_with($line, 'export ')) {
                 $line = trim(substr($line, 7));
@@ -64,7 +80,7 @@ function app_load_env_local(): void
             }
 
             // Do not override vars already injected by hosting/server env.
-            if (app_env_raw($name) !== null) {
+            if (isset($lockedNames[$name])) {
                 continue;
             }
 
