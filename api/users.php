@@ -63,6 +63,9 @@ function app_users_parse_bool($value): ?bool
 app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 $currentUser = app_require_auth(['admin', 'manager']);
+if ($method !== 'GET') {
+    app_require_csrf();
+}
 app_ensure_users_table($pdo);
 $hasIsActive = app_users_is_active_column($pdo);
 

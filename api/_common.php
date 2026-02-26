@@ -86,7 +86,7 @@ function app_handle_preflight(array $allowedMethods): void
 
     app_send_cors_headers();
     header('Access-Control-Allow-Methods: ' . implode(', ', $methods));
-    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With');
+    header('Access-Control-Allow-Headers: Content-Type, X-Requested-With, X-CSRF-Token');
 
     if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'OPTIONS') {
         http_response_code(200);
@@ -129,7 +129,43 @@ function app_read_json_body(): array
 function app_start_session(): void
 {
     if (session_status() === PHP_SESSION_NONE) {
+        $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (int)($_SERVER['SERVER_PORT'] ?? 80) === 443;
+        session_set_cookie_params([
+            'lifetime' => 0,
+            'path' => '/',
+            'domain' => '',
+            'secure' => $isHttps,
+            'httponly' => true,
+            'samesite' => 'Lax',
+        ]);
         session_start();
+    }
+}
+
+function app_csrf_token(): string
+{
+    app_start_session();
+    if (empty($_SESSION['csrf_token'])) {
+        try {
+            $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+        } catch (Throwable $e) {
+            $_SESSION['csrf_token'] = bin2hex(md5(uniqid('', true)));
+        }
+    }
+    return (string)$_SESSION['csrf_token'];
+}
+
+function app_require_csrf(): void
+{
+    app_start_session();
+    $token = (string)($_SERVER['HTTP_X_CSRF_TOKEN'] ?? '');
+    $expected = (string)($_SESSION['csrf_token'] ?? '');
+    if ($expected === '' || $token === '' || !hash_equals($expected, $token)) {
+        app_json([
+            'success' => false,
+            'error' => 'Invalid or missing CSRF token.',
+        ], 403);
     }
 }
 

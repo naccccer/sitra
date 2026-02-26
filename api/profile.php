@@ -15,6 +15,7 @@ if ($method === 'GET') {
 }
 
 app_require_auth(['admin', 'manager']);
+app_require_csrf();
 $payload = app_read_json_body();
 $source = is_array($payload) ? $payload : [];
 

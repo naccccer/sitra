@@ -49,6 +49,7 @@ app_json([
         'role' => $user['role'] ?? null,
         'username' => $user['username'] ?? null,
     ],
+    'csrfToken' => app_csrf_token(),
     'catalog' => $catalog,
     'profile' => $profile,
     'orders' => $orders,

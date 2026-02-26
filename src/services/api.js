@@ -1,11 +1,23 @@
 const parsedTimeoutMs = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS ?? '10000', 10)
 const REQUEST_TIMEOUT_MS = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 10000
 
+let _csrfToken = ''
+
+export function setCsrfToken(token) {
+  _csrfToken = token || ''
+}
+
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
+
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) }
   const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData
   if (options.body && !headers['Content-Type'] && !isFormData) {
     headers['Content-Type'] = 'application/json'
+  }
+  const method = (options.method || 'GET').toUpperCase()
+  if (STATE_CHANGING_METHODS.has(method) && _csrfToken) {
+    headers['X-CSRF-Token'] = _csrfToken
   }
 
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null

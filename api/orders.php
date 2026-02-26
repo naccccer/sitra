@@ -160,6 +160,10 @@ app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 app_ensure_orders_table($pdo);
 
+if ($method !== 'GET') {
+    app_require_csrf();
+}
+
 if ($method === 'GET') {
     app_require_auth(['admin', 'manager']);
 

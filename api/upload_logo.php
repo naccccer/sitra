@@ -6,6 +6,7 @@ require_once __DIR__ . '/_common.php';
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
 app_require_auth(['admin', 'manager']);
+app_require_csrf();
 
 const MAX_LOGO_SIZE_BYTES = 2 * 1024 * 1024;
 
@@ -34,11 +35,13 @@ switch ((int)$file['error']) {
             'error' => 'File is larger than 2MB.',
             'maxSizeBytes' => MAX_LOGO_SIZE_BYTES,
         ], 413);
+        break;
     case UPLOAD_ERR_NO_FILE:
         app_json([
             'success' => false,
             'error' => 'No file uploaded.',
         ], 400);
+        break;
     default:
         app_json([
             'success' => false,
