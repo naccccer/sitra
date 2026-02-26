@@ -36,20 +36,97 @@ const EMPTY_SESSION = {
   authenticated: false,
   role: null,
   username: null,
+  permissions: [],
+  capabilities: {},
+  modules: [],
 };
 
-const normalizeSession = (rawSession, fallbackRole = null) => {
+const deriveCapabilitiesFromRole = (role) => {
+  const normalizedRole = String(role || '').trim();
+  if (normalizedRole === 'admin' || normalizedRole === 'manager') {
+    return {
+      canAccessDashboard: true,
+      canManageOrders: true,
+      canManageCatalog: true,
+      canManageUsers: true,
+      canUseProduction: true,
+      canUseInventory: true,
+      canManageProfile: true,
+    };
+  }
+
+  if (normalizedRole === 'sales') {
+    return {
+      canAccessDashboard: true,
+      canManageOrders: true,
+      canManageCatalog: false,
+      canManageUsers: false,
+      canUseProduction: false,
+      canUseInventory: false,
+      canManageProfile: false,
+    };
+  }
+
+  if (normalizedRole === 'production') {
+    return {
+      canAccessDashboard: true,
+      canManageOrders: true,
+      canManageCatalog: false,
+      canManageUsers: false,
+      canUseProduction: true,
+      canUseInventory: false,
+      canManageProfile: false,
+    };
+  }
+
+  if (normalizedRole === 'inventory') {
+    return {
+      canAccessDashboard: true,
+      canManageOrders: true,
+      canManageCatalog: false,
+      canManageUsers: false,
+      canUseProduction: false,
+      canUseInventory: true,
+      canManageProfile: false,
+    };
+  }
+
+  return {
+    canAccessDashboard: false,
+    canManageOrders: false,
+    canManageCatalog: false,
+    canManageUsers: false,
+    canUseProduction: false,
+    canUseInventory: false,
+    canManageProfile: false,
+  };
+};
+
+const normalizeSession = (rawSession, fallbackRole = null, bootstrapData = null) => {
+  const effectiveRole = rawSession?.role || fallbackRole || null;
+  const permissions = Array.isArray(bootstrapData?.permissions) ? bootstrapData.permissions : [];
+  const capabilities = bootstrapData?.capabilities && typeof bootstrapData.capabilities === 'object'
+    ? bootstrapData.capabilities
+    : deriveCapabilitiesFromRole(effectiveRole);
+  const modules = Array.isArray(bootstrapData?.modules) ? bootstrapData.modules : [];
+
   if (!rawSession || typeof rawSession !== 'object') {
     return {
       ...EMPTY_SESSION,
-      role: fallbackRole || null,
+      role: effectiveRole,
+      permissions,
+      capabilities,
+      modules,
     };
   }
 
   return {
     authenticated: Boolean(rawSession.authenticated),
-    role: rawSession.role || fallbackRole || null,
+    role: effectiveRole,
     username: rawSession.username || null,
+    permissions,
+    capabilities,
+    modules,
   };
 };
 
@@ -84,7 +161,7 @@ export default function App() {
           setOrders(data.orders);
         }
 
-        setSession(normalizeSession(data?.session));
+        setSession(normalizeSession(data?.session, null, data));
       } catch (error) {
         if (import.meta.env.DEV) console.error('Failed to load bootstrap data from backend.', error);
       } finally {
@@ -113,7 +190,7 @@ export default function App() {
       if (data?.catalog) setCatalog(data.catalog);
       if (data?.profile) setProfile(normalizeProfile(data.profile));
       if (Array.isArray(data?.orders)) setOrders(data.orders);
-      setSession(normalizeSession(data?.session, role));
+      setSession(normalizeSession(data?.session, role, data));
     } catch (error) {
       if (import.meta.env.DEV) console.error('Failed to refresh admin data after login.', error);
     }

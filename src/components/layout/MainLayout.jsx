@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
-export const MainLayout = ({ onLogout, profile, children }) => {
+export const MainLayout = ({ onLogout, profile, session, children }) => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   const toggleSidebarCollapse = () => {
@@ -15,6 +15,7 @@ export const MainLayout = ({ onLogout, profile, children }) => {
       <div className="mx-auto flex min-h-screen w-full max-w-[1500px] flex-col lg:flex-row">
         <Sidebar
           profile={profile}
+          session={session}
           isCollapsed={isSidebarCollapsed}
           onToggleCollapse={toggleSidebarCollapse}
         />

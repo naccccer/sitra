@@ -15,13 +15,13 @@ import {
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
 
 const navItems = [
-  { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true },
-  { to: '/orders', label: 'سفارشات', icon: ClipboardList },
-  { to: '/inventory', label: 'انبار', icon: Boxes },
-  { to: '/production', label: 'تولید', icon: Factory },
-  { to: '/admin', label: 'مدیریت قیمت‌ها', icon: Settings },
-  { to: '/profile', label: 'پروفایل کسب‌وکار', icon: BadgeCheck },
-  { to: '/users', label: 'مدیریت کاربران', icon: Users },
+  { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard' },
+  { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders' },
+  { to: '/inventory', label: 'انبار', icon: Boxes, capability: 'canUseInventory' },
+  { to: '/production', label: 'تولید', icon: Factory, capability: 'canUseProduction' },
+  { to: '/admin', label: 'مدیریت قیمت‌ها', icon: Settings, capability: 'canManageCatalog' },
+  { to: '/profile', label: 'پروفایل کسب‌وکار', icon: BadgeCheck, capability: 'canManageProfile' },
+  { to: '/users', label: 'مدیریت کاربران', icon: Users, capability: 'canManageUsers' },
 ];
 
 const navLinkClass = (isActive, isCollapsed) => `
@@ -30,12 +30,20 @@ const navLinkClass = (isActive, isCollapsed) => `
   ${isActive ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}
 `;
 
-export const Sidebar = ({ profile, isCollapsed = false, onToggleCollapse = () => {} }) => {
+export const Sidebar = ({ profile, session, isCollapsed = false, onToggleCollapse = () => {} }) => {
   const normalizedProfile = normalizeProfile(profile);
   const logoSrc = profileLogoSrc(normalizedProfile.logoPath);
   const [failedLogoSrc, setFailedLogoSrc] = useState('');
   const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc;
   const fallbackLetter = profileBrandInitial(normalizedProfile);
+  const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {};
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (!item.capability) return true;
+    return Boolean(capabilities[item.capability]);
+  });
+
+  const canCreateOrders = Boolean(capabilities.canManageOrders);
 
   return (
     <aside
@@ -75,7 +83,7 @@ export const Sidebar = ({ profile, isCollapsed = false, onToggleCollapse = () =>
       </button>
 
       <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -92,14 +100,16 @@ export const Sidebar = ({ profile, isCollapsed = false, onToggleCollapse = () =>
         })}
       </nav>
 
-      <NavLink
-        to="/orders/new"
-        title="ثبت سفارش جدید"
-        className={`mt-3 flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white transition-colors hover:bg-emerald-500 ${isCollapsed ? 'justify-center lg:px-2' : 'justify-center gap-1'}`}
-      >
-        <PlusCircle size={14} />
-        <span className={isCollapsed ? 'lg:hidden' : ''}>ثبت سفارش جدید</span>
-      </NavLink>
+      {canCreateOrders && (
+        <NavLink
+          to="/orders/new"
+          title="ثبت سفارش جدید"
+          className={`mt-3 flex items-center rounded-xl bg-emerald-600 px-3 py-2 text-xs font-black text-white transition-colors hover:bg-emerald-500 ${isCollapsed ? 'justify-center lg:px-2' : 'justify-center gap-1'}`}
+        >
+          <PlusCircle size={14} />
+          <span className={isCollapsed ? 'lg:hidden' : ''}>ثبت سفارش جدید</span>
+        </NavLink>
+      )}
     </aside>
   );
 };

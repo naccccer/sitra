@@ -1,16 +1,14 @@
 ﻿import React from 'react';
 import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom';
 import { MainLayout } from '../components/layout/MainLayout';
-import { AdminPage } from '../pages/AdminPage';
+import { OrderCreatePage, OrderDetailPage, OrdersPage } from '../modules/sales';
+import { AdminPage } from '../modules/master-data';
+import { InventoryPage } from '../modules/inventory';
 import { DashboardPage } from '../pages/DashboardPage';
-import { InventoryPage } from '../pages/InventoryPage';
 import { LoginPage } from '../pages/LoginPage';
-import { OrderCreatePage } from '../pages/OrderCreatePage';
-import { OrderDetailPage } from '../pages/OrderDetailPage';
-import { OrdersPage } from '../pages/OrdersPage';
+import { ProductionPage } from '../modules/production';
+import { UsersPage } from '../modules/users-access';
 import { ProfilePage } from '../pages/ProfilePage';
-import { ProductionPage } from '../pages/ProductionPage';
-import { UsersPage } from '../pages/UsersPage';
 
 const ProtectedRoute = ({ isAuthenticated }) => {
   const location = useLocation();
@@ -39,7 +37,7 @@ export const AppRoutes = ({
       <Route
         path="/orders/new"
         element={session?.authenticated ? (
-          <MainLayout onLogout={onLogout} profile={profile}>
+          <MainLayout onLogout={onLogout} profile={profile} session={session}>
             <OrderCreatePage catalog={catalog} orders={orders} setOrders={setOrders} session={session} profile={profile} />
           </MainLayout>
         ) : (
@@ -48,7 +46,7 @@ export const AppRoutes = ({
       />
 
       <Route element={<ProtectedRoute isAuthenticated={Boolean(session?.authenticated)} />}>
-        <Route element={<MainLayout onLogout={onLogout} profile={profile} />}>
+        <Route element={<MainLayout onLogout={onLogout} profile={profile} session={session} />}>
           <Route index element={<DashboardPage orders={orders} />} />
           <Route path="orders" element={<OrdersPage orders={orders} setOrders={setOrders} catalog={catalog} profile={profile} />} />
           <Route path="orders/:id" element={<OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} />} />

@@ -199,6 +199,72 @@ function app_require_auth(?array $roles = null): array
     return $user;
 }
 
+function app_ensure_audit_logs_table(PDO $pdo): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS audit_logs (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            event_type VARCHAR(120) NOT NULL,
+            entity_type VARCHAR(80) NOT NULL,
+            entity_id VARCHAR(80) NULL,
+            actor_user_id VARCHAR(64) NULL,
+            actor_username VARCHAR(64) NULL,
+            actor_role VARCHAR(32) NULL,
+            payload_json LONGTEXT NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_audit_event_created (event_type, created_at),
+            KEY idx_audit_entity (entity_type, entity_id),
+            KEY idx_audit_actor_created (actor_user_id, created_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+}
+
+function app_audit_log(PDO $pdo, string $eventType, string $entityType, ?string $entityId = null, array $payload = [], ?array $actor = null): void
+{
+    try {
+        app_ensure_audit_logs_table($pdo);
+
+        $effectiveActor = $actor;
+        if ($effectiveActor === null) {
+            $effectiveActor = app_current_user();
+        }
+
+        $payloadJson = json_encode($payload, JSON_UNESCAPED_UNICODE);
+        if ($payloadJson === false) {
+            $payloadJson = json_encode(['encoding_error' => true], JSON_UNESCAPED_UNICODE);
+        }
+
+        $stmt = $pdo->prepare(
+            'INSERT INTO audit_logs (
+                event_type, entity_type, entity_id,
+                actor_user_id, actor_username, actor_role, payload_json
+             ) VALUES (
+                :event_type, :entity_type, :entity_id,
+                :actor_user_id, :actor_username, :actor_role, :payload_json
+             )'
+        );
+
+        $stmt->execute([
+            'event_type' => $eventType,
+            'entity_type' => $entityType,
+            'entity_id' => $entityId,
+            'actor_user_id' => $effectiveActor['id'] ?? null,
+            'actor_username' => $effectiveActor['username'] ?? null,
+            'actor_role' => $effectiveActor['role'] ?? null,
+            'payload_json' => $payloadJson,
+        ]);
+    } catch (Throwable $e) {
+        // Audit logging must never block primary business flow.
+    }
+}
+
 function app_valid_order_status(string $status): bool
 {
     return in_array($status, ['pending', 'processing', 'delivered', 'archived'], true);
@@ -671,7 +737,143 @@ function app_read_catalog(PDO $pdo)
 
 function app_user_roles(): array
 {
-    return ['admin', 'manager'];
+    return ['admin', 'manager', 'sales', 'production', 'inventory'];
+}
+
+function app_module_registry(): array
+{
+    return [
+        [
+            'id' => 'sales',
+            'label' => 'Sales',
+            'enabled' => true,
+            'phase' => 'active',
+        ],
+        [
+            'id' => 'production',
+            'label' => 'Production',
+            'enabled' => true,
+            'phase' => 'mvp',
+        ],
+        [
+            'id' => 'inventory',
+            'label' => 'Inventory',
+            'enabled' => true,
+            'phase' => 'mvp',
+        ],
+        [
+            'id' => 'master-data',
+            'label' => 'Master Data',
+            'enabled' => true,
+            'phase' => 'active',
+        ],
+        [
+            'id' => 'users-access',
+            'label' => 'Users Access',
+            'enabled' => true,
+            'phase' => 'active',
+        ],
+    ];
+}
+
+function app_role_permissions(string $role): array
+{
+    $all = [
+        'sales.orders.read',
+        'sales.orders.create',
+        'sales.orders.update',
+        'sales.orders.status',
+        'sales.orders.delete',
+        'sales.orders.release',
+        'master_data.catalog.read',
+        'master_data.catalog.write',
+        'production.work_orders.read',
+        'production.work_orders.write',
+        'inventory.stock.read',
+        'inventory.stock.write',
+        'users_access.users.read',
+        'users_access.users.write',
+        'profile.read',
+        'profile.write',
+    ];
+
+    $manager = [
+        'sales.orders.read',
+        'sales.orders.create',
+        'sales.orders.update',
+        'sales.orders.status',
+        'sales.orders.delete',
+        'sales.orders.release',
+        'master_data.catalog.read',
+        'master_data.catalog.write',
+        'production.work_orders.read',
+        'production.work_orders.write',
+        'inventory.stock.read',
+        'inventory.stock.write',
+        'users_access.users.read',
+        'users_access.users.write',
+        'profile.read',
+        'profile.write',
+    ];
+
+    $sales = [
+        'sales.orders.read',
+        'sales.orders.create',
+        'sales.orders.update',
+        'sales.orders.status',
+        'sales.orders.release',
+        'master_data.catalog.read',
+        'profile.read',
+    ];
+
+    $production = [
+        'sales.orders.read',
+        'production.work_orders.read',
+        'production.work_orders.write',
+        'master_data.catalog.read',
+        'profile.read',
+    ];
+
+    $inventory = [
+        'sales.orders.read',
+        'inventory.stock.read',
+        'inventory.stock.write',
+        'master_data.catalog.read',
+        'profile.read',
+    ];
+
+    if ($role === 'admin') {
+        return $all;
+    }
+    if ($role === 'manager') {
+        return $manager;
+    }
+    if ($role === 'sales') {
+        return $sales;
+    }
+    if ($role === 'production') {
+        return $production;
+    }
+    if ($role === 'inventory') {
+        return $inventory;
+    }
+
+    return [];
+}
+
+function app_module_capabilities(?string $role): array
+{
+    $permissions = app_role_permissions((string)$role);
+
+    return [
+        'canAccessDashboard' => in_array('sales.orders.read', $permissions, true),
+        'canManageOrders' => in_array('sales.orders.read', $permissions, true),
+        'canManageCatalog' => in_array('master_data.catalog.write', $permissions, true),
+        'canManageUsers' => in_array('users_access.users.write', $permissions, true),
+        'canUseProduction' => in_array('production.work_orders.read', $permissions, true),
+        'canUseInventory' => in_array('inventory.stock.read', $permissions, true),
+        'canManageProfile' => in_array('profile.write', $permissions, true),
+    ];
 }
 
 function app_is_valid_user_role(string $role): bool
@@ -692,7 +894,7 @@ function app_ensure_users_table(PDO $pdo): void
             id INT UNSIGNED NOT NULL AUTO_INCREMENT,
             username VARCHAR(64) NOT NULL,
             password VARCHAR(255) NOT NULL,
-            role ENUM('admin','manager') NOT NULL DEFAULT 'manager',
+            role ENUM('admin','manager','sales','production','inventory') NOT NULL DEFAULT 'manager',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -705,6 +907,17 @@ function app_ensure_users_table(PDO $pdo): void
         $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'is_active'");
         if (!$stmt || !$stmt->fetch()) {
             $pdo->exec("ALTER TABLE users ADD COLUMN is_active TINYINT(1) NOT NULL DEFAULT 1 AFTER role");
+        }
+    } catch (Throwable $e) {
+        // Preserve runtime compatibility even if alter is not permitted.
+    }
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'");
+        $row = $stmt ? $stmt->fetch() : null;
+        $type = strtolower((string)($row['Type'] ?? ''));
+        if ($type !== '' && !str_contains($type, "'sales'")) {
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','sales','production','inventory') NOT NULL DEFAULT 'manager'");
         }
     } catch (Throwable $e) {
         // Preserve runtime compatibility even if alter is not permitted.

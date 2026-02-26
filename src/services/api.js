@@ -114,6 +114,22 @@ export const api = {
     return request('/api/orders.php', { method: 'GET' })
   },
 
+  async fetchProductionWorkOrders(filters = {}) {
+    const params = new URLSearchParams()
+    if (filters?.status) params.set('status', String(filters.status))
+    if (filters?.orderRowKey) params.set('orderRowKey', String(filters.orderRowKey))
+    const query = params.toString()
+    const path = query ? `/api/production.php?${query}` : '/api/production.php'
+    return request(path, { method: 'GET' })
+  },
+
+  async releaseOrderLines(payload) {
+    return request('/api/production.php', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
   async createOrder(payload) {
     return request('/api/orders.php', {
       method: 'POST',

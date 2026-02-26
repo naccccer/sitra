@@ -6,11 +6,13 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run check:encoding && vite build",
-    "lint": "npm run check:encoding && eslint .",
+    "lint": "npm run check:encoding && npm run check:boundaries && eslint .",
     "check:encoding": "node scripts/check-encoding.js",
+    "check:boundaries": "node scripts/check-boundaries.js",
     "env:home": "node scripts/switch-env.js home",
     "env:office": "node scripts/switch-env.js office",
     "env:status": "node scripts/switch-env.js status",
+    "auth:reset-admin": "php scripts/reset-admin-password.php",
     "preview": "vite preview"
   },
   "dependencies": {

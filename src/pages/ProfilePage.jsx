@@ -3,7 +3,7 @@ import { AdminProfileSettingsTab } from '../components/admin/AdminProfileSetting
 import { AccessDenied } from '../components/shared/AccessDenied';
 
 export const ProfilePage = ({ profile, setProfile, session }) => {
-  const canManageSettings = session?.role === 'admin' || session?.role === 'manager';
+  const canManageSettings = Boolean(session?.capabilities?.canManageProfile);
 
   if (!canManageSettings) {
     return <AccessDenied message="دسترسی کافی برای تنظیمات وجود ندارد" />;
