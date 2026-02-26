@@ -445,8 +445,23 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
   };
 
   const submitOrderToServer = async () => {
-    if (!customerInfo.name || !customerInfo.phone) {
-      alert('لطفاً نام و شماره تماس را وارد کنید.');
+    const trimmedName = customerInfo.name.trim();
+    const trimmedPhone = customerInfo.phone.trim();
+
+    if (!trimmedName) {
+      alert('لطفاً نام و نام خانوادگی را وارد کنید.');
+      return;
+    }
+    if (trimmedName.length < 2) {
+      alert('نام باید حداقل ۲ کاراکتر باشد.');
+      return;
+    }
+    if (!trimmedPhone) {
+      alert('لطفاً شماره موبایل را وارد کنید.');
+      return;
+    }
+    if (!/^(09\d{9}|(\+98|0098)9\d{9})$/.test(trimmedPhone)) {
+      alert('شماره موبایل وارد شده معتبر نیست. مثال: 09123456789');
       return;
     }
 
@@ -454,8 +469,8 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
       if (editingOrder) {
         const updatePayload = {
           id: Number(editingOrder.id),
-          customerName: customerInfo.name,
-          phone: customerInfo.phone,
+          customerName: trimmedName,
+          phone: trimmedPhone,
           date: editingOrder.date,
           total: grandTotal,
           status: editingOrder.status || 'pending',
@@ -476,8 +491,8 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
       const code = generateOrderCode(orderItems, orderSource, orders.length + 1);
       const createPayload = {
         orderCode: code,
-        customerName: customerInfo.name,
-        phone: customerInfo.phone,
+        customerName: trimmedName,
+        phone: trimmedPhone,
         date: new Date().toLocaleDateString('fa-IR'),
         total: isStaffContext ? grandTotal : orderItems.reduce((acc, item) => acc + Math.max(0, parseIntSafe(item.totalPrice, 0)), 0),
         status: 'pending',
@@ -503,7 +518,6 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
       setEditingItemId(null);
       setEditingItemType('catalog');
     } catch (error) {
-      console.error('Failed to submit order to backend.', error);
       alert(error?.message || 'ثبت سفارش با خطا مواجه شد.');
     }
   };

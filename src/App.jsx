@@ -1,8 +1,36 @@
 ﻿import React, { useEffect, useState } from 'react';
 import { initialCatalog } from './data/mockData';
 import { AppRoutes } from './routes/AppRoutes';
-import { api } from './services/api';
+import { api, setCsrfToken } from './services/api';
 import { defaultProfile, normalizeProfile } from './utils/profile';
+
+class ErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false };
+  }
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+          <div className="text-center p-8">
+            <h2 className="text-xl font-black mb-2">خطایی رخ داد</h2>
+            <p className="text-sm mb-4">لطفاً صفحه را مجدداً بارگذاری کنید.</p>
+            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold">
+              بارگذاری مجدد
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const EMPTY_SESSION = {
   authenticated: false,
@@ -39,6 +67,10 @@ export default function App() {
       try {
         const data = await api.bootstrap();
         if (cancelled) return;
+
+        if (data?.csrfToken) {
+          setCsrfToken(data.csrfToken);
+        }
 
         if (data?.catalog) {
           setCatalog(data.catalog);
@@ -77,6 +109,7 @@ export default function App() {
 
     try {
       const data = await api.bootstrap();
+      if (data?.csrfToken) setCsrfToken(data.csrfToken);
       if (data?.catalog) setCatalog(data.catalog);
       if (data?.profile) setProfile(normalizeProfile(data.profile));
       if (Array.isArray(data?.orders)) setOrders(data.orders);
@@ -106,18 +139,20 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
-      <AppRoutes
-        session={session}
-        catalog={catalog}
-        setCatalog={setCatalog}
-        profile={profile}
-        setProfile={setProfile}
-        orders={orders}
-        setOrders={setOrders}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-      />
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-slate-50 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+        <AppRoutes
+          session={session}
+          catalog={catalog}
+          setCatalog={setCatalog}
+          profile={profile}
+          setProfile={setProfile}
+          orders={orders}
+          setOrders={setOrders}
+          onLogin={handleLogin}
+          onLogout={handleLogout}
+        />
+      </div>
+    </ErrorBoundary>
   );
 }

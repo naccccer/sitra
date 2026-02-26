@@ -9,6 +9,34 @@ app_require_method(['POST']);
 app_ensure_users_table($pdo);
 $hasIsActive = app_users_is_active_column($pdo);
 
+// Rate limiting: max 5 failed attempts per IP in a 15-minute window
+$clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
+$rateLimitMax = 5;
+$rateLimitWindowSec = 900;
+try {
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS login_attempts (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            ip VARCHAR(45) NOT NULL,
+            attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_ip_time (ip, attempted_at)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+    $pdo->prepare('DELETE FROM login_attempts WHERE attempted_at < DATE_SUB(NOW(), INTERVAL :w SECOND)')
+        ->execute(['w' => $rateLimitWindowSec]);
+    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE ip = :ip AND attempted_at > DATE_SUB(NOW(), INTERVAL :w SECOND)');
+    $countStmt->execute(['ip' => $clientIp, 'w' => $rateLimitWindowSec]);
+    if ((int)$countStmt->fetchColumn() >= $rateLimitMax) {
+        app_json([
+            'success' => false,
+            'error' => 'تعداد تلاش‌های ناموفق بیش از حد مجاز است. لطفاً بعد از ۱۵ دقیقه دوباره تلاش کنید.',
+        ], 429);
+    }
+} catch (Throwable $e) {
+    // If rate-limit table is unavailable, proceed without blocking
+}
+
 $data = app_read_json_body();
 $username = trim((string)($data['username'] ?? ''));
 $password = (string)($data['password'] ?? '');
@@ -47,6 +75,12 @@ if ($user) {
 }
 
 if (!$user || !$validCredentials) {
+    try {
+        $pdo->prepare('INSERT INTO login_attempts (ip) VALUES (:ip)')
+            ->execute(['ip' => $clientIp]);
+    } catch (Throwable $e) {
+        // Ignore if table unavailable
+    }
     app_json([
         'success' => false,
         'error' => 'Invalid username or password.',

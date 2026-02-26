@@ -5,6 +5,7 @@ require_once __DIR__ . '/_common.php';
 
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
+app_require_csrf();
 
 app_start_session();
 $_SESSION = [];
