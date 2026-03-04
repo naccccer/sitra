@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../../config/db.php';
 
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
+app_require_module_enabled($pdo, 'auth');
 app_ensure_users_table($pdo);
 $hasIsActive = app_users_is_active_column($pdo);
 

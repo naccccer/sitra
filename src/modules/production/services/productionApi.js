@@ -31,5 +31,28 @@ export const productionApi = {
   async releaseOrderLines(payload) {
     return api.releaseOrderLines(payload)
   },
-}
 
+  /**
+   * @param {Object} payload
+   * @returns {Promise<any>}
+   */
+  async updateWorkOrder(payload) {
+    return api.updateProductionWorkOrder(payload)
+  },
+
+  /**
+   * @param {{workOrderId?: number|string, orderRowKey?: string}} params
+   * @returns {Promise<any>}
+   */
+  async fetchLabelData(params) {
+    return api.fetchProductionLabel(params)
+  },
+
+  /**
+   * @param {{workOrderId?: number|string, orderRowKey?: string, action?: 'preview'|'print', copies?: number}} payload
+   * @returns {Promise<any>}
+   */
+  async printLabel(payload) {
+    return api.printProductionLabel(payload)
+  },
+}

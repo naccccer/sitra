@@ -240,6 +240,75 @@ function app_production_work_order_code(string $orderRowKey): string
     return 'WO-' . strtoupper($safeRowKey);
 }
 
+function app_production_station_presets(): array
+{
+    return [
+        [
+            'stationKey' => 'station-cut-1',
+            'label' => 'ایستگاه برش ۱',
+            'defaultStage' => 'cutting',
+            'printTemplatePreset' => 'cut-a6',
+            'defaultLabelCopies' => 1,
+            'allowedRoles' => ['admin', 'manager', 'production'],
+        ],
+        [
+            'stationKey' => 'station-drill-1',
+            'label' => 'ایستگاه سوراخ‌کاری ۱',
+            'defaultStage' => 'drilling',
+            'printTemplatePreset' => 'drill-a6-alert',
+            'defaultLabelCopies' => 1,
+            'allowedRoles' => ['admin', 'manager', 'production'],
+        ],
+        [
+            'stationKey' => 'station-temp-1',
+            'label' => 'ایستگاه سکوریت ۱',
+            'defaultStage' => 'tempering',
+            'printTemplatePreset' => 'temp-a6',
+            'defaultLabelCopies' => 1,
+            'allowedRoles' => ['admin', 'manager', 'production'],
+        ],
+        [
+            'stationKey' => 'station-pack-1',
+            'label' => 'ایستگاه بسته‌بندی ۱',
+            'defaultStage' => 'packing',
+            'printTemplatePreset' => 'pack-a5',
+            'defaultLabelCopies' => 2,
+            'allowedRoles' => ['admin', 'manager', 'production', 'sales'],
+        ],
+    ];
+}
+
+function app_production_station_presets_for_role(string $role): array
+{
+    $presets = app_production_station_presets();
+    $roleTrimmed = trim($role);
+    if ($roleTrimmed === '') {
+        return [];
+    }
+
+    return array_values(array_filter($presets, static function (array $preset) use ($roleTrimmed): bool {
+        $roles = is_array($preset['allowedRoles'] ?? null) ? $preset['allowedRoles'] : [];
+        return in_array($roleTrimmed, $roles, true);
+    }));
+}
+
+function app_production_station_is_allowed_for_role(string $role, string $stationKey): bool
+{
+    $stationTrimmed = trim($stationKey);
+    if ($stationTrimmed === '') {
+        return true;
+    }
+
+    $presets = app_production_station_presets_for_role($role);
+    foreach ($presets as $preset) {
+        if ((string)($preset['stationKey'] ?? '') === $stationTrimmed) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 function app_production_collect_release_lines(array $order, array $lineNos): array
 {
     $items = is_array($order['items'] ?? null) ? $order['items'] : [];
@@ -343,4 +412,3 @@ function app_production_upsert_order_line(PDO $pdo, int $orderId, array $line, b
 
     return (int)$row['id'];
 }
-

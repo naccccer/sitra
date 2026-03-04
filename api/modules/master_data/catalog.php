@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../../config/db.php';
 
 app_handle_preflight(['GET', 'POST']);
 $method = app_require_method(['GET', 'POST']);
+app_require_module_enabled($pdo, 'master-data');
 
 if ($method === 'GET') {
     $catalog = app_read_catalog($pdo);
@@ -15,7 +16,7 @@ if ($method === 'GET') {
     ]);
 }
 
-app_require_auth(['admin', 'manager']);
+$actor = app_require_permission('master_data.catalog.write', $pdo);
 app_require_csrf();
 $catalog = app_read_json_body();
 if (count($catalog) === 0) {
@@ -39,6 +40,21 @@ $stmt->execute([
     'key' => 'catalog',
     'value' => $catalogJson,
 ]);
+
+app_audit_log(
+    $pdo,
+    'master_data.catalog.updated',
+    'system_settings',
+    'catalog',
+    [
+        'summary' => [
+            'glassesCount' => is_array($catalog['glasses'] ?? null) ? count($catalog['glasses']) : 0,
+            'operationsCount' => is_array($catalog['operations'] ?? null) ? count($catalog['operations']) : 0,
+            'thicknessesCount' => is_array($catalog['thicknesses'] ?? null) ? count($catalog['thicknesses']) : 0,
+        ],
+    ],
+    $actor
+);
 
 app_json([
     'success' => true,

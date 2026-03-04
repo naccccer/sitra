@@ -4,7 +4,7 @@ import {
   Trash2, Edit3, Printer, CheckCircle2,
   User, Phone, Save, Menu, ShieldAlert
 } from 'lucide-react';
-import { toPN, generateOrderCode } from '../../../../utils/helpers';
+import { toPN } from '../../../../utils/helpers';
 import { usePricingCalculator } from '../../hooks/usePricingCalculator';
 import { StructureDetails } from '../../../../components/shared/StructureDetails';
 import { SettingsModal } from './SettingsModal';
@@ -177,7 +177,7 @@ const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, cat
 
 // --- Main Order Form ---
 
-export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = null, onCancelEdit, onGoToLogin, orderSource = 'customer', staffMode = false }) => {
+export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, onCancelEdit, onGoToLogin, staffMode = false }) => {
   const isStaffContext = staffMode || Boolean(editingOrder);
   const billing = ensureBillingSettings(catalog);
 
@@ -488,9 +488,7 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
         return;
       }
 
-      const code = generateOrderCode(orderItems, orderSource, orders.length + 1);
       const createPayload = {
-        orderCode: code,
         customerName: trimmedName,
         phone: trimmedPhone,
         date: new Date().toLocaleDateString('fa-IR'),
@@ -506,9 +504,9 @@ export const OrderForm = ({ catalog, orders, setOrders, profile, editingOrder = 
       }
 
       const response = await salesApi.createOrder(createPayload);
-      const createdOrder = response?.order ?? { id: code, ...createPayload };
+      const createdOrder = response?.order ?? { id: Date.now(), ...createPayload, orderCode: '' };
       setOrders((prev) => [createdOrder, ...prev]);
-      alert(`سفارش ثبت شد. کد پیگیری: ${createdOrder.orderCode || code}`);
+      alert(`سفارش ثبت شد. کد پیگیری: ${createdOrder.orderCode || '-'}`);
 
       setOrderItems([]);
       setPayments([]);

@@ -5,6 +5,7 @@ Shared backend infrastructure primitives:
 - permission checks
 - audit writers
 - module registry helpers
+- owner control guard (`ModuleGuard.php`)
+- integration contracts for cross-module orchestration (transitional)
 
 No business-domain rules should be implemented here.
-

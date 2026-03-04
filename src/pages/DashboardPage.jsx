@@ -9,6 +9,14 @@ const toSafeNumber = (value) => {
   return n;
 };
 
+const formatOrderDate = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return raw;
+  return date.toLocaleDateString('fa-IR');
+};
+
 export const DashboardPage = ({ orders = [] }) => {
   const summary = useMemo(() => {
     const visibleOrders = Array.isArray(orders) ? orders : [];
@@ -70,7 +78,7 @@ export const DashboardPage = ({ orders = [] }) => {
               >
                 <div>
                   <div className="text-xs font-black text-slate-800">{order.customerName || 'بدون نام'}</div>
-                  <div className="text-[11px] font-bold text-slate-500">{order.orderCode || '-'} - {order.date || '-'}</div>
+                  <div className="text-[11px] font-bold text-slate-500">{order.orderCode || '-'} - {toPN(formatOrderDate(order.date))}</div>
                 </div>
                 <div className="text-xs font-black text-slate-900 tabular-nums">{toPN(toSafeNumber(order.total).toLocaleString())}</div>
               </Link>

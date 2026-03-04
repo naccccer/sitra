@@ -38,19 +38,16 @@ database/schema.sql
 npm run dev
 ```
 
-## Required Commands Before Finishing
-- Encoding guard:
+## Validation Modes
+- Fast mode (preferred for small, localized changes):
 ```bash
-npm run check:encoding
+npm run verify:fast
 ```
-- Lint:
+- Safe mode (required for cross-module, API-contract, schema, or release-facing changes):
 ```bash
-npm run lint
+npm run verify:safe
 ```
-- Build:
-```bash
-npm run build
-```
+- If the user explicitly asks for full checks, always run safe mode even for small changes.
 
 ## Key Runtime Behavior
 - Frontend bootstraps from `GET /api/bootstrap.php`.

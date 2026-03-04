@@ -1,7 +1,6 @@
-﻿import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import {
-  BadgeCheck,
   Boxes,
   ClipboardList,
   Factory,
@@ -10,46 +9,106 @@ import {
   PanelRightOpen,
   PlusCircle,
   Settings,
-  Users,
-} from 'lucide-react';
-import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
+  ShieldCheck,
+  SlidersHorizontal,
+} from 'lucide-react'
+import { isModuleEnabled } from '../../kernel/moduleRegistry'
+import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile'
 
-const navItems = [
-  { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard' },
-  { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders' },
-  { to: '/inventory', label: 'انبار', icon: Boxes, capability: 'canUseInventory' },
-  { to: '/production', label: 'تولید', icon: Factory, capability: 'canUseProduction' },
-  { to: '/admin', label: 'مدیریت قیمت‌ها', icon: Settings, capability: 'canManageCatalog' },
-  { to: '/profile', label: 'پروفایل کسب‌وکار', icon: BadgeCheck, capability: 'canManageProfile' },
-  { to: '/users', label: 'مدیریت کاربران', icon: Users, capability: 'canManageUsers' },
-];
+const navSections = [
+  {
+    id: 'daily',
+    label: 'عملیات روزانه',
+    items: [
+      { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
+      { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
+    ],
+  },
+  {
+    id: 'factory',
+    label: 'عملیات کارخانه',
+    items: [
+      { to: '/production', label: 'تولید', icon: Factory, capability: 'canUseProduction', moduleId: 'production' },
+      { to: '/inventory', label: 'انبار', icon: Boxes, capability: 'canUseInventory', moduleId: 'inventory' },
+    ],
+  },
+  {
+    id: 'system',
+    label: 'مدیریت سیستم',
+    items: [
+      {
+        to: '/owner',
+        label: 'اتاق فرمان',
+        icon: ShieldCheck,
+        capability: 'canManageSystemSettings',
+      },
+      {
+        to: '/settings',
+        label: 'تنظیمات',
+        icon: SlidersHorizontal,
+        when: (capabilities) => Boolean(
+          capabilities.canManageCatalog
+          || capabilities.canManageProfile
+          || capabilities.canManageUsers
+          || capabilities.canViewAuditLogs,
+        ),
+      },
+    ],
+  },
+]
 
 const navLinkClass = (isActive, isCollapsed) => `
   flex items-center rounded-xl border px-3 py-2 text-sm font-black transition-colors
   ${isCollapsed ? 'justify-center lg:px-2' : 'gap-2'}
   ${isActive ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50'}
-`;
+`
 
 export const Sidebar = ({ profile, session, isCollapsed = false, onToggleCollapse = () => {} }) => {
-  const normalizedProfile = normalizeProfile(profile);
-  const logoSrc = profileLogoSrc(normalizedProfile.logoPath);
-  const [failedLogoSrc, setFailedLogoSrc] = useState('');
-  const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc;
-  const fallbackLetter = profileBrandInitial(normalizedProfile);
-  const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {};
+  const normalizedProfile = normalizeProfile(profile)
+  const logoSrc = profileLogoSrc(normalizedProfile.logoPath)
+  const [failedLogoSrc, setFailedLogoSrc] = useState('')
+  const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc
+  const fallbackLetter = profileBrandInitial(normalizedProfile)
+  const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}
+  const modules = Array.isArray(session?.modules) ? session.modules : []
 
-  const visibleNavItems = navItems.filter((item) => {
-    if (!item.capability) return true;
-    return Boolean(capabilities[item.capability]);
-  });
+  const isVisibleItem = (item) => {
+    if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
+    if (item.capability && !capabilities[item.capability]) return false
+    if (item.moduleId && !isModuleEnabled(modules, item.moduleId)) return false
+    return true
+  }
 
-  const canCreateOrders = Boolean(capabilities.canManageOrders);
+  const visibleSections = navSections
+    .map((section) => ({
+      ...section,
+      items: section.items.filter(isVisibleItem),
+    }))
+    .filter((section) => section.items.length > 0)
+
+  const canCreateOrders = Boolean(capabilities.canManageOrders) && isModuleEnabled(modules, 'sales')
+  const canAccessBusinessProfile = Boolean(capabilities.canManageProfile) && isModuleEnabled(modules, 'master-data')
 
   return (
     <aside
       className={`print-hide border-b border-slate-200 bg-white px-4 py-4 transition-all lg:min-h-screen lg:border-b-0 lg:border-l ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
+      dir="rtl"
+      style={{ fontFamily: 'Vazirmatn' }}
     >
-      <div className={`mb-3 rounded-2xl bg-slate-900 text-white ${isCollapsed ? 'p-2' : 'px-3 py-3'}`}>
+      <div className={`relative mb-3 rounded-2xl bg-slate-900 text-white ${isCollapsed ? 'p-2' : 'px-3 py-3'}`}>
+        {canAccessBusinessProfile && !isCollapsed && (
+          <NavLink
+            to="/settings/profile"
+            title="پروفایل کسب‌وکار"
+            className={({ isActive }) => `absolute left-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg border text-white transition-colors ${
+              isActive
+                ? 'border-white/50 bg-white/20'
+                : 'border-white/20 bg-white/10 hover:bg-white/20'
+            }`}
+          >
+            <Settings size={14} />
+          </NavLink>
+        )}
         <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-2'}`}>
           <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/10 text-base font-black shadow-inner">
             {showLogo ? (
@@ -82,22 +141,29 @@ export const Sidebar = ({ profile, session, isCollapsed = false, onToggleCollaps
         {!isCollapsed && <span className="text-xs font-black">جمع کردن منو</span>}
       </button>
 
-      <nav className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-1">
-        {visibleNavItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={Boolean(item.end)}
-              className={({ isActive }) => navLinkClass(isActive, isCollapsed)}
-              title={item.label}
-            >
-              <Icon size={16} />
-              <span className={isCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
-            </NavLink>
-          );
-        })}
+      <nav className="space-y-4">
+        {visibleSections.map((section) => (
+          <div key={section.id} className="space-y-2">
+            {!isCollapsed && <div className="px-1 text-[10px] font-black text-slate-400">{section.label}</div>}
+            <div className="space-y-2">
+              {section.items.map((item) => {
+                const Icon = item.icon
+                return (
+                  <NavLink
+                    key={item.to}
+                    to={item.to}
+                    end={Boolean(item.end)}
+                    className={({ isActive }) => navLinkClass(isActive, isCollapsed)}
+                    title={item.label}
+                  >
+                    <Icon size={16} />
+                    <span className={isCollapsed ? 'lg:hidden' : ''}>{item.label}</span>
+                  </NavLink>
+                )
+              })}
+            </div>
+          </div>
+        ))}
       </nav>
 
       {canCreateOrders && (
@@ -111,5 +177,5 @@ export const Sidebar = ({ profile, session, isCollapsed = false, onToggleCollaps
         </NavLink>
       )}
     </aside>
-  );
-};
+  )
+}

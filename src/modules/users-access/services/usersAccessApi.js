@@ -35,5 +35,19 @@ export const usersAccessApi = {
   async setUserActive(id, isActive) {
     return api.setUserActive(id, isActive)
   },
-}
 
+  /**
+   * @returns {Promise<any>}
+   */
+  async fetchRolePermissions() {
+    return api.fetchRolePermissions()
+  },
+
+  /**
+   * @param {Object} rolePermissions
+   * @returns {Promise<any>}
+   */
+  async saveRolePermissions(rolePermissions) {
+    return api.saveRolePermissions(rolePermissions)
+  },
+}

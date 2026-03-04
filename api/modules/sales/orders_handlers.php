@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function app_sales_orders_handle_get(PDO $pdo): void
 {
-    app_require_auth(['admin', 'manager', 'sales', 'production', 'inventory']);
+    app_require_permission('sales.orders.read', $pdo);
 
     $stmt = $pdo->query('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders ORDER BY ' . app_orders_sort_clause($pdo));
     $rows = $stmt->fetchAll();
@@ -23,7 +23,7 @@ function app_sales_orders_handle_post(PDO $pdo): void
 {
     $payload = app_read_json_body();
     $currentUser = app_current_user();
-    $isStaff = $currentUser !== null && in_array((string)$currentUser['role'], ['admin', 'manager', 'sales'], true);
+    $isStaff = app_user_has_permission($currentUser, 'sales.orders.create', $pdo);
 
     $customerName = trim((string)($payload['customerName'] ?? ''));
     $phone = trim((string)($payload['phone'] ?? ''));
@@ -55,14 +55,8 @@ function app_sales_orders_handle_post(PDO $pdo): void
 
     $orderMeta = app_sales_normalize_order_meta_payload($payload, max(0, $total));
     $total = (int)($orderMeta['financials']['grandTotal'] ?? max(0, $total));
-
-    $orderCode = trim((string)($payload['orderCode'] ?? ''));
-    if ($orderCode === '') {
-        $countStmt = $pdo->query('SELECT COUNT(*) AS c FROM orders');
-        $countRow = $countStmt->fetch();
-        $seq = (int)($countRow['c'] ?? 0) + 1;
-        $orderCode = app_generate_order_code($seq);
-    }
+    $datePrefix = date('ymd');
+    $codeFlags = app_sales_order_code_flags($items, $isStaff);
 
     $orderDate = trim((string)($payload['date'] ?? ''));
     if ($orderDate === '') {
@@ -90,38 +84,64 @@ function app_sales_orders_handle_post(PDO $pdo): void
 
     $inserted = false;
     $lastInsertError = null;
-    foreach (app_sales_orders_date_column_candidates($pdo) as $dateColumn) {
-        try {
-            $insertCols = "order_code, customer_name, phone, {$dateColumn}, total, status, {$itemsColumn}";
-            $insertVals = ':order_code, :customer_name, :phone, :order_date, :total, :status, :items_json';
-            $insertParams = [
-                'order_code' => $orderCode,
-                'customer_name' => $customerName,
-                'phone' => $phone,
-                'order_date' => $orderDate,
-                'total' => max(0, $total),
-                'status' => $status,
-                'items_json' => $itemsJson,
-            ];
-            if ($metaColumn !== null) {
-                $insertCols .= ", {$metaColumn}";
-                $insertVals .= ', :order_meta_json';
-                $insertParams['order_meta_json'] = $orderMetaJson;
-            }
-            $stmt = $pdo->prepare("INSERT INTO orders ({$insertCols}) VALUES ({$insertVals})");
-            $stmt->execute($insertParams);
+    $orderCode = '';
+    $maxOrderCodeAttempts = 10;
 
-            $inserted = true;
-            break;
-        } catch (Throwable $e) {
-            $lastInsertError = $e;
-            if (!app_sales_is_unknown_column_exception($e, $dateColumn)) {
+    for ($attempt = 1; $attempt <= $maxOrderCodeAttempts && !$inserted; $attempt++) {
+        $nextSequence = app_sales_next_order_daily_sequence($pdo, $datePrefix, $codeFlags);
+        $orderCode = app_generate_order_code($datePrefix, $codeFlags, $nextSequence, 5);
+        $retryDuplicateCode = false;
+
+        foreach (app_sales_orders_date_column_candidates($pdo) as $dateColumn) {
+            try {
+                $insertCols = "order_code, customer_name, phone, {$dateColumn}, total, status, {$itemsColumn}";
+                $insertVals = ':order_code, :customer_name, :phone, :order_date, :total, :status, :items_json';
+                $insertParams = [
+                    'order_code' => $orderCode,
+                    'customer_name' => $customerName,
+                    'phone' => $phone,
+                    'order_date' => $orderDate,
+                    'total' => max(0, $total),
+                    'status' => $status,
+                    'items_json' => $itemsJson,
+                ];
+                if ($metaColumn !== null) {
+                    $insertCols .= ", {$metaColumn}";
+                    $insertVals .= ', :order_meta_json';
+                    $insertParams['order_meta_json'] = $orderMetaJson;
+                }
+                $stmt = $pdo->prepare("INSERT INTO orders ({$insertCols}) VALUES ({$insertVals})");
+                $stmt->execute($insertParams);
+
+                $inserted = true;
+                break;
+            } catch (Throwable $e) {
+                $lastInsertError = $e;
+                if (app_sales_is_unknown_column_exception($e, $dateColumn)) {
+                    continue;
+                }
+
+                if (app_sales_detect_duplicate_order_code_exception($e)) {
+                    $retryDuplicateCode = true;
+                    break;
+                }
+
                 throw $e;
             }
+        }
+
+        if (!$retryDuplicateCode && !$inserted && $lastInsertError instanceof Throwable) {
+            break;
         }
     }
 
     if (!$inserted) {
+        if ($lastInsertError instanceof Throwable && app_sales_detect_duplicate_order_code_exception($lastInsertError)) {
+            app_json([
+                'success' => false,
+                'error' => 'Unable to generate unique order code.',
+            ], 500);
+        }
         if ($lastInsertError instanceof Throwable) {
             throw $lastInsertError;
         }
@@ -132,16 +152,33 @@ function app_sales_orders_handle_post(PDO $pdo): void
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);
     $row = $select->fetch();
+    $order = $row ? app_order_from_row($row) : null;
+
+    if ($isStaff && $currentUser !== null && $order !== null) {
+        app_audit_log(
+            $pdo,
+            'sales.order.created',
+            'orders',
+            (string)$id,
+            [
+                'orderCode' => (string)($order['orderCode'] ?? ''),
+                'status' => (string)($order['status'] ?? ''),
+                'total' => (int)($order['total'] ?? 0),
+                'itemsCount' => is_array($order['items'] ?? null) ? count($order['items']) : 0,
+            ],
+            $currentUser
+        );
+    }
 
     app_json([
         'success' => true,
-        'order' => $row ? app_order_from_row($row) : null,
+        'order' => $order,
     ], 201);
 }
 
 function app_sales_orders_handle_put(PDO $pdo): void
 {
-    app_require_auth(['admin', 'manager', 'sales']);
+    $actor = app_require_permission('sales.orders.update', $pdo);
     $payload = app_read_json_body();
 
     $id = (int)($payload['id'] ?? 0);
@@ -246,15 +283,30 @@ function app_sales_orders_handle_put(PDO $pdo): void
         ], 404);
     }
 
+    $order = app_order_from_row($row);
+    app_audit_log(
+        $pdo,
+        'sales.order.updated',
+        'orders',
+        (string)$id,
+        [
+            'orderCode' => (string)($order['orderCode'] ?? ''),
+            'status' => (string)($order['status'] ?? ''),
+            'total' => (int)($order['total'] ?? 0),
+            'itemsCount' => is_array($order['items'] ?? null) ? count($order['items']) : 0,
+        ],
+        $actor
+    );
+
     app_json([
         'success' => true,
-        'order' => app_order_from_row($row),
+        'order' => $order,
     ]);
 }
 
 function app_sales_orders_handle_delete(PDO $pdo): void
 {
-    app_require_auth(['admin', 'manager']);
+    $actor = app_require_permission('sales.orders.delete', $pdo);
     $payload = app_read_json_body();
 
     $id = (int)($payload['id'] ?? 0);
@@ -265,7 +317,7 @@ function app_sales_orders_handle_delete(PDO $pdo): void
         ], 400);
     }
 
-    $statusStmt = $pdo->prepare('SELECT status FROM orders WHERE id = :id LIMIT 1');
+    $statusStmt = $pdo->prepare('SELECT order_code, status, total FROM orders WHERE id = :id LIMIT 1');
     $statusStmt->execute(['id' => $id]);
     $statusRow = $statusStmt->fetch();
 
@@ -287,6 +339,19 @@ function app_sales_orders_handle_delete(PDO $pdo): void
     $deleteStmt = $pdo->prepare('DELETE FROM orders WHERE id = :id');
     $deleteStmt->execute(['id' => $id]);
 
+    app_audit_log(
+        $pdo,
+        'sales.order.deleted',
+        'orders',
+        (string)$id,
+        [
+            'orderCode' => (string)($statusRow['order_code'] ?? ''),
+            'status' => $status,
+            'total' => (int)($statusRow['total'] ?? 0),
+        ],
+        $actor
+    );
+
     app_json([
         'success' => true,
         'id' => (string)$id,
@@ -295,7 +360,7 @@ function app_sales_orders_handle_delete(PDO $pdo): void
 
 function app_sales_orders_handle_patch(PDO $pdo): void
 {
-    app_require_auth(['admin', 'manager', 'sales']);
+    $actor = app_require_permission('sales.orders.status', $pdo);
     $payload = app_read_json_body();
 
     $id = (int)($payload['id'] ?? 0);
@@ -306,6 +371,17 @@ function app_sales_orders_handle_patch(PDO $pdo): void
             'error' => 'Valid id and status are required.',
         ], 400);
     }
+
+    $beforeStmt = $pdo->prepare('SELECT status FROM orders WHERE id = :id LIMIT 1');
+    $beforeStmt->execute(['id' => $id]);
+    $before = $beforeStmt->fetch();
+    if (!$before) {
+        app_json([
+            'success' => false,
+            'error' => 'Order not found.',
+        ], 404);
+    }
+    $beforeStatus = (string)($before['status'] ?? '');
 
     $stmt = $pdo->prepare('UPDATE orders SET status = :status WHERE id = :id');
     $stmt->execute([
@@ -324,8 +400,22 @@ function app_sales_orders_handle_patch(PDO $pdo): void
         ], 404);
     }
 
+    $order = app_order_from_row($row);
+    app_audit_log(
+        $pdo,
+        'sales.order.status.changed',
+        'orders',
+        (string)$id,
+        [
+            'fromStatus' => $beforeStatus,
+            'toStatus' => $status,
+            'orderCode' => (string)($order['orderCode'] ?? ''),
+        ],
+        $actor
+    );
+
     app_json([
         'success' => true,
-        'order' => app_order_from_row($row),
+        'order' => $order,
     ]);
 }

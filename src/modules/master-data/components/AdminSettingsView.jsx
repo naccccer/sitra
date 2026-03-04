@@ -71,7 +71,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
   return (
     <div className="space-y-4 print-hide animate-in fade-in">
       <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <h2 className="font-black text-slate-800">پیکربندی کاتالوگ و قیمت‌گذاری</h2>
+        <h2 className="font-black text-slate-800">پیکربندی لیست قیمت و قیمت‌گذاری</h2>
         <button onClick={handleSaveSettings} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg text-sm font-black flex items-center gap-2 shadow-sm transition-all active:scale-95">
           <Save size={16} /> ثبت تغییرات
         </button>
@@ -210,7 +210,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
             <div className="border border-slate-200 bg-slate-50/70 p-4 rounded-xl space-y-4">
               <h3 className="font-black text-sm text-slate-800 border-b pb-2">قوانین قیمت‌گذاری</h3>
               <div>
-                <label className="text-[10px] text-slate-500 font-bold block mb-1">درصد کف قیمت نسبت به کاتالوگ</label>
+                <label className="text-[10px] text-slate-500 font-bold block mb-1">درصد کف قیمت نسبت به لیست قیمت</label>
                 <input
                   type="number"
                   min="1"

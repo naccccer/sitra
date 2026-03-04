@@ -51,7 +51,9 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageUsers: true,
       canUseProduction: true,
       canUseInventory: true,
+      canViewAuditLogs: true,
       canManageProfile: true,
+      canManageSystemSettings: false,
     };
   }
 
@@ -63,7 +65,9 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageUsers: false,
       canUseProduction: false,
       canUseInventory: false,
+      canViewAuditLogs: false,
       canManageProfile: false,
+      canManageSystemSettings: false,
     };
   }
 
@@ -75,7 +79,9 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageUsers: false,
       canUseProduction: true,
       canUseInventory: false,
+      canViewAuditLogs: false,
       canManageProfile: false,
+      canManageSystemSettings: false,
     };
   }
 
@@ -87,7 +93,9 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageUsers: false,
       canUseProduction: false,
       canUseInventory: true,
+      canViewAuditLogs: false,
       canManageProfile: false,
+      canManageSystemSettings: false,
     };
   }
 
@@ -98,7 +106,9 @@ const deriveCapabilitiesFromRole = (role) => {
     canManageUsers: false,
     canUseProduction: false,
     canUseInventory: false,
+    canViewAuditLogs: false,
     canManageProfile: false,
+    canManageSystemSettings: false,
   };
 };
 
@@ -196,6 +206,19 @@ export default function App() {
     }
   };
 
+  const handleRefreshSession = async () => {
+    try {
+      const data = await api.bootstrap();
+      if (data?.csrfToken) setCsrfToken(data.csrfToken);
+      if (data?.catalog) setCatalog(data.catalog);
+      if (data?.profile) setProfile(normalizeProfile(data.profile));
+      if (Array.isArray(data?.orders)) setOrders(data.orders);
+      setSession(normalizeSession(data?.session, session?.role || null, data));
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Failed to refresh bootstrap data.', error);
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await api.logout();
@@ -228,6 +251,7 @@ export default function App() {
           setOrders={setOrders}
           onLogin={handleLogin}
           onLogout={handleLogout}
+          onRefreshSession={handleRefreshSession}
         />
       </div>
     </ErrorBoundary>

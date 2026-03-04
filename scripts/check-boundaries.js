@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import process from 'node:process';
+import { getChangedFiles } from './changed-files.js';
 
 const ROOT = process.cwd();
 const SRC_MODULES_DIR = path.join(ROOT, 'src', 'modules');
@@ -9,6 +10,9 @@ const API_MODULES_DIR = path.join(ROOT, 'api', 'modules');
 const JS_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 const IMPORT_RE = /(?:import\s+[^'"]*from\s*|import\s*\(|export\s+[^'"]*from\s*)['"]([^'"]+)['"]/g;
 const PHP_REQUIRE_RE = /\b(?:require|require_once|include|include_once)\s*\(?\s*__DIR__\s*\.\s*['"]([^'"]+)['"]\s*\)?\s*;/g;
+const ARGUMENTS = process.argv.slice(2);
+const CHANGED_MODE = ARGUMENTS.includes('--changed');
+const EXPLICIT_INPUTS = ARGUMENTS.filter((arg) => !arg.startsWith('--'));
 
 /** @type {Array<{file:string, message:string}>} */
 const violations = [];
@@ -119,8 +123,38 @@ function checkBackendBoundaries(filePath) {
   }
 }
 
-walk(SRC_MODULES_DIR, checkFrontendBoundaries);
-walk(API_MODULES_DIR, checkBackendBoundaries);
+function checkInputPaths(inputs) {
+  inputs.forEach((input) => {
+    const absolutePath = path.resolve(ROOT, input);
+    if (!fs.existsSync(absolutePath)) return;
+
+    const stat = fs.statSync(absolutePath);
+    if (stat.isDirectory()) {
+      walk(absolutePath, (filePath) => {
+        checkFrontendBoundaries(filePath);
+        checkBackendBoundaries(filePath);
+      });
+      return;
+    }
+
+    checkFrontendBoundaries(absolutePath);
+    checkBackendBoundaries(absolutePath);
+  });
+}
+
+if (EXPLICIT_INPUTS.length > 0) {
+  checkInputPaths(EXPLICIT_INPUTS);
+} else if (CHANGED_MODE) {
+  const changedFiles = getChangedFiles({ rootDir: ROOT });
+  if (changedFiles.length === 0) {
+    console.log('Boundary check (changed) skipped: no changed files found.');
+    process.exit(0);
+  }
+  checkInputPaths(changedFiles);
+} else {
+  walk(SRC_MODULES_DIR, checkFrontendBoundaries);
+  walk(API_MODULES_DIR, checkBackendBoundaries);
+}
 
 if (violations.length > 0) {
   console.error('Boundary check failed.');

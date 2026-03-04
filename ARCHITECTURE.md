@@ -115,6 +115,10 @@
 ## 8) Security and Access Control Rules
 - Authorization is enforced server-side only; UI checks are convenience, not security.
 - Role model target includes: `admin`, `manager`, `sales`, `production`, `inventory`.
+- `admin` is reserved for System Owner/Support (Super Admin), not factory workflow roles.
+- Kernel control plane ownership:
+  - `module_registry` is Owner-only (`admin` + `APP_OWNER_UID`).
+  - Non-owner bootstrap must not expose module-registry control metadata.
 - During migration, legacy roles remain valid and must map to effective permissions.
 - Critical actions requiring audit log:
   - Order status changes and destructive order actions.
@@ -135,6 +139,7 @@
 - Global app shell may orchestrate module routes, but module state and logic stay within module boundaries.
 - Shared UI belongs to neutral shared/kernel layers only.
 - `dir="rtl"` and Persian UX compatibility are mandatory.
+- End-user UI copy is Persian-first by default; avoid English-only labels/messages in operator-facing screens.
 
 ## 11) Backend Architecture Constraints
 - Backend structure must converge to:
@@ -184,4 +189,3 @@
 - Template logic implemented via hard forks per industry.
 - Business-critical rules hidden only in UI with no backend enforcement.
 - New large cross-domain files that merge multiple module responsibilities.
-

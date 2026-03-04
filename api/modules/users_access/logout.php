@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../../config/db.php';
 
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
+app_require_module_enabled($pdo, 'auth');
 app_require_csrf();
 
 $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');

@@ -81,9 +81,14 @@ php scripts/reset-admin-password.php admin mynewpass123
 
 - Frontend bootstraps from `GET /api/bootstrap.php`.
 - Requests use `credentials: include`.
+- Module registry control plane is Owner-only (`admin` + `APP_OWNER_UID`).
+- Non-owner bootstrap responses do not expose module-registry payload.
 - Catalog is persisted in `system_settings` with key `catalog`.
 - Orders are stored in `orders` with JSON payload (`items_json`) and compatibility helpers for legacy shape.
 - Production release creates line-level rows in `order_lines` and `production_work_orders`.
+- Production release also upserts inventory reservations and reserve-ledger movements.
+- Production labels support quick lookup/reprint by `order_row_key` via `production_labels` endpoint.
+- Production GET response includes role-filtered `stationPresets` for scan/transition UI.
 - Valid order statuses are exactly:
   - `pending`
   - `processing`
@@ -94,7 +99,9 @@ php scripts/reset-admin-password.php admin mynewpass123
 
 - `GET /api/bootstrap.php`
 - `GET|POST|PUT|PATCH|DELETE /api/orders.php`
-- `GET|POST /api/production.php`
+- `GET|POST|PATCH /api/production.php`
+- `GET|POST /api/production_labels.php`
+- `GET /api/inventory.php`
 - `GET|POST /api/catalog.php`
 - `GET|POST /api/profile.php`
 - `GET|POST|PUT|PATCH /api/users.php`
@@ -114,11 +121,36 @@ php scripts/reset-admin-password.php admin mynewpass123
 
 ## Required Checks Before Finishing Changes
 
+Language should be Farsi-first.
+
+For small scoped changes (UI copy, one module/page, minor fixes), run fast validation:
+```bash
+npm run verify:fast
+```
+
+For cross-module/backend contract changes or pre-release validation, run safe validation:
+```bash
+npm run verify:safe
+```
+
+Safe mode expands to the full checks:
 ```bash
 npm run check:encoding
 npm run check:boundaries
 npm run lint
 npm run build
+```
+
+Optional API smoke for production/label flow:
+
+```bash
+npm run smoke:production
+```
+
+Owner identity default:
+
+```bash
+APP_OWNER_UID=1
 ```
 
 ## Manual Smoke Checks (Minimum)

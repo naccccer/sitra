@@ -99,6 +99,30 @@ export const api = {
     return request('/api/bootstrap.php', { method: 'GET' })
   },
 
+  async fetchAuditLogs(filters = {}) {
+    const params = new URLSearchParams()
+    if (filters?.page) params.set('page', String(filters.page))
+    if (filters?.pageSize) params.set('pageSize', String(filters.pageSize))
+    if (filters?.from) params.set('from', String(filters.from))
+    if (filters?.to) params.set('to', String(filters.to))
+    if (filters?.eventType) params.set('eventType', String(filters.eventType))
+    if (filters?.actor) params.set('actor', String(filters.actor))
+    const query = params.toString()
+    const path = query ? `/api/audit_logs.php?${query}` : '/api/audit_logs.php'
+    return request(path, { method: 'GET' })
+  },
+
+  async fetchModuleRegistry() {
+    return request('/api/module_registry.php', { method: 'GET' })
+  },
+
+  async setModuleEnabled(moduleId, enabled) {
+    return request('/api/module_registry.php', {
+      method: 'PATCH',
+      body: JSON.stringify({ moduleId, enabled }),
+    })
+  },
+
   async fetchProfile() {
     return request('/api/profile.php', { method: 'GET' })
   },
@@ -128,6 +152,45 @@ export const api = {
       method: 'POST',
       body: JSON.stringify(payload),
     })
+  },
+
+  async updateProductionWorkOrder(payload) {
+    return request('/api/production.php', {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async fetchProductionLabel(params = {}) {
+    const query = new URLSearchParams()
+    if (params?.workOrderId) query.set('workOrderId', String(params.workOrderId))
+    if (params?.orderRowKey) query.set('orderRowKey', String(params.orderRowKey))
+    const queryString = query.toString()
+    const path = queryString ? `/api/production_labels.php?${queryString}` : '/api/production_labels.php'
+    return request(path, { method: 'GET' })
+  },
+
+  async printProductionLabel(payload) {
+    return request('/api/production_labels.php', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async fetchInventoryReservations(filters = {}) {
+    const params = new URLSearchParams()
+    params.set('view', 'reservations')
+    if (filters?.status) params.set('status', String(filters.status))
+    if (filters?.orderRowKey) params.set('orderRowKey', String(filters.orderRowKey))
+    return request(`/api/inventory.php?${params.toString()}`, { method: 'GET' })
+  },
+
+  async fetchInventoryLedger(filters = {}) {
+    const params = new URLSearchParams()
+    params.set('view', 'ledger')
+    if (filters?.movementType) params.set('movementType', String(filters.movementType))
+    if (filters?.orderRowKey) params.set('orderRowKey', String(filters.orderRowKey))
+    return request(`/api/inventory.php?${params.toString()}`, { method: 'GET' })
   },
 
   async createOrder(payload) {
@@ -187,6 +250,17 @@ export const api = {
     return request('/api/users.php', {
       method: 'PATCH',
       body: JSON.stringify({ id, isActive }),
+    })
+  },
+
+  async fetchRolePermissions() {
+    return request('/api/role_permissions.php', { method: 'GET' })
+  },
+
+  async saveRolePermissions(rolePermissions) {
+    return request('/api/role_permissions.php', {
+      method: 'POST',
+      body: JSON.stringify({ rolePermissions }),
     })
   },
 

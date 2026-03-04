@@ -325,20 +325,37 @@ function app_normalize_payment_receipt($receipt): ?array
     ];
 }
 
-function app_generate_order_code(int $sequence = 1): string
+function app_generate_order_code(string|int $datePrefix = '', string $flags = '00', int $sequence = 1, int $seqPad = 5): string
 {
     $date = date('ymd');
+    if (is_int($datePrefix)) {
+        // Backward compatibility for old signature: app_generate_order_code($sequence)
+        $sequence = $datePrefix;
+    } else {
+        $candidateDate = preg_replace('/\D+/', '', trim($datePrefix));
+        if (is_string($candidateDate) && strlen($candidateDate) === 6) {
+            $date = $candidateDate;
+        }
+    }
+
+    $flagsDigits = preg_replace('/\D+/', '', $flags);
+    if (!is_string($flagsDigits)) {
+        $flagsDigits = '00';
+    }
+    $flagsNormalized = substr(str_pad($flagsDigits, 2, '0', STR_PAD_LEFT), -2);
+
     $sequence = max(1, $sequence);
-    $seq = str_pad((string)$sequence, 3, '0', STR_PAD_LEFT);
-    $base = $date . '00' . $seq;
+    $seqPad = max(3, min(12, $seqPad));
+    $seq = str_pad((string)$sequence, $seqPad, '0', STR_PAD_LEFT);
+
+    $base = $date . $flagsNormalized . $seq;
     $sum = 0;
-    $chars = str_split($base);
-    foreach ($chars as $char) {
+    foreach (str_split($base) as $char) {
         $sum += (int)$char;
     }
 
     $checksum = $sum % 10;
-    return $date . '-00-' . $seq . '-' . $checksum;
+    return $date . '-' . $flagsNormalized . '-' . $seq . '-' . $checksum;
 }
 
 function app_order_meta_defaults(int $grandTotal = 0): array
@@ -550,6 +567,16 @@ function app_column_is_queryable(PDO $pdo, string $table, string $column): bool
     }
 }
 
+function app_orders_unique_code_index_exists(PDO $pdo): bool
+{
+    try {
+        $stmt = $pdo->query("SHOW INDEX FROM orders WHERE Key_name = 'uq_orders_order_code'");
+        return (bool)($stmt && $stmt->fetch());
+    } catch (Throwable $e) {
+        return false;
+    }
+}
+
 function app_ensure_orders_table(PDO $pdo): void
 {
     static $ensured = false;
@@ -574,6 +601,7 @@ function app_ensure_orders_table(PDO $pdo): void
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
+                UNIQUE KEY uq_orders_order_code (order_code),
                 KEY idx_orders_status (status),
                 KEY idx_orders_created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
@@ -584,6 +612,14 @@ function app_ensure_orders_table(PDO $pdo): void
         $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
         if (!$stmt || !$stmt->fetch()) {
             $pdo->exec("ALTER TABLE orders ADD COLUMN order_meta_json LONGTEXT NULL AFTER items_json");
+        }
+    } catch (Throwable $e) {
+        // Keep runtime compatibility if alter is not possible.
+    }
+
+    try {
+        if (!app_orders_unique_code_index_exists($pdo)) {
+            $pdo->exec("ALTER TABLE orders ADD UNIQUE KEY uq_orders_order_code (order_code)");
         }
     } catch (Throwable $e) {
         // Keep runtime compatibility if alter is not possible.
@@ -740,140 +776,610 @@ function app_user_roles(): array
     return ['admin', 'manager', 'sales', 'production', 'inventory'];
 }
 
-function app_module_registry(): array
+function app_module_registry_seed_rows(): array
 {
     return [
         [
-            'id' => 'sales',
-            'label' => 'Sales',
-            'enabled' => true,
+            'module_key' => 'auth',
+            'label' => 'Auth',
             'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 1,
+            'sort_order' => 10,
         ],
         [
-            'id' => 'production',
-            'label' => 'Production',
-            'enabled' => true,
-            'phase' => 'mvp',
-        ],
-        [
-            'id' => 'inventory',
-            'label' => 'Inventory',
-            'enabled' => true,
-            'phase' => 'mvp',
-        ],
-        [
-            'id' => 'master-data',
-            'label' => 'Master Data',
-            'enabled' => true,
-            'phase' => 'active',
-        ],
-        [
-            'id' => 'users-access',
+            'module_key' => 'users-access',
             'label' => 'Users Access',
-            'enabled' => true,
             'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 1,
+            'sort_order' => 20,
+        ],
+        [
+            'module_key' => 'sales',
+            'label' => 'Sales',
+            'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 30,
+        ],
+        [
+            'module_key' => 'master-data',
+            'label' => 'Master Data',
+            'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 40,
+        ],
+        [
+            'module_key' => 'production',
+            'label' => 'Production',
+            'phase' => 'mvp',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 50,
+        ],
+        [
+            'module_key' => 'inventory',
+            'label' => 'Inventory',
+            'phase' => 'mvp',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 60,
         ],
     ];
 }
 
-function app_role_permissions(string $role): array
+function app_module_dependency_map(): array
 {
-    $all = [
-        'sales.orders.read',
-        'sales.orders.create',
-        'sales.orders.update',
-        'sales.orders.status',
-        'sales.orders.delete',
-        'sales.orders.release',
-        'master_data.catalog.read',
-        'master_data.catalog.write',
-        'production.work_orders.read',
-        'production.work_orders.write',
-        'inventory.stock.read',
-        'inventory.stock.write',
-        'users_access.users.read',
-        'users_access.users.write',
-        'profile.read',
-        'profile.write',
+    return [
+        'production' => ['inventory'],
     ];
-
-    $manager = [
-        'sales.orders.read',
-        'sales.orders.create',
-        'sales.orders.update',
-        'sales.orders.status',
-        'sales.orders.delete',
-        'sales.orders.release',
-        'master_data.catalog.read',
-        'master_data.catalog.write',
-        'production.work_orders.read',
-        'production.work_orders.write',
-        'inventory.stock.read',
-        'inventory.stock.write',
-        'users_access.users.read',
-        'users_access.users.write',
-        'profile.read',
-        'profile.write',
-    ];
-
-    $sales = [
-        'sales.orders.read',
-        'sales.orders.create',
-        'sales.orders.update',
-        'sales.orders.status',
-        'sales.orders.release',
-        'master_data.catalog.read',
-        'profile.read',
-    ];
-
-    $production = [
-        'sales.orders.read',
-        'production.work_orders.read',
-        'production.work_orders.write',
-        'master_data.catalog.read',
-        'profile.read',
-    ];
-
-    $inventory = [
-        'sales.orders.read',
-        'inventory.stock.read',
-        'inventory.stock.write',
-        'master_data.catalog.read',
-        'profile.read',
-    ];
-
-    if ($role === 'admin') {
-        return $all;
-    }
-    if ($role === 'manager') {
-        return $manager;
-    }
-    if ($role === 'sales') {
-        return $sales;
-    }
-    if ($role === 'production') {
-        return $production;
-    }
-    if ($role === 'inventory') {
-        return $inventory;
-    }
-
-    return [];
 }
 
-function app_module_capabilities(?string $role): array
+function app_module_registry_row_to_response(array $row): array
 {
-    $permissions = app_role_permissions((string)$role);
+    $moduleId = (string)($row['module_key'] ?? '');
+    $dependencyMap = app_module_dependency_map();
 
     return [
+        'id' => $moduleId,
+        'label' => (string)($row['label'] ?? ''),
+        'enabled' => ((int)($row['is_enabled'] ?? 0)) === 1,
+        'phase' => (string)($row['phase'] ?? 'active'),
+        'isProtected' => ((int)($row['is_protected'] ?? 0)) === 1,
+        'dependsOn' => array_values($dependencyMap[$moduleId] ?? []),
+        'sortOrder' => (int)($row['sort_order'] ?? 100),
+        'updatedAt' => (string)($row['updated_at'] ?? ''),
+        'updatedByUserId' => $row['updated_by_user_id'] !== null ? (string)$row['updated_by_user_id'] : null,
+    ];
+}
+
+function app_module_registry_seed_fallback(): array
+{
+    return array_map('app_module_registry_row_to_response', app_module_registry_seed_rows());
+}
+
+function app_ensure_module_registry_table(PDO $pdo): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
+    app_ensure_users_table($pdo);
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS module_registry (
+            module_key VARCHAR(64) NOT NULL,
+            label VARCHAR(120) NOT NULL,
+            phase VARCHAR(40) NOT NULL DEFAULT 'active',
+            is_enabled TINYINT(1) NOT NULL DEFAULT 1,
+            is_protected TINYINT(1) NOT NULL DEFAULT 0,
+            sort_order INT NOT NULL DEFAULT 100,
+            updated_by_user_id INT UNSIGNED NULL,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (module_key),
+            KEY idx_module_registry_enabled (is_enabled),
+            KEY idx_module_registry_sort (sort_order),
+            CONSTRAINT fk_module_registry_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
+
+    $seedStmt = $pdo->prepare(
+        'INSERT INTO module_registry (module_key, label, phase, is_enabled, is_protected, sort_order)
+         VALUES (:module_key, :label, :phase, :is_enabled, :is_protected, :sort_order)
+         ON DUPLICATE KEY UPDATE
+            label = VALUES(label),
+            phase = VALUES(phase),
+            is_protected = VALUES(is_protected),
+            sort_order = VALUES(sort_order)'
+    );
+
+    foreach (app_module_registry_seed_rows() as $seed) {
+        $seedStmt->execute($seed);
+    }
+}
+
+function app_module_registry(?PDO $pdo = null): array
+{
+    if ($pdo === null) {
+        return app_module_registry_seed_fallback();
+    }
+
+    try {
+        app_ensure_module_registry_table($pdo);
+        $stmt = $pdo->query(
+            'SELECT module_key, label, phase, is_enabled, is_protected, sort_order, updated_at, updated_by_user_id
+             FROM module_registry
+             ORDER BY sort_order ASC, module_key ASC'
+        );
+        $rows = $stmt ? $stmt->fetchAll() : [];
+        if (!is_array($rows) || $rows === []) {
+            return app_module_registry_seed_fallback();
+        }
+
+        return array_map('app_module_registry_row_to_response', $rows);
+    } catch (Throwable $e) {
+        return app_module_registry_seed_fallback();
+    }
+}
+
+function app_module_registry_enabled_map(array $modules): array
+{
+    $map = [];
+    foreach ($modules as $module) {
+        if (!is_array($module)) {
+            continue;
+        }
+        $id = trim((string)($module['id'] ?? ''));
+        if ($id === '') {
+            continue;
+        }
+        $map[$id] = (bool)($module['enabled'] ?? false);
+    }
+    return $map;
+}
+
+function app_module_registry_find(PDO $pdo, string $moduleKey): ?array
+{
+    $moduleId = trim($moduleKey);
+    if ($moduleId === '') {
+        return null;
+    }
+
+    $modules = app_module_registry($pdo);
+    foreach ($modules as $module) {
+        if (!is_array($module)) {
+            continue;
+        }
+        if ((string)($module['id'] ?? '') === $moduleId) {
+            return $module;
+        }
+    }
+
+    return null;
+}
+
+function app_is_module_enabled(PDO $pdo, string $moduleKey): bool
+{
+    $module = app_module_registry_find($pdo, $moduleKey);
+    if ($module === null) {
+        return true;
+    }
+
+    return (bool)($module['enabled'] ?? false);
+}
+
+function app_require_module_enabled(PDO $pdo, string $moduleKey): void
+{
+    if (app_is_module_enabled($pdo, $moduleKey)) {
+        return;
+    }
+
+    app_json([
+        'success' => false,
+        'error' => 'Module is disabled.',
+        'code' => 'module_disabled',
+        'module' => $moduleKey,
+    ], 403);
+}
+
+function app_module_registry_update_enabled(PDO $pdo, string $moduleKey, bool $enabled, ?array $actor = null): array
+{
+    app_ensure_module_registry_table($pdo);
+    $moduleId = trim($moduleKey);
+    if ($moduleId === '') {
+        return [
+            'success' => false,
+            'status' => 400,
+            'error' => 'moduleId is required.',
+            'code' => 'module_id_required',
+        ];
+    }
+
+    $modules = app_module_registry($pdo);
+    $moduleById = [];
+    foreach ($modules as $module) {
+        if (!is_array($module)) {
+            continue;
+        }
+        $id = (string)($module['id'] ?? '');
+        if ($id === '') {
+            continue;
+        }
+        $moduleById[$id] = $module;
+    }
+
+    $current = $moduleById[$moduleId] ?? null;
+    if ($current === null) {
+        return [
+            'success' => false,
+            'status' => 404,
+            'error' => 'Module not found.',
+            'code' => 'module_not_found',
+        ];
+    }
+
+    if (!$enabled && (bool)($current['isProtected'] ?? false)) {
+        return [
+            'success' => false,
+            'status' => 409,
+            'error' => 'Protected modules cannot be disabled.',
+            'code' => 'module_protected',
+            'module' => $moduleId,
+        ];
+    }
+
+    if (!$enabled) {
+        foreach (app_module_dependency_map() as $dependentModule => $dependencies) {
+            if (!in_array($moduleId, $dependencies, true)) {
+                continue;
+            }
+
+            $dependentEnabled = (bool)($moduleById[$dependentModule]['enabled'] ?? false);
+            if ($dependentEnabled) {
+                return [
+                    'success' => false,
+                    'status' => 409,
+                    'error' => 'Cannot disable module because an active dependent module requires it.',
+                    'code' => 'module_dependency_blocked',
+                    'module' => $moduleId,
+                    'dependentModule' => $dependentModule,
+                ];
+            }
+        }
+    }
+
+    $currentEnabled = (bool)($current['enabled'] ?? false);
+    if ($currentEnabled !== $enabled) {
+        $stmt = $pdo->prepare(
+            'UPDATE module_registry
+             SET is_enabled = :is_enabled,
+                 updated_by_user_id = :updated_by_user_id,
+                 updated_at = CURRENT_TIMESTAMP
+             WHERE module_key = :module_key'
+        );
+        $stmt->execute([
+            'is_enabled' => $enabled ? 1 : 0,
+            'updated_by_user_id' => isset($actor['id']) && (string)$actor['id'] !== '' ? (int)$actor['id'] : null,
+            'module_key' => $moduleId,
+        ]);
+
+        app_audit_log(
+            $pdo,
+            'kernel.module_registry.updated',
+            'module_registry',
+            $moduleId,
+            [
+                'moduleId' => $moduleId,
+                'enabled' => $enabled,
+            ],
+            $actor
+        );
+    }
+
+    $updated = app_module_registry_find($pdo, $moduleId);
+    if ($updated === null) {
+        $updated = array_merge($current, ['enabled' => $enabled]);
+    }
+
+    return [
+        'success' => true,
+        'module' => $updated,
+    ];
+}
+
+function app_permission_definitions(): array
+{
+    return [
+        ['key' => 'sales.orders.read', 'module' => 'sales', 'label' => 'مشاهده سفارش‌ها'],
+        ['key' => 'sales.orders.create', 'module' => 'sales', 'label' => 'ایجاد سفارش'],
+        ['key' => 'sales.orders.update', 'module' => 'sales', 'label' => 'ویرایش سفارش'],
+        ['key' => 'sales.orders.status', 'module' => 'sales', 'label' => 'تغییر وضعیت سفارش'],
+        ['key' => 'sales.orders.delete', 'module' => 'sales', 'label' => 'حذف سفارش بایگانی‌شده'],
+        ['key' => 'sales.orders.release', 'module' => 'sales', 'label' => 'ارسال سطرها به تولید'],
+        ['key' => 'master_data.catalog.read', 'module' => 'master-data', 'label' => 'مشاهده لیست قیمت'],
+        ['key' => 'master_data.catalog.write', 'module' => 'master-data', 'label' => 'ویرایش لیست قیمت'],
+        ['key' => 'production.work_orders.read', 'module' => 'production', 'label' => 'مشاهده برگه کار تولید'],
+        ['key' => 'production.work_orders.write', 'module' => 'production', 'label' => 'به‌روزرسانی برگه کار تولید و لیبل'],
+        ['key' => 'inventory.stock.read', 'module' => 'inventory', 'label' => 'مشاهده موجودی'],
+        ['key' => 'inventory.stock.write', 'module' => 'inventory', 'label' => 'ثبت ویرایش موجودی'],
+        ['key' => 'users_access.users.read', 'module' => 'users-access', 'label' => 'مشاهده کاربران'],
+        ['key' => 'users_access.users.write', 'module' => 'users-access', 'label' => 'مدیریت کاربران و جدول دسترسی'],
+        ['key' => 'kernel.audit.read', 'module' => 'kernel', 'label' => 'مشاهده لاگ ممیزی'],
+        ['key' => 'profile.read', 'module' => 'master-data', 'label' => 'مشاهده پروفایل کسب‌وکار'],
+        ['key' => 'profile.write', 'module' => 'master-data', 'label' => 'ویرایش پروفایل کسب‌وکار'],
+    ];
+}
+
+function app_kernel_control_permissions(): array
+{
+    return ['kernel.module_registry.write'];
+}
+
+function app_permissions_without_kernel_control(array $permissions): array
+{
+    $reserved = array_fill_keys(app_kernel_control_permissions(), true);
+    $normalized = [];
+
+    foreach ($permissions as $permission) {
+        $key = trim((string)$permission);
+        if ($key === '' || isset($reserved[$key])) {
+            continue;
+        }
+        $normalized[$key] = true;
+    }
+
+    return array_values(array_keys($normalized));
+}
+
+function app_permission_catalog(): array
+{
+    $keys = [];
+    foreach (app_permission_definitions() as $definition) {
+        $key = trim((string)($definition['key'] ?? ''));
+        if ($key === '') {
+            continue;
+        }
+        $keys[$key] = true;
+    }
+
+    return array_values(array_keys($keys));
+}
+
+function app_default_role_permissions_matrix(): array
+{
+    $all = app_permission_catalog();
+
+    return [
+        'admin' => $all,
+        'manager' => [
+            'sales.orders.read',
+            'sales.orders.create',
+            'sales.orders.update',
+            'sales.orders.status',
+            'sales.orders.delete',
+            'sales.orders.release',
+            'master_data.catalog.read',
+            'master_data.catalog.write',
+            'production.work_orders.read',
+            'production.work_orders.write',
+            'inventory.stock.read',
+            'inventory.stock.write',
+            'users_access.users.read',
+            'users_access.users.write',
+            'kernel.audit.read',
+            'profile.read',
+            'profile.write',
+        ],
+        'sales' => [
+            'sales.orders.read',
+            'sales.orders.create',
+            'sales.orders.update',
+            'sales.orders.status',
+            'sales.orders.release',
+            'master_data.catalog.read',
+            'profile.read',
+        ],
+        'production' => [
+            'sales.orders.read',
+            'production.work_orders.read',
+            'production.work_orders.write',
+            'master_data.catalog.read',
+            'profile.read',
+        ],
+        'inventory' => [
+            'sales.orders.read',
+            'inventory.stock.read',
+            'inventory.stock.write',
+            'master_data.catalog.read',
+            'profile.read',
+        ],
+    ];
+}
+
+function app_normalize_role_permissions_matrix($input): array
+{
+    $defaults = app_default_role_permissions_matrix();
+    if (!is_array($input)) {
+        return $defaults;
+    }
+
+    $knownPermissions = array_fill_keys(app_permission_catalog(), true);
+    $normalized = [];
+    foreach (app_user_roles() as $role) {
+        $candidate = $input[$role] ?? $defaults[$role] ?? [];
+        if (!is_array($candidate)) {
+            $candidate = $defaults[$role] ?? [];
+        }
+
+        $rolePermissions = [];
+        foreach ($candidate as $permission) {
+            $key = trim((string)$permission);
+            if ($key === '' || !isset($knownPermissions[$key])) {
+                continue;
+            }
+            $rolePermissions[$key] = true;
+        }
+
+        $normalized[$role] = array_values(array_keys($rolePermissions));
+    }
+
+    return $normalized;
+}
+
+function app_read_role_permissions_matrix(PDO $pdo): array
+{
+    static $cache = null;
+    if ($cache !== null) {
+        return $cache;
+    }
+
+    $defaults = app_default_role_permissions_matrix();
+    try {
+        app_ensure_system_settings_table($pdo);
+        $stmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1');
+        $stmt->execute(['k' => 'role_permissions']);
+        $row = $stmt->fetch();
+        if (!$row || !isset($row['setting_value'])) {
+            $cache = $defaults;
+            return $cache;
+        }
+
+        $decoded = json_decode((string)$row['setting_value'], true);
+        $cache = app_normalize_role_permissions_matrix($decoded);
+        return $cache;
+    } catch (Throwable $e) {
+        $cache = $defaults;
+        return $cache;
+    }
+}
+
+function app_save_role_permissions_matrix(PDO $pdo, $input): array
+{
+    $normalized = app_normalize_role_permissions_matrix($input);
+    $encoded = json_encode($normalized, JSON_UNESCAPED_UNICODE);
+    if ($encoded === false) {
+        throw new RuntimeException('Unable to serialize role permissions matrix.');
+    }
+
+    app_ensure_system_settings_table($pdo);
+    $stmt = $pdo->prepare(
+        'INSERT INTO system_settings (setting_key, setting_value)
+         VALUES (:key, :value)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP'
+    );
+    $stmt->execute([
+        'key' => 'role_permissions',
+        'value' => $encoded,
+    ]);
+
+    return $normalized;
+}
+
+function app_role_permissions(string $role, ?PDO $pdo = null): array
+{
+    $normalizedRole = trim($role);
+    if (!app_is_valid_user_role($normalizedRole)) {
+        return [];
+    }
+
+    $matrix = $pdo !== null ? app_read_role_permissions_matrix($pdo) : app_default_role_permissions_matrix();
+    $permissions = $matrix[$normalizedRole] ?? [];
+    if (!is_array($permissions)) {
+        return [];
+    }
+
+    return array_values($permissions);
+}
+
+function app_user_permissions(?array $user, ?PDO $pdo = null): array
+{
+    if ($user === null) {
+        return [];
+    }
+
+    return app_role_permissions((string)($user['role'] ?? ''), $pdo);
+}
+
+function app_user_has_permission(?array $user, string $permission, ?PDO $pdo = null): bool
+{
+    $permissionKey = trim($permission);
+    if ($permissionKey === '') {
+        return false;
+    }
+
+    return in_array($permissionKey, app_user_permissions($user, $pdo), true);
+}
+
+function app_require_permission(string $permission, ?PDO $pdo = null): array
+{
+    $user = app_require_auth();
+    if (!app_user_has_permission($user, $permission, $pdo)) {
+        app_json([
+            'success' => false,
+            'error' => 'Access denied.',
+        ], 403);
+    }
+
+    return $user;
+}
+
+function app_require_any_permission(array $permissions, ?PDO $pdo = null): array
+{
+    $user = app_require_auth();
+    foreach ($permissions as $permission) {
+        if (!is_string($permission)) {
+            continue;
+        }
+        if (app_user_has_permission($user, $permission, $pdo)) {
+            return $user;
+        }
+    }
+
+    app_json([
+        'success' => false,
+        'error' => 'Access denied.',
+    ], 403);
+}
+
+function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pdo = null): array
+{
+    $permissions = app_permissions_without_kernel_control(app_role_permissions((string)$role, $pdo));
+    $capabilities = [
         'canAccessDashboard' => in_array('sales.orders.read', $permissions, true),
         'canManageOrders' => in_array('sales.orders.read', $permissions, true),
         'canManageCatalog' => in_array('master_data.catalog.write', $permissions, true),
         'canManageUsers' => in_array('users_access.users.write', $permissions, true),
         'canUseProduction' => in_array('production.work_orders.read', $permissions, true),
         'canUseInventory' => in_array('inventory.stock.read', $permissions, true),
+        'canViewAuditLogs' => in_array('kernel.audit.read', $permissions, true),
         'canManageProfile' => in_array('profile.write', $permissions, true),
+        'canManageSystemSettings' => false,
     ];
+
+    if (!is_array($modules)) {
+        return $capabilities;
+    }
+
+    $enabledMap = app_module_registry_enabled_map($modules);
+    $salesEnabled = $enabledMap['sales'] ?? true;
+    $masterDataEnabled = $enabledMap['master-data'] ?? true;
+    $productionEnabled = $enabledMap['production'] ?? true;
+    $inventoryEnabled = $enabledMap['inventory'] ?? true;
+    $usersAccessEnabled = $enabledMap['users-access'] ?? true;
+
+    $capabilities['canAccessDashboard'] = $capabilities['canAccessDashboard'] && $salesEnabled;
+    $capabilities['canManageOrders'] = $capabilities['canManageOrders'] && $salesEnabled;
+    $capabilities['canManageCatalog'] = $capabilities['canManageCatalog'] && $masterDataEnabled;
+    $capabilities['canManageProfile'] = $capabilities['canManageProfile'] && $masterDataEnabled;
+    $capabilities['canUseProduction'] = $capabilities['canUseProduction'] && $productionEnabled;
+    $capabilities['canUseInventory'] = $capabilities['canUseInventory'] && $inventoryEnabled;
+    $capabilities['canManageUsers'] = $capabilities['canManageUsers'] && $usersAccessEnabled;
+
+    return $capabilities;
 }
 
 function app_is_valid_user_role(string $role): bool

@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/../../kernel/ModuleGuard.php';
+
 function app_users_handle_get(PDO $pdo, bool $hasIsActive): void
 {
     $activeSql = app_users_active_sql($hasIsActive) . ' AS is_active';
@@ -14,7 +16,20 @@ function app_users_handle_get(PDO $pdo, bool $hasIsActive): void
     ]);
 }
 
-function app_users_handle_post(PDO $pdo, bool $hasIsActive): void
+function app_users_reject_admin_role_mutation_for_non_owner(?array $actor, string $code): void
+{
+    if (app_kernel_is_owner($actor)) {
+        return;
+    }
+
+    app_json([
+        'success' => false,
+        'error' => 'Access denied.',
+        'code' => $code,
+    ], 403);
+}
+
+function app_users_handle_post(PDO $pdo, bool $hasIsActive, ?array $currentUser): void
 {
     $payload = app_read_json_body();
     $username = trim((string)($payload['username'] ?? ''));
@@ -40,6 +55,10 @@ function app_users_handle_post(PDO $pdo, bool $hasIsActive): void
             'success' => false,
             'error' => 'Invalid role.',
         ], 400);
+    }
+
+    if ($role === 'admin') {
+        app_users_reject_admin_role_mutation_for_non_owner($currentUser, 'owner_required_to_assign_admin_role');
     }
 
     $existsStmt = $pdo->prepare('SELECT id FROM users WHERE username = :username LIMIT 1');
@@ -74,13 +93,26 @@ function app_users_handle_post(PDO $pdo, bool $hasIsActive): void
     }
 
     $created = app_users_fetch_one($pdo, (int)$pdo->lastInsertId(), $hasIsActive);
+    $createdResponse = $created ? app_users_to_response($created) : null;
+
+    app_audit_log(
+        $pdo,
+        'users_access.user.created',
+        'users',
+        $createdResponse !== null ? (string)$createdResponse['id'] : null,
+        [
+            'user' => $createdResponse,
+        ],
+        $currentUser
+    );
+
     app_json([
         'success' => true,
-        'user' => $created ? app_users_to_response($created) : null,
+        'user' => $createdResponse,
     ], 201);
 }
 
-function app_users_handle_put(PDO $pdo, bool $hasIsActive): void
+function app_users_handle_put(PDO $pdo, bool $hasIsActive, ?array $currentUser): void
 {
     $payload = app_read_json_body();
     $id = (int)($payload['id'] ?? 0);
@@ -97,6 +129,17 @@ function app_users_handle_put(PDO $pdo, bool $hasIsActive): void
             'success' => false,
             'error' => 'User not found.',
         ], 404);
+    }
+    $before = app_users_to_response($existing);
+
+    $isOwner = app_kernel_is_owner($currentUser);
+    $existingRole = (string)($existing['role'] ?? '');
+    if ($existingRole === 'admin' && !$isOwner) {
+        app_json([
+            'success' => false,
+            'error' => 'Access denied.',
+            'code' => 'owner_required_to_modify_admin_user',
+        ], 403);
     }
 
     $fields = [];
@@ -134,6 +177,14 @@ function app_users_handle_put(PDO $pdo, bool $hasIsActive): void
                 'success' => false,
                 'error' => 'Invalid role.',
             ], 400);
+        }
+
+        if (($existingRole === 'admin' || $role === 'admin') && !$isOwner) {
+            app_json([
+                'success' => false,
+                'error' => 'Access denied.',
+                'code' => 'owner_required_to_change_admin_role',
+            ], 403);
         }
 
         $isActiveNow = ((int)($existing['is_active'] ?? 1)) === 1;
@@ -174,9 +225,40 @@ function app_users_handle_put(PDO $pdo, bool $hasIsActive): void
     $stmt->execute($params);
 
     $updated = app_users_fetch_one($pdo, $id, $hasIsActive);
+    $updatedResponse = $updated ? app_users_to_response($updated) : null;
+    $changes = [];
+    if ($updatedResponse !== null) {
+        if ((string)($before['username'] ?? '') !== (string)($updatedResponse['username'] ?? '')) {
+            $changes['username'] = [
+                'before' => (string)($before['username'] ?? ''),
+                'after' => (string)($updatedResponse['username'] ?? ''),
+            ];
+        }
+        if ((string)($before['role'] ?? '') !== (string)($updatedResponse['role'] ?? '')) {
+            $changes['role'] = [
+                'before' => (string)($before['role'] ?? ''),
+                'after' => (string)($updatedResponse['role'] ?? ''),
+            ];
+        }
+    }
+    if (array_key_exists('password', $payload)) {
+        $changes['passwordChanged'] = true;
+    }
+
+    app_audit_log(
+        $pdo,
+        'users_access.user.updated',
+        'users',
+        (string)$id,
+        [
+            'changes' => $changes,
+        ],
+        $currentUser
+    );
+
     app_json([
         'success' => true,
-        'user' => $updated ? app_users_to_response($updated) : null,
+        'user' => $updatedResponse,
     ]);
 }
 
@@ -222,6 +304,15 @@ function app_users_handle_patch(PDO $pdo, bool $hasIsActive, array $currentUser)
             'error' => 'User not found.',
         ], 404);
     }
+    $targetResponse = app_users_to_response($target);
+
+    if ((string)($target['role'] ?? '') === 'admin' && !app_kernel_is_owner($currentUser)) {
+        app_json([
+            'success' => false,
+            'error' => 'Access denied.',
+            'code' => 'owner_required_to_change_admin_activation',
+        ], 403);
+    }
 
     $targetIsActive = ((int)($target['is_active'] ?? 1)) === 1;
     if (!$nextActive) {
@@ -247,8 +338,22 @@ function app_users_handle_patch(PDO $pdo, bool $hasIsActive, array $currentUser)
     ]);
 
     $updated = app_users_fetch_one($pdo, $id, $hasIsActive);
+    $updatedResponse = $updated ? app_users_to_response($updated) : null;
+
+    app_audit_log(
+        $pdo,
+        'users_access.user.activation.changed',
+        'users',
+        (string)$id,
+        [
+            'before' => (bool)($targetResponse['isActive'] ?? false),
+            'after' => (bool)($updatedResponse['isActive'] ?? $nextActive),
+        ],
+        $currentUser
+    );
+
     app_json([
         'success' => true,
-        'user' => $updated ? app_users_to_response($updated) : null,
+        'user' => $updatedResponse,
     ]);
 }

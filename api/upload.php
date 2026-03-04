@@ -2,9 +2,11 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/_common.php';
+require_once __DIR__ . '/../config/db.php';
 
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
+app_require_module_enabled($pdo, 'sales');
 app_require_csrf();
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;

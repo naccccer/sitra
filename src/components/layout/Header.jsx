@@ -3,6 +3,8 @@ import { ArrowRight, LogOut } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 const getPageTitle = (pathname) => {
+  if (pathname === '/owner' || pathname.startsWith('/owner/')) return 'اتاق فرمان ERP'
+  if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'تنظیمات'
   if (pathname === '/') return 'داشبورد';
   if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return 'ویرایش سفارش';
   if (pathname === '/orders') return 'مدیریت سفارشات';
@@ -12,6 +14,7 @@ const getPageTitle = (pathname) => {
   if (pathname === '/admin') return 'مدیریت قیمت‌ها';
   if (pathname === '/profile') return 'پروفایل کسب‌وکار';
   if (pathname === '/users') return 'مدیریت کاربران';
+  if (pathname === '/system-settings') return 'تنظیمات سیستم';
   return 'پنل مدیریت';
 };
 
@@ -21,13 +24,16 @@ export const Header = ({ onLogout }) => {
 
   const title = useMemo(() => getPageTitle(location.pathname), [location.pathname]);
   const isCreateOrderPage = location.pathname === '/orders/new';
+  const isOwnerConsole = location.pathname === '/owner' || location.pathname.startsWith('/owner/')
 
   return (
     <header className="print-hide sticky top-0 z-30 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur lg:px-6">
       <div className="mx-auto flex max-w-[1300px] items-center justify-between gap-2">
         <div>
           <h1 className="text-sm font-black text-slate-800 lg:text-base">{title}</h1>
-          <p className="text-[10px] font-bold text-slate-500">مدیریت یکپارچه سفارشات و عملیات</p>
+          <p className="text-[10px] font-bold text-slate-500">
+            {isOwnerConsole ? 'کنترل سطح مالک سیستم' : 'مدیریت یکپارچه سفارشات و عملیات'}
+          </p>
         </div>
 
         <div className="flex items-center gap-2">

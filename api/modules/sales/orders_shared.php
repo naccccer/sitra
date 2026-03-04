@@ -152,3 +152,75 @@ function app_sales_is_unknown_column_exception(Throwable $e, string $column): bo
 
     return str_contains($e->getMessage(), "Unknown column '" . $column . "'");
 }
+
+function app_sales_detect_duplicate_order_code_exception(Throwable $e): bool
+{
+    if (!$e instanceof PDOException) {
+        return false;
+    }
+
+    $driverCode = (string)$e->getCode();
+    if ($driverCode === '23000' && str_contains($e->getMessage(), 'uq_orders_order_code')) {
+        return true;
+    }
+
+    if (str_contains($e->getMessage(), 'Duplicate entry') && str_contains($e->getMessage(), 'uq_orders_order_code')) {
+        return true;
+    }
+
+    return false;
+}
+
+function app_sales_order_has_pattern(array $items): bool
+{
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $pattern = is_array($item['pattern'] ?? null) ? $item['pattern'] : [];
+        $type = strtolower(trim((string)($pattern['type'] ?? '')));
+        if (in_array($type, ['pattern', 'upload', 'carton'], true)) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+function app_sales_order_code_flags(array $items, bool $isStaff): string
+{
+    $hasPattern = app_sales_order_has_pattern($items) ? '1' : '0';
+    $isAdmin = $isStaff ? '1' : '0';
+    return $hasPattern . $isAdmin;
+}
+
+function app_sales_next_order_daily_sequence(PDO $pdo, string $datePrefix, string $flags): int
+{
+    $safeDatePrefix = preg_replace('/\D+/', '', $datePrefix);
+    if (!is_string($safeDatePrefix) || strlen($safeDatePrefix) !== 6) {
+        $safeDatePrefix = date('ymd');
+    }
+
+    $safeFlags = preg_replace('/\D+/', '', $flags);
+    if (!is_string($safeFlags)) {
+        $safeFlags = '00';
+    }
+    $safeFlags = substr(str_pad($safeFlags, 2, '0', STR_PAD_LEFT), -2);
+
+    $stmt = $pdo->prepare(
+        "SELECT COALESCE(
+            MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(order_code, '-', 3), '-', -1) AS UNSIGNED)),
+            0
+        ) AS max_seq
+        FROM orders
+        WHERE order_code LIKE :order_code_like"
+    );
+    $stmt->execute([
+        'order_code_like' => $safeDatePrefix . '-' . $safeFlags . '-%',
+    ]);
+    $row = $stmt->fetch();
+    $maxSeq = (int)($row['max_seq'] ?? 0);
+
+    return $maxSeq + 1;
+}

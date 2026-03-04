@@ -8,6 +8,7 @@ require_once __DIR__ . '/orders_handlers.php';
 
 app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
+app_require_module_enabled($pdo, 'sales');
 app_ensure_orders_table($pdo);
 
 if ($method !== 'GET') {

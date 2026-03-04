@@ -60,6 +60,13 @@ const extractPatternFiles = (order = {}) => {
 };
 
 const toSafeAmount = (value) => Math.max(0, Number(value) || 0);
+const formatPersianDate = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw) return '-';
+  const date = new Date(raw);
+  if (Number.isNaN(date.getTime())) return toPN(raw);
+  return toPN(date.toLocaleDateString('fa-IR'));
+};
 const defaultPaymentMethod = PAYMENT_METHOD_OPTIONS[0]?.value || 'cash';
 const PAYMENT_MANAGER_TABS = [
   { id: 'create', label: 'ثبت پرداخت' },
@@ -156,6 +163,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
   const [paymentManagerOrderId, setPaymentManagerOrderId] = useState(null);
   const [paymentManagerActiveTab, setPaymentManagerActiveTab] = useState(PAYMENT_MANAGER_TABS[0].id);
   const [uploadingReceiptKey, setUploadingReceiptKey] = useState('');
+  const [releasingOrderIds, setReleasingOrderIds] = useState({});
 
   const updateOrderStatus = async (id, status) => {
     const previousOrder = orders.find((o) => o.id === id);
@@ -266,6 +274,36 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
     };
     setViewingOrder(nextOrder);
     setTimeout(() => window.print(), 100);
+  };
+
+  const releaseOrderToProduction = async (order) => {
+    if (!order?.id) return;
+    const orderId = String(order.id);
+    if (releasingOrderIds[orderId]) return;
+
+    setReleasingOrderIds((prev) => ({ ...prev, [orderId]: true }));
+    try {
+      const response = await salesApi.releaseOrderLines({
+        orderId: Number(order.id),
+        enforceStockCheck: false,
+      });
+      const released = Array.isArray(response?.workOrders) ? response.workOrders.length : 0;
+      const shortages = (Array.isArray(response?.workOrders) ? response.workOrders : []).filter((workOrder) => {
+        const shortageQty = Number(workOrder?.reservation?.capacity?.shortageQty || 0);
+        return Number.isFinite(shortageQty) && shortageQty > 0;
+      });
+
+      if (shortages.length > 0) {
+        alert(`ارسال به تولید انجام شد. تعداد سطرهای پردازش شده: ${toPN(released)}. تعداد موارد کمبود موجودی: ${toPN(shortages.length)}.`);
+      } else {
+        alert(`ارسال به تولید انجام شد. تعداد سطرهای پردازش شده: ${toPN(released)}.`);
+      }
+    } catch (error) {
+      console.error('Failed to release order lines to production.', error);
+      alert(error?.message || 'ارسال سفارش به تولید ناموفق بود.');
+    } finally {
+      setReleasingOrderIds((prev) => ({ ...prev, [orderId]: false }));
+    }
   };
 
   const getOrderPaymentDraft = (orderId) => paymentDraftsByOrder[orderId] || createPaymentDraft();
@@ -544,7 +582,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
             { id: 'pending', label: 'ثبت شده / پیگیری' },
             { id: 'processing', label: 'تولید / آماده تحویل' },
             { id: 'delivered', label: 'تحویل شده' },
-            { id: 'archived', label: 'آرشیو' },
+            { id: 'archived', label: 'بایگانی' },
           ].map((t) => (
             <button
               key={t.id}
@@ -606,7 +644,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
                           <span className="text-[10px] text-slate-400 font-normal mr-1">({toPN(Array.isArray(o.items) ? o.items.length : o.items)} قلم)</span>
                         </td>
                         <td className="p-3 font-bold text-slate-600 tabular-nums border-l border-slate-50" dir="ltr">{toPN(o.phone)}</td>
-                        <td className="p-3 text-center font-bold text-slate-500 border-l border-slate-50">{toPN(o.date)}</td>
+                        <td className="p-3 text-center font-bold text-slate-500 border-l border-slate-50">{formatPersianDate(o.date)}</td>
                         <td className="p-3 text-center font-black text-slate-900 tabular-nums border-l border-slate-50">{toPN(financialSummary.total.toLocaleString())}</td>
                         <td className="p-3 text-center font-black text-rose-600 tabular-nums border-l border-slate-50">{toPN(financialSummary.due.toLocaleString())}</td>
                         <td className="p-3 text-center border-l border-slate-50">
@@ -619,7 +657,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
                         <td className="p-3 text-center border-l border-slate-50">
                           <div className="flex items-center justify-center gap-1.5">
                             {o.status === 'archived' ? (
-                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">آرشیو شده</span>
+                              <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded">بایگانی‌شده</span>
                             ) : (
                               <select
                                 value={orderStageId}
@@ -672,6 +710,15 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
                               <div className="flex flex-wrap gap-2 justify-between items-center mb-3 border-b border-slate-100 pb-2">
                                 <span className="font-black text-sm text-slate-800">ریز اقلام سفارش</span>
                                 <div className="flex flex-wrap items-center gap-2">
+                                  {o.status !== 'archived' && (
+                                    <button
+                                      onClick={() => releaseOrderToProduction(o)}
+                                      disabled={Boolean(releasingOrderIds[String(o.id)])}
+                                      className={`text-xs px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors ${releasingOrderIds[String(o.id)] ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
+                                    >
+                                      {releasingOrderIds[String(o.id)] ? 'در حال ارسال...' : 'ارسال به تولید'}
+                                    </button>
+                                  )}
                                   <button
                                     onClick={() => openPatternFilesModal(o)}
                                     className="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors"
@@ -989,7 +1036,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
                                       className="h-8 w-full bg-white border border-slate-200 rounded-lg px-2 text-[11px] font-bold"
                                     />
                                   ) : (
-                                    <span className="font-bold text-slate-700">{toPN(payment.date)}</span>
+                                    <span className="font-bold text-slate-700">{formatPersianDate(payment.date)}</span>
                                   )}
                                 </td>
                                 <td className="p-2">
