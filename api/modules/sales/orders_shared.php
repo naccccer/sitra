@@ -180,7 +180,7 @@ function app_sales_order_has_pattern(array $items): bool
 
         $pattern = is_array($item['pattern'] ?? null) ? $item['pattern'] : [];
         $type = strtolower(trim((string)($pattern['type'] ?? '')));
-        if (in_array($type, ['pattern', 'upload', 'carton'], true)) {
+        if (in_array($type, ['pattern', 'upload', 'carton', 'hole_map'], true)) {
             return true;
         }
     }

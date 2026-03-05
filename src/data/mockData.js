@@ -22,8 +22,6 @@ export const initialCatalog = {
     ]
   },
   operations: [
-    { id: 'op_hole1', title: 'سوراخ مته ۲۰', price: 15000, unit: 'qty', iconFile: 'hole1.svg', isActive: true, sortOrder: 1 },
-    { id: 'op_hole2', title: 'سوراخ گردبر ۵۰', price: 25000, unit: 'qty', iconFile: 'hole2.svg', isActive: true, sortOrder: 2 },
     { id: 'op_hinge1', title: 'جاساز لولا دیوار', price: 50000, unit: 'qty', iconFile: 'hinge1.svg', isActive: true, sortOrder: 3 },
     { id: 'op_other1', title: 'جاساز قفل کمری', price: 45000, unit: 'qty', iconFile: 'other1.svg', isActive: true, sortOrder: 4 }
   ],

@@ -188,6 +188,14 @@ function app_production_detect_requires_drilling(array $item): bool
         return $explicit;
     }
 
+    $pattern = is_array($item['pattern'] ?? null) ? $item['pattern'] : [];
+    $patternType = strtolower(trim((string)($pattern['type'] ?? '')));
+    $holeMap = is_array($pattern['holeMap'] ?? null) ? $pattern['holeMap'] : [];
+    $holes = is_array($holeMap['holes'] ?? null) ? $holeMap['holes'] : [];
+    if ($patternType === 'hole_map' && count($holes) > 0) {
+        return true;
+    }
+
     $operations = is_array($item['operations'] ?? null) ? $item['operations'] : [];
     foreach ($operations as $operationId => $qty) {
         $quantity = (int)$qty;

@@ -5,6 +5,17 @@ import { PriceInput } from '../../../components/shared/PriceInput';
 import { ensureBillingSettings, PAYMENT_METHOD_OPTIONS } from '../../../utils/invoice';
 import { masterDataApi } from '../services/masterDataApi';
 
+const DESTINATION_DRILLING_SERVICE_IDS = new Set(['op_hole1', 'op_hole2']);
+const DRILLING_SERVICE_KEYWORDS = ['hole', 'drill', 'سوراخ'];
+
+const isDestinationDrillingService = (operation = {}) => {
+  const id = String(operation?.id || '').toLowerCase();
+  if (DESTINATION_DRILLING_SERVICE_IDS.has(id)) return true;
+  if (String(operation?.unit || '') !== 'qty') return false;
+  const searchable = `${id} ${String(operation?.title || '').toLowerCase()}`;
+  return DRILLING_SERVICE_KEYWORDS.some((keyword) => searchable.includes(keyword));
+};
+
 const ensureCatalogDefaults = (source) => {
   const next = JSON.parse(JSON.stringify(source || {}));
   if (!next.fees) next.fees = {};
@@ -16,6 +27,8 @@ const ensureCatalogDefaults = (source) => {
     };
   }
   next.billing = ensureBillingSettings(next);
+  if (!Array.isArray(next.operations)) next.operations = [];
+  next.operations = next.operations.filter((operation) => !isDestinationDrillingService(operation));
   return next;
 };
 

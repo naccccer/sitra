@@ -16,6 +16,29 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     base: normalizedBase,
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            const normalizedId = id.replace(/\\/g, '/')
+
+            if (!normalizedId.includes('node_modules')) {
+              return undefined
+            }
+
+            if (normalizedId.includes('/react-multi-date-picker/') || normalizedId.includes('/react-date-object/')) {
+              return 'vendor-date-picker'
+            }
+
+            if (normalizedId.includes('/lucide-react/')) {
+              return 'vendor-icons'
+            }
+
+            return undefined
+          },
+        },
+      },
+    },
     server: {
       host: '127.0.0.1', // Use IPv4 explicitly.
       port: 5173,

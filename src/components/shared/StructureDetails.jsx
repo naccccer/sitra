@@ -79,6 +79,10 @@ export const StructureDetails = ({ item, catalog }) => {
         ? `الگو (فایل پیوست: ${item.pattern.fileName})`
         : 'الگو (فایل پیوست)';
     }
+    if (item.pattern.type === 'hole_map') {
+      const holeCount = Array.isArray(item?.pattern?.holeMap?.holes) ? item.pattern.holeMap.holes.length : 0;
+      return `نقشه سوراخ (${toPN(holeCount)} سوراخ)`;
+    }
     return 'الگو (کارتن)';
   };
 

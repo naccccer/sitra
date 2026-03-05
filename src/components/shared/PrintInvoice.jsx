@@ -13,6 +13,30 @@ const getDataUrlMimeType = (dataUrl = '') => {
   return dataUrl.slice(5, semiIndex).toLowerCase();
 };
 
+const parsePositiveNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const formatCm = (value) => {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) return toPN('0');
+  const rounded = Math.round(numeric * 10) / 10;
+  return toPN(rounded.toString());
+};
+
+const holeCenterFromEdges = (hole, widthCm, heightCm) => {
+  const distanceY = Math.max(0, Number(hole?.distanceYCm) || 0);
+  const distanceZ = Math.max(0, Number(hole?.distanceZCm) || 0);
+  const fromYEdge = hole?.fromYEdge === 'bottom' ? 'bottom' : 'top';
+  const fromZEdge = hole?.fromZEdge === 'right' ? 'right' : 'left';
+
+  return {
+    centerX: fromZEdge === 'left' ? distanceZ : widthCm - distanceZ,
+    centerY: fromYEdge === 'top' ? distanceY : heightCm - distanceY,
+  };
+};
+
 const normalizePayment = (payment = {}, fallbackIndex = 0) => ({
   id: String(payment.id || `pay_${fallbackIndex}`),
   date: String(payment.date || '-'),
@@ -67,13 +91,124 @@ const OperationChip = ({ title, iconFile, qty = 1 }) => {
   );
 };
 
-const PatternPreview = ({ pattern }) => {
+const PatternPreview = ({ pattern, width, height }) => {
   const type = pattern?.type || 'none';
 
   if (type === 'carton') {
     return (
       <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[11px] font-bold text-amber-800">
         این آیتم با الگوی فیزیکی (کارتن/شابلون) ثبت شده است.
+      </div>
+    );
+  }
+
+  if (type === 'hole_map') {
+    const holeMap = pattern?.holeMap && typeof pattern.holeMap === 'object' ? pattern.holeMap : {};
+    const holes = Array.isArray(holeMap?.holes) ? holeMap.holes : [];
+    const widthCm = parsePositiveNumber(width);
+    const heightCm = parsePositiveNumber(height);
+    const canRenderPreview = widthCm > 0 && heightCm > 0;
+
+    const normalizedHoles = holes.map((hole, index) => {
+      const diameterCm = Math.max(0, Number(hole?.diameterCm) || 0);
+      const fromYEdge = hole?.fromYEdge === 'bottom' ? 'bottom' : 'top';
+      const fromZEdge = hole?.fromZEdge === 'right' ? 'right' : 'left';
+      const distanceYCm = Math.max(0, Number(hole?.distanceYCm) || 0);
+      const distanceZCm = Math.max(0, Number(hole?.distanceZCm) || 0);
+      const center = canRenderPreview
+        ? holeCenterFromEdges({ fromYEdge, fromZEdge, distanceYCm, distanceZCm }, widthCm, heightCm)
+        : { centerX: 0, centerY: 0 };
+
+      return {
+        id: String(hole?.id || `hole_${index}`),
+        index,
+        diameterCm,
+        fromYEdge,
+        fromZEdge,
+        distanceYCm,
+        distanceZCm,
+        centerX: center.centerX,
+        centerY: center.centerY,
+      };
+    });
+
+    const fromYLabel = (edge) => (edge === 'bottom' ? 'از پایین' : 'از بالا');
+    const fromZLabel = (edge) => (edge === 'right' ? 'از راست' : 'از چپ');
+
+    return (
+      <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
+        <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-700">
+          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1">
+            تعداد سوراخ: <span className="font-black">{toPN(normalizedHoles.length)}</span>
+          </div>
+          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1">
+            ابعاد: <span className="font-black">{widthCm > 0 ? toPN(widthCm) : '-'} × {heightCm > 0 ? toPN(heightCm) : '-'}</span> cm
+          </div>
+        </div>
+
+        {canRenderPreview ? (
+          <div className="rounded-lg border border-emerald-200 bg-white p-2">
+            <svg viewBox={`0 0 ${widthCm} ${heightCm}`} className="pattern-preview-thumb w-full rounded-md bg-gradient-to-br from-cyan-50 to-slate-100">
+              <rect x="0" y="0" width={widthCm} height={heightCm} fill="transparent" stroke="#94a3b8" strokeWidth={Math.max(0.8, Math.min(widthCm, heightCm) * 0.003)} />
+              {normalizedHoles.map((hole) => (
+                <g key={hole.id}>
+                  <circle
+                    cx={hole.centerX}
+                    cy={hole.centerY}
+                    r={Math.max(0.2, hole.diameterCm / 2)}
+                    fill="rgba(14,116,144,0.10)"
+                    stroke="#0e7490"
+                    strokeWidth={Math.max(0.2, hole.diameterCm * 0.05)}
+                  />
+                  <text
+                    x={hole.centerX}
+                    y={hole.centerY}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#0f172a"
+                    fontSize={Math.max(1.6, Math.min(widthCm, heightCm) * 0.045)}
+                    fontWeight="700"
+                  >
+                    {hole.index + 1}
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-2 text-[10px] font-bold text-slate-500">
+            برای پیش‌نمایش موقعیت سوراخ‌ها، ابعاد آیتم باید معتبر باشد.
+          </div>
+        )}
+
+        {normalizedHoles.length > 0 ? (
+          <div className="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
+            <table className="w-full text-[10px]">
+              <thead className="bg-emerald-100/70 text-emerald-900">
+                <tr>
+                  <th className="px-2 py-1 text-right font-black">#</th>
+                  <th className="px-2 py-1 text-right font-black">x (قطر)</th>
+                  <th className="px-2 py-1 text-right font-black">y</th>
+                  <th className="px-2 py-1 text-right font-black">z</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-emerald-100">
+                {normalizedHoles.map((hole) => (
+                  <tr key={hole.id} className="text-slate-700">
+                    <td className="px-2 py-1 font-bold">{toPN(hole.index + 1)}</td>
+                    <td className="px-2 py-1 font-bold">{formatCm(hole.diameterCm)} cm</td>
+                    <td className="px-2 py-1 font-bold">{fromYLabel(hole.fromYEdge)}: {formatCm(hole.distanceYCm)}</td>
+                    <td className="px-2 py-1 font-bold">{fromZLabel(hole.fromZEdge)}: {formatCm(hole.distanceZCm)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-2 text-[10px] font-bold text-slate-500">
+            برای این آیتم هنوز سوراخی در نقشه ثبت نشده است.
+          </div>
+        )}
       </div>
     );
   }
@@ -405,7 +540,7 @@ export const PrintInvoice = ({
                   <div>
                     <div className="mb-1 text-[11px] font-black text-slate-700">الگو</div>
                     {entry.hasPattern ? (
-                      <PatternPreview pattern={entry.pattern} />
+                      <PatternPreview pattern={entry.pattern} width={entry.width} height={entry.height} />
                     ) : (
                       <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-[10px] font-bold text-slate-500">
                         برای این آیتم الگو ثبت نشده است.

@@ -318,6 +318,10 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
   const handleAddToCart = () => {
     if (!canAddCatalogItem) return;
 
+    const hasHoleMap = config.pattern?.type === 'hole_map'
+      && Array.isArray(config.pattern?.holeMap?.holes)
+      && config.pattern.holeMap.holes.length > 0;
+
     const newItem = {
       id: editingItemType === 'catalog' && editingItemId ? editingItemId : Date.now(),
       itemType: 'catalog',
@@ -327,6 +331,7 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
       config: JSON.parse(JSON.stringify(config[activeTab])),
       operations: { ...config.operations },
       pattern: { ...config.pattern },
+      requiresDrilling: hasHoleMap,
       unitPrice: catalogPricingPreview.finalUnitPrice,
       totalPrice: catalogPricingPreview.finalLineTotal,
       pricingMeta: { ...catalogPricingPreview },
@@ -720,7 +725,8 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
             setModalMode={setModalMode} 
             config={config} 
             setConfig={setConfig} 
-            catalog={catalog} 
+            catalog={catalog}
+            dimensions={dimensions}
         />
       )}
 
