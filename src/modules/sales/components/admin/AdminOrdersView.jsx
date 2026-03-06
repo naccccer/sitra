@@ -165,16 +165,22 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
   const [uploadingReceiptKey, setUploadingReceiptKey] = useState('');
   const [releasingOrderIds, setReleasingOrderIds] = useState({});
 
-  const updateOrderStatus = async (id, status) => {
+  const updateOrderStatus = async (id, status, expectedUpdatedAt = null) => {
     const previousOrder = orders.find((o) => o.id === id);
     if (!previousOrder) return;
 
     setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
 
     try {
-      const response = await salesApi.updateOrderStatus(id, status);
+      const response = await salesApi.updateOrderStatus(id, status, { expectedUpdatedAt });
       if (response?.order) {
         setOrders((prev) => prev.map((o) => (o.id === id ? response.order : o)));
+      } else if (response?.queued) {
+        setOrders((prev) => prev.map((o) => (
+          o.id === id
+            ? { ...o, status, offlineQueued: true, offlineQueueId: response?.queueItem?.queueId || null, updatedAt: new Date().toISOString() }
+            : o
+        )));
       }
     } catch (error) {
       console.error('Failed to update order status.', error);
@@ -194,6 +200,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
     financials: nextFinancials,
     payments: (Array.isArray(order.payments) ? order.payments : []).map(normalizePayment),
     invoiceNotes: String(order.invoiceNotes || ''),
+    expectedUpdatedAt: String(order.updatedAt || ''),
   });
 
   const updateOrderWorkflowStage = async (order, stageId) => {
@@ -214,6 +221,12 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
       const response = await salesApi.updateOrder(payload);
       if (response?.order) {
         setOrders((prev) => prev.map((candidate) => (candidate.id === previousOrder.id ? response.order : candidate)));
+      } else if (response?.queued) {
+        setOrders((prev) => prev.map((candidate) => (
+          candidate.id === previousOrder.id
+            ? { ...optimisticOrder, offlineQueued: true, offlineQueueId: response?.queueItem?.queueId || null, updatedAt: new Date().toISOString() }
+            : candidate
+        )));
       }
     } catch (error) {
       console.error('Failed to update order workflow stage.', error);
@@ -224,7 +237,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
 
   const handleArchiveOrder = (order) => {
     if (!order?.id) return;
-    updateOrderStatus(order.id, 'archived');
+    updateOrderStatus(order.id, 'archived', order?.updatedAt || null);
     if (expandedOrderId === order.id) setExpandedOrderId(null);
   };
 

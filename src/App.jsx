@@ -1,8 +1,17 @@
-﻿import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { initialCatalog } from './data/mockData';
 import { AppRoutes } from './routes/AppRoutes';
 import { api, setCsrfToken } from './services/api';
+import { OfflineSyncBanner } from './components/shared/OfflineSyncBanner';
 import { defaultProfile, normalizeProfile } from './utils/profile';
+import { readBootstrapCache, writeBootstrapCache } from './services/bootstrapCache';
+import {
+  dropSalesOfflineOperation,
+  getSalesOfflineQueueSnapshot,
+  retrySalesOfflineConflict,
+  subscribeSalesOfflineQueue,
+  syncSalesOfflineQueue,
+} from './services/salesOfflineQueue';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -41,6 +50,14 @@ const EMPTY_SESSION = {
   modules: [],
 };
 
+const EMPTY_OFFLINE_QUEUE_SNAPSHOT = {
+  pendingCount: 0,
+  authBlockedCount: 0,
+  conflictCount: 0,
+  isSyncing: false,
+  firstConflict: null,
+};
+
 const deriveCapabilitiesFromRole = (role) => {
   const normalizedRole = String(role || '').trim();
   if (normalizedRole === 'admin' || normalizedRole === 'manager') {
@@ -53,7 +70,7 @@ const deriveCapabilitiesFromRole = (role) => {
       canUseInventory: true,
       canViewAuditLogs: true,
       canManageProfile: true,
-      canManageSystemSettings: false,
+      canManageSystemSettings: normalizedRole === 'admin',
     };
   }
 
@@ -145,7 +162,62 @@ export default function App() {
   const [profile, setProfile] = useState(defaultProfile);
   const [orders, setOrders] = useState([]);
   const [session, setSession] = useState(EMPTY_SESSION);
+  const [isOnline, setIsOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine !== false);
+  const [offlineQueueSnapshot, setOfflineQueueSnapshot] = useState(EMPTY_OFFLINE_QUEUE_SNAPSHOT);
   const [isHydrating, setIsHydrating] = useState(true);
+  const sessionRef = useRef(EMPTY_SESSION);
+
+  useEffect(() => {
+    sessionRef.current = session;
+  }, [session]);
+
+  const applyBootstrapData = useCallback((data, fallbackRole = null) => {
+    if (!data || typeof data !== 'object') return;
+    if (data?.csrfToken) setCsrfToken(data.csrfToken);
+    if (data?.catalog) setCatalog(data.catalog);
+    if (data?.profile) setProfile(normalizeProfile(data.profile));
+    if (Array.isArray(data?.orders)) setOrders(data.orders);
+    const normalized = normalizeSession(data?.session, fallbackRole, data);
+    setSession(normalized);
+    return normalized;
+  }, []);
+
+  const handleSyncedOrder = useCallback((serverOrder, queueItem) => {
+    if (!serverOrder || typeof serverOrder !== 'object') return;
+    const serverOrderId = String(serverOrder.id ?? '');
+    const tempQueueOrderId = queueItem?.queueId ? `offline:${queueItem.queueId}` : '';
+
+    setOrders((prev) => {
+      const next = [...prev];
+      if (queueItem?.opType === 'create' && tempQueueOrderId) {
+        const tempIndex = next.findIndex((order) => String(order?.id) === tempQueueOrderId);
+        if (tempIndex >= 0) {
+          next[tempIndex] = serverOrder;
+          return next;
+        }
+      }
+
+      const existingIndex = next.findIndex((order) => String(order?.id) === serverOrderId);
+      if (existingIndex >= 0) {
+        next[existingIndex] = serverOrder;
+        return next;
+      }
+
+      return [serverOrder, ...next];
+    });
+  }, []);
+
+  const runOfflineSync = useCallback(async (targetSession = null) => {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      return;
+    }
+    await syncSalesOfflineQueue({
+      session: targetSession || sessionRef.current,
+      onSyncedOrder: handleSyncedOrder,
+    });
+    const snapshot = await getSalesOfflineQueueSnapshot();
+    setOfflineQueueSnapshot(snapshot);
+  }, [handleSyncedOrder]);
 
   useEffect(() => {
     let cancelled = false;
@@ -154,25 +226,15 @@ export default function App() {
       try {
         const data = await api.bootstrap();
         if (cancelled) return;
-
-        if (data?.csrfToken) {
-          setCsrfToken(data.csrfToken);
-        }
-
-        if (data?.catalog) {
-          setCatalog(data.catalog);
-        }
-
-        if (data?.profile) {
-          setProfile(normalizeProfile(data.profile));
-        }
-
-        if (Array.isArray(data?.orders)) {
-          setOrders(data.orders);
-        }
-
-        setSession(normalizeSession(data?.session, null, data));
+        const effectiveSession = applyBootstrapData(data, null);
+        writeBootstrapCache(data);
+        await runOfflineSync(effectiveSession);
       } catch (error) {
+        const cached = readBootstrapCache();
+        if (!cancelled && cached) {
+          const effectiveSession = applyBootstrapData(cached, null);
+          await runOfflineSync(effectiveSession);
+        }
         if (import.meta.env.DEV) console.error('Failed to load bootstrap data from backend.', error);
       } finally {
         if (!cancelled) {
@@ -185,22 +247,69 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [applyBootstrapData, runOfflineSync]);
+
+  useEffect(() => {
+    let disposed = false;
+    const unsubscribe = subscribeSalesOfflineQueue((snapshot) => {
+      if (!disposed) {
+        setOfflineQueueSnapshot(snapshot);
+      }
+    });
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      runOfflineSync().catch((error) => {
+        if (import.meta.env.DEV) console.error('Failed to sync offline queue after online event.', error);
+      });
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        runOfflineSync().catch((error) => {
+          if (import.meta.env.DEV) console.error('Failed to sync offline queue after visibility change.', error);
+        });
+      }
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    runOfflineSync().catch((error) => {
+      if (import.meta.env.DEV) console.error('Failed to run initial offline sync.', error);
+    });
+
+    return () => {
+      disposed = true;
+      unsubscribe();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [runOfflineSync]);
 
   const handleLogin = async (role) => {
-    setSession((prev) => ({
-      ...prev,
-      authenticated: true,
-      role: role || prev.role || 'manager',
-    }));
+    setSession((prev) => {
+      const nextRole = role || prev.role || 'manager';
+      return normalizeSession(
+        {
+          authenticated: true,
+          role: nextRole,
+          username: prev?.username || null,
+        },
+        nextRole,
+        null,
+      );
+    });
 
     try {
       const data = await api.bootstrap();
-      if (data?.csrfToken) setCsrfToken(data.csrfToken);
-      if (data?.catalog) setCatalog(data.catalog);
-      if (data?.profile) setProfile(normalizeProfile(data.profile));
-      if (Array.isArray(data?.orders)) setOrders(data.orders);
-      setSession(normalizeSession(data?.session, role, data));
+      const effectiveSession = applyBootstrapData(data, role);
+      writeBootstrapCache(data);
+      await runOfflineSync(effectiveSession);
     } catch (error) {
       if (import.meta.env.DEV) console.error('Failed to refresh admin data after login.', error);
     }
@@ -209,11 +318,9 @@ export default function App() {
   const handleRefreshSession = async () => {
     try {
       const data = await api.bootstrap();
-      if (data?.csrfToken) setCsrfToken(data.csrfToken);
-      if (data?.catalog) setCatalog(data.catalog);
-      if (data?.profile) setProfile(normalizeProfile(data.profile));
-      if (Array.isArray(data?.orders)) setOrders(data.orders);
-      setSession(normalizeSession(data?.session, session?.role || null, data));
+      const effectiveSession = applyBootstrapData(data, session?.role || null);
+      writeBootstrapCache(data);
+      await runOfflineSync(effectiveSession);
     } catch (error) {
       if (import.meta.env.DEV) console.error('Failed to refresh bootstrap data.', error);
     }
@@ -230,6 +337,29 @@ export default function App() {
     }
   };
 
+  const handleSyncNow = () => {
+    runOfflineSync().catch((error) => {
+      if (import.meta.env.DEV) console.error('Manual queue sync failed.', error);
+    });
+  };
+
+  const handleAcceptConflict = (queueId) => {
+    dropSalesOfflineOperation(queueId)
+      .then(() => getSalesOfflineQueueSnapshot())
+      .then((snapshot) => setOfflineQueueSnapshot(snapshot))
+      .catch((error) => {
+        if (import.meta.env.DEV) console.error('Failed to drop conflict queue item.', error);
+      });
+  };
+
+  const handleRetryConflict = (queueId) => {
+    retrySalesOfflineConflict(queueId)
+      .then(() => runOfflineSync())
+      .catch((error) => {
+        if (import.meta.env.DEV) console.error('Failed to retry conflict queue item.', error);
+      });
+  };
+
   if (isHydrating) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600 font-bold" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
@@ -241,6 +371,13 @@ export default function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-slate-50 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+        <OfflineSyncBanner
+          isOnline={isOnline}
+          queueSnapshot={offlineQueueSnapshot}
+          onSyncNow={handleSyncNow}
+          onAcceptConflict={handleAcceptConflict}
+          onRetryConflict={handleRetryConflict}
+        />
         <AppRoutes
           session={session}
           catalog={catalog}

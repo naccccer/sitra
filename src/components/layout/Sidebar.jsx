@@ -71,9 +71,11 @@ export const Sidebar = ({ profile, session, isCollapsed = false, onToggleCollaps
   const fallbackLetter = profileBrandInitial(normalizedProfile)
   const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}
   const modules = Array.isArray(session?.modules) ? session.modules : []
+  const isAdmin = String(session?.role || '').trim() === 'admin'
 
   const isVisibleItem = (item) => {
     if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
+    if (item.to === '/owner' && isAdmin) return true
     if (item.capability && !capabilities[item.capability]) return false
     if (item.moduleId && !isModuleEnabled(modules, item.moduleId)) return false
     return true

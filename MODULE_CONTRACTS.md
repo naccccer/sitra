@@ -98,25 +98,35 @@
 - Owner: `sales`
 - Input:
   - customer/order payload compatible with current `/api/orders.php` POST.
+  - `clientRequestId?: string` (UUIDv4 idempotency key).
 - Output:
-  - `order: object`
+  - `order: object` with `createdAt` and `updatedAt`.
 - Side Effects:
   - Persist order row and order metadata.
+  - Persist idempotency replay snapshot keyed by `clientRequestId` when provided.
 
 ### `sales.order_update.v1`
 - Owner: `sales`
 - Input:
   - payload compatible with current `/api/orders.php` PUT.
+  - `clientRequestId?: string` (UUIDv4 idempotency key).
+  - `expectedUpdatedAt?: string` (optimistic concurrency token).
 - Output:
-  - `order: object`
+  - `order: object` with `createdAt` and `updatedAt`.
+- Errors:
+  - `409` `order_conflict` when `expectedUpdatedAt` mismatches current server version.
 
 ### `sales.order_status_set.v1`
 - Owner: `sales`
 - Input:
   - `id: number`
   - `status: 'pending' | 'processing' | 'delivered' | 'archived'`
+  - `clientRequestId?: string` (UUIDv4 idempotency key).
+  - `expectedUpdatedAt?: string` (optimistic concurrency token).
 - Output:
-  - `order: object`
+  - `order: object` with `createdAt` and `updatedAt`.
+- Errors:
+  - `409` `order_conflict` when `expectedUpdatedAt` mismatches current server version.
 
 ### `sales.release_order_lines.v1`
 - Owner: `sales`

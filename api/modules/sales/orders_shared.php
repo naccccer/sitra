@@ -224,3 +224,53 @@ function app_sales_next_order_daily_sequence(PDO $pdo, string $datePrefix, strin
 
     return $maxSeq + 1;
 }
+
+function app_sales_normalize_expected_updated_at($value): ?string
+{
+    if ($value === null) {
+        return null;
+    }
+    $raw = trim((string)$value);
+    return $raw === '' ? null : $raw;
+}
+
+function app_sales_timestamp_to_epoch(?string $value): ?int
+{
+    $raw = trim((string)$value);
+    if ($raw === '') {
+        return null;
+    }
+
+    $ts = strtotime($raw);
+    if ($ts === false) {
+        return null;
+    }
+
+    return (int)$ts;
+}
+
+function app_sales_is_order_conflict(array $currentOrderRow, ?string $expectedUpdatedAt): bool
+{
+    if ($expectedUpdatedAt === null) {
+        return false;
+    }
+
+    $expectedEpoch = app_sales_timestamp_to_epoch($expectedUpdatedAt);
+    $serverEpoch = app_sales_timestamp_to_epoch((string)($currentOrderRow['updated_at'] ?? ''));
+    if ($expectedEpoch === null || $serverEpoch === null) {
+        return false;
+    }
+
+    return $expectedEpoch !== $serverEpoch;
+}
+
+function app_sales_respond_order_conflict(array $currentOrderRow): void
+{
+    $serverOrder = app_order_from_row($currentOrderRow);
+    app_json([
+        'success' => false,
+        'error' => 'Order has changed on the server.',
+        'code' => 'order_conflict',
+        'serverOrder' => $serverOrder,
+    ], 409);
+}

@@ -483,12 +483,17 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
           financials,
           payments,
           invoiceNotes,
+          expectedUpdatedAt: editingOrder?.updatedAt || null,
         };
 
         const response = await salesApi.updateOrder(updatePayload);
         const updatedOrder = response?.order ?? { ...editingOrder, ...updatePayload };
         setOrders((prev) => prev.map((o) => (o.id === editingOrder.id ? updatedOrder : o)));
-        alert('سفارش با موفقیت ویرایش شد.');
+        if (response?.queued) {
+          alert('ویرایش سفارش در صف آفلاین ثبت شد و بعد از اتصال همگام‌سازی می‌شود.');
+        } else {
+          alert('سفارش با موفقیت ویرایش شد.');
+        }
         onCancelEdit();
         return;
       }
@@ -511,7 +516,11 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
       const response = await salesApi.createOrder(createPayload);
       const createdOrder = response?.order ?? { id: Date.now(), ...createPayload, orderCode: '' };
       setOrders((prev) => [createdOrder, ...prev]);
-      alert(`سفارش ثبت شد. کد پیگیری: ${createdOrder.orderCode || '-'}`);
+      if (response?.queued) {
+        alert('سفارش در صف آفلاین ذخیره شد و پس از اتصال به صورت خودکار ارسال می‌شود.');
+      } else {
+        alert(`سفارش ثبت شد. کد پیگیری: ${createdOrder.orderCode || '-'}`);
+      }
 
       setOrderItems([]);
       setPayments([]);

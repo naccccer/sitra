@@ -11,8 +11,10 @@ app_require_module_enabled($pdo, 'users-access');
 
 if ($method === 'GET') {
     $actor = app_require_permission('users_access.users.read', $pdo);
+    $actorIsAdmin = ((string)($actor['role'] ?? '')) === 'admin';
+    $canSeeAdminRole = app_kernel_is_owner($actor) || $actorIsAdmin;
     $roles = app_user_roles();
-    if (!app_kernel_is_owner($actor)) {
+    if (!$canSeeAdminRole) {
         $roles = array_values(array_filter($roles, static fn (string $role): bool => $role !== 'admin'));
     }
     app_json([
@@ -24,6 +26,8 @@ if ($method === 'GET') {
 }
 
 $actor = app_require_permission('users_access.users.write', $pdo);
+$actorIsAdmin = ((string)($actor['role'] ?? '')) === 'admin';
+$canManageAdminRole = app_kernel_is_owner($actor) || $actorIsAdmin;
 app_require_csrf();
 
 $payload = app_read_json_body();
@@ -49,7 +53,7 @@ foreach ($payload['rolePermissions'] as $rolePermissions) {
     }
 }
 
-if ($hasKernelControlPermission && !app_kernel_is_owner($actor)) {
+if ($hasKernelControlPermission && !$canManageAdminRole) {
     app_json([
         'success' => false,
         'error' => 'Access denied.',
@@ -71,7 +75,7 @@ app_audit_log(
 
 app_json([
     'success' => true,
-    'roles' => app_kernel_is_owner($actor)
+    'roles' => $canManageAdminRole
         ? app_user_roles()
         : array_values(array_filter(app_user_roles(), static fn (string $role): bool => $role !== 'admin')),
     'permissionDefinitions' => app_permission_definitions(),

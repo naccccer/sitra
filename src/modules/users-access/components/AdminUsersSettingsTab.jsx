@@ -97,7 +97,9 @@ const buildPermissionGroups = (definitions, rolePermissions) => {
 };
 
 export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
-  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings);
+  const canManageSystemSettings = Boolean(
+    session?.capabilities?.canManageSystemSettings || String(session?.role || '').trim() === 'admin',
+  );
   const availableRoleOptions = useMemo(
     () => (canManageSystemSettings ? ALL_ROLE_OPTIONS : FACTORY_ROLE_OPTIONS),
     [canManageSystemSettings],

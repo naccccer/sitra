@@ -1,5 +1,8 @@
 const parsedTimeoutMs = Number.parseInt(import.meta.env.VITE_API_TIMEOUT_MS ?? '10000', 10)
 const REQUEST_TIMEOUT_MS = Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 10000
+const APP_BASE_URL = import.meta.env.BASE_URL || '/'
+const RAW_API_BASE = String(import.meta.env.VITE_API_BASE || '').trim()
+const API_BASE = RAW_API_BASE ? RAW_API_BASE.replace(/\/+$/, '') : ''
 
 let _csrfToken = ''
 
@@ -8,6 +11,27 @@ export function setCsrfToken(token) {
 }
 
 const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
+
+function resolveRequestPath(path) {
+  if (typeof path !== 'string') {
+    return path
+  }
+
+  if (/^https?:\/\//i.test(path)) {
+    return path
+  }
+
+  if (!path.startsWith('/api/')) {
+    return path
+  }
+
+  if (API_BASE) {
+    return `${API_BASE}${path.slice('/api'.length)}`
+  }
+
+  const normalizedBase = APP_BASE_URL === '/' ? '' : APP_BASE_URL.replace(/\/$/, '')
+  return `${normalizedBase}${path}`
+}
 
 async function request(path, options = {}) {
   const headers = { ...(options.headers || {}) }
@@ -45,7 +69,7 @@ async function request(path, options = {}) {
 
   let response
   try {
-    response = await fetch(path, {
+    response = await fetch(resolveRequestPath(path), {
       credentials: 'include',
       ...options,
       signal: controller ? controller.signal : options.signal,
@@ -193,24 +217,41 @@ export const api = {
     return request(`/api/inventory.php?${params.toString()}`, { method: 'GET' })
   },
 
-  async createOrder(payload) {
+  async createOrder(payload, options = {}) {
+    const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
     return request('/api/orders.php', {
       method: 'POST',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...(payload || {}),
+        ...(clientRequestId ? { clientRequestId } : {}),
+      }),
     })
   },
 
-  async updateOrder(payload) {
+  async updateOrder(payload, options = {}) {
+    const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
+    const expectedUpdatedAt = typeof options.expectedUpdatedAt === 'string' ? options.expectedUpdatedAt : null
     return request('/api/orders.php', {
       method: 'PUT',
-      body: JSON.stringify(payload),
+      body: JSON.stringify({
+        ...(payload || {}),
+        ...(clientRequestId ? { clientRequestId } : {}),
+        ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
+      }),
     })
   },
 
-  async updateOrderStatus(id, status) {
+  async updateOrderStatus(id, status, options = {}) {
+    const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
+    const expectedUpdatedAt = typeof options.expectedUpdatedAt === 'string' ? options.expectedUpdatedAt : null
     return request('/api/orders.php', {
       method: 'PATCH',
-      body: JSON.stringify({ id, status }),
+      body: JSON.stringify({
+        id,
+        status,
+        ...(clientRequestId ? { clientRequestId } : {}),
+        ...(expectedUpdatedAt ? { expectedUpdatedAt } : {}),
+      }),
     })
   },
 

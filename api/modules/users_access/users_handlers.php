@@ -18,7 +18,8 @@ function app_users_handle_get(PDO $pdo, bool $hasIsActive): void
 
 function app_users_reject_admin_role_mutation_for_non_owner(?array $actor, string $code): void
 {
-    if (app_kernel_is_owner($actor)) {
+    $actorIsAdmin = ((string)($actor['role'] ?? '')) === 'admin';
+    if (app_kernel_is_owner($actor) || $actorIsAdmin) {
         return;
     }
 
@@ -132,7 +133,7 @@ function app_users_handle_put(PDO $pdo, bool $hasIsActive, ?array $currentUser):
     }
     $before = app_users_to_response($existing);
 
-    $isOwner = app_kernel_is_owner($currentUser);
+    $isOwner = app_kernel_is_owner($currentUser) || ((string)($currentUser['role'] ?? '')) === 'admin';
     $existingRole = (string)($existing['role'] ?? '');
     if ($existingRole === 'admin' && !$isOwner) {
         app_json([
@@ -306,7 +307,8 @@ function app_users_handle_patch(PDO $pdo, bool $hasIsActive, array $currentUser)
     }
     $targetResponse = app_users_to_response($target);
 
-    if ((string)($target['role'] ?? '') === 'admin' && !app_kernel_is_owner($currentUser)) {
+    $isOwner = app_kernel_is_owner($currentUser) || ((string)($currentUser['role'] ?? '')) === 'admin';
+    if ((string)($target['role'] ?? '') === 'admin' && !$isOwner) {
         app_json([
             'success' => false,
             'error' => 'Access denied.',

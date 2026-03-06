@@ -23,6 +23,15 @@ function app_sales_orders_handle_post(PDO $pdo): void
 {
     $payload = app_read_json_body();
     $currentUser = app_current_user();
+    $clientRequestId = app_validate_client_request_id($payload['clientRequestId'] ?? null);
+    if ($clientRequestId !== null) {
+        $existing = app_find_idempotent_order_request($pdo, $clientRequestId, 'POST', '/api/orders.php', $currentUser);
+        if ($existing !== null) {
+            $existingPayload = is_array($existing['payload']) ? $existing['payload'] : ['success' => false, 'error' => 'Invalid idempotency response payload.'];
+            app_json($existingPayload, (int)$existing['statusCode']);
+        }
+    }
+
     $isStaff = app_user_has_permission($currentUser, 'sales.orders.create', $pdo);
 
     $customerName = trim((string)($payload['customerName'] ?? ''));
@@ -170,16 +179,39 @@ function app_sales_orders_handle_post(PDO $pdo): void
         );
     }
 
-    app_json([
+    $responsePayload = [
         'success' => true,
         'order' => $order,
-    ], 201);
+    ];
+    if ($clientRequestId !== null) {
+        app_store_idempotent_order_request_response(
+            $pdo,
+            $clientRequestId,
+            'POST',
+            '/api/orders.php',
+            $currentUser,
+            $id,
+            $responsePayload,
+            201
+        );
+    }
+
+    app_json($responsePayload, 201);
 }
 
 function app_sales_orders_handle_put(PDO $pdo): void
 {
     $actor = app_require_permission('sales.orders.update', $pdo);
     $payload = app_read_json_body();
+    $clientRequestId = app_validate_client_request_id($payload['clientRequestId'] ?? null);
+    if ($clientRequestId !== null) {
+        $existing = app_find_idempotent_order_request($pdo, $clientRequestId, 'PUT', '/api/orders.php', $actor);
+        if ($existing !== null) {
+            $existingPayload = is_array($existing['payload']) ? $existing['payload'] : ['success' => false, 'error' => 'Invalid idempotency response payload.'];
+            app_json($existingPayload, (int)$existing['statusCode']);
+        }
+    }
+    $expectedUpdatedAt = app_sales_normalize_expected_updated_at($payload['expectedUpdatedAt'] ?? null);
 
     $id = (int)($payload['id'] ?? 0);
     if ($id <= 0) {
@@ -187,6 +219,18 @@ function app_sales_orders_handle_put(PDO $pdo): void
             'success' => false,
             'error' => 'Valid order id is required.',
         ], 400);
+    }
+    $currentOrderStmt = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
+    $currentOrderStmt->execute(['id' => $id]);
+    $currentOrderRow = $currentOrderStmt->fetch();
+    if (!$currentOrderRow) {
+        app_json([
+            'success' => false,
+            'error' => 'Order not found.',
+        ], 404);
+    }
+    if (app_sales_is_order_conflict($currentOrderRow, $expectedUpdatedAt)) {
+        app_sales_respond_order_conflict($currentOrderRow);
     }
 
     $customerName = trim((string)($payload['customerName'] ?? ''));
@@ -298,10 +342,24 @@ function app_sales_orders_handle_put(PDO $pdo): void
         $actor
     );
 
-    app_json([
+    $responsePayload = [
         'success' => true,
         'order' => $order,
-    ]);
+    ];
+    if ($clientRequestId !== null) {
+        app_store_idempotent_order_request_response(
+            $pdo,
+            $clientRequestId,
+            'PUT',
+            '/api/orders.php',
+            $actor,
+            $id,
+            $responsePayload,
+            200
+        );
+    }
+
+    app_json($responsePayload);
 }
 
 function app_sales_orders_handle_delete(PDO $pdo): void
@@ -362,6 +420,15 @@ function app_sales_orders_handle_patch(PDO $pdo): void
 {
     $actor = app_require_permission('sales.orders.status', $pdo);
     $payload = app_read_json_body();
+    $clientRequestId = app_validate_client_request_id($payload['clientRequestId'] ?? null);
+    if ($clientRequestId !== null) {
+        $existing = app_find_idempotent_order_request($pdo, $clientRequestId, 'PATCH', '/api/orders.php', $actor);
+        if ($existing !== null) {
+            $existingPayload = is_array($existing['payload']) ? $existing['payload'] : ['success' => false, 'error' => 'Invalid idempotency response payload.'];
+            app_json($existingPayload, (int)$existing['statusCode']);
+        }
+    }
+    $expectedUpdatedAt = app_sales_normalize_expected_updated_at($payload['expectedUpdatedAt'] ?? null);
 
     $id = (int)($payload['id'] ?? 0);
     $status = trim((string)($payload['status'] ?? ''));
@@ -372,7 +439,7 @@ function app_sales_orders_handle_patch(PDO $pdo): void
         ], 400);
     }
 
-    $beforeStmt = $pdo->prepare('SELECT status FROM orders WHERE id = :id LIMIT 1');
+    $beforeStmt = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $beforeStmt->execute(['id' => $id]);
     $before = $beforeStmt->fetch();
     if (!$before) {
@@ -380,6 +447,9 @@ function app_sales_orders_handle_patch(PDO $pdo): void
             'success' => false,
             'error' => 'Order not found.',
         ], 404);
+    }
+    if (app_sales_is_order_conflict($before, $expectedUpdatedAt)) {
+        app_sales_respond_order_conflict($before);
     }
     $beforeStatus = (string)($before['status'] ?? '');
 
@@ -414,8 +484,22 @@ function app_sales_orders_handle_patch(PDO $pdo): void
         $actor
     );
 
-    app_json([
+    $responsePayload = [
         'success' => true,
         'order' => $order,
-    ]);
+    ];
+    if ($clientRequestId !== null) {
+        app_store_idempotent_order_request_response(
+            $pdo,
+            $clientRequestId,
+            'PATCH',
+            '/api/orders.php',
+            $actor,
+            $id,
+            $responsePayload,
+            200
+        );
+    }
+
+    app_json($responsePayload);
 }

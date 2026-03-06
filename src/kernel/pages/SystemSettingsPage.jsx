@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { ModuleRegistryPanel } from '../components/ModuleRegistryPanel'
 
 export const SystemSettingsPage = ({ session, onRegistryUpdated }) => {
-  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings)
+  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings || session?.role === 'admin')
 
   if (!canManageSystemSettings) {
     return <Navigate to="/settings" replace />

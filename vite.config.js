@@ -1,6 +1,7 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
+import { VitePWA } from 'vite-plugin-pwa'
 import process from 'node:process'
 
 export default defineConfig(({ mode }) => {
@@ -14,7 +15,94 @@ export default defineConfig(({ mode }) => {
       : `/${rawBase.replace(/^\/+|\/+$/g, '')}/`
 
   return {
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      VitePWA({
+        registerType: 'autoUpdate',
+        includeAssets: [
+          'pwa/icon-192.png',
+          'pwa/icon-512.png',
+          'pwa/icon-512-maskable.png',
+          'pwa/apple-touch-icon.png',
+        ],
+        manifest: {
+          id: normalizedBase,
+          name: 'سیستم سفارشات سیترا',
+          short_name: 'Sitra ERP',
+          description: 'سامانه یکپارچه مدیریت سفارشات و عملیات سیترا',
+          theme_color: '#0f172a',
+          background_color: '#f8fafc',
+          display: 'standalone',
+          scope: normalizedBase,
+          start_url: normalizedBase,
+          lang: 'fa',
+          dir: 'rtl',
+          icons: [
+            {
+              src: 'pwa/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: 'pwa/icon-512-maskable.png',
+              sizes: '512x512',
+              type: 'image/png',
+              purpose: 'maskable',
+            },
+            {
+              src: 'pwa/apple-touch-icon.png',
+              sizes: '180x180',
+              type: 'image/png',
+            },
+          ],
+        },
+        workbox: {
+          cleanupOutdatedCaches: true,
+          clientsClaim: true,
+          skipWaiting: true,
+          navigateFallback: 'index.html',
+          runtimeCaching: [
+            {
+              urlPattern: ({ request, url }) =>
+                request.method === 'GET'
+                && /\/api\/(bootstrap|catalog|orders)\.php($|\?)/.test(url.pathname),
+              handler: 'NetworkFirst',
+              options: {
+                cacheName: 'sitra-api-read-cache',
+                networkTimeoutSeconds: 8,
+                expiration: {
+                  maxEntries: 40,
+                  maxAgeSeconds: 24 * 60 * 60,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+            {
+              urlPattern: ({ request }) => request.destination === 'font',
+              handler: 'CacheFirst',
+              options: {
+                cacheName: 'sitra-font-cache',
+                expiration: {
+                  maxEntries: 20,
+                  maxAgeSeconds: 30 * 24 * 60 * 60,
+                },
+                cacheableResponse: {
+                  statuses: [0, 200],
+                },
+              },
+            },
+          ],
+        },
+      }),
+    ],
     base: normalizedBase,
     build: {
       rollupOptions: {

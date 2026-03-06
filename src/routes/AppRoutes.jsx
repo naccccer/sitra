@@ -43,7 +43,7 @@ const CapabilityRouteGuard = ({ session, capability, children }) => {
 }
 
 const OwnerRouteGuard = ({ session, children }) => {
-  if (session?.capabilities?.canManageSystemSettings) {
+  if (session?.capabilities?.canManageSystemSettings || session?.role === 'admin') {
     return children
   }
 
@@ -62,7 +62,7 @@ export const AppRoutes = ({
   onLogout,
   onRefreshSession,
 }) => {
-  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings)
+  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings || session?.role === 'admin')
 
   return (
     <Routes>

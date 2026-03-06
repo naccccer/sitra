@@ -69,6 +69,22 @@ CREATE TABLE IF NOT EXISTS orders (
     KEY idx_orders_created_at (created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS order_request_idempotency (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    client_request_id VARCHAR(64) NOT NULL,
+    method VARCHAR(10) NOT NULL,
+    endpoint VARCHAR(120) NOT NULL,
+    actor_user_id VARCHAR(64) NULL,
+    order_id BIGINT UNSIGNED NULL,
+    response_json LONGTEXT NOT NULL,
+    status_code SMALLINT UNSIGNED NOT NULL DEFAULT 200,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_order_request_idempotency_client_request_id (client_request_id),
+    KEY idx_order_request_idempotency_actor_created (actor_user_id, created_at),
+    KEY idx_order_request_idempotency_order (order_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS order_lines (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_id BIGINT UNSIGNED NOT NULL,
