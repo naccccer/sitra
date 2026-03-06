@@ -20,8 +20,8 @@ export const LoginPage = ({ session, onLogin, profile }) => {
     return <Navigate to="/" replace />;
   }
 
-  const handleLogin = async (role) => {
-    await onLogin(role);
+  const handleLogin = async (authPayload) => {
+    await onLogin(authPayload);
 
     const nextPath = toRedirectPath(location.state?.from);
     navigate(nextPath, { replace: true });

@@ -24,8 +24,6 @@ const MODULE_PERSIAN_LABELS = {
   'users-access': 'کاربران و دسترسی',
   sales: 'فروش',
   'master-data': 'داده‌های پایه',
-  production: 'تولید',
-  inventory: 'انبار',
 }
 
 export const moduleLabelFa = (moduleId = '', modules = []) => {
@@ -35,4 +33,3 @@ export const moduleLabelFa = (moduleId = '', modules = []) => {
   if (dynamic?.label) return String(dynamic.label)
   return MODULE_PERSIAN_LABELS[id] || id
 }
-

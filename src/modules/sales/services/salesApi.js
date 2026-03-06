@@ -209,14 +209,6 @@ export const salesApi = {
   },
 
   /**
-   * @param {Object} payload
-   * @returns {Promise<any>}
-   */
-  async releaseOrderLines(payload) {
-    return api.releaseOrderLines(payload)
-  },
-
-  /**
    * @param {File} file
    * @returns {Promise<any>}
    */

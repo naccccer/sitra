@@ -64,8 +64,7 @@ function app_sales_orders_handle_post(PDO $pdo): void
 
     $orderMeta = app_sales_normalize_order_meta_payload($payload, max(0, $total));
     $total = (int)($orderMeta['financials']['grandTotal'] ?? max(0, $total));
-    $datePrefix = date('ymd');
-    $codeFlags = app_sales_order_code_flags($items, $isStaff);
+    $orderCodeDatePrefix = app_order_code_date_prefix_jalali();
 
     $orderDate = trim((string)($payload['date'] ?? ''));
     if ($orderDate === '') {
@@ -97,8 +96,15 @@ function app_sales_orders_handle_post(PDO $pdo): void
     $maxOrderCodeAttempts = 10;
 
     for ($attempt = 1; $attempt <= $maxOrderCodeAttempts && !$inserted; $attempt++) {
-        $nextSequence = app_sales_next_order_daily_sequence($pdo, $datePrefix, $codeFlags);
-        $orderCode = app_generate_order_code($datePrefix, $codeFlags, $nextSequence, 5);
+        $nextSequence = app_sales_next_order_daily_sequence($pdo, $orderCodeDatePrefix, '');
+        if ($nextSequence > 999) {
+            app_json([
+                'success' => false,
+                'error' => 'Daily order capacity reached for tracking code generation.',
+            ], 429);
+        }
+
+        $orderCode = app_generate_order_code($orderCodeDatePrefix, '', $nextSequence, 3);
         $retryDuplicateCode = false;
 
         foreach (app_sales_orders_date_column_candidates($pdo) as $dateColumn) {

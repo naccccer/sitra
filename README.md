@@ -1,28 +1,24 @@
-# Sitra ERP
+﻿# Sitra ERP
 
-Sitra is an RTL-first ERP application currently focused on glass factory operations, with a modular foundation for future industry expansion.
+Sitra is an RTL-first ERP focused on order intake and sales operations.
 
 ## Architecture Authority
 
-`ARCHITECTURE.md` is the strict architectural rulebook for this repository.
+`ARCHITECTURE.md` is the source of truth for architecture rules.
 
 Key locked decisions:
 - Modular Monolith.
 - Single-tenant deployment per customer.
 - Dependency direction: `Kernel <- Modules`.
-- Module communication through contracts/APIs only (no direct cross-module table access).
-- Config-driven industry templates.
-- Strict JSDoc contracts with gradual TypeScript migration.
-- Production tracking at order-line level.
-
-If this README and `ARCHITECTURE.md` ever conflict, follow `ARCHITECTURE.md`.
+- Contract-first module boundaries (no direct cross-module table access).
+- Config-driven templates.
 
 ## Current Product Scope
 
-- Sales (active): order intake, order lifecycle, invoice/payment context.
-- Production (active foundation): line-level work orders and release intake endpoint.
-- Inventory (skeleton route exists, domain expansion in progress).
-- Admin settings (catalog/profile/users).
+- Sales: order intake, lifecycle, invoice/payment context.
+- Master Data: catalog/pricing and business profile.
+- Users & Access: users, roles, permission matrix.
+- Kernel/Auth: session, CSRF, audit, module registry.
 
 ## Tech Stack
 
@@ -37,9 +33,8 @@ If this README and `ARCHITECTURE.md` ever conflict, follow `ARCHITECTURE.md`.
 - `api/` PHP HTTP endpoints and shared helpers.
 - `config/` environment and DB bootstrap.
 - `database/schema.sql` baseline DB schema.
+- `database/destructive-domain-cleanup.sql` one-time destructive cleanup script.
 - `public/icons/operations/` operation icon assets.
-- `ARCHITECTURE.md` system context and architectural laws.
-- `AGENTS.md` repository-specific coding agent guidance.
 
 ## Local Setup
 
@@ -54,7 +49,7 @@ copy .env.example .env.local
 ```
 
 3. Create database and import schema:
-- Import `database/schema.sql` in MySQL/MariaDB (for example via phpMyAdmin).
+- Import `database/schema.sql` in MySQL/MariaDB.
 
 4. Serve backend through Apache/PHP (XAMPP layout is expected for this repo).
 
@@ -68,13 +63,9 @@ npm run dev
 - Seed credentials after importing `database/schema.sql`:
   - `username: admin`
   - `password: admin123`
-- If login credentials are unknown, reset admin quickly:
+- Reset admin credentials if needed:
 ```bash
 npm run auth:reset-admin
-```
-- Optional custom reset (username and password):
-```bash
-php scripts/reset-admin-password.php admin mynewpass123
 ```
 
 ## Runtime Notes
@@ -82,13 +73,8 @@ php scripts/reset-admin-password.php admin mynewpass123
 - Frontend bootstraps from `GET /api/bootstrap.php`.
 - Requests use `credentials: include`.
 - Module registry control plane is Owner-only (`admin` + `APP_OWNER_UID`).
-- Non-owner bootstrap responses do not expose module-registry payload.
 - Catalog is persisted in `system_settings` with key `catalog`.
-- Orders are stored in `orders` with JSON payload (`items_json`) and compatibility helpers for legacy shape.
-- Production release creates line-level rows in `order_lines` and `production_work_orders`.
-- Production release also upserts inventory reservations and reserve-ledger movements.
-- Production labels support quick lookup/reprint by `order_row_key` via `production_labels` endpoint.
-- Production GET response includes role-filtered `stationPresets` for scan/transition UI.
+- Orders are stored in `orders` with JSON payload (`items_json`).
 - Valid order statuses are exactly:
   - `pending`
   - `processing`
@@ -99,63 +85,33 @@ php scripts/reset-admin-password.php admin mynewpass123
 
 - `GET /api/bootstrap.php`
 - `GET|POST|PUT|PATCH|DELETE /api/orders.php`
-- `GET|POST|PATCH /api/production.php`
-- `GET|POST /api/production_labels.php`
-- `GET /api/inventory.php`
 - `GET|POST /api/catalog.php`
 - `GET|POST /api/profile.php`
 - `GET|POST|PUT|PATCH /api/users.php`
+- `GET|POST /api/role_permissions.php`
+- `GET|PATCH /api/module_registry.php`
+- `GET /api/audit_logs.php`
 - `POST /api/login.php`
 - `POST /api/logout.php`
 - `POST /api/upload.php`
 - `POST /api/upload_logo.php`
 
-## Development Rules (Short Form)
+## Validation
 
-- Keep diffs focused and minimal.
-- Preserve RTL behavior and Persian text safety (UTF-8, LF).
-- Reuse shared backend helpers where applicable.
-- Use prepared SQL statements for user input.
-- Keep API compatibility during modular migration.
-- Do not introduce cross-module coupling that violates architecture boundaries.
-
-## Required Checks Before Finishing Changes
-
-Language should be Farsi-first.
-
-For small scoped changes (UI copy, one module/page, minor fixes), run fast validation:
+For small scoped changes:
 ```bash
 npm run verify:fast
 ```
 
-For cross-module/backend contract changes or pre-release validation, run safe validation:
+For cross-module/backend contract changes:
 ```bash
 npm run verify:safe
 ```
 
-Safe mode expands to the full checks:
-```bash
-npm run check:encoding
-npm run check:boundaries
-npm run lint
-npm run build
-```
-
-Optional API smoke for production/label flow:
-
-```bash
-npm run smoke:production
-```
-
-Owner identity default:
-
-```bash
-APP_OWNER_UID=1
-```
-
-## Manual Smoke Checks (Minimum)
+## Manual Smoke Checks
 
 - Customer can create an order.
 - Staff can log in and view orders.
 - Staff can update status and archive/unarchive orders.
 - Admin/settings persist and reload through bootstrap.
+- Users/roles only show `admin`, `manager`, `sales`.

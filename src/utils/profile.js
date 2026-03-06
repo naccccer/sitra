@@ -4,7 +4,7 @@ export const defaultProfile = {
   brandName: 'Sitra',
   panelSubtitle: 'پنل مدیریت سفارش',
   invoiceTitleCustomer: 'پیش‌فاکتور رسمی سفارش',
-  invoiceTitleFactory: 'برگه سفارش تولید (نسخه کارخانه)',
+  invoiceTitleFactory: 'برگه سفارش کارگاهی',
   logoPath: '',
   logoOriginalName: '',
   address: FACTORY_ADDRESS,

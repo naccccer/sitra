@@ -9,8 +9,6 @@ const getPageTitle = (pathname) => {
   if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return 'ویرایش سفارش';
   if (pathname === '/orders') return 'مدیریت سفارشات';
   if (pathname === '/orders/new') return 'ثبت سفارش جدید';
-  if (pathname === '/inventory') return 'مدیریت انبار';
-  if (pathname === '/production') return 'برنامه تولید';
   if (pathname === '/admin') return 'مدیریت قیمت‌ها';
   if (pathname === '/profile') return 'پروفایل کسب‌وکار';
   if (pathname === '/users') return 'مدیریت کاربران';

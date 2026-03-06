@@ -157,7 +157,7 @@ export const AdminProfileSettingsTab = ({ profile, setProfile }) => {
             />
           </div>
           <div>
-            <label className="text-xs font-black text-slate-600 mb-1 block">عنوان برگه تولید</label>
+            <label className="text-xs font-black text-slate-600 mb-1 block">عنوان برگه کارگاهی</label>
             <input
               type="text"
               value={draft.invoiceTitleFactory}

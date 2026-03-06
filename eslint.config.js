@@ -4,7 +4,7 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-const moduleNames = ['sales', 'production', 'inventory', 'master-data', 'users-access']
+const moduleNames = ['sales', 'master-data', 'users-access']
 
 const moduleBoundaryOverrides = moduleNames.map((moduleName) => {
   const restricted = moduleNames

@@ -171,58 +171,30 @@ function app_sales_detect_duplicate_order_code_exception(Throwable $e): bool
     return false;
 }
 
-function app_sales_order_has_pattern(array $items): bool
+function app_sales_next_order_daily_sequence(PDO $pdo, string $datePrefix, string $flags = ''): int
 {
-    foreach ($items as $item) {
-        if (!is_array($item)) {
-            continue;
-        }
-
-        $pattern = is_array($item['pattern'] ?? null) ? $item['pattern'] : [];
-        $type = strtolower(trim((string)($pattern['type'] ?? '')));
-        if (in_array($type, ['pattern', 'upload', 'carton', 'hole_map'], true)) {
-            return true;
-        }
-    }
-
-    return false;
-}
-
-function app_sales_order_code_flags(array $items, bool $isStaff): string
-{
-    $hasPattern = app_sales_order_has_pattern($items) ? '1' : '0';
-    $isAdmin = $isStaff ? '1' : '0';
-    return $hasPattern . $isAdmin;
-}
-
-function app_sales_next_order_daily_sequence(PDO $pdo, string $datePrefix, string $flags): int
-{
+    // $flags is retained only for backward compatibility with existing call sites.
     $safeDatePrefix = preg_replace('/\D+/', '', $datePrefix);
     if (!is_string($safeDatePrefix) || strlen($safeDatePrefix) !== 6) {
-        $safeDatePrefix = date('ymd');
+        $safeDatePrefix = app_order_code_date_prefix_jalali();
     }
-
-    $safeFlags = preg_replace('/\D+/', '', $flags);
-    if (!is_string($safeFlags)) {
-        $safeFlags = '00';
-    }
-    $safeFlags = substr(str_pad($safeFlags, 2, '0', STR_PAD_LEFT), -2);
 
     $stmt = $pdo->prepare(
         "SELECT COALESCE(
-            MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(order_code, '-', 3), '-', -1) AS UNSIGNED)),
+            MAX(CAST(SUBSTRING_INDEX(SUBSTRING_INDEX(order_code, '-', 2), '-', -1) AS UNSIGNED)),
             0
         ) AS max_seq
         FROM orders
-        WHERE order_code LIKE :order_code_like"
+        WHERE order_code LIKE :order_code_like
+          AND order_code REGEXP '^[0-9]{6}-[0-9]{3}-[0-9]$'"
     );
     $stmt->execute([
-        'order_code_like' => $safeDatePrefix . '-' . $safeFlags . '-%',
+        'order_code_like' => $safeDatePrefix . '-%',
     ]);
     $row = $stmt->fetch();
     $maxSeq = (int)($row['max_seq'] ?? 0);
 
-    return $maxSeq + 1;
+    return max(1, $maxSeq + 1);
 }
 
 function app_sales_normalize_expected_updated_at($value): ?string

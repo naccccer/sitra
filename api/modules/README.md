@@ -16,13 +16,7 @@ Current adapter mapping:
 - `api/logout.php` -> `api/modules/users_access/logout.php`
 - `api/bootstrap.php` -> `api/modules/kernel/bootstrap.php`
 - `api/module_registry.php` -> `api/modules/kernel/module_registry.php`
-- `api/production.php` -> `api/modules/production/work_orders.php`
-- `api/production_labels.php` -> `api/modules/production/labels.php`
-- `api/inventory.php` -> `api/modules/inventory/stock.php`
 
 Internal split pattern (applied where logic is large):
 - `orders.php` delegates to `orders_handlers.php` and `orders_shared.php`
 - `users.php` delegates to `users_handlers.php` and `users_shared.php`
-- `work_orders.php` delegates to `work_orders_handlers.php` and `work_orders_shared.php`
-- `labels.php` delegates to `labels_handlers.php` and `labels_shared.php`
-- `stock.php` delegates to `stock_handlers.php` (shared inventory contracts in kernel integration layer)

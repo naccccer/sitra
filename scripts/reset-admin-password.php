@@ -21,7 +21,7 @@ $pdo->exec(
         id INT UNSIGNED NOT NULL AUTO_INCREMENT,
         username VARCHAR(64) NOT NULL,
         password VARCHAR(255) NOT NULL,
-        role ENUM('admin','manager','sales','production','inventory') NOT NULL DEFAULT 'manager',
+        role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager',
         is_active TINYINT(1) NOT NULL DEFAULT 1,
         created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,

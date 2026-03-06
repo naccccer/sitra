@@ -10,16 +10,12 @@ const OWNER_ROLE_OPTIONS = [
 const FACTORY_ROLE_OPTIONS = [
   { value: 'manager', label: 'مدیر' },
   { value: 'sales', label: 'فروش' },
-  { value: 'production', label: 'تولید' },
-  { value: 'inventory', label: 'انبار' },
 ];
 
 const ALL_ROLE_OPTIONS = [...OWNER_ROLE_OPTIONS, ...FACTORY_ROLE_OPTIONS];
 
 const MODULE_LABELS = {
   sales: 'فروش',
-  production: 'تولید',
-  inventory: 'انبار',
   'users-access': 'کاربران و دسترسی',
   'master-data': 'داده‌های پایه',
   kernel: 'هسته',
@@ -31,8 +27,6 @@ const roleBadgeClass = (role) => {
   if (role === 'admin') return 'bg-indigo-100 text-indigo-700';
   if (role === 'manager') return 'bg-slate-100 text-slate-700';
   if (role === 'sales') return 'bg-blue-100 text-blue-700';
-  if (role === 'production') return 'bg-amber-100 text-amber-700';
-  if (role === 'inventory') return 'bg-emerald-100 text-emerald-700';
   return 'bg-slate-100 text-slate-700';
 };
 
@@ -97,9 +91,7 @@ const buildPermissionGroups = (definitions, rolePermissions) => {
 };
 
 export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
-  const canManageSystemSettings = Boolean(
-    session?.capabilities?.canManageSystemSettings || String(session?.role || '').trim() === 'admin',
-  );
+  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings);
   const availableRoleOptions = useMemo(
     () => (canManageSystemSettings ? ALL_ROLE_OPTIONS : FACTORY_ROLE_OPTIONS),
     [canManageSystemSettings],

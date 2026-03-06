@@ -51,7 +51,6 @@ const createEmptyManualDraft = () => ({
   unitPrice: '',
   description: '',
   taxable: true,
-  productionImpact: false,
   discountType: 'none',
   discountValue: '',
 });
@@ -106,7 +105,6 @@ const normalizeLoadedItem = (item) => {
         unitLabel: String(item?.manual?.unitLabel || 'عدد'),
         description: String(item?.manual?.description || ''),
         taxable: Boolean(item?.manual?.taxable ?? true),
-        productionImpact: Boolean(item?.manual?.productionImpact ?? false),
       }
       : undefined,
   };
@@ -379,7 +377,6 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
         unitLabel: String(manualDraft.unitLabel || 'عدد').trim() || 'عدد',
         description: String(manualDraft.description || ''),
         taxable: Boolean(manualDraft.taxable),
-        productionImpact: Boolean(manualDraft.productionImpact),
       },
     };
 
@@ -406,7 +403,6 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
         unitPrice: String(item?.pricingMeta?.catalogUnitPrice ?? item?.unitPrice ?? ''),
         description: item?.manual?.description || '',
         taxable: Boolean(item?.manual?.taxable ?? true),
-        productionImpact: Boolean(item?.manual?.productionImpact ?? false),
         discountType: item?.pricingMeta?.itemDiscountType || 'none',
         discountValue: String(item?.pricingMeta?.itemDiscountValue ?? ''),
       });
@@ -850,14 +846,6 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
                   />
                   مشمول مالیات
                 </label>
-                <label className="h-10 flex items-center gap-2 text-xs font-bold text-slate-700 bg-slate-50 border border-slate-200 rounded-lg px-3">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(manualDraft.productionImpact)}
-                    onChange={(e) => handleManualFieldChange('productionImpact', e.target.checked)}
-                  />
-                  اثر روی تولید (نمایش در چاپ کارخانه)
-                </label>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
@@ -925,6 +913,7 @@ export const OrderForm = ({ catalog, setOrders, profile, editingOrder = null, on
     </div>
   );
 };
+
 
 
 

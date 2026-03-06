@@ -28,7 +28,10 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
 
     try {
       const data = await api.login(username, password);
-      await onLogin(data?.role || null);
+      await onLogin({
+        role: data?.role || null,
+        username: data?.username || username,
+      });
     } catch (error) {
       setErrorMsg(error?.message || 'ارتباط با سرور برقرار نشد.');
     } finally {

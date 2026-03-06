@@ -19,7 +19,6 @@
     "env:office": "node scripts/switch-env.js office",
     "env:status": "node scripts/switch-env.js status",
     "auth:reset-admin": "php scripts/reset-admin-password.php",
-    "smoke:production": "php scripts/smoke-production-flow.php",
     "preview": "vite preview"
   },
   "dependencies": {

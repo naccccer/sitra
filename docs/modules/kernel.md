@@ -12,7 +12,7 @@
 - Module registry and capability exposure.
 
 ## Must Not Own
-- Sales, production, inventory, or catalog business workflows.
+- Sales or catalog business workflows.
 
 ## Public Services
 - `auth_context`
@@ -29,9 +29,6 @@
 - Protected modules that cannot be disabled:
   - `auth`
   - `users-access`
-- Dependency guard:
-  - `production` depends on `inventory`.
-  - While `production` is enabled, disabling `inventory` is blocked (`409`).
 - Bootstrap contract:
   - `GET /api/bootstrap.php` exposes dynamic `modules` from registry only for Owner.
   - Capability flags are masked by module enabled state.

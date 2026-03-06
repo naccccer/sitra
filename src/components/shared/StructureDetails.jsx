@@ -14,7 +14,6 @@ export const StructureDetails = ({ item, catalog }) => {
         {manual.description && <div className="text-[10px] font-bold text-slate-500">{manual.description}</div>}
         <div className="text-[10px] font-bold text-slate-500 flex flex-wrap gap-2">
           <span>{manual.taxable ? 'مشمول مالیات' : 'معاف از مالیات'}</span>
-          <span>{manual.productionImpact ? 'تولیدی' : 'غیرتولیدی'}</span>
         </div>
       </div>
     );

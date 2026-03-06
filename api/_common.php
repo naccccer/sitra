@@ -224,6 +224,13 @@ function app_ensure_audit_logs_table(PDO $pdo): void
             KEY idx_audit_actor_created (actor_user_id, created_at)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+
+    $pdo->exec(
+        "DELETE FROM audit_logs
+         WHERE event_type IS NULL
+            OR event_type = ''
+            OR SUBSTRING_INDEX(event_type, '.', 1) NOT IN ('auth', 'users_access', 'master_data', 'sales', 'kernel')"
+    );
 }
 
 function app_audit_log(PDO $pdo, string $eventType, string $entityType, ?string $entityId = null, array $payload = [], ?array $actor = null): void
@@ -327,35 +334,91 @@ function app_normalize_payment_receipt($receipt): ?array
 
 function app_generate_order_code(string|int $datePrefix = '', string $flags = '00', int $sequence = 1, int $seqPad = 5): string
 {
-    $date = date('ymd');
+    $date = app_order_code_date_prefix_jalali();
     if (is_int($datePrefix)) {
         // Backward compatibility for old signature: app_generate_order_code($sequence)
         $sequence = $datePrefix;
     } else {
         $candidateDate = preg_replace('/\D+/', '', trim($datePrefix));
-        if (is_string($candidateDate) && strlen($candidateDate) === 6) {
+        if (is_string($candidateDate) && preg_match('/^\d{6}$/', $candidateDate)) {
             $date = $candidateDate;
         }
     }
 
-    $flagsDigits = preg_replace('/\D+/', '', $flags);
-    if (!is_string($flagsDigits)) {
-        $flagsDigits = '00';
-    }
-    $flagsNormalized = substr(str_pad($flagsDigits, 2, '0', STR_PAD_LEFT), -2);
-
+    // Flags and seqPad are intentionally ignored in the YYMMDD-SSS-C format.
     $sequence = max(1, $sequence);
-    $seqPad = max(3, min(12, $seqPad));
-    $seq = str_pad((string)$sequence, $seqPad, '0', STR_PAD_LEFT);
+    if ($sequence > 999) {
+        throw new InvalidArgumentException('Order sequence exceeds daily capacity (999).');
+    }
 
-    $base = $date . $flagsNormalized . $seq;
+    $seq = str_pad((string)$sequence, 3, '0', STR_PAD_LEFT);
+    $core = $date . $seq;
+
     $sum = 0;
-    foreach (str_split($base) as $char) {
-        $sum += (int)$char;
+    foreach (str_split($core) as $index => $char) {
+        $sum += ((int)$char) * ($index + 1);
     }
 
     $checksum = $sum % 10;
-    return $date . '-' . $flagsNormalized . '-' . $seq . '-' . $checksum;
+    return $date . '-' . $seq . '-' . $checksum;
+}
+
+function app_order_code_date_prefix_jalali(?int $timestamp = null): string
+{
+    $ts = $timestamp ?? time();
+    $gy = (int)date('Y', $ts);
+    $gm = (int)date('n', $ts);
+    $gd = (int)date('j', $ts);
+
+    [$jy, $jm, $jd] = app_gregorian_to_jalali($gy, $gm, $gd);
+
+    $yy = str_pad((string)($jy % 100), 2, '0', STR_PAD_LEFT);
+    $mm = str_pad((string)$jm, 2, '0', STR_PAD_LEFT);
+    $dd = str_pad((string)$jd, 2, '0', STR_PAD_LEFT);
+    return $yy . $mm . $dd;
+}
+
+function app_gregorian_to_jalali(int $gy, int $gm, int $gd): array
+{
+    $gDayAcc = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+
+    if ($gy > 1600) {
+        $jy = 979;
+        $gy -= 1600;
+    } else {
+        $jy = 0;
+        $gy -= 621;
+    }
+
+    $gy2 = $gm > 2 ? $gy + 1 : $gy;
+    $days =
+        (365 * $gy)
+        + intdiv($gy2 + 3, 4)
+        - intdiv($gy2 + 99, 100)
+        + intdiv($gy2 + 399, 400)
+        - 80
+        + $gd
+        + $gDayAcc[$gm - 1];
+
+    $jy += 33 * intdiv($days, 12053);
+    $days %= 12053;
+    $jy += 4 * intdiv($days, 1461);
+    $days %= 1461;
+
+    if ($days > 365) {
+        $jy += intdiv($days - 1, 365);
+        $days = ($days - 1) % 365;
+    }
+
+    if ($days < 186) {
+        $jm = 1 + intdiv($days, 31);
+        $jd = 1 + ($days % 31);
+    } else {
+        $jm = 7 + intdiv($days - 186, 30);
+        $jd = 1 + (($days - 186) % 30);
+    }
+
+    return [$jy, $jm, $jd];
 }
 
 function app_order_meta_defaults(int $grandTotal = 0): array
@@ -431,7 +494,6 @@ function app_normalize_item_for_response($item): array
             'unitLabel' => 'عدد',
             'description' => '',
             'taxable' => true,
-            'productionImpact' => false,
         ], $manual);
     }
 
@@ -939,7 +1001,7 @@ function app_read_catalog(PDO $pdo)
 
 function app_user_roles(): array
 {
-    return ['admin', 'manager', 'sales', 'production', 'inventory'];
+    return ['admin', 'manager', 'sales'];
 }
 
 function app_module_registry_seed_rows(): array
@@ -977,30 +1039,12 @@ function app_module_registry_seed_rows(): array
             'is_protected' => 0,
             'sort_order' => 40,
         ],
-        [
-            'module_key' => 'production',
-            'label' => 'Production',
-            'phase' => 'mvp',
-            'is_enabled' => 1,
-            'is_protected' => 0,
-            'sort_order' => 50,
-        ],
-        [
-            'module_key' => 'inventory',
-            'label' => 'Inventory',
-            'phase' => 'mvp',
-            'is_enabled' => 1,
-            'is_protected' => 0,
-            'sort_order' => 60,
-        ],
     ];
 }
 
 function app_module_dependency_map(): array
 {
-    return [
-        'production' => ['inventory'],
-    ];
+    return [];
 }
 
 function app_module_registry_row_to_response(array $row): array
@@ -1066,6 +1110,11 @@ function app_ensure_module_registry_table(PDO $pdo): void
     foreach (app_module_registry_seed_rows() as $seed) {
         $seedStmt->execute($seed);
     }
+
+    $pdo->exec(
+        "DELETE FROM module_registry
+         WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'master-data')"
+    );
 }
 
 function app_module_registry(?PDO $pdo = null): array
@@ -1265,13 +1314,8 @@ function app_permission_definitions(): array
         ['key' => 'sales.orders.update', 'module' => 'sales', 'label' => 'ویرایش سفارش'],
         ['key' => 'sales.orders.status', 'module' => 'sales', 'label' => 'تغییر وضعیت سفارش'],
         ['key' => 'sales.orders.delete', 'module' => 'sales', 'label' => 'حذف سفارش بایگانی‌شده'],
-        ['key' => 'sales.orders.release', 'module' => 'sales', 'label' => 'ارسال سطرها به تولید'],
         ['key' => 'master_data.catalog.read', 'module' => 'master-data', 'label' => 'مشاهده لیست قیمت'],
         ['key' => 'master_data.catalog.write', 'module' => 'master-data', 'label' => 'ویرایش لیست قیمت'],
-        ['key' => 'production.work_orders.read', 'module' => 'production', 'label' => 'مشاهده برگه کار تولید'],
-        ['key' => 'production.work_orders.write', 'module' => 'production', 'label' => 'به‌روزرسانی برگه کار تولید و لیبل'],
-        ['key' => 'inventory.stock.read', 'module' => 'inventory', 'label' => 'مشاهده موجودی'],
-        ['key' => 'inventory.stock.write', 'module' => 'inventory', 'label' => 'ثبت ویرایش موجودی'],
         ['key' => 'users_access.users.read', 'module' => 'users-access', 'label' => 'مشاهده کاربران'],
         ['key' => 'users_access.users.write', 'module' => 'users-access', 'label' => 'مدیریت کاربران و جدول دسترسی'],
         ['key' => 'kernel.audit.read', 'module' => 'kernel', 'label' => 'مشاهده لاگ ممیزی'],
@@ -1327,13 +1371,8 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.update',
             'sales.orders.status',
             'sales.orders.delete',
-            'sales.orders.release',
             'master_data.catalog.read',
             'master_data.catalog.write',
-            'production.work_orders.read',
-            'production.work_orders.write',
-            'inventory.stock.read',
-            'inventory.stock.write',
             'users_access.users.read',
             'users_access.users.write',
             'kernel.audit.read',
@@ -1345,21 +1384,6 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.create',
             'sales.orders.update',
             'sales.orders.status',
-            'sales.orders.release',
-            'master_data.catalog.read',
-            'profile.read',
-        ],
-        'production' => [
-            'sales.orders.read',
-            'production.work_orders.read',
-            'production.work_orders.write',
-            'master_data.catalog.read',
-            'profile.read',
-        ],
-        'inventory' => [
-            'sales.orders.read',
-            'inventory.stock.read',
-            'inventory.stock.write',
             'master_data.catalog.read',
             'profile.read',
         ],
@@ -1519,8 +1543,6 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
         'canManageOrders' => in_array('sales.orders.read', $permissions, true),
         'canManageCatalog' => in_array('master_data.catalog.write', $permissions, true),
         'canManageUsers' => in_array('users_access.users.write', $permissions, true),
-        'canUseProduction' => in_array('production.work_orders.read', $permissions, true),
-        'canUseInventory' => in_array('inventory.stock.read', $permissions, true),
         'canViewAuditLogs' => in_array('kernel.audit.read', $permissions, true),
         'canManageProfile' => in_array('profile.write', $permissions, true),
         'canManageSystemSettings' => false,
@@ -1533,16 +1555,12 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
     $enabledMap = app_module_registry_enabled_map($modules);
     $salesEnabled = $enabledMap['sales'] ?? true;
     $masterDataEnabled = $enabledMap['master-data'] ?? true;
-    $productionEnabled = $enabledMap['production'] ?? true;
-    $inventoryEnabled = $enabledMap['inventory'] ?? true;
     $usersAccessEnabled = $enabledMap['users-access'] ?? true;
 
     $capabilities['canAccessDashboard'] = $capabilities['canAccessDashboard'] && $salesEnabled;
     $capabilities['canManageOrders'] = $capabilities['canManageOrders'] && $salesEnabled;
     $capabilities['canManageCatalog'] = $capabilities['canManageCatalog'] && $masterDataEnabled;
     $capabilities['canManageProfile'] = $capabilities['canManageProfile'] && $masterDataEnabled;
-    $capabilities['canUseProduction'] = $capabilities['canUseProduction'] && $productionEnabled;
-    $capabilities['canUseInventory'] = $capabilities['canUseInventory'] && $inventoryEnabled;
     $capabilities['canManageUsers'] = $capabilities['canManageUsers'] && $usersAccessEnabled;
 
     return $capabilities;
@@ -1566,7 +1584,7 @@ function app_ensure_users_table(PDO $pdo): void
             id INT UNSIGNED NOT NULL AUTO_INCREMENT,
             username VARCHAR(64) NOT NULL,
             password VARCHAR(255) NOT NULL,
-            role ENUM('admin','manager','sales','production','inventory') NOT NULL DEFAULT 'manager',
+            role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -1588,8 +1606,10 @@ function app_ensure_users_table(PDO $pdo): void
         $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'");
         $row = $stmt ? $stmt->fetch() : null;
         $type = strtolower((string)($row['Type'] ?? ''));
-        if ($type !== '' && !str_contains($type, "'sales'")) {
-            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','sales','production','inventory') NOT NULL DEFAULT 'manager'");
+        $targetType = "enum('admin','manager','sales')";
+        if ($type !== '' && $type !== $targetType) {
+            $pdo->exec("UPDATE users SET role = 'sales' WHERE role NOT IN ('admin', 'manager', 'sales')");
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager'");
         }
     } catch (Throwable $e) {
         // Preserve runtime compatibility even if alter is not permitted.
@@ -1624,7 +1644,7 @@ function app_profile_defaults(): array
         'brandName' => 'Sitra',
         'panelSubtitle' => 'پنل مدیریت سفارش',
         'invoiceTitleCustomer' => 'پیش‌فاکتور رسمی سفارش',
-        'invoiceTitleFactory' => 'برگه سفارش تولید (نسخه کارخانه)',
+        'invoiceTitleFactory' => 'برگه سفارش کارگاهی',
         'logoPath' => '',
         'logoOriginalName' => '',
         'address' => 'مشهد، خین‌عرب، بین طرح چی 11 و 13، پرهام',

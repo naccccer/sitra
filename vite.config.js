@@ -71,10 +71,10 @@ export default defineConfig(({ mode }) => {
             {
               urlPattern: ({ request, url }) =>
                 request.method === 'GET'
-                && /\/api\/(bootstrap|catalog|orders)\.php($|\?)/.test(url.pathname),
+                && /\/api\/catalog\.php($|\?)/.test(url.pathname),
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'sitra-api-read-cache',
+                cacheName: 'sitra-api-catalog-cache',
                 networkTimeoutSeconds: 8,
                 expiration: {
                   maxEntries: 40,

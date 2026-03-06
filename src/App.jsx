@@ -4,7 +4,7 @@ import { AppRoutes } from './routes/AppRoutes';
 import { api, setCsrfToken } from './services/api';
 import { OfflineSyncBanner } from './components/shared/OfflineSyncBanner';
 import { defaultProfile, normalizeProfile } from './utils/profile';
-import { readBootstrapCache, writeBootstrapCache } from './services/bootstrapCache';
+import { clearBootstrapCache, readBootstrapCache, writeBootstrapCache } from './services/bootstrapCache';
 import {
   dropSalesOfflineOperation,
   getSalesOfflineQueueSnapshot,
@@ -66,8 +66,6 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageOrders: true,
       canManageCatalog: true,
       canManageUsers: true,
-      canUseProduction: true,
-      canUseInventory: true,
       canViewAuditLogs: true,
       canManageProfile: true,
       canManageSystemSettings: normalizedRole === 'admin',
@@ -80,36 +78,6 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageOrders: true,
       canManageCatalog: false,
       canManageUsers: false,
-      canUseProduction: false,
-      canUseInventory: false,
-      canViewAuditLogs: false,
-      canManageProfile: false,
-      canManageSystemSettings: false,
-    };
-  }
-
-  if (normalizedRole === 'production') {
-    return {
-      canAccessDashboard: true,
-      canManageOrders: true,
-      canManageCatalog: false,
-      canManageUsers: false,
-      canUseProduction: true,
-      canUseInventory: false,
-      canViewAuditLogs: false,
-      canManageProfile: false,
-      canManageSystemSettings: false,
-    };
-  }
-
-  if (normalizedRole === 'inventory') {
-    return {
-      canAccessDashboard: true,
-      canManageOrders: true,
-      canManageCatalog: false,
-      canManageUsers: false,
-      canUseProduction: false,
-      canUseInventory: true,
       canViewAuditLogs: false,
       canManageProfile: false,
       canManageSystemSettings: false,
@@ -121,8 +89,6 @@ const deriveCapabilitiesFromRole = (role) => {
     canManageOrders: false,
     canManageCatalog: false,
     canManageUsers: false,
-    canUseProduction: false,
-    canUseInventory: false,
     canViewAuditLogs: false,
     canManageProfile: false,
     canManageSystemSettings: false,
@@ -141,6 +107,7 @@ const normalizeSession = (rawSession, fallbackRole = null, bootstrapData = null)
     return {
       ...EMPTY_SESSION,
       role: effectiveRole,
+      username: null,
       permissions,
       capabilities,
       modules,
@@ -291,14 +258,17 @@ export default function App() {
     };
   }, [runOfflineSync]);
 
-  const handleLogin = async (role) => {
+  const handleLogin = async (authPayload) => {
+    const role = authPayload && typeof authPayload === 'object' ? authPayload.role : authPayload;
+    const username = authPayload && typeof authPayload === 'object' ? authPayload.username : null;
     setSession((prev) => {
-      const nextRole = role || prev.role || 'manager';
+      const normalizedUsername = String(username || prev?.username || '').trim();
+      const nextRole = role || prev.role || null;
       return normalizeSession(
         {
           authenticated: true,
           role: nextRole,
-          username: prev?.username || null,
+          username: normalizedUsername || prev?.username || null,
         },
         nextRole,
         null,
@@ -332,6 +302,7 @@ export default function App() {
     } catch (error) {
       if (import.meta.env.DEV) console.error('Failed to logout from backend.', error);
     } finally {
+      clearBootstrapCache();
       setSession(EMPTY_SESSION);
       setOrders([]);
     }

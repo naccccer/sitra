@@ -9,10 +9,8 @@ import { AuditLogsPage } from '../kernel/pages/AuditLogsPage'
 import { isModuleEnabled, moduleLabelFa } from '../kernel/moduleRegistry'
 import { OrderCreatePage, OrderDetailPage, OrdersPage } from '../modules/sales'
 import { AdminPage } from '../modules/master-data'
-import { InventoryPage } from '../modules/inventory'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
-import { ProductionPage } from '../modules/production'
 import { UsersPage } from '../modules/users-access'
 import { ProfilePage } from '../pages/ProfilePage'
 
@@ -43,7 +41,7 @@ const CapabilityRouteGuard = ({ session, capability, children }) => {
 }
 
 const OwnerRouteGuard = ({ session, children }) => {
-  if (session?.capabilities?.canManageSystemSettings || session?.role === 'admin') {
+  if (session?.capabilities?.canManageSystemSettings) {
     return children
   }
 
@@ -62,7 +60,7 @@ export const AppRoutes = ({
   onLogout,
   onRefreshSession,
 }) => {
-  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings || session?.role === 'admin')
+  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings)
 
   return (
     <Routes>
@@ -91,8 +89,6 @@ export const AppRoutes = ({
           <Route index element={<CapabilityRouteGuard session={session} capability="canAccessDashboard"><ModuleRouteGuard session={session} moduleId="sales"><DashboardPage orders={orders} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} setOrders={setOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
-          <Route path="inventory" element={<CapabilityRouteGuard session={session} capability="canUseInventory"><ModuleRouteGuard session={session} moduleId="inventory"><InventoryPage /></ModuleRouteGuard></CapabilityRouteGuard>} />
-          <Route path="production" element={<CapabilityRouteGuard session={session} capability="canUseProduction"><ModuleRouteGuard session={session} moduleId="production"><ProductionPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
           <Route path="settings" element={<SettingsPage session={session} />}>
             <Route path="catalog" element={<CapabilityRouteGuard session={session} capability="canManageCatalog"><ModuleRouteGuard session={session} moduleId="master-data"><AdminPage catalog={catalog} setCatalog={setCatalog} session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />

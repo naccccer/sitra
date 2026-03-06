@@ -34,14 +34,6 @@ const AUDIT_EVENT_LABELS = {
   'sales.order.updated': 'ویرایش سفارش',
   'sales.order.status.changed': 'تغییر وضعیت سفارش',
   'sales.order.deleted': 'حذف سفارش بایگانی شده',
-  'sales.order.released': 'ارسال سفارش به تولید',
-  'production.work_order.created': 'ایجاد برگه کار تولید',
-  'production.work_order.release_replayed': 'بازپخش رهاسازی برگه کار تولید',
-  'production.work_order.updated': 'به روزرسانی برگه کار تولید',
-  'production.label.printed': 'ثبت چاپ لیبل تولید',
-  'inventory.reservation.created': 'ایجاد رزرو انبار',
-  'inventory.reservation.updated': 'به روزرسانی رزرو انبار',
-  'inventory.reservation.consumed': 'کسر از رزرو انبار',
   'kernel.module_registry.updated': 'تغییر وضعیت ماژول',
 }
 
@@ -51,16 +43,12 @@ const ENTITY_LABELS = {
   orders: 'سفارش',
   system_settings: 'تنظیمات سیستم',
   module_registry: 'رجیستری ماژول ها',
-  production_work_order: 'برگه کار تولید',
-  inventory_stock_reservations: 'رزرو انبار',
 }
 
 const ROLE_LABELS = {
   admin: 'ادمین',
   manager: 'مدیر',
   sales: 'فروش',
-  production: 'تولید',
-  inventory: 'انبار',
 }
 
 const toAuditEventLabel = (eventType) => AUDIT_EVENT_LABELS[String(eventType || '').trim()] || 'رویداد سیستمی'

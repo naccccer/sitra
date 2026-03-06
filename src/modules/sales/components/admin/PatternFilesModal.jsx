@@ -15,7 +15,7 @@ export const PatternFilesModal = ({ isOpen, onClose, orderCode, files = [] }) =>
       <div className="w-full max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl bg-white border border-slate-200 shadow-2xl">
         <div className="flex items-center justify-between p-4 border-b border-slate-100 bg-slate-50">
           <div>
-            <h3 className="text-sm font-black text-slate-800">فایل‌های الگوی سفارش تولید</h3>
+            <h3 className="text-sm font-black text-slate-800">فایل‌های الگوی سفارش کارگاهی</h3>
             <p className="text-[11px] font-bold text-slate-500 mt-1">کد رهگیری: <span className="tabular-nums" dir="ltr">{toPN(orderCode || '-')}</span></p>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg bg-white border border-slate-200 text-slate-500 hover:text-slate-800">

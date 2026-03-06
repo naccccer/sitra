@@ -100,7 +100,7 @@ const paymentStatusPill = (status) => {
 const ORDER_STAGE_OPTIONS = [
   { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-slate-100 text-slate-700' },
   { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-amber-100 text-amber-700' },
-  { id: 'in_production', label: 'در حال تولید', status: 'processing', className: 'bg-blue-100 text-blue-700' },
+  { id: 'in_progress', label: 'در حال انجام', status: 'processing', className: 'bg-blue-100 text-blue-700' },
   { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-indigo-100 text-indigo-700' },
   { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-emerald-100 text-emerald-700' },
 ];
@@ -112,7 +112,7 @@ const ORDER_STAGE_MAP = ORDER_STAGE_OPTIONS.reduce((acc, option) => {
 
 const FALLBACK_STAGE_BY_STATUS = {
   pending: 'registered',
-  processing: 'in_production',
+  processing: 'in_progress',
   delivered: 'delivered',
   archived: 'delivered',
 };
@@ -163,7 +163,6 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
   const [paymentManagerOrderId, setPaymentManagerOrderId] = useState(null);
   const [paymentManagerActiveTab, setPaymentManagerActiveTab] = useState(PAYMENT_MANAGER_TABS[0].id);
   const [uploadingReceiptKey, setUploadingReceiptKey] = useState('');
-  const [releasingOrderIds, setReleasingOrderIds] = useState({});
 
   const updateOrderStatus = async (id, status, expectedUpdatedAt = null) => {
     const previousOrder = orders.find((o) => o.id === id);
@@ -281,42 +280,8 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
 
   const printFactoryOrder = (order) => {
     if (!order) return;
-    const nextOrder = {
-      ...order,
-      factoryIncludeNonProductionManual: true,
-    };
-    setViewingOrder(nextOrder);
+    setViewingOrder(order);
     setTimeout(() => window.print(), 100);
-  };
-
-  const releaseOrderToProduction = async (order) => {
-    if (!order?.id) return;
-    const orderId = String(order.id);
-    if (releasingOrderIds[orderId]) return;
-
-    setReleasingOrderIds((prev) => ({ ...prev, [orderId]: true }));
-    try {
-      const response = await salesApi.releaseOrderLines({
-        orderId: Number(order.id),
-        enforceStockCheck: false,
-      });
-      const released = Array.isArray(response?.workOrders) ? response.workOrders.length : 0;
-      const shortages = (Array.isArray(response?.workOrders) ? response.workOrders : []).filter((workOrder) => {
-        const shortageQty = Number(workOrder?.reservation?.capacity?.shortageQty || 0);
-        return Number.isFinite(shortageQty) && shortageQty > 0;
-      });
-
-      if (shortages.length > 0) {
-        alert(`ارسال به تولید انجام شد. تعداد سطرهای پردازش شده: ${toPN(released)}. تعداد موارد کمبود موجودی: ${toPN(shortages.length)}.`);
-      } else {
-        alert(`ارسال به تولید انجام شد. تعداد سطرهای پردازش شده: ${toPN(released)}.`);
-      }
-    } catch (error) {
-      console.error('Failed to release order lines to production.', error);
-      alert(error?.message || 'ارسال سفارش به تولید ناموفق بود.');
-    } finally {
-      setReleasingOrderIds((prev) => ({ ...prev, [orderId]: false }));
-    }
   };
 
   const getOrderPaymentDraft = (orderId) => paymentDraftsByOrder[orderId] || createPaymentDraft();
@@ -593,7 +558,7 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
           {[
             { id: 'all', label: 'همه سفارش‌ها' },
             { id: 'pending', label: 'ثبت شده / پیگیری' },
-            { id: 'processing', label: 'تولید / آماده تحویل' },
+            { id: 'processing', label: 'در حال انجام / آماده تحویل' },
             { id: 'delivered', label: 'تحویل شده' },
             { id: 'archived', label: 'بایگانی' },
           ].map((t) => (
@@ -723,25 +688,16 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
                               <div className="flex flex-wrap gap-2 justify-between items-center mb-3 border-b border-slate-100 pb-2">
                                 <span className="font-black text-sm text-slate-800">ریز اقلام سفارش</span>
                                 <div className="flex flex-wrap items-center gap-2">
-                                  {o.status !== 'archived' && (
                                     <button
-                                      onClick={() => releaseOrderToProduction(o)}
-                                      disabled={Boolean(releasingOrderIds[String(o.id)])}
-                                      className={`text-xs px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors ${releasingOrderIds[String(o.id)] ? 'bg-slate-300 text-white cursor-not-allowed' : 'bg-emerald-600 hover:bg-emerald-700 text-white'}`}
-                                    >
-                                      {releasingOrderIds[String(o.id)] ? 'در حال ارسال...' : 'ارسال به تولید'}
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => openPatternFilesModal(o)}
-                                    className="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors"
+                                      onClick={() => openPatternFilesModal(o)}
+                                      className="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors"
                                   >
                                     <FileText size={12} />
                                     فایل‌های الگو
                                   </button>
                                   <button onClick={() => printFactoryOrder(o)} className="text-xs bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg flex gap-1 items-center font-bold shadow-sm transition-colors">
                                     <Printer size={12} />
-                                    چاپ برای تولید
+                                    چاپ نسخه کارگاهی
                                   </button>
                                 </div>
                               </div>
@@ -1212,7 +1168,6 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
           payments={viewingOrder.payments}
           invoiceNotes={viewingOrder.invoiceNotes}
           type="factory"
-          factoryIncludeNonProductionManual={Boolean(viewingOrder.factoryIncludeNonProductionManual)}
         />
       )}
 
