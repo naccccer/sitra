@@ -22,6 +22,36 @@ function formatNowIso() {
   return new Date().toISOString()
 }
 
+function sanitizeOrderItemForTransport(item) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return item
+  }
+
+  const nextItem = { ...item }
+  const pattern = nextItem.pattern
+  if (pattern && typeof pattern === 'object' && !Array.isArray(pattern)) {
+    const nextPattern = { ...pattern }
+    // previewDataUrl is only for local UI preview and can exceed DB packet limits.
+    delete nextPattern.previewDataUrl
+    nextItem.pattern = nextPattern
+  }
+
+  return nextItem
+}
+
+function sanitizeOrderPayloadForTransport(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {}
+  }
+
+  const nextPayload = { ...payload }
+  if (Array.isArray(nextPayload.items)) {
+    nextPayload.items = nextPayload.items.map(sanitizeOrderItemForTransport)
+  }
+
+  return nextPayload
+}
+
 function createQueuedOrderPreview(payload, queueItem) {
   const items = Array.isArray(payload?.items) ? payload.items : []
   const totalFromPayload = Number(payload?.total || 0)
@@ -58,43 +88,44 @@ export const salesApi = {
    * @returns {Promise<any>}
    */
   async createOrder(payload) {
+    const requestPayload = sanitizeOrderPayloadForTransport(payload)
     const clientRequestId = createClientRequestId()
     const requiresAuth = Boolean(
-      payload?.financials
-      || (Array.isArray(payload?.payments) && payload.payments.length > 0)
-      || String(payload?.invoiceNotes || '').trim() !== '',
+      requestPayload?.financials
+      || (Array.isArray(requestPayload?.payments) && requestPayload.payments.length > 0)
+      || String(requestPayload?.invoiceNotes || '').trim() !== '',
     )
 
     if (isOffline() && supportsSalesOfflineQueue()) {
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'create',
-        payload,
+        payload: requestPayload,
         requiresAuth,
       })
       return {
         success: true,
         queued: true,
         queueItem,
-        order: createQueuedOrderPreview(payload, queueItem),
+        order: createQueuedOrderPreview(requestPayload, queueItem),
       }
     }
 
     try {
-      return await api.createOrder(payload, { clientRequestId })
+      return await api.createOrder(requestPayload, { clientRequestId })
     } catch (error) {
       if (!supportsSalesOfflineQueue() || !isRetriableOfflineError(error)) {
         throw error
       }
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'create',
-        payload,
+        payload: requestPayload,
         requiresAuth,
       })
       return {
         success: true,
         queued: true,
         queueItem,
-        order: createQueuedOrderPreview(payload, queueItem),
+        order: createQueuedOrderPreview(requestPayload, queueItem),
       }
     }
   },
@@ -104,15 +135,16 @@ export const salesApi = {
    * @returns {Promise<any>}
    */
   async updateOrder(payload) {
+    const requestPayload = sanitizeOrderPayloadForTransport(payload)
     const clientRequestId = createClientRequestId()
-    const expectedUpdatedAt = typeof payload?.expectedUpdatedAt === 'string'
-      ? payload.expectedUpdatedAt
-      : (typeof payload?.updatedAt === 'string' ? payload.updatedAt : null)
+    const expectedUpdatedAt = typeof requestPayload?.expectedUpdatedAt === 'string'
+      ? requestPayload.expectedUpdatedAt
+      : (typeof requestPayload?.updatedAt === 'string' ? requestPayload.updatedAt : null)
 
     if (isOffline() && supportsSalesOfflineQueue()) {
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'update',
-        payload,
+        payload: requestPayload,
         requiresAuth: true,
         expectedUpdatedAt,
       })
@@ -125,7 +157,7 @@ export const salesApi = {
     }
 
     try {
-      return await api.updateOrder(payload, {
+      return await api.updateOrder(requestPayload, {
         clientRequestId,
         expectedUpdatedAt: expectedUpdatedAt || undefined,
       })
@@ -135,7 +167,7 @@ export const salesApi = {
       }
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'update',
-        payload,
+        payload: requestPayload,
         requiresAuth: true,
         expectedUpdatedAt,
       })
