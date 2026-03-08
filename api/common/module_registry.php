@@ -68,7 +68,7 @@ function app_module_registry_row_to_response(array $row): array
         'dependsOn' => array_values($dependencyMap[$moduleId] ?? []),
         'sortOrder' => (int)($row['sort_order'] ?? 100),
         'updatedAt' => (string)($row['updated_at'] ?? ''),
-        'updatedByUserId' => $row['updated_by_user_id'] !== null ? (string)$row['updated_by_user_id'] : null,
+        'updatedByUserId' => isset($row['updated_by_user_id']) ? (string)$row['updated_by_user_id'] : null,
     ];
 }
 
