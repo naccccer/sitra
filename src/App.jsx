@@ -38,10 +38,12 @@ export default function App() {
     catalog,
     profile,
     orders,
+    ordersHasMore,
     isHydrating,
     setOrders,
     setCatalog,
     setProfile,
+    loadMoreOrders,
     runOfflineSync,
     handleLogin,
     handleLogout,
@@ -81,7 +83,9 @@ export default function App() {
           profile={profile}
           setProfile={setProfile}
           orders={orders}
+          ordersHasMore={ordersHasMore}
           setOrders={setOrders}
+          onLoadMoreOrders={loadMoreOrders}
           onLogin={handleLogin}
           onLogout={handleLogout}
           onRefreshSession={handleRefreshSession}

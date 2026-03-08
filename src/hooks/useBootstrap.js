@@ -88,10 +88,12 @@ const normalizeSession = (rawSession, fallbackRole = null, bootstrapData = null)
  *   catalog: any,
  *   profile: any,
  *   orders: any[],
+ *   ordersHasMore: boolean,
  *   isHydrating: boolean,
  *   setOrders: Function,
  *   setCatalog: Function,
  *   setProfile: Function,
+ *   loadMoreOrders: () => Promise<void>,
  *   runOfflineSync: (targetSession?: object|null) => Promise<void>,
  *   handleLogin: (authPayload: any) => Promise<void>,
  *   handleLogout: () => Promise<void>,
@@ -102,6 +104,8 @@ export function useBootstrap() {
   const [catalog, setCatalog] = useState(initialCatalog);
   const [profile, setProfile] = useState(defaultProfile);
   const [orders, setOrders] = useState([]);
+  const [ordersHasMore, setOrdersHasMore] = useState(false);
+  const [ordersNextCursor, setOrdersNextCursor] = useState(null);
   const [session, setSession] = useState(EMPTY_SESSION);
   const [isHydrating, setIsHydrating] = useState(true);
   const sessionRef = useRef(EMPTY_SESSION);
@@ -115,7 +119,18 @@ export function useBootstrap() {
     if (data?.csrfToken) setCsrfToken(data.csrfToken);
     if (data?.catalog) setCatalog(data.catalog);
     if (data?.profile) setProfile(normalizeProfile(data.profile));
-    if (Array.isArray(data?.orders)) setOrders(data.orders);
+
+    // Handle both the legacy array shape and the new paginated object shape.
+    if (Array.isArray(data?.orders)) {
+      setOrders(data.orders);
+      setOrdersHasMore(false);
+      setOrdersNextCursor(null);
+    } else if (data?.orders && typeof data.orders === 'object') {
+      setOrders(Array.isArray(data.orders.items) ? data.orders.items : []);
+      setOrdersHasMore(Boolean(data.orders.hasMore));
+      setOrdersNextCursor(data.orders.nextCursor ?? null);
+    }
+
     const normalized = normalizeSession(data?.session, fallbackRole, data);
     setSession(normalized);
     return normalized;
@@ -215,6 +230,19 @@ export function useBootstrap() {
     }
   };
 
+  const loadMoreOrders = useCallback(async () => {
+    if (!ordersHasMore || !ordersNextCursor) return;
+    try {
+      const data = await api.fetchOrders({ cursor: ordersNextCursor });
+      const newOrders = Array.isArray(data?.orders) ? data.orders : [];
+      setOrders((prev) => [...prev, ...newOrders]);
+      setOrdersHasMore(Boolean(data?.hasMore));
+      setOrdersNextCursor(data?.nextCursor ?? null);
+    } catch (error) {
+      if (import.meta.env.DEV) console.error('Failed to load more orders.', error);
+    }
+  }, [ordersHasMore, ordersNextCursor]);
+
   const handleLogout = async () => {
     try {
       await api.logout();
@@ -224,6 +252,8 @@ export function useBootstrap() {
       clearBootstrapCache();
       setSession(EMPTY_SESSION);
       setOrders([]);
+      setOrdersHasMore(false);
+      setOrdersNextCursor(null);
     }
   };
 
@@ -243,10 +273,12 @@ export function useBootstrap() {
     catalog,
     profile,
     orders,
+    ordersHasMore,
     isHydrating,
     setOrders,
     setCatalog,
     setProfile,
+    loadMoreOrders,
     runOfflineSync,
     handleLogin,
     handleLogout,

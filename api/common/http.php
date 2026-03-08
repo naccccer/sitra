@@ -37,6 +37,11 @@ function app_allowed_origins(): array
     }
 
     // Dev-only fallbacks — override in production via CORS_ALLOWED_ORIGINS env var.
+    // If APP_ENV=production and CORS_ALLOWED_ORIGINS is not set, log a warning once.
+    if (app_env_get('APP_ENV') === 'production') {
+        error_log('[sitra] WARNING: CORS_ALLOWED_ORIGINS is not set in production. Falling back to localhost origins. Set CORS_ALLOWED_ORIGINS in your environment to lock down CORS.');
+    }
+
     return [
         'http://127.0.0.1:5173',
         'http://localhost:5173',

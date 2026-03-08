@@ -232,11 +232,13 @@ export const api = {
   },
 
   /**
-   * Fetch all orders. Requires admin or manager role.
-   * @returns {Promise<{ orders: any[] }>}
+   * Fetch a page of orders. Supports cursor-based pagination.
+   * @param {{ cursor?: string|null }} [opts]
+   * @returns {Promise<{ orders: any[], hasMore: boolean, nextCursor: string|null }>}
    */
-  async fetchOrders() {
-    return request('/api/orders.php', { method: 'GET' })
+  async fetchOrders({ cursor } = {}) {
+    const url = cursor ? `/api/orders.php?cursor=${encodeURIComponent(cursor)}` : '/api/orders.php'
+    return request(url, { method: 'GET' })
   },
 
   /**

@@ -5,17 +5,53 @@ function app_sales_orders_handle_get(PDO $pdo): void
 {
     app_require_permission('sales.orders.read', $pdo);
 
-    $stmt = $pdo->query('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders ORDER BY ' . app_orders_sort_clause($pdo));
+    $LIMIT = 50;
+
+    // Cursor-based pagination: ?cursor=<last-seen-id>&limit=50
+    // Returns orders with id < cursor, newest-first, so the client can
+    // call repeatedly to page backwards through history.
+    $cursorRaw = trim((string)($_GET['cursor'] ?? ''));
+    $cursor = ($cursorRaw !== '' && ctype_digit($cursorRaw)) ? (int)$cursorRaw : null;
+
+    if ($cursor !== null) {
+        $stmt = $pdo->prepare(
+            'SELECT ' . app_orders_select_fields($pdo) .
+            ' FROM orders WHERE id < :cursor ORDER BY id DESC LIMIT :limit'
+        );
+        $stmt->bindValue(':cursor', $cursor, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $LIMIT + 1, PDO::PARAM_INT);
+        $stmt->execute();
+    } else {
+        $stmt = $pdo->prepare(
+            'SELECT ' . app_orders_select_fields($pdo) .
+            ' FROM orders ORDER BY id DESC LIMIT :limit'
+        );
+        $stmt->bindValue(':limit', $LIMIT + 1, PDO::PARAM_INT);
+        $stmt->execute();
+    }
+
     $rows = $stmt->fetchAll();
+    $hasMore = count($rows) > $LIMIT;
+    if ($hasMore) {
+        array_pop($rows);
+    }
 
     $orders = [];
     foreach ($rows as $row) {
         $orders[] = app_order_from_row($row);
     }
 
+    $nextCursor = null;
+    if ($hasMore && count($orders) > 0) {
+        $lastOrder = end($orders);
+        $nextCursor = (string)($lastOrder['id'] ?? '');
+    }
+
     app_json([
         'success' => true,
         'orders' => $orders,
+        'hasMore' => $hasMore,
+        'nextCursor' => $nextCursor,
     ]);
 }
 

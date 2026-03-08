@@ -150,11 +150,12 @@ const buildFinancialsForOrder = (order = {}, payments = [], invoiceDraft = null,
   });
 };
 
-export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrder }) => {
+export const AdminOrdersView = ({ orders, hasMoreOrders, setOrders, onLoadMoreOrders, catalog, profile, onEditOrder }) => {
   const [activeOrdersTab, setActiveOrdersTab] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [patternFilesContext, setPatternFilesContext] = useState(null);
   const [paymentDraftsByOrder, setPaymentDraftsByOrder] = useState({});
   const [paymentTouchedByOrder, setPaymentTouchedByOrder] = useState({});
@@ -757,6 +758,26 @@ export const AdminOrdersView = ({ orders, setOrders, catalog, profile, onEditOrd
           </table>
         </div>
       </div>
+
+      {hasMoreOrders && (
+        <div className="print-hide flex justify-center pt-2 pb-4">
+          <button
+            onClick={async () => {
+              if (!onLoadMoreOrders || isLoadingMore) return;
+              setIsLoadingMore(true);
+              try {
+                await onLoadMoreOrders();
+              } finally {
+                setIsLoadingMore(false);
+              }
+            }}
+            disabled={isLoadingMore}
+            className="px-5 py-2 text-sm font-bold rounded-lg border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-all"
+          >
+            {isLoadingMore ? 'در حال بارگذاری...' : 'بارگذاری سفارش‌های بیشتر'}
+          </button>
+        </div>
+      )}
 
       {paymentManagerOrder && paymentManagerInvoiceDraft && paymentManagerFinancials && (
         <div className="fixed inset-0 bg-slate-900/60 z-[90] flex items-center justify-center p-4 print-hide">
