@@ -104,6 +104,9 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
+    test: {
+      environment: 'jsdom',
+    },
     resolve: {
       alias: {
         '@': path.resolve(process.cwd(), 'src'),

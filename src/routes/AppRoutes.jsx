@@ -55,7 +55,9 @@ export const AppRoutes = ({
   profile,
   setProfile,
   orders,
+  ordersHasMore,
   setOrders,
+  onLoadMoreOrders,
   onLogin,
   onLogout,
   onRefreshSession,
@@ -87,7 +89,7 @@ export const AppRoutes = ({
       <Route element={<ProtectedRoute isAuthenticated={Boolean(session?.authenticated)} />}>
         <Route element={<MainLayout onLogout={onLogout} profile={profile} session={session} />}>
           <Route index element={<CapabilityRouteGuard session={session} capability="canAccessDashboard"><ModuleRouteGuard session={session} moduleId="sales"><DashboardPage orders={orders} /></ModuleRouteGuard></CapabilityRouteGuard>} />
-          <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} setOrders={setOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
+          <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
           <Route path="settings" element={<SettingsPage session={session} />}>

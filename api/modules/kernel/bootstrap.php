@@ -29,7 +29,6 @@ try {
     $profile = app_profile_defaults();
 }
 
-$orders = [];
 $role = $user['role'] ?? null;
 $modules = app_module_registry($pdo);
 $isOwner = app_kernel_is_owner($user);
@@ -37,15 +36,43 @@ $permissions = app_permissions_without_kernel_control(app_role_permissions((stri
 $capabilities = app_module_capabilities($role, $modules, $pdo);
 $capabilities['canManageSystemSettings'] = $isOwner;
 
+// Load only the 50 most recent orders to keep bootstrap fast.
+// The frontend can load more on demand via GET /api/orders.php?cursor=<id>.
+$BOOTSTRAP_LIMIT = 50;
+$ordersItems = [];
+$ordersTotal = 0;
+$ordersHasMore = false;
+$ordersNextCursor = null;
+
 if ($user !== null) {
     try {
-        $stmt = $pdo->query('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders ORDER BY ' . app_orders_sort_clause($pdo));
-        $rows = $stmt->fetchAll();
+        app_ensure_orders_table($pdo);
+
+        $countStmt = $pdo->query('SELECT COUNT(*) FROM orders');
+        $ordersTotal = (int)($countStmt ? $countStmt->fetchColumn() : 0);
+
+        $fetchLimit = $BOOTSTRAP_LIMIT + 1;
+        $stmt = $pdo->query(
+            'SELECT ' . app_orders_select_fields($pdo) .
+            ' FROM orders ORDER BY id DESC LIMIT ' . $fetchLimit
+        );
+        $rows = $stmt ? $stmt->fetchAll() : [];
+
+        $ordersHasMore = count($rows) > $BOOTSTRAP_LIMIT;
+        if ($ordersHasMore) {
+            array_pop($rows);
+        }
+
         foreach ($rows as $row) {
-            $orders[] = app_order_from_row($row);
+            $ordersItems[] = app_order_from_row($row);
+        }
+
+        if ($ordersHasMore && count($ordersItems) > 0) {
+            $lastOrder = end($ordersItems);
+            $ordersNextCursor = (string)($lastOrder['id'] ?? '');
         }
     } catch (Throwable $e) {
-        $orders = [];
+        $ordersItems = [];
     }
 }
 
@@ -61,7 +88,12 @@ $response = [
     'csrfToken' => app_csrf_token(),
     'catalog' => $catalog,
     'profile' => $profile,
-    'orders' => $orders,
+    'orders' => [
+        'items' => $ordersItems,
+        'total' => $ordersTotal,
+        'hasMore' => $ordersHasMore,
+        'nextCursor' => $ordersNextCursor,
+    ],
 ];
 
 if ($isOwner) {
