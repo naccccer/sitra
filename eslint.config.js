@@ -23,7 +23,7 @@ const moduleBoundaryOverrides = moduleNames.map((moduleName) => {
               message: 'Cross-module imports are forbidden. Use module public contracts via kernel/services.',
             },
             {
-              group: ['**/services/api', 'src/services/api'],
+              group: ['**/services/api', 'src/services/api', '@services/api'],
               message: 'Use module-local service facade instead of importing src/services/api directly.',
             },
           ],

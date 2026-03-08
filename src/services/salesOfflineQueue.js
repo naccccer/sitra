@@ -208,10 +208,20 @@ async function executeQueueOp(item) {
   throw new Error(`Unsupported queue opType: ${item.opType}`)
 }
 
+/**
+ * Whether the current browser supports the offline sales queue (requires IndexedDB).
+ * @returns {boolean}
+ */
 export function supportsSalesOfflineQueue() {
   return hasIndexedDB()
 }
 
+/**
+ * Subscribe to queue state changes. The listener is called immediately with the current snapshot,
+ * then again on every change (enqueue, sync complete, conflict, etc.).
+ * @param {(snapshot: QueueSnapshot) => void} listener
+ * @returns {() => void} Unsubscribe function — call it in `useEffect` cleanup
+ */
 export function subscribeSalesOfflineQueue(listener) {
   listeners.add(listener)
   refreshAndEmitSnapshot().catch(() => {
@@ -223,11 +233,22 @@ export function subscribeSalesOfflineQueue(listener) {
   }
 }
 
+/**
+ * Read a one-time snapshot of the current queue state without subscribing.
+ * @returns {Promise<QueueSnapshot>}
+ */
 export async function getSalesOfflineQueueSnapshot() {
   const items = await listOps()
   return snapshotFromItems(items, syncInFlight)
 }
 
+/**
+ * Add a new operation to the offline queue. Generates a unique `queueId` and `clientRequestId`.
+ * Throws if IndexedDB is unavailable.
+ * @param {{ opType: 'create'|'update'|'status', payload: any, requiresAuth?: boolean, expectedUpdatedAt?: string|null }} opts
+ * @returns {Promise<SalesQueueOp>} The enqueued operation record
+ * @throws {Error} If IndexedDB is not supported
+ */
 export async function enqueueSalesOfflineOperation({
   opType,
   payload,
@@ -259,11 +280,22 @@ export async function enqueueSalesOfflineOperation({
   return op
 }
 
+/**
+ * Permanently remove an operation from the queue (e.g. user chose to discard a conflict).
+ * @param {string} queueId
+ * @returns {Promise<void>}
+ */
 export async function dropSalesOfflineOperation(queueId) {
   await deleteOp(queueId)
   await refreshAndEmitSnapshot()
 }
 
+/**
+ * Retry a conflict item. Updates `expectedUpdatedAt` from the server's version of the order
+ * and resets status to `pending` so the next sync attempt uses the latest timestamp.
+ * @param {string} queueId
+ * @returns {Promise<void>}
+ */
 export async function retrySalesOfflineConflict(queueId) {
   const row = await getOp(queueId)
   if (!row || row.status !== STATUS_CONFLICT) return
@@ -282,6 +314,17 @@ export async function retrySalesOfflineConflict(queueId) {
   await refreshAndEmitSnapshot()
 }
 
+/**
+ * Process all eligible pending operations in the queue, one at a time.
+ * - Skips items in `conflict` state (require explicit user action).
+ * - Skips `auth_blocked` items when session is unauthenticated.
+ * - Applies exponential backoff on transient errors.
+ * - Stops processing and marks items `auth_blocked` on 401/403.
+ * - Marks items `conflict` on 409 with `order_conflict` code.
+ * Safe to call concurrently — a second call while one is in-flight returns immediately.
+ * @param {{ session?: { authenticated: boolean } | null, onSyncedOrder?: (order: any, op: SalesQueueOp) => void }} [opts]
+ * @returns {Promise<{ processed: number, blockedByAuth: boolean }>}
+ */
 export async function syncSalesOfflineQueue({ session, onSyncedOrder } = {}) {
   if (!hasIndexedDB()) {
     return { processed: 0, blockedByAuth: false }
