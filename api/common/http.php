@@ -38,15 +38,10 @@ function app_allowed_origins(): array
 
     // In production, CORS_ALLOWED_ORIGINS must be explicitly configured.
     if (app_env_get('APP_ENV') === 'production') {
-        // Cannot use app_json() here: it calls app_send_cors_headers() → app_allowed_origins()
-        // → infinite recursion. Emit the error response directly.
-        header('Content-Type: application/json; charset=UTF-8');
-        http_response_code(500);
-        echo json_encode([
+        app_json([
             'success' => false,
             'error' => 'Server misconfiguration: CORS_ALLOWED_ORIGINS is not set. Configure it in your environment.',
-        ], JSON_UNESCAPED_UNICODE);
-        exit;
+        ], 500);
     }
 
     // Dev-only fallbacks — never used in production (see above).
