@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import process from 'node:process'
+import path from 'node:path'
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '')
@@ -103,6 +104,15 @@ export default defineConfig(({ mode }) => {
         },
       }),
     ],
+    resolve: {
+      alias: {
+        '@': path.resolve(process.cwd(), 'src'),
+        '@kernel': path.resolve(process.cwd(), 'src/kernel'),
+        '@components': path.resolve(process.cwd(), 'src/components'),
+        '@services': path.resolve(process.cwd(), 'src/services'),
+        '@hooks': path.resolve(process.cwd(), 'src/hooks'),
+      },
+    },
     base: normalizedBase,
     build: {
       rollupOptions: {
