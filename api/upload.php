@@ -11,6 +11,8 @@ app_require_module_enabled($pdo, 'sales');
 // Auth is intentionally NOT required: the public /orders/new customer form (no login)
 // uses this endpoint to attach pattern files to new orders.
 app_require_csrf();
+app_require_auth();
+app_require_permission('sales.order.write', $pdo);
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
