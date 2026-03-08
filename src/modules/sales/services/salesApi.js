@@ -1,11 +1,9 @@
 import { api } from '../../../services/api'
 import { enqueueSalesOfflineOperation, supportsSalesOfflineQueue } from '../../../services/salesOfflineQueue'
+import { generateUUIDv4 } from '../../../utils/uuid'
 
 function createClientRequestId() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return `uuid-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return generateUUIDv4()
 }
 
 function isOffline() {

@@ -1,4 +1,5 @@
 import { api } from './api'
+import { generateUUIDv4 } from '../utils/uuid'
 
 const DB_NAME = 'sitra-offline'
 const DB_VERSION = 1
@@ -32,10 +33,7 @@ function now() {
 }
 
 function createUuid() {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID()
-  }
-  return `uuid-${now()}-${Math.random().toString(16).slice(2)}`
+  return generateUUIDv4()
 }
 
 function getBackoffDelayMs(attemptCount) {
