@@ -16,6 +16,14 @@ export function setCsrfToken(token) {
   _csrf.token = token || ''
 }
 
+/**
+ * Clear the CSRF token. Call this on logout so stale tokens are not retained
+ * in memory after the session is destroyed.
+ */
+export function clearCsrfToken() {
+  _csrf.token = ''
+}
+
 const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH'])
 
 /**

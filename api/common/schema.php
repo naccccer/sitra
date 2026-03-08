@@ -19,8 +19,22 @@ function app_ensure_system_settings_table(PDO $pdo): void
     );
 }
 
+/**
+ * Returns true only when $name is a safe SQL identifier:
+ * starts with a letter or underscore, contains only letters/digits/underscores,
+ * and is at most 64 characters (MySQL identifier limit).
+ * Used to guard dynamic table/column names before interpolating into SQL.
+ */
+function app_schema_is_safe_identifier(string $name): bool
+{
+    return (bool)preg_match('/^[a-zA-Z_][a-zA-Z0-9_]{0,63}$/', $name);
+}
+
 function app_table_is_queryable(PDO $pdo, string $table): bool
 {
+    if (!app_schema_is_safe_identifier($table)) {
+        return false;
+    }
     try {
         $pdo->query('SELECT 1 FROM `' . $table . '` LIMIT 1');
         return true;
@@ -31,6 +45,9 @@ function app_table_is_queryable(PDO $pdo, string $table): bool
 
 function app_column_is_queryable(PDO $pdo, string $table, string $column): bool
 {
+    if (!app_schema_is_safe_identifier($table) || !app_schema_is_safe_identifier($column)) {
+        return false;
+    }
     try {
         $pdo->query('SELECT `' . $column . '` FROM `' . $table . '` LIMIT 1');
         return true;
@@ -252,6 +269,9 @@ function app_find_orders_column(PDO $pdo, array $candidates): ?string
     try {
         app_ensure_orders_table($pdo);
         foreach ($candidates as $col) {
+            if (!app_schema_is_safe_identifier((string)$col)) {
+                continue;
+            }
             $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE '{$col}'");
             if ($stmt && $stmt->fetch()) {
                 return $col;

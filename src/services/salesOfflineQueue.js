@@ -391,7 +391,7 @@ export async function syncSalesOfflineQueue({ session, onSyncedOrder } = {}) {
             ...started,
             status: STATUS_AUTH_BLOCKED,
             updatedAt: now(),
-            lastError: error?.message || 'Authentication required.',
+            lastError: (error?.code ? `[${error.code}] ` : '') + (error?.message || 'Authentication required.'),
           })
           blockedByAuth = true
           await refreshAndEmitSnapshot()
@@ -420,7 +420,7 @@ export async function syncSalesOfflineQueue({ session, onSyncedOrder } = {}) {
             status: STATUS_FAILED,
             attemptCount: nextAttemptCount,
             updatedAt: now(),
-            lastError: error?.message || 'Queue sync failed after max retries.',
+            lastError: (error?.code ? `[${error.code}] ` : '') + (error?.message || 'Queue sync failed after max retries.'),
           })
           await refreshAndEmitSnapshot()
           continue
