@@ -20,6 +20,7 @@ $testFiles = [
     __DIR__ . '/test_permissions.php',
     __DIR__ . '/test_orders_domain.php',
     __DIR__ . '/test_module_registry.php',
+    __DIR__ . '/test_order_code.php',
 ];
 
 $totalPassed = 0;

@@ -9,6 +9,9 @@ const STATUS_PENDING = 'pending'
 const STATUS_SYNCING = 'syncing'
 const STATUS_AUTH_BLOCKED = 'auth_blocked'
 const STATUS_CONFLICT = 'conflict'
+const STATUS_FAILED = 'failed'
+
+const MAX_ATTEMPTS = 5
 
 const BACKOFF_STEPS_MS = [5000, 15000, 30000, 60000, 120000, 300000, 600000, 900000]
 
@@ -63,6 +66,7 @@ function getBackoffDelayMs(attemptCount) {
  * @property {number} pendingCount
  * @property {number} authBlockedCount
  * @property {number} conflictCount
+ * @property {number} failedCount
  * @property {boolean} isSyncing
  * @property {SalesQueueOp | null} firstConflict
  */
@@ -80,11 +84,13 @@ function snapshotFromItems(items, isSyncing = syncInFlight) {
   const pendingCount = items.filter((item) => item.status === STATUS_PENDING).length
   const authBlockedCount = items.filter((item) => item.status === STATUS_AUTH_BLOCKED).length
   const conflicts = items.filter((item) => item.status === STATUS_CONFLICT).sort(compareByCreatedAt)
+  const failedCount = items.filter((item) => item.status === STATUS_FAILED).length
 
   return {
     pendingCount,
     authBlockedCount,
     conflictCount: conflicts.length,
+    failedCount,
     isSyncing,
     firstConflict: conflicts[0] || null,
   }
@@ -125,6 +131,8 @@ function openDb() {
     }
 
     request.onerror = () => {
+      // Reset cached promise so future calls can retry opening the DB.
+      dbPromise = null
       reject(request.error || new Error('Failed to open IndexedDB'))
     }
   })
@@ -406,6 +414,17 @@ export async function syncSalesOfflineQueue({ session, onSyncedOrder } = {}) {
         }
 
         const nextAttemptCount = Number(started.attemptCount || 0) + 1
+        if (nextAttemptCount >= MAX_ATTEMPTS) {
+          await putOp({
+            ...started,
+            status: STATUS_FAILED,
+            attemptCount: nextAttemptCount,
+            updatedAt: now(),
+            lastError: error?.message || 'Queue sync failed after max retries.',
+          })
+          await refreshAndEmitSnapshot()
+          continue
+        }
         const nextDelay = getBackoffDelayMs(nextAttemptCount)
         await putOp({
           ...started,
