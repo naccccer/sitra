@@ -43,6 +43,38 @@ import { api } from '../../src/services/api'
 const DB_NAME = 'sitra-offline'
 const STORE_NAME = 'sales_offline_ops'
 
+/** Read all raw ops from the IDB store. */
+async function readAllOps() {
+  return new Promise((resolve) => {
+    const req = indexedDB.open(DB_NAME, 1)
+    req.onsuccess = () => {
+      const db = req.result
+      try {
+        const tx = db.transaction(STORE_NAME, 'readonly')
+        const getAll = tx.objectStore(STORE_NAME).getAll()
+        getAll.onsuccess = () => {
+          db.close()
+          resolve(getAll.result || [])
+        }
+        getAll.onerror = () => {
+          db.close()
+          resolve([])
+        }
+      } catch {
+        db.close()
+        resolve([])
+      }
+    }
+    req.onerror = () => resolve([])
+    req.onupgradeneeded = () => {
+      const db = req.result
+      if (!db.objectStoreNames.contains(STORE_NAME)) {
+        db.createObjectStore(STORE_NAME, { keyPath: 'queueId' })
+      }
+    }
+  })
+}
+
 /** Clear all ops from the IDB store between tests. */
 async function clearStore() {
   await new Promise((resolve) => {
@@ -296,5 +328,40 @@ describe('subscribeSalesOfflineQueue', () => {
 
     expect(listener.mock.calls.length).toBeGreaterThan(callsBefore)
     unsubscribe()
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Error code capture in lastError
+// ---------------------------------------------------------------------------
+
+describe('syncSalesOfflineQueue — error code in lastError', () => {
+  it('prefixes lastError with error code on auth_blocked', async () => {
+    const authError = Object.assign(new Error('Session expired'), {
+      status: 401,
+      code: 'session_expired',
+    })
+    vi.mocked(api.createOrder).mockRejectedValue(authError)
+
+    await enqueueSalesOfflineOperation({ opType: 'create', payload: {} })
+    await syncSalesOfflineQueue({ session: { authenticated: true } })
+
+    const ops = await readAllOps()
+    const blocked = ops.find((op) => op.status === 'auth_blocked')
+    expect(blocked?.lastError).toMatch(/\[session_expired\]/)
+    expect(blocked?.lastError).toContain('Session expired')
+  })
+
+  it('omits code prefix when error has no code', async () => {
+    const bareError = Object.assign(new Error('Unknown failure'), { status: 401 })
+    vi.mocked(api.createOrder).mockRejectedValue(bareError)
+
+    await enqueueSalesOfflineOperation({ opType: 'create', payload: {} })
+    await syncSalesOfflineQueue({ session: { authenticated: true } })
+
+    const ops = await readAllOps()
+    const blocked = ops.find((op) => op.status === 'auth_blocked')
+    expect(blocked?.lastError).not.toMatch(/^\[/)
+    expect(blocked?.lastError).toContain('Unknown failure')
   })
 })

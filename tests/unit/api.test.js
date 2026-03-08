@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { api, setCsrfToken } from '../../src/services/api'
+import { api, clearCsrfToken, setCsrfToken } from '../../src/services/api'
 
 // ------------------------------------------------------------------
 // Helpers
@@ -184,5 +184,52 @@ describe('request shape', () => {
     vi.stubGlobal('fetch', mockFetchOk({ username: 'admin' }))  // missing role
 
     await expect(api.login('admin', 'pass')).rejects.toThrow('Invalid login response')
+  })
+})
+
+// ------------------------------------------------------------------
+// clearCsrfToken
+// ------------------------------------------------------------------
+
+describe('clearCsrfToken', () => {
+  beforeEach(() => {
+    setCsrfToken('')
+  })
+
+  it('removes X-CSRF-Token header after clearing', async () => {
+    setCsrfToken('tok-active')
+    clearCsrfToken()
+
+    const { fetch, getHeaders } = captureHeaders()
+    vi.stubGlobal('fetch', fetch)
+
+    await api.createOrder({ customerName: 'Test' })
+
+    expect(getHeaders()['X-CSRF-Token']).toBeUndefined()
+  })
+
+  it('does not affect GET requests (which never carry CSRF)', async () => {
+    setCsrfToken('tok-active')
+    clearCsrfToken()
+
+    const { fetch, getHeaders } = captureHeaders()
+    vi.stubGlobal('fetch', fetch)
+
+    await api.fetchOrders()
+
+    expect(getHeaders()['X-CSRF-Token']).toBeUndefined()
+  })
+
+  it('allows a new token to be set after clearing', async () => {
+    setCsrfToken('old-tok')
+    clearCsrfToken()
+    setCsrfToken('new-tok')
+
+    const { fetch, getHeaders } = captureHeaders()
+    vi.stubGlobal('fetch', fetch)
+
+    await api.createOrder({ customerName: 'Test' })
+
+    expect(getHeaders()['X-CSRF-Token']).toBe('new-tok')
   })
 })

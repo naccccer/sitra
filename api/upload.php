@@ -8,6 +8,8 @@ app_handle_preflight(['POST']);
 app_require_method(['POST']);
 app_require_module_enabled($pdo, 'sales');
 app_require_csrf();
+app_require_auth();
+app_require_permission('sales.order.write', $pdo);
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 

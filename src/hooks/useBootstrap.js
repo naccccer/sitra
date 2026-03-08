@@ -1,9 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { initialCatalog } from '../data/mockData';
-import { api, setCsrfToken } from '../services/api';
+import { api, clearCsrfToken, setCsrfToken } from '../services/api';
 import { defaultProfile, normalizeProfile } from '../utils/profile';
 import { clearBootstrapCache, readBootstrapCache, writeBootstrapCache } from '../services/bootstrapCache';
 import { getSalesOfflineQueueSnapshot, syncSalesOfflineQueue } from '../services/salesOfflineQueue';
+
+/**
+ * Returns true for errors that are likely transient (network/timeout) and
+ * worth retrying. HTTP errors (status > 0) are not transient.
+ */
+function isTransientError(error) {
+  if (!error) return false;
+  if (typeof error?.status === 'number' && error.status > 0) return false;
+  return true;
+}
 
 const EMPTY_SESSION = {
   authenticated: false,
@@ -175,6 +185,7 @@ export function useBootstrap() {
 
   useEffect(() => {
     let cancelled = false;
+    let retryTimer = null;
 
     const hydrateFromServer = async () => {
       try {
@@ -190,6 +201,22 @@ export function useBootstrap() {
           await runOfflineSync(effectiveSession);
         }
         if (import.meta.env.DEV) console.error('Failed to load bootstrap data from backend.', error);
+        // Schedule a silent background retry for transient (network/timeout) failures.
+        // The UI is already showing cached data; the retry will refresh it if successful.
+        if (!cancelled && isTransientError(error)) {
+          retryTimer = setTimeout(async () => {
+            if (cancelled) return;
+            try {
+              const retryData = await api.bootstrap();
+              if (cancelled) return;
+              const effectiveSession = applyBootstrapData(retryData, null);
+              writeBootstrapCache(retryData);
+              await runOfflineSync(effectiveSession);
+            } catch {
+              // Silent: app is already running on cached data.
+            }
+          }, 5000);
+        }
       } finally {
         if (!cancelled) {
           setIsHydrating(false);
@@ -200,6 +227,7 @@ export function useBootstrap() {
     hydrateFromServer();
     return () => {
       cancelled = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
     };
   }, [applyBootstrapData, runOfflineSync]);
 
@@ -249,6 +277,7 @@ export function useBootstrap() {
     } catch (error) {
       if (import.meta.env.DEV) console.error('Failed to logout from backend.', error);
     } finally {
+      clearCsrfToken();
       clearBootstrapCache();
       setSession(EMPTY_SESSION);
       setOrders([]);

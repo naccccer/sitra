@@ -36,12 +36,15 @@ function app_allowed_origins(): array
         }
     }
 
-    // Dev-only fallbacks — override in production via CORS_ALLOWED_ORIGINS env var.
-    // If APP_ENV=production and CORS_ALLOWED_ORIGINS is not set, log a warning once.
+    // In production, CORS_ALLOWED_ORIGINS must be explicitly configured.
     if (app_env_get('APP_ENV') === 'production') {
-        error_log('[sitra] WARNING: CORS_ALLOWED_ORIGINS is not set in production. Falling back to localhost origins. Set CORS_ALLOWED_ORIGINS in your environment to lock down CORS.');
+        app_json([
+            'success' => false,
+            'error' => 'Server misconfiguration: CORS_ALLOWED_ORIGINS is not set. Configure it in your environment.',
+        ], 500);
     }
 
+    // Dev-only fallbacks — never used in production (see above).
     return [
         'http://127.0.0.1:5173',
         'http://localhost:5173',
@@ -60,11 +63,7 @@ function app_send_cors_headers(): void
         return;
     }
 
-    if ($origin === '' && isset($_SERVER['HTTP_HOST'])) {
-        $scheme = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? 'https' : 'http';
-        header('Access-Control-Allow-Origin: ' . $scheme . '://' . $_SERVER['HTTP_HOST']);
-        header('Access-Control-Allow-Credentials: true');
-    }
+    // No matching origin and no Origin header — same-origin request, no CORS headers needed.
 }
 
 function app_json($payload, int $statusCode = 200): void
