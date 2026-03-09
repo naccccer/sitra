@@ -3,7 +3,7 @@ import { X, CheckCircle2, UploadCloud, FileBox, MapPin, Plus, Trash2 } from 'luc
 import { toPN, FACTORY_ADDRESS } from '../../../../utils/helpers';
 import { salesApi } from '../../services/salesApi';
 
-const MAX_PATTERN_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_PATTERN_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 const OPERATION_ICON_BASE_PATH = '/icons/operations';
 const MAX_HOLE_COUNT = 10;
 const HOLE_STEP_CM = 0.1;
@@ -260,7 +260,7 @@ export const SettingsModal = ({ setModalMode, config, setConfig, catalog, dimens
     if (!file) return;
 
     if (file.size > MAX_PATTERN_FILE_SIZE_BYTES) {
-      alert('حجم فایل نباید بیشتر از ۵ مگابایت باشد.');
+      alert('حجم فایل نباید بیشتر از ۱۰ مگابایت باشد.');
       e.target.value = '';
       return;
     }

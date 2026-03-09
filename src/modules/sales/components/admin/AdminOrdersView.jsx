@@ -17,7 +17,7 @@ import {
 const PRINTABLE_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const PRINTABLE_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 const CAD_EXTENSIONS = new Set(['dwg', 'dxf']);
-const MAX_RECEIPT_SIZE = 5 * 1024 * 1024;
+const MAX_RECEIPT_SIZE = 10 * 1024 * 1024;
 const ALLOWED_RECEIPT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const ALLOWED_RECEIPT_EXTENSIONS = new Set(['pdf', 'jpg', 'jpeg', 'png']);
 
@@ -450,7 +450,7 @@ export const AdminOrdersView = ({ orders, hasMoreOrders, setOrders, onLoadMoreOr
 
   const validateReceiptFile = (file) => {
     if (!file) return 'فایلی انتخاب نشده است.';
-    if (file.size > MAX_RECEIPT_SIZE) return 'حجم رسید نباید بیشتر از ۵ مگابایت باشد.';
+    if (file.size > MAX_RECEIPT_SIZE) return 'حجم رسید نباید بیشتر از ۱۰ مگابایت باشد.';
     const extension = String(file.name || '').split('.').pop()?.toLowerCase() || '';
     if (!ALLOWED_RECEIPT_TYPES.has(file.type) && !ALLOWED_RECEIPT_EXTENSIONS.has(extension)) {
       return 'فرمت رسید فقط PDF یا تصویر (JPG/PNG) مجاز است.';
