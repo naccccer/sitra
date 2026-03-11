@@ -1,0 +1,13 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrdersStatusPatchRequest",
+  "type": "object",
+  "required": ["id", "status"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "status": { "type": "string", "enum": ["pending", "processing", "delivered", "archived"] },
+    "expectedUpdatedAt": { "type": "string" },
+    "clientRequestId": { "type": "string" }
+  },
+  "additionalProperties": false
+}

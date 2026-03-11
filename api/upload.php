@@ -7,11 +7,12 @@ require_once __DIR__ . '/../config/db.php';
 app_handle_preflight(['POST']);
 app_require_method(['POST']);
 app_require_module_enabled($pdo, 'sales');
+// CSRF is required even for public endpoints to prevent cross-site upload abuse.
+// Auth is intentionally NOT required: the public /orders/new customer form (no login)
+// uses this endpoint to attach pattern files to new orders.
 app_require_csrf();
-app_require_auth();
-app_require_permission('sales.order.write', $pdo);
 
-const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
 
 if (!isset($_FILES['patternFile'])) {
     app_json([
@@ -35,7 +36,7 @@ switch ((int)$file['error']) {
     case UPLOAD_ERR_FORM_SIZE:
         app_json([
             'success' => false,
-            'error' => 'File is larger than 5MB.',
+            'error' => 'File is larger than 10MB.',
             'maxSizeBytes' => MAX_FILE_SIZE_BYTES,
         ], 413);
         break;
@@ -56,7 +57,7 @@ switch ((int)$file['error']) {
 if ((int)$file['size'] > MAX_FILE_SIZE_BYTES) {
     app_json([
         'success' => false,
-        'error' => 'File is larger than 5MB.',
+        'error' => 'File is larger than 10MB.',
         'maxSizeBytes' => MAX_FILE_SIZE_BYTES,
     ], 413);
 }

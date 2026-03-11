@@ -2,6 +2,10 @@ import { api } from '../../../services/api'
 import { enqueueSalesOfflineOperation, supportsSalesOfflineQueue } from '../../../services/salesOfflineQueue'
 import { generateUUIDv4 } from '../../../utils/uuid'
 
+/** @typedef {import('../../../types/api-contracts.generated').OrdersCreateRequest} OrdersCreateRequest */
+/** @typedef {import('../../../types/api-contracts.generated').OrdersUpdateRequest} OrdersUpdateRequest */
+/** @typedef {import('../../../types/api-contracts.generated').OrdersStatusPatchRequest} OrdersStatusPatchRequest */
+
 function createClientRequestId() {
   return generateUUIDv4()
 }
@@ -20,6 +24,36 @@ function isRetriableOfflineError(error) {
 
 function formatNowIso() {
   return new Date().toISOString()
+}
+
+function sanitizeOrderItemForTransport(item) {
+  if (!item || typeof item !== 'object' || Array.isArray(item)) {
+    return item
+  }
+
+  const nextItem = { ...item }
+  const pattern = nextItem.pattern
+  if (pattern && typeof pattern === 'object' && !Array.isArray(pattern)) {
+    const nextPattern = { ...pattern }
+    // previewDataUrl is only for local UI preview and can exceed DB packet limits.
+    delete nextPattern.previewDataUrl
+    nextItem.pattern = nextPattern
+  }
+
+  return nextItem
+}
+
+function sanitizeOrderPayloadForTransport(payload) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+    return {}
+  }
+
+  const nextPayload = { ...payload }
+  if (Array.isArray(nextPayload.items)) {
+    nextPayload.items = nextPayload.items.map(sanitizeOrderItemForTransport)
+  }
+
+  return nextPayload
 }
 
 function createQueuedOrderPreview(payload, queueItem) {
@@ -54,65 +88,67 @@ function createQueuedOrderPreview(payload, queueItem) {
  */
 export const salesApi = {
   /**
-   * @param {Object} payload
+   * @param {OrdersCreateRequest} payload
    * @returns {Promise<any>}
    */
   async createOrder(payload) {
+    const requestPayload = sanitizeOrderPayloadForTransport(payload)
     const clientRequestId = createClientRequestId()
     const requiresAuth = Boolean(
-      payload?.financials
-      || (Array.isArray(payload?.payments) && payload.payments.length > 0)
-      || String(payload?.invoiceNotes || '').trim() !== '',
+      requestPayload?.financials
+      || (Array.isArray(requestPayload?.payments) && requestPayload.payments.length > 0)
+      || String(requestPayload?.invoiceNotes || '').trim() !== '',
     )
 
     if (isOffline() && supportsSalesOfflineQueue()) {
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'create',
-        payload,
+        payload: requestPayload,
         requiresAuth,
       })
       return {
         success: true,
         queued: true,
         queueItem,
-        order: createQueuedOrderPreview(payload, queueItem),
+        order: createQueuedOrderPreview(requestPayload, queueItem),
       }
     }
 
     try {
-      return await api.createOrder(payload, { clientRequestId })
+      return await api.createOrder(requestPayload, { clientRequestId })
     } catch (error) {
       if (!supportsSalesOfflineQueue() || !isRetriableOfflineError(error)) {
         throw error
       }
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'create',
-        payload,
+        payload: requestPayload,
         requiresAuth,
       })
       return {
         success: true,
         queued: true,
         queueItem,
-        order: createQueuedOrderPreview(payload, queueItem),
+        order: createQueuedOrderPreview(requestPayload, queueItem),
       }
     }
   },
 
   /**
-   * @param {Object} payload
+   * @param {OrdersUpdateRequest} payload
    * @returns {Promise<any>}
    */
   async updateOrder(payload) {
+    const requestPayload = sanitizeOrderPayloadForTransport(payload)
     const clientRequestId = createClientRequestId()
-    const expectedUpdatedAt = typeof payload?.expectedUpdatedAt === 'string'
-      ? payload.expectedUpdatedAt
-      : (typeof payload?.updatedAt === 'string' ? payload.updatedAt : null)
+    const expectedUpdatedAt = typeof requestPayload?.expectedUpdatedAt === 'string'
+      ? requestPayload.expectedUpdatedAt
+      : (typeof requestPayload?.updatedAt === 'string' ? requestPayload.updatedAt : null)
 
     if (isOffline() && supportsSalesOfflineQueue()) {
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'update',
-        payload,
+        payload: requestPayload,
         requiresAuth: true,
         expectedUpdatedAt,
       })
@@ -125,7 +161,7 @@ export const salesApi = {
     }
 
     try {
-      return await api.updateOrder(payload, {
+      return await api.updateOrder(requestPayload, {
         clientRequestId,
         expectedUpdatedAt: expectedUpdatedAt || undefined,
       })
@@ -135,7 +171,7 @@ export const salesApi = {
       }
       const queueItem = await enqueueSalesOfflineOperation({
         opType: 'update',
-        payload,
+        payload: requestPayload,
         requiresAuth: true,
         expectedUpdatedAt,
       })
@@ -151,7 +187,7 @@ export const salesApi = {
   /**
    * @param {number|string} id
    * @param {'pending'|'processing'|'delivered'|'archived'} status
-   * @param {{ expectedUpdatedAt?: string | null }} [options]
+   * @param {Partial<OrdersStatusPatchRequest>} [options]
    * @returns {Promise<any>}
    */
   async updateOrderStatus(id, status, options = {}) {

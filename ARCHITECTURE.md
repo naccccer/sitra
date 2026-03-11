@@ -85,6 +85,13 @@
 
 ## 11) Quality Gates
 - Encoding check: `npm run check:encoding`
+- Naming check: `npm run check:naming`
+- File-size budget check: `npm run check:file-size`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Manual smoke checks for affected scope.
+
+## 12) Contract Artifacts
+- Human-readable module contracts live in `MODULE_CONTRACTS.md`.
+- Machine-readable API schemas live in `contracts/schemas/*.json`.
+- Frontend generated contract typedefs live in `src/types/api-contracts.generated.js`.

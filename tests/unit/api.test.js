@@ -102,6 +102,44 @@ describe('setCsrfToken / CSRF injection', () => {
 
     expect(getHeaders()['X-CSRF-Token']).toBeUndefined()
   })
+
+  it('refreshes csrf token and retries once when server returns csrf failure', async () => {
+    setCsrfToken('stale-token')
+
+    const calls = []
+    vi.stubGlobal('fetch', vi.fn().mockImplementation((url, opts = {}) => {
+      calls.push({ url: String(url), headers: { ...(opts.headers || {}) } })
+
+      if (String(url).includes('/api/orders.php') && calls.length === 1) {
+        return Promise.resolve({
+          ok: false,
+          status: 403,
+          text: () => Promise.resolve(JSON.stringify({ error: 'csrf token mismatch' })),
+        })
+      }
+
+      if (String(url).includes('/api/bootstrap.php')) {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({ csrfToken: 'fresh-token' })),
+        })
+      }
+
+      return Promise.resolve({
+        ok: true,
+        status: 200,
+        text: () => Promise.resolve(JSON.stringify({ success: true })),
+      })
+    }))
+
+    await api.createOrder({ customerName: 'Retry test' })
+
+    const orderRequests = calls.filter((c) => c.url.includes('/api/orders.php'))
+    expect(orderRequests).toHaveLength(2)
+    expect(orderRequests[0].headers['X-CSRF-Token']).toBe('stale-token')
+    expect(orderRequests[1].headers['X-CSRF-Token']).toBe('fresh-token')
+  })
 })
 
 describe('error handling', () => {

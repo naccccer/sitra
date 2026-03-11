@@ -1,13 +1,14 @@
 import React from 'react';
 import { X, ExternalLink, Download, Printer, AlertTriangle, FileText } from 'lucide-react';
 import { toPN } from '../../../../utils/helpers';
+import { resolveApiFileUrl } from '@/utils/url';
 
 export const PatternFilesModal = ({ isOpen, onClose, orderCode, files = [] }) => {
   if (!isOpen) return null;
 
   const handleOpenForPrint = (filePath) => {
     if (!filePath) return;
-    window.open(filePath, '_blank', 'noopener,noreferrer');
+    window.open(resolveApiFileUrl(filePath), '_blank', 'noopener,noreferrer');
   };
 
   return (
@@ -58,7 +59,7 @@ export const PatternFilesModal = ({ isOpen, onClose, orderCode, files = [] }) =>
                   {!file.isDirectPrintable && file.filePath && (
                     <>
                       <a
-                        href={file.filePath}
+                        href={resolveApiFileUrl(file.filePath)}
                         target="_blank"
                         rel="noreferrer"
                         className="text-xs bg-slate-700 hover:bg-slate-800 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold"
@@ -68,7 +69,7 @@ export const PatternFilesModal = ({ isOpen, onClose, orderCode, files = [] }) =>
                       </a>
                       {file.isCad && (
                         <a
-                          href={file.filePath}
+                          href={resolveApiFileUrl(file.filePath)}
                           download
                           className="text-xs bg-amber-600 hover:bg-amber-700 text-white px-3 py-1.5 rounded-lg flex items-center gap-1 font-bold"
                         >

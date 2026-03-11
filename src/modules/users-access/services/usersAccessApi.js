@@ -1,6 +1,16 @@
 import { api } from '../../../services/api'
 
 /**
+ * @typedef {Object} UsersAccessUserPayload
+ * @property {number|string} [id]
+ * @property {string} [username]
+ * @property {string} [password]
+ * @property {'admin'|'manager'|'sales'} [role]
+ */
+
+/** @typedef {Record<string, Array<string>>} RolePermissionsMatrix */
+
+/**
  * Users-access module API facade.
  */
 export const usersAccessApi = {
@@ -12,7 +22,7 @@ export const usersAccessApi = {
   },
 
   /**
-   * @param {Object} payload
+   * @param {UsersAccessUserPayload} payload
    * @returns {Promise<any>}
    */
   async createUser(payload) {
@@ -20,7 +30,7 @@ export const usersAccessApi = {
   },
 
   /**
-   * @param {Object} payload
+   * @param {UsersAccessUserPayload} payload
    * @returns {Promise<any>}
    */
   async updateUser(payload) {
@@ -44,7 +54,7 @@ export const usersAccessApi = {
   },
 
   /**
-   * @param {Object} rolePermissions
+   * @param {RolePermissionsMatrix} rolePermissions
    * @returns {Promise<any>}
    */
   async saveRolePermissions(rolePermissions) {

@@ -68,6 +68,26 @@ function app_sales_validate_override_reasons(array $items): void
     }
 }
 
+function app_sales_sanitize_order_items_for_storage(array $items): array
+{
+    $sanitized = [];
+    foreach ($items as $index => $item) {
+        if (!is_array($item)) {
+            $sanitized[$index] = $item;
+            continue;
+        }
+
+        $nextItem = $item;
+        if (is_array($nextItem['pattern'] ?? null) && array_key_exists('previewDataUrl', $nextItem['pattern'])) {
+            unset($nextItem['pattern']['previewDataUrl']);
+        }
+
+        $sanitized[$index] = $nextItem;
+    }
+
+    return $sanitized;
+}
+
 function app_sales_normalize_order_meta_payload(array $payload, int $total): array
 {
     $defaults = app_order_meta_defaults($total);

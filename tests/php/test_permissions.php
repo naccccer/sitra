@@ -207,6 +207,26 @@ test_assert_false($salesCaps['canManageUsers'], 'sales cannot manage users');
 $unknownCaps = app_module_capabilities('nonexistent');
 test_assert_false($unknownCaps['canAccessDashboard'], 'unknown role has no capabilities');
 
+$salesDisabledModules = [
+    ['id' => 'auth', 'enabled' => true],
+    ['id' => 'users-access', 'enabled' => true],
+    ['id' => 'sales', 'enabled' => false],
+    ['id' => 'master-data', 'enabled' => true],
+];
+$salesCapsWhenDisabled = app_module_capabilities('sales', $salesDisabledModules);
+test_assert_false($salesCapsWhenDisabled['canManageOrders'], 'sales module disabled removes canManageOrders');
+test_assert_false($salesCapsWhenDisabled['canAccessDashboard'], 'sales module disabled removes dashboard access');
+
+$masterDataDisabledModules = [
+    ['id' => 'auth', 'enabled' => true],
+    ['id' => 'users-access', 'enabled' => true],
+    ['id' => 'sales', 'enabled' => true],
+    ['id' => 'master-data', 'enabled' => false],
+];
+$adminCapsWhenMasterDataDisabled = app_module_capabilities('admin', $masterDataDisabledModules);
+test_assert_false($adminCapsWhenMasterDataDisabled['canManageCatalog'], 'master-data disabled removes canManageCatalog');
+test_assert_false($adminCapsWhenMasterDataDisabled['canManageProfile'], 'master-data disabled removes canManageProfile');
+
 // Print machine-readable summary for the runner
 $r = test_summary();
 echo "RESULTS:passed={$r['passed']},failed={$r['failed']}\n";

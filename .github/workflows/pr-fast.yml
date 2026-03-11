@@ -1,0 +1,58 @@
+﻿name: PR Fast Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  fast-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Install dependencies
+        run: npm ci --prefer-offline --no-audit --no-fund
+
+      - name: Collect changed files
+        id: changed
+        shell: bash
+        run: |
+          git fetch --no-tags origin "${{ github.base_ref }}" --depth=1
+          git diff --name-only --diff-filter=ACMR "origin/${{ github.base_ref }}...HEAD" > changed_files.txt
+          echo "count=$(wc -l < changed_files.txt)" >> "$GITHUB_OUTPUT"
+          cat changed_files.txt
+
+      - name: Run changed-file checks
+        if: steps.changed.outputs.count != '0'
+        shell: bash
+        run: |
+          mapfile -t CHANGED < changed_files.txt
+          node scripts/check-encoding.js "${CHANGED[@]}"
+          node scripts/check-boundaries.js "${CHANGED[@]}"
+          node scripts/check-file-size.js "${CHANGED[@]}"
+          node scripts/check-naming.js "${CHANGED[@]}"
+          node scripts/check-doc-contract-sync.js "${CHANGED[@]}"
+
+          JS_FILES=$(printf '%s\n' "${CHANGED[@]}" | grep -E '\.(js|jsx|ts|tsx)$' || true)
+          if [ -n "$JS_FILES" ]; then
+            npx eslint $JS_FILES
+          else
+            echo "No JS/TS files changed; eslint step skipped."
+          fi
+
+      - name: Run PHP tests
+        run: npm run test:php

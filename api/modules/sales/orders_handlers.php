@@ -93,6 +93,7 @@ function app_sales_orders_handle_post(PDO $pdo): void
     if ($isStaff) {
         app_sales_validate_override_reasons($items);
     }
+    $items = app_sales_sanitize_order_items_for_storage($items);
 
     if (!app_valid_order_status($status)) {
         $status = 'pending';
@@ -296,6 +297,7 @@ function app_sales_orders_handle_put(PDO $pdo): void
     }
 
     app_sales_validate_override_reasons($items);
+    $items = app_sales_sanitize_order_items_for_storage($items);
 
     $orderMeta = app_sales_normalize_order_meta_payload($payload, max(0, $total));
     $total = (int)($orderMeta['financials']['grandTotal'] ?? max(0, $total));

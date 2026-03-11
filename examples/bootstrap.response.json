@@ -1,0 +1,54 @@
+﻿{
+  "session": {
+    "authenticated": true,
+    "role": "admin",
+    "username": "admin"
+  },
+  "permissions": [
+    "sales.orders.read",
+    "sales.orders.create",
+    "sales.orders.update",
+    "sales.orders.status",
+    "sales.orders.delete",
+    "master_data.catalog.write",
+    "users_access.users.write",
+    "kernel.audit.read",
+    "profile.read",
+    "profile.write"
+  ],
+  "capabilities": {
+    "canAccessDashboard": true,
+    "canManageOrders": true,
+    "canManageCatalog": true,
+    "canManageUsers": true,
+    "canViewAuditLogs": true,
+    "canManageProfile": true,
+    "canManageSystemSettings": true
+  },
+  "modules": [
+    { "id": "auth", "enabled": true, "isProtected": true, "dependsOn": [] },
+    { "id": "users-access", "enabled": true, "isProtected": true, "dependsOn": ["auth"] },
+    { "id": "sales", "enabled": true, "isProtected": false, "dependsOn": ["auth"] },
+    { "id": "master-data", "enabled": true, "isProtected": false, "dependsOn": ["auth"] }
+  ],
+  "catalog": {
+    "glasses": [],
+    "operations": [],
+    "connectors": { "interlayers": [], "spacers": [] },
+    "fees": {},
+    "jumboRules": [],
+    "roundStep": 1000
+  },
+  "profile": {
+    "brandName": "Sitra",
+    "address": "",
+    "phone": "",
+    "logoPath": ""
+  },
+  "orders": {
+    "items": [],
+    "hasMore": false,
+    "nextCursor": null
+  },
+  "csrfToken": "example-csrf-token"
+}

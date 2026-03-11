@@ -58,6 +58,36 @@ function resolveRequestPath(path) {
   return `${normalizedBase}${path}`
 }
 
+function parseResponseData(text) {
+  if (!text) return null
+  try {
+    return JSON.parse(text)
+  } catch {
+    return null
+  }
+}
+
+function isCsrfFailurePayload(payload) {
+  const errorText = String(payload?.error || payload?.message || '').toLowerCase()
+  return errorText.includes('csrf')
+}
+
+async function refreshCsrfToken() {
+  try {
+    const cacheBuster = Date.now().toString(36)
+    const response = await fetch(resolveRequestPath(`/api/bootstrap.php?_ts=${cacheBuster}`), {
+      method: 'GET',
+      credentials: 'include',
+    })
+    const data = parseResponseData(await response.text())
+    const token = typeof data?.csrfToken === 'string' ? data.csrfToken : ''
+    if (token) setCsrfToken(token)
+    return token
+  } catch {
+    return ''
+  }
+}
+
 /**
  * Core HTTP request helper.
  * Automatically injects Content-Type, CSRF token, credentials, and a timeout.
@@ -73,72 +103,84 @@ async function request(path, options = {}) {
   if (options.body && !headers['Content-Type'] && !isFormData) {
     headers['Content-Type'] = 'application/json'
   }
+
   const method = (options.method || 'GET').toUpperCase()
-  if (STATE_CHANGING_METHODS.has(method) && _csrf.token) {
+  const isStateChanging = STATE_CHANGING_METHODS.has(method)
+  if (isStateChanging && !_csrf.token) {
+    await refreshCsrfToken()
+  }
+  if (isStateChanging && _csrf.token) {
     headers['X-CSRF-Token'] = _csrf.token
   }
 
-  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
-  let timeoutId = null
+  const sendRequest = async (requestHeaders) => {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null
+    let timeoutId = null
 
-  if (controller && options.signal) {
-    if (options.signal.aborted) {
-      controller.abort(options.signal.reason)
-    } else {
-      options.signal.addEventListener(
-        'abort',
-        () => {
-          controller.abort(options.signal.reason)
-        },
-        { once: true },
-      )
+    if (controller && options.signal) {
+      if (options.signal.aborted) {
+        controller.abort(options.signal.reason)
+      } else {
+        options.signal.addEventListener(
+          'abort',
+          () => {
+            controller.abort(options.signal.reason)
+          },
+          { once: true },
+        )
+      }
     }
-  }
 
-  if (controller) {
-    timeoutId = setTimeout(() => {
-      controller.abort()
-    }, REQUEST_TIMEOUT_MS)
-  }
-
-  let response
-  try {
-    response = await fetch(resolveRequestPath(path), {
-      credentials: 'include',
-      ...options,
-      signal: controller ? controller.signal : options.signal,
-      headers,
-    })
-  } catch (error) {
-    if (error instanceof DOMException && error.name === 'AbortError') {
-      throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`)
+    if (controller) {
+      timeoutId = setTimeout(() => {
+        controller.abort()
+      }, REQUEST_TIMEOUT_MS)
     }
-    throw error
-  } finally {
-    if (timeoutId !== null) {
-      clearTimeout(timeoutId)
-    }
-  }
 
-  const text = await response.text()
-  let data = null
-  if (text) {
     try {
-      data = JSON.parse(text)
-    } catch {
-      data = null
+      const response = await fetch(resolveRequestPath(path), {
+        credentials: 'include',
+        ...options,
+        signal: controller ? controller.signal : options.signal,
+        headers: requestHeaders,
+      })
+      const data = parseResponseData(await response.text())
+      return { response, data }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        throw new Error(`Request timed out after ${REQUEST_TIMEOUT_MS}ms`)
+      }
+      throw error
+    } finally {
+      if (timeoutId !== null) {
+        clearTimeout(timeoutId)
+      }
     }
   }
 
-  if (!response.ok) {
-    const message = data?.error || data?.message || `Request failed with status ${response.status}`
+  let result = await sendRequest(headers)
+
+  if (
+    isStateChanging
+    && result.response.status === 403
+    && isCsrfFailurePayload(result.data)
+  ) {
+    const refreshedToken = await refreshCsrfToken()
+    if (refreshedToken) {
+      headers['X-CSRF-Token'] = refreshedToken
+      result = await sendRequest(headers)
+    }
+  }
+
+  if (!result.response.ok) {
+    const message = result.data?.error || result.data?.message || `Request failed with status ${result.response.status}`
     const error = new Error(message)
-    error.status = response.status
-    error.payload = data
+    error.status = result.response.status
+    error.payload = result.data
     throw error
   }
 
-  return data
+  return result.data
 }
 
 export const api = {
@@ -411,7 +453,7 @@ export const api = {
 
   /**
    * Upload a pattern/design file attached to an order item.
-   * Accepted formats: pdf, dwg, dxf, jpg, jpeg, png. Max 5MB.
+   * Accepted formats: pdf, dwg, dxf, jpg, jpeg, png. Max 10MB.
    * @param {File} file
    * @returns {Promise<{ filePath: string, originalName: string, mimeType: string, size: number }>}
    */
@@ -427,7 +469,7 @@ export const api = {
   /**
    * Upload a payment receipt file attached to an order.
    * Uses the same upload endpoint and field name as pattern files.
-   * Accepted formats: pdf, dwg, dxf, jpg, jpeg, png. Max 5MB.
+   * Accepted formats: pdf, dwg, dxf, jpg, jpeg, png. Max 10MB.
    * @param {File} file
    * @returns {Promise<{ filePath: string, originalName: string, mimeType: string, size: number }>}
    */
