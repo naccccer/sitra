@@ -1,0 +1,43 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "BootstrapResponse",
+  "type": "object",
+  "required": ["session", "catalog", "csrfToken"],
+  "properties": {
+    "session": {
+      "type": "object",
+      "required": ["authenticated", "role", "username"],
+      "properties": {
+        "authenticated": { "type": "boolean" },
+        "role": { "type": ["string", "null"] },
+        "username": { "type": ["string", "null"] }
+      }
+    },
+    "permissions": { "type": "array", "items": { "type": "string" } },
+    "capabilities": { "type": "object", "additionalProperties": { "type": "boolean" } },
+    "modules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "enabled"],
+        "properties": {
+          "id": { "type": "string" },
+          "enabled": { "type": "boolean" },
+          "isProtected": { "type": "boolean" },
+          "dependsOn": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "catalog": { "type": "object" },
+    "profile": { "type": "object" },
+    "orders": {
+      "type": "object",
+      "properties": {
+        "items": { "type": "array", "items": { "type": "object" } },
+        "hasMore": { "type": "boolean" },
+        "nextCursor": { "type": ["string", "null"] }
+      }
+    },
+    "csrfToken": { "type": "string" }
+  }
+}

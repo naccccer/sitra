@@ -3,6 +3,8 @@
 ## Purpose
 - Defines stable contracts between modules in the modular monolith.
 - Any boundary change must update this file in the same change.
+- Machine-readable endpoint schemas are maintained under `contracts/schemas/*.json`.
+- Generated frontend typedefs are maintained in `src/types/api-contracts.generated.js`.
 
 ## Global Rules
 - No direct cross-module table access.

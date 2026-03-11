@@ -1,0 +1,23 @@
+﻿{
+  "customerName": "شرکت نمونه",
+  "phone": "09120000000",
+  "date": "1405/01/01",
+  "status": "pending",
+  "items": [
+    {
+      "id": "item-1",
+      "title": "شیشه سکوریت 6mm",
+      "quantity": 2,
+      "unitPrice": 1500000,
+      "totalPrice": 3000000
+    }
+  ],
+  "financials": {
+    "discount": 0,
+    "tax": 0,
+    "shipping": 0
+  },
+  "payments": [],
+  "invoiceNotes": "نمونه یادداشت",
+  "clientRequestId": "f3e57267-240c-4c0d-a90c-ce7e8e5837a1"
+}

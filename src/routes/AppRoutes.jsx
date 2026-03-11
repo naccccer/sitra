@@ -1,52 +1,18 @@
 ﻿import React from 'react'
-import { Navigate, Outlet, Route, Routes, useLocation } from 'react-router-dom'
+import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../components/layout/MainLayout'
-import { AccessDenied } from '../components/shared/AccessDenied'
 import { SettingsPage } from '../kernel/pages/SettingsPage'
 import { SystemSettingsPage } from '../kernel/pages/SystemSettingsPage'
 import { OwnerConsolePage } from '../kernel/pages/OwnerConsolePage'
 import { AuditLogsPage } from '../kernel/pages/AuditLogsPage'
-import { isModuleEnabled, moduleLabelFa } from '../kernel/moduleRegistry'
 import { OrderCreatePage, OrderDetailPage, OrdersPage } from '../modules/sales'
 import { AdminPage } from '../modules/master-data'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { UsersPage } from '../modules/users-access'
 import { ProfilePage } from '../pages/ProfilePage'
-
-const ProtectedRoute = ({ isAuthenticated }) => {
-  const location = useLocation()
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace state={{ from: location }} />
-  }
-
-  return <Outlet />
-}
-
-const ModuleRouteGuard = ({ session, moduleId, children }) => {
-  if (isModuleEnabled(session?.modules, moduleId)) {
-    return children
-  }
-
-  return <AccessDenied message={`ماژول ${moduleLabelFa(moduleId, session?.modules)} غیرفعال است.`} />
-}
-
-const CapabilityRouteGuard = ({ session, capability, children }) => {
-  if (!capability || Boolean(session?.capabilities?.[capability])) {
-    return children
-  }
-
-  return <AccessDenied message="دسترسی کافی وجود ندارد." />
-}
-
-const OwnerRouteGuard = ({ session, children }) => {
-  if (session?.capabilities?.canManageSystemSettings) {
-    return children
-  }
-
-  return <Navigate to="/" replace />
-}
+import { CapabilityRouteGuard, ModuleRouteGuard, OwnerRouteGuard, ProtectedRoute } from './RouteGuards'
+import { SETTINGS_ALIAS_REDIRECTS, SETTINGS_ROUTE_POLICIES } from './routePolicies'
 
 export const AppRoutes = ({
   session,
@@ -63,6 +29,32 @@ export const AppRoutes = ({
   onRefreshSession,
 }) => {
   const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings)
+
+  const renderSettingsView = (policy) => {
+    if (policy.view === 'catalog') {
+      return <AdminPage catalog={catalog} setCatalog={setCatalog} session={session} />
+    }
+    if (policy.view === 'profile') {
+      return <ProfilePage profile={profile} setProfile={setProfile} session={session} />
+    }
+    if (policy.view === 'users') {
+      return <UsersPage session={session} onRefreshSession={onRefreshSession} />
+    }
+    return <AuditLogsPage />
+  }
+
+  const renderSettingsRoute = (policy) => {
+    const content = renderSettingsView(policy)
+    const withModuleGuard = policy.moduleId
+      ? <ModuleRouteGuard session={session} moduleId={policy.moduleId}>{content}</ModuleRouteGuard>
+      : content
+
+    return (
+      <CapabilityRouteGuard session={session} capability={policy.capability}>
+        {withModuleGuard}
+      </CapabilityRouteGuard>
+    )
+  }
 
   return (
     <Routes>
@@ -93,10 +85,9 @@ export const AppRoutes = ({
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
           <Route path="settings" element={<SettingsPage session={session} />}>
-            <Route path="catalog" element={<CapabilityRouteGuard session={session} capability="canManageCatalog"><ModuleRouteGuard session={session} moduleId="master-data"><AdminPage catalog={catalog} setCatalog={setCatalog} session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
-            <Route path="profile" element={<CapabilityRouteGuard session={session} capability="canManageProfile"><ModuleRouteGuard session={session} moduleId="master-data"><ProfilePage profile={profile} setProfile={setProfile} session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
-            <Route path="users" element={<CapabilityRouteGuard session={session} capability="canManageUsers"><ModuleRouteGuard session={session} moduleId="users-access"><UsersPage session={session} onRefreshSession={onRefreshSession} /></ModuleRouteGuard></CapabilityRouteGuard>} />
-            <Route path="audit" element={<CapabilityRouteGuard session={session} capability="canViewAuditLogs"><AuditLogsPage /></CapabilityRouteGuard>} />
+            {SETTINGS_ROUTE_POLICIES.map((policy) => (
+              <Route key={policy.path} path={policy.path} element={renderSettingsRoute(policy)} />
+            ))}
             <Route path="system" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/settings'} replace />} />
           </Route>
 
@@ -113,17 +104,16 @@ export const AppRoutes = ({
             <Route path="users" element={<UsersPage session={session} onRefreshSession={onRefreshSession} />} />
           </Route>
 
-          <Route path="admin" element={<Navigate to="/settings/catalog" replace />} />
+          {SETTINGS_ALIAS_REDIRECTS.map((alias) => (
+            <Route key={alias.path} path={alias.path} element={<Navigate to={alias.to} replace />} />
+          ))}
           <Route path="profile" element={<Navigate to="/settings/profile" replace />} />
           <Route path="users" element={<Navigate to="/settings/users" replace />} />
           <Route path="system-settings" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/settings'} replace />} />
         </Route>
       </Route>
 
-      <Route
-        path="*"
-        element={<Navigate to={session?.authenticated ? '/' : '/orders/new'} replace />}
-      />
+      <Route path="*" element={<Navigate to={session?.authenticated ? '/' : '/orders/new'} replace />} />
     </Routes>
   )
 }

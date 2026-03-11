@@ -1,4 +1,4 @@
-# AGENTS.md
+﻿# AGENTS.md
 
 Guidance for coding agents working in this repository.
 
@@ -28,7 +28,8 @@ Guidance for coding agents working in this repository.
 ## Local Setup
 1. Install dependencies:
 ```bash
-npm install
+npm ci --prefer-offline --no-audit --no-fund
+# or: npm run deps:install
 ```
 2. Create local env:
 ```bash
@@ -195,7 +196,10 @@ Module-scoped aliases (`@sales/`, `@master-data/`, `@users-access/`) are **inten
 - Run `npm run check:encoding` after text-heavy edits.
 
 ## Testing Guidance
-- There is no formal test suite in this repo today.
+- The repo has a lightweight automated test suite:
+  - Frontend/unit: `tests/unit/*` via Vitest (`npm run test`).
+  - Backend/PHP: `tests/php/*` via custom runner (`npm run test:php`).
+- Run `npm run test:all` for full local confidence when touching contracts or backend logic.
 - Minimum manual smoke checks after relevant changes:
   - Customer can create an order.
   - Staff can log in and view orders.

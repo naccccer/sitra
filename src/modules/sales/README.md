@@ -11,7 +11,3 @@ Public entry points:
 - `pages/OrdersPage.jsx`
 - `components/customer/OrderForm.jsx`
 - `components/admin/AdminOrdersView.jsx`
-
-Compatibility:
-- Legacy paths in `src/pages/*` and `src/components/*` re-export from this module.
-

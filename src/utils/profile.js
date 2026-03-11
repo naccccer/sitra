@@ -1,4 +1,5 @@
 import { FACTORY_ADDRESS, FACTORY_PHONES } from './helpers';
+import { resolveApiFileUrl } from '@/utils/url';
 
 export const defaultProfile = {
   brandName: 'Sitra',
@@ -40,8 +41,7 @@ export const profileLogoSrc = (logoPath = '') => {
   const raw = toSafeText(logoPath);
   if (!raw) return '';
   if (/^(https?:|data:|blob:)/i.test(raw)) return raw;
-  if (raw.startsWith('/')) return raw;
-  return `/${raw}`;
+  return resolveApiFileUrl(raw);
 };
 
 export const profileBrandInitial = (profile) => {

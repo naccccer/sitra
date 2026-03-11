@@ -1,0 +1,31 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "OrdersCreateRequest",
+  "type": "object",
+  "required": ["customerName", "phone", "date", "items"],
+  "properties": {
+    "customerName": { "type": "string", "minLength": 1 },
+    "phone": { "type": "string", "minLength": 1 },
+    "date": { "type": "string", "minLength": 1 },
+    "status": { "type": "string", "enum": ["pending", "processing", "delivered", "archived"] },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "quantity"],
+        "properties": {
+          "id": { "type": ["string", "number"] },
+          "title": { "type": "string" },
+          "quantity": { "type": "number" },
+          "unitPrice": { "type": "number" },
+          "totalPrice": { "type": "number" }
+        }
+      }
+    },
+    "financials": { "type": ["object", "null"] },
+    "payments": { "type": "array", "items": { "type": "object" } },
+    "invoiceNotes": { "type": "string" },
+    "clientRequestId": { "type": "string" }
+  },
+  "additionalProperties": true
+}

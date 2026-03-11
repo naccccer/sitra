@@ -1,0 +1,13 @@
+﻿{
+  "glasses": [],
+  "operations": [],
+  "connectors": {
+    "interlayers": [],
+    "spacers": []
+  },
+  "fees": {
+    "transport": 0
+  },
+  "jumboRules": [],
+  "roundStep": 1000
+}

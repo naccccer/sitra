@@ -1,0 +1,15 @@
+﻿{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CatalogSaveRequest",
+  "type": "object",
+  "required": ["glasses", "operations", "connectors", "fees"],
+  "properties": {
+    "glasses": { "type": "array", "items": { "type": "object" } },
+    "operations": { "type": "array", "items": { "type": "object" } },
+    "connectors": { "type": "object" },
+    "fees": { "type": "object" },
+    "jumboRules": { "type": "array", "items": { "type": "object" } },
+    "roundStep": { "type": "number" }
+  },
+  "additionalProperties": true
+}

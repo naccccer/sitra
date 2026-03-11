@@ -2,6 +2,28 @@
 
 Sitra is an RTL-first ERP focused on order intake and sales operations.
 
+## Start Here (Human + AI)
+
+Read in this order:
+
+1. `ARCHITECTURE.md` (hard architectural rules)
+2. `MODULE_CONTRACTS.md` (cross-module contracts)
+3. `docs/code-map.md` (feature-to-code ownership map)
+4. `AGENTS.md` and `docs/ai-playbook.md` (implementation guardrails)
+
+Canonical edit paths:
+
+- Frontend business logic: `src/modules/<module>/*`
+- Shared frontend runtime: `src/kernel/*`, `src/services/*`, `src/hooks/*`
+- Backend business handlers: `api/modules/<module>/*`
+- Thin API wrappers: `api/*.php`
+
+Module boundaries:
+
+- Allowed: Module -> Kernel/shared
+- Forbidden: Module -> other module internals
+- Enforced by: `npm run check:boundaries`
+
 ## Architecture Authority
 
 `ARCHITECTURE.md` is the source of truth for architecture rules.
@@ -29,18 +51,20 @@ Key locked decisions:
 
 ## Repository Layout
 
-- `src/` frontend app (pages, components, routes, services, hooks, utils).
+- `src/` frontend app (modules, kernel, shared components, services, hooks).
 - `api/` PHP HTTP endpoints and shared helpers.
 - `config/` environment and DB bootstrap.
 - `database/schema.sql` baseline DB schema.
-- `database/destructive-domain-cleanup.sql` one-time destructive cleanup script.
-- `public/icons/operations/` operation icon assets.
+- `database/fixtures/minimal_fixture.sql` reproducible minimal dataset.
+- `contracts/schemas/` machine-readable API contract schemas.
+- `examples/` canonical request/response payload examples.
 
 ## Local Setup
 
 1. Install dependencies:
 ```bash
-npm install
+npm ci --prefer-offline --no-audit --no-fund
+# or: npm run deps:install
 ```
 
 2. Create local environment file:
@@ -56,6 +80,11 @@ copy .env.example .env.local
 5. Start frontend:
 ```bash
 npm run dev
+```
+
+6. Optional: reset to minimal reproducible dataset:
+```bash
+npm run db:reset-minimal
 ```
 
 ## Local Login
@@ -75,11 +104,7 @@ npm run auth:reset-admin
 - Module registry control plane is Owner-only (`admin` + `APP_OWNER_UID`).
 - Catalog is persisted in `system_settings` with key `catalog`.
 - Orders are stored in `orders` with JSON payload (`items_json`).
-- Valid order statuses are exactly:
-  - `pending`
-  - `processing`
-  - `delivered`
-  - `archived`
+- Valid order statuses are exactly: `pending`, `processing`, `delivered`, `archived`.
 
 ## Main API Endpoints
 
@@ -96,7 +121,7 @@ npm run auth:reset-admin
 - `POST /api/upload.php`
 - `POST /api/upload_logo.php`
 
-## Validation
+## Validation and Tests
 
 For small scoped changes:
 ```bash
@@ -107,6 +132,24 @@ For cross-module/backend contract changes:
 ```bash
 npm run verify:safe
 ```
+
+Direct test commands:
+
+```bash
+npm run test
+npm run test:coverage
+npm run test:php
+npm run test:all
+```
+
+## Additional Docs
+
+- `docs/api-contracts-index.md`
+- `docs/naming-conventions.md`
+- `docs/ai-playbook.md`
+- `docs/adr/README.md`
+- `docs/golden-paths.md`
+- `docs/api-usage.md`
 
 ## Manual Smoke Checks
 

@@ -11,6 +11,11 @@ node_modules
 dist
 dist-ssr
 *.local
+api/uploads/*
+!api/uploads/.gitkeep
+!api/uploads/branding/
+api/uploads/branding/*
+!api/uploads/branding/.gitkeep
 
 # Editor directories and files
 .vscode/*

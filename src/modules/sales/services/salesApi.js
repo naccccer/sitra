@@ -2,6 +2,10 @@ import { api } from '../../../services/api'
 import { enqueueSalesOfflineOperation, supportsSalesOfflineQueue } from '../../../services/salesOfflineQueue'
 import { generateUUIDv4 } from '../../../utils/uuid'
 
+/** @typedef {import('../../../types/api-contracts.generated').OrdersCreateRequest} OrdersCreateRequest */
+/** @typedef {import('../../../types/api-contracts.generated').OrdersUpdateRequest} OrdersUpdateRequest */
+/** @typedef {import('../../../types/api-contracts.generated').OrdersStatusPatchRequest} OrdersStatusPatchRequest */
+
 function createClientRequestId() {
   return generateUUIDv4()
 }
@@ -84,7 +88,7 @@ function createQueuedOrderPreview(payload, queueItem) {
  */
 export const salesApi = {
   /**
-   * @param {Object} payload
+   * @param {OrdersCreateRequest} payload
    * @returns {Promise<any>}
    */
   async createOrder(payload) {
@@ -131,7 +135,7 @@ export const salesApi = {
   },
 
   /**
-   * @param {Object} payload
+   * @param {OrdersUpdateRequest} payload
    * @returns {Promise<any>}
    */
   async updateOrder(payload) {
@@ -183,7 +187,7 @@ export const salesApi = {
   /**
    * @param {number|string} id
    * @param {'pending'|'processing'|'delivered'|'archived'} status
-   * @param {{ expectedUpdatedAt?: string | null }} [options]
+   * @param {Partial<OrdersStatusPatchRequest>} [options]
    * @returns {Promise<any>}
    */
   async updateOrderStatus(id, status, options = {}) {

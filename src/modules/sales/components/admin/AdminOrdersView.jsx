@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Search, ChevronDown, ChevronUp, Edit3, Archive, Printer, FileText, X, Upload, Link2, Trash2, Cog } from 'lucide-react';
 import { toPN } from '../../../../utils/helpers';
+import { resolveApiFileUrl } from '@/utils/url';
 import { StructureDetails } from '../../../../components/shared/StructureDetails';
 import { PrintInvoice } from '../../../../components/shared/PrintInvoice';
 import { PriceInput } from '../../../../components/shared/PriceInput';
@@ -50,7 +51,7 @@ const extractPatternFiles = (order = {}) => {
       rowNumber: index + 1,
       itemTitle: item?.title || 'آیتم سفارش',
       fileName: String(pattern?.fileName || `pattern-${index + 1}`),
-      filePath: typeof pattern?.filePath === 'string' ? pattern.filePath : '',
+      filePath: resolveApiFileUrl(pattern?.filePath),
       mimeType: typeof pattern?.mimeType === 'string' ? pattern.mimeType : '',
       previewDataUrl: typeof pattern?.previewDataUrl === 'string' ? pattern.previewDataUrl : '',
       isDirectPrintable: isDirectBrowserPrintable(pattern),
@@ -467,7 +468,7 @@ export const AdminOrdersView = ({ orders, hasMoreOrders, setOrders, onLoadMoreOr
 
     const response = await salesApi.uploadReceiptFile(file);
     return {
-      filePath: String(response?.filePath || ''),
+      filePath: resolveApiFileUrl(response?.filePath),
       originalName: String(response?.originalName || file.name || ''),
       mimeType: String(response?.mimeType || file.type || ''),
       size: Number(response?.size || file.size || 0),
@@ -1085,7 +1086,7 @@ export const AdminOrdersView = ({ orders, hasMoreOrders, setOrders, onLoadMoreOr
                                       )}
                                     </div>
                                   ) : payment.receipt?.filePath ? (
-                                    <a href={payment.receipt.filePath} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 font-black">
+                                    <a href={resolveApiFileUrl(payment.receipt.filePath)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-blue-700 hover:text-blue-800 font-black">
                                       <Link2 size={12} />
                                       {payment.receipt.originalName || 'مشاهده'}
                                     </a>

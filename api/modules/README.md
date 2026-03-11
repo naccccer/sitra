@@ -20,3 +20,7 @@ Current adapter mapping:
 Internal split pattern (applied where logic is large):
 - `orders.php` delegates to `orders_handlers.php` and `orders_shared.php`
 - `users.php` delegates to `users_handlers.php` and `users_shared.php`
+
+Inactive scaffolds:
+- `api/modules/inventory/` (reserved, not active)
+- `api/modules/production/` (reserved, not active)
