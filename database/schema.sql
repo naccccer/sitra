@@ -4,8 +4,10 @@
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     username VARCHAR(64) NOT NULL,
+    full_name VARCHAR(120) NOT NULL,
     password VARCHAR(255) NOT NULL,
     role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager',
+    job_title VARCHAR(120) NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -97,9 +99,11 @@ ON DUPLICATE KEY UPDATE
     is_protected = VALUES(is_protected),
     sort_order = VALUES(sort_order);
 
-INSERT INTO users (username, password, role)
+INSERT INTO users (username, full_name, password, role, job_title)
 VALUES
-    ('admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin')
+    ('admin', 'admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin', 'مالک سیستم')
 ON DUPLICATE KEY UPDATE
+    full_name = VALUES(full_name),
     password = VALUES(password),
-    role = VALUES(role);
+    role = VALUES(role),
+    job_title = VALUES(job_title);

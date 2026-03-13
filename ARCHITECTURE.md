@@ -60,6 +60,7 @@
   - `/api/module_registry.php`
   - `/api/login.php`, `/api/logout.php`
 - `bootstrap` extensions must be additive.
+- `bootstrap.session` identity fields include `username`, `fullName`, `jobTitle`, and `role`.
 - All mutating operations enforce CSRF and auth.
 - Frontend requests keep `credentials: include`.
 

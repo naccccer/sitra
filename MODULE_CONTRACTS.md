@@ -16,7 +16,7 @@
 ### `kernel.auth_context.v1`
 - Owner: `kernel`
 - Output:
-  - `user: { id, username, role } | null`
+  - `user: { id, username, fullName, jobTitle, role } | null`
   - `authenticated: boolean`
 
 ### `kernel.permission_check.v1`
@@ -108,6 +108,8 @@
 - Owner: `users-access`
 - Input:
   - `username: string`
+  - `fullName: string`
+  - `jobTitle?: string | null`
   - `password: string`
   - `role: 'admin' | 'manager' | 'sales'`
 - Output:
@@ -117,7 +119,7 @@
 - Owner: `users-access`
 - Input:
   - `id: number`
-  - mutable fields subset
+  - mutable fields subset (`username`, `fullName`, `jobTitle`, `role`, `password`)
 - Output:
   - `user: object`
 

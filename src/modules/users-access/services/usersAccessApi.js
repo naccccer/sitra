@@ -4,6 +4,8 @@ import { api } from '../../../services/api'
  * @typedef {Object} UsersAccessUserPayload
  * @property {number|string} [id]
  * @property {string} [username]
+ * @property {string} [fullName]
+ * @property {string|null} [jobTitle]
  * @property {string} [password]
  * @property {'admin'|'manager'|'sales'} [role]
  */

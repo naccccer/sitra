@@ -9,6 +9,7 @@ app_require_method(['POST']);
 app_require_module_enabled($pdo, 'auth');
 app_ensure_users_table($pdo);
 $hasIsActive = app_users_is_active_column($pdo);
+$hasIdentityColumns = app_users_has_identity_columns($pdo);
 
 // Rate limiting: max 5 failed attempts per IP in a 15-minute window
 $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
@@ -56,7 +57,8 @@ if ($username === '' || $password === '') {
 }
 
 $activeSelect = $hasIsActive ? ', is_active' : ', 1 AS is_active';
-$stmt = $pdo->prepare('SELECT id, username, password, role' . $activeSelect . ' FROM users WHERE username = :username LIMIT 1');
+$identitySelect = $hasIdentityColumns ? ', full_name, job_title' : ', username AS full_name, NULL AS job_title';
+$stmt = $pdo->prepare('SELECT id, username, password, role' . $identitySelect . $activeSelect . ' FROM users WHERE username = :username LIMIT 1');
 $stmt->execute(['username' => $username]);
 $user = $stmt->fetch();
 
@@ -116,6 +118,8 @@ session_regenerate_id(true);
 $_SESSION['user_id'] = (string)$user['id'];
 $_SESSION['username'] = (string)$user['username'];
 $_SESSION['role'] = (string)$user['role'];
+$_SESSION['full_name'] = (string)($user['full_name'] ?? $user['username'] ?? '');
+$_SESSION['job_title'] = (string)($user['job_title'] ?? '');
 
 app_audit_log(
     $pdo,
@@ -134,4 +138,6 @@ app_json([
     'success' => true,
     'role' => (string)$user['role'],
     'username' => (string)$user['username'],
+    'fullName' => trim((string)($user['full_name'] ?? '')) !== '' ? (string)$user['full_name'] : (string)$user['username'],
+    'jobTitle' => trim((string)($user['job_title'] ?? '')) !== '' ? (string)$user['job_title'] : null,
 ]);

@@ -15,4 +15,6 @@ app_json([
     'authenticated' => $user !== null,
     'role' => $user['role'] ?? null,
     'username' => $user['username'] ?? null,
+    'fullName' => $user['fullName'] ?? null,
+    'jobTitle' => $user['jobTitle'] ?? null,
 ]);

@@ -8,10 +8,17 @@ function app_users_active_sql(bool $hasIsActive): string
 
 function app_users_to_response(array $row): array
 {
+    $role = (string)($row['role'] ?? '');
+    $username = (string)($row['username'] ?? '');
+    $fullName = trim((string)($row['full_name'] ?? ''));
+    $jobTitle = trim((string)($row['job_title'] ?? ''));
+
     return [
         'id' => (string)$row['id'],
-        'username' => (string)$row['username'],
-        'role' => (string)$row['role'],
+        'username' => $username,
+        'fullName' => $fullName !== '' ? $fullName : $username,
+        'role' => $role,
+        'jobTitle' => $jobTitle !== '' ? $jobTitle : null,
         'isActive' => ((int)($row['is_active'] ?? 1)) === 1,
         'createdAt' => (string)($row['created_at'] ?? ''),
         'updatedAt' => (string)($row['updated_at'] ?? ''),
@@ -20,8 +27,11 @@ function app_users_to_response(array $row): array
 
 function app_users_fetch_one(PDO $pdo, int $id, bool $hasIsActive): ?array
 {
+    $identitySql = app_users_has_identity_columns($pdo)
+        ? 'full_name, job_title, '
+        : 'username AS full_name, NULL AS job_title, ';
     $activeSql = app_users_active_sql($hasIsActive) . ' AS is_active';
-    $stmt = $pdo->prepare('SELECT id, username, role, ' . $activeSql . ', created_at, updated_at FROM users WHERE id = :id LIMIT 1');
+    $stmt = $pdo->prepare('SELECT id, username, ' . $identitySql . 'role, ' . $activeSql . ', created_at, updated_at FROM users WHERE id = :id LIMIT 1');
     $stmt->execute(['id' => $id]);
     $row = $stmt->fetch();
     if (!$row) {

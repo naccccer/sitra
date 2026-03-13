@@ -1,8 +1,9 @@
 import React from 'react';
-import { AppRoutes } from './routes/AppRoutes';
-import { OfflineSyncBanner } from './components/shared/OfflineSyncBanner';
-import { useBootstrap } from './hooks/useBootstrap';
-import { useOfflineSync } from './hooks/useOfflineSync';
+import { AppRoutes } from '@/routes/AppRoutes';
+import { OfflineSyncBanner } from '@/components/shared/OfflineSyncBanner';
+import { Button, Card } from '@/components/shared/ui';
+import { useBootstrap } from '@/hooks/useBootstrap';
+import { useOfflineSync } from '@/hooks/useOfflineSync';
 
 class ErrorBoundary extends React.Component {
   constructor(props) {
@@ -17,14 +18,14 @@ class ErrorBoundary extends React.Component {
   render() {
     if (this.state.hasError) {
       return (
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
-          <div className="text-center p-8">
-            <h2 className="text-xl font-black mb-2">خطایی رخ داد</h2>
-            <p className="text-sm mb-4">لطفاً صفحه را مجدداً بارگذاری کنید.</p>
-            <button onClick={() => window.location.reload()} className="px-4 py-2 bg-slate-900 text-white rounded-lg text-sm font-bold">
+        <div className="app-shell flex items-center justify-center px-4 text-slate-600" dir="rtl">
+          <Card className="w-full max-w-md text-center" padding="lg">
+            <h2 className="mb-2 text-xl font-black">خطایی رخ داد</h2>
+            <p className="mb-4 text-sm">لطفا صفحه را مجددا بارگذاری کنید.</p>
+            <Button onClick={() => window.location.reload()} variant="primary" size="lg">
               بارگذاری مجدد
-            </button>
-          </div>
+            </Button>
+          </Card>
         </div>
       );
     }
@@ -60,7 +61,7 @@ export default function App() {
 
   if (isHydrating) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center text-slate-600 font-bold" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+      <div className="app-shell flex items-center justify-center text-slate-600 font-bold" dir="rtl">
         در حال بارگذاری اطلاعات...
       </div>
     );
@@ -68,7 +69,7 @@ export default function App() {
 
   return (
     <ErrorBoundary>
-      <div className="min-h-screen bg-slate-50 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+      <div className="app-shell font-sans" dir="rtl">
         <OfflineSyncBanner
           isOnline={isOnline}
           queueSnapshot={offlineQueueSnapshot}

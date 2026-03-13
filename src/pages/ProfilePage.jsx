@@ -1,19 +1,24 @@
 import React from 'react';
-import { AdminProfileSettingsTab } from '../components/admin/AdminProfileSettingsTab';
-import { AccessDenied } from '../components/shared/AccessDenied';
+import { AccessDenied } from '@/components/shared/AccessDenied';
+import { Card } from '@/components/shared/ui';
+import { AdminProfileSettingsTab } from '@/components/admin/AdminProfileSettingsTab';
 
 export const ProfilePage = ({ profile, setProfile, session }) => {
   const canManageSettings = Boolean(session?.capabilities?.canManageProfile);
 
   if (!canManageSettings) {
-    return <AccessDenied message="دسترسی کافی برای تنظیمات وجود ندارد" />;
+    return <AccessDenied message="دسترسی کافی برای مدیریت پروفایل وجود ندارد" />;
   }
 
   return (
-    <div className="mx-auto max-w-[1300px]">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="mx-auto max-w-[1300px] space-y-4">
+      <Card padding="md">
+        <h3 className="text-sm font-black text-slate-900">پروفایل کسب‌وکار</h3>
+        <p className="mt-1 text-xs font-bold text-slate-500">مدیریت هویت برند، عناوین چاپ و اطلاعات تماس</p>
+      </Card>
+      <Card padding="lg">
         <AdminProfileSettingsTab profile={profile} setProfile={setProfile} />
-      </div>
+      </Card>
     </div>
   );
 };

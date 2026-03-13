@@ -1,7 +1,8 @@
-﻿import React, { useState } from 'react';
-import { Lock, ArrowRight, Loader2 } from 'lucide-react';
-import { api } from '../../services/api';
-import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
+import React, { useState } from 'react';
+import { ArrowRight, Loader2, Lock } from 'lucide-react';
+import { api } from '@/services/api';
+import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '@/utils/profile';
+import { Button, Card, Input } from '@/components/shared/ui';
 
 export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
   const [username, setUsername] = useState('');
@@ -15,8 +16,8 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
   const showLogo = Boolean(logoSrc) && failedLogoSrc !== logoSrc;
   const fallbackLetter = profileBrandInitial(normalizedProfile);
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
+  const handleLogin = async (event) => {
+    event.preventDefault();
     setErrorMsg('');
 
     if (!username || !password) {
@@ -25,7 +26,6 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
     }
 
     setIsLoading(true);
-
     try {
       const data = await api.login(username, password);
       await onLogin({
@@ -40,9 +40,9 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4 font-sans" dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
-      <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm border border-slate-100 animate-in fade-in zoom-in-95">
-        <div className="w-16 h-16 bg-slate-900 rounded-2xl flex items-center justify-center text-white font-black text-2xl mx-auto mb-4 overflow-hidden">
+    <div className="app-shell flex flex-col items-center justify-center p-4 font-sans" dir="rtl">
+      <Card className="w-full max-w-sm animate-in fade-in zoom-in-95" padding="lg">
+        <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-2xl bg-slate-900 text-2xl font-black text-white">
           {showLogo ? (
             <img
               src={logoSrc}
@@ -54,50 +54,52 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
             fallbackLetter
           )}
         </div>
-        <h1 className="text-xl font-black text-center text-slate-800 mb-2">{normalizedProfile.brandName}</h1>
-        <p className="text-xs text-center text-slate-500 font-bold mb-8">{normalizedProfile.panelSubtitle}</p>
+
+        <h1 className="mb-2 text-center text-xl font-black text-slate-800">{normalizedProfile.brandName}</h1>
+        <p className="mb-8 text-center text-xs font-bold text-slate-500">{normalizedProfile.panelSubtitle}</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>
-            <label className="text-xs font-bold text-slate-600 mb-1.5 block">نام کاربری</label>
-            <input
+            <label className="mb-1.5 block text-xs font-bold text-slate-600">نام کاربری</label>
+            <Input
               type="text"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-800 transition-colors"
+              onChange={(event) => setUsername(event.target.value)}
+              className="bg-slate-50"
+              autoComplete="username"
               dir="ltr"
             />
           </div>
+
           <div>
-            <label className="text-xs font-bold text-slate-600 mb-1.5 block">رمز عبور</label>
-            <input
+            <label className="mb-1.5 block text-xs font-bold text-slate-600">رمز عبور</label>
+            <Input
               type="password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 p-3 rounded-xl outline-none focus:border-blue-500 font-bold text-slate-800 transition-colors"
+              onChange={(event) => setPassword(event.target.value)}
+              className="bg-slate-50"
+              autoComplete="current-password"
               dir="ltr"
             />
           </div>
 
           {errorMsg && (
-            <div className="text-xs text-red-500 font-bold text-center bg-red-50 p-2 rounded-lg">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-2 text-center text-xs font-bold text-rose-700" aria-live="polite">
               {errorMsg}
             </div>
           )}
 
-          <button
-            disabled={isLoading}
-            type="submit"
-            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-black py-3.5 rounded-xl flex justify-center items-center gap-2 shadow-lg shadow-blue-600/30 transition-all mt-6"
-          >
+          <Button disabled={isLoading} type="submit" variant="primary" size="lg" className="mt-6 w-full">
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />}
             {isLoading ? 'در حال بررسی...' : 'ورود به پنل'}
-          </button>
+          </Button>
         </form>
-      </div>
-      <button onClick={onGoToCustomer} className="mt-8 text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1.5 transition-colors">
-        <ArrowRight size={14} /> بازگشت به فرم سفارش مشتری
-      </button>
+      </Card>
+
+      <Button onClick={onGoToCustomer} variant="ghost" className="mt-6">
+        <ArrowRight size={14} />
+        بازگشت به فرم سفارش مشتری
+      </Button>
     </div>
   );
 };

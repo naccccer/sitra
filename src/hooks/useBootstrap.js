@@ -4,91 +4,12 @@ import { api, clearCsrfToken, setCsrfToken } from '../services/api';
 import { defaultProfile, normalizeProfile } from '../utils/profile';
 import { clearBootstrapCache, readBootstrapCache, writeBootstrapCache } from '../services/bootstrapCache';
 import { getSalesOfflineQueueSnapshot, syncSalesOfflineQueue } from '../services/salesOfflineQueue';
-
-/**
- * Returns true for errors that are likely transient (network/timeout) and
- * worth retrying. HTTP errors (status > 0) are not transient.
- */
-function isTransientError(error) {
-  if (!error) return false;
-  if (typeof error?.status === 'number' && error.status > 0) return false;
-  return true;
-}
-
-const EMPTY_SESSION = {
-  authenticated: false,
-  role: null,
-  username: null,
-  permissions: [],
-  capabilities: {},
-  modules: [],
-};
-
-const deriveCapabilitiesFromRole = (role) => {
-  const normalizedRole = String(role || '').trim();
-  if (normalizedRole === 'admin' || normalizedRole === 'manager') {
-    return {
-      canAccessDashboard: true,
-      canManageOrders: true,
-      canManageCatalog: true,
-      canManageUsers: true,
-      canViewAuditLogs: true,
-      canManageProfile: true,
-      canManageSystemSettings: normalizedRole === 'admin',
-    };
-  }
-
-  if (normalizedRole === 'sales') {
-    return {
-      canAccessDashboard: true,
-      canManageOrders: true,
-      canManageCatalog: false,
-      canManageUsers: false,
-      canViewAuditLogs: false,
-      canManageProfile: false,
-      canManageSystemSettings: false,
-    };
-  }
-
-  return {
-    canAccessDashboard: false,
-    canManageOrders: false,
-    canManageCatalog: false,
-    canManageUsers: false,
-    canViewAuditLogs: false,
-    canManageProfile: false,
-    canManageSystemSettings: false,
-  };
-};
-
-const normalizeSession = (rawSession, fallbackRole = null, bootstrapData = null) => {
-  const effectiveRole = rawSession?.role || fallbackRole || null;
-  const permissions = Array.isArray(bootstrapData?.permissions) ? bootstrapData.permissions : [];
-  const capabilities = bootstrapData?.capabilities && typeof bootstrapData.capabilities === 'object'
-    ? bootstrapData.capabilities
-    : deriveCapabilitiesFromRole(effectiveRole);
-  const modules = Array.isArray(bootstrapData?.modules) ? bootstrapData.modules : [];
-
-  if (!rawSession || typeof rawSession !== 'object') {
-    return {
-      ...EMPTY_SESSION,
-      role: effectiveRole,
-      username: null,
-      permissions,
-      capabilities,
-      modules,
-    };
-  }
-
-  return {
-    authenticated: Boolean(rawSession.authenticated),
-    role: effectiveRole,
-    username: rawSession.username || null,
-    permissions,
-    capabilities,
-    modules,
-  };
-};
+import {
+  EMPTY_SESSION,
+  isTransientError,
+  normalizeBootstrapOrders,
+  normalizeSession,
+} from './useBootstrapSession';
 
 /**
  * Manages bootstrap data: session, catalog, profile, orders, and offline sync execution.
@@ -130,16 +51,11 @@ export function useBootstrap() {
     if (data?.catalog) setCatalog(data.catalog);
     if (data?.profile) setProfile(normalizeProfile(data.profile));
 
-    // Handle both the legacy array shape and the new paginated object shape.
-    if (Array.isArray(data?.orders)) {
-      setOrders(data.orders);
-      setOrdersHasMore(false);
-      setOrdersNextCursor(null);
-    } else if (data?.orders && typeof data.orders === 'object') {
-      setOrders(Array.isArray(data.orders.items) ? data.orders.items : []);
-      setOrdersHasMore(Boolean(data.orders.hasMore));
-      setOrdersNextCursor(data.orders.nextCursor ?? null);
-    }
+    // Keep both legacy array and paginated object bootstrap shapes supported.
+    const normalizedOrders = normalizeBootstrapOrders(data?.orders);
+    setOrders(normalizedOrders.items);
+    setOrdersHasMore(normalizedOrders.hasMore);
+    setOrdersNextCursor(normalizedOrders.nextCursor);
 
     const normalized = normalizeSession(data?.session, fallbackRole, data);
     setSession(normalized);
@@ -234,14 +150,20 @@ export function useBootstrap() {
   const handleLogin = async (authPayload) => {
     const role = authPayload && typeof authPayload === 'object' ? authPayload.role : authPayload;
     const username = authPayload && typeof authPayload === 'object' ? authPayload.username : null;
+    const fullName = authPayload && typeof authPayload === 'object' ? authPayload.fullName : null;
+    const jobTitle = authPayload && typeof authPayload === 'object' ? authPayload.jobTitle : null;
     setSession((prev) => {
       const normalizedUsername = String(username || prev?.username || '').trim();
+      const normalizedFullName = String(fullName || prev?.fullName || '').trim();
+      const normalizedJobTitle = String(jobTitle || prev?.jobTitle || '').trim();
       const nextRole = role || prev.role || null;
       return normalizeSession(
         {
           authenticated: true,
           role: nextRole,
           username: normalizedUsername || prev?.username || null,
+          fullName: normalizedFullName || prev?.fullName || normalizedUsername || prev?.username || null,
+          jobTitle: normalizedJobTitle || prev?.jobTitle || null,
         },
         nextRole,
         null,

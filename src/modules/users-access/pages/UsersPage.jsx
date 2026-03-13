@@ -1,6 +1,7 @@
 import React from 'react';
-import { AccessDenied } from '../../../components/shared/AccessDenied';
-import { AdminUsersSettingsTab } from '../components/AdminUsersSettingsTab';
+import { AccessDenied } from '@/components/shared/AccessDenied';
+import { Card } from '@/components/shared/ui';
+import { AdminUsersSettingsTab } from '@/modules/users-access/components/AdminUsersSettingsTab';
 
 export const UsersPage = ({ session, onRefreshSession }) => {
   const canManageSettings = Boolean(session?.capabilities?.canManageUsers);
@@ -10,10 +11,10 @@ export const UsersPage = ({ session, onRefreshSession }) => {
   }
 
   return (
-    <div className="mx-auto max-w-[1300px]">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="mx-auto max-w-[1300px] space-y-4">
+      <Card padding="lg">
         <AdminUsersSettingsTab session={session} onRefreshSession={onRefreshSession} />
-      </div>
+      </Card>
     </div>
   );
 };

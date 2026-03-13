@@ -34,9 +34,6 @@ export const AppRoutes = ({
     if (policy.view === 'catalog') {
       return <AdminPage catalog={catalog} setCatalog={setCatalog} session={session} />
     }
-    if (policy.view === 'profile') {
-      return <ProfilePage profile={profile} setProfile={setProfile} session={session} />
-    }
     if (policy.view === 'users') {
       return <UsersPage session={session} onRefreshSession={onRefreshSession} />
     }
@@ -84,11 +81,22 @@ export const AppRoutes = ({
           <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
-          <Route path="settings" element={<SettingsPage session={session} />}>
+          <Route
+            path="profile"
+            element={(
+              <CapabilityRouteGuard session={session} capability="canManageProfile">
+                <ModuleRouteGuard session={session} moduleId="master-data">
+                  <ProfilePage profile={profile} setProfile={setProfile} session={session} />
+                </ModuleRouteGuard>
+              </CapabilityRouteGuard>
+            )}
+          />
+
+          <Route path="management" element={<SettingsPage session={session} />}>
             {SETTINGS_ROUTE_POLICIES.map((policy) => (
               <Route key={policy.path} path={policy.path} element={renderSettingsRoute(policy)} />
             ))}
-            <Route path="system" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/settings'} replace />} />
+            <Route path="system" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
           </Route>
 
           <Route
@@ -107,9 +115,13 @@ export const AppRoutes = ({
           {SETTINGS_ALIAS_REDIRECTS.map((alias) => (
             <Route key={alias.path} path={alias.path} element={<Navigate to={alias.to} replace />} />
           ))}
-          <Route path="profile" element={<Navigate to="/settings/profile" replace />} />
-          <Route path="users" element={<Navigate to="/settings/users" replace />} />
-          <Route path="system-settings" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/settings'} replace />} />
+          <Route path="settings" element={<Navigate to="/management" replace />} />
+          <Route path="settings/catalog" element={<Navigate to="/management/catalog" replace />} />
+          <Route path="settings/users" element={<Navigate to="/management/users" replace />} />
+          <Route path="settings/audit" element={<Navigate to="/management/audit" replace />} />
+          <Route path="settings/profile" element={<Navigate to="/profile" replace />} />
+          <Route path="users" element={<Navigate to="/management/users" replace />} />
+          <Route path="system-settings" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
         </Route>
       </Route>
 

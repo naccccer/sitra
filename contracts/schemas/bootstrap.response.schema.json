@@ -6,11 +6,13 @@
   "properties": {
     "session": {
       "type": "object",
-      "required": ["authenticated", "role", "username"],
+      "required": ["authenticated", "role", "username", "fullName", "jobTitle"],
       "properties": {
         "authenticated": { "type": "boolean" },
         "role": { "type": ["string", "null"] },
-        "username": { "type": ["string", "null"] }
+        "username": { "type": ["string", "null"] },
+        "fullName": { "type": ["string", "null"] },
+        "jobTitle": { "type": ["string", "null"] }
       }
     },
     "permissions": { "type": "array", "items": { "type": "string" } },

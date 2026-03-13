@@ -26,3 +26,7 @@ This index links endpoint behavior, request/response examples, permissions, and 
 | `POST /api/logout.php` | session | yes | n/a | auth contract in bootstrap/logout behavior |
 | `POST /api/upload.php` | protected | yes | order/profile write context | upload response shape from runtime |
 | `POST /api/upload_logo.php` | protected | yes | `profile.write` | upload response shape from runtime |
+
+## Contract Maintenance Notes
+
+- 2026-03-12: Refactored internal PHP helper structure (`api/common/*`, `api/modules/users_access/*`) with no public endpoint, permission, or schema shape changes.

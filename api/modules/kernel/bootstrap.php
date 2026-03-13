@@ -82,6 +82,12 @@ $response = [
         'authenticated' => $user !== null,
         'role' => $role,
         'username' => $user['username'] ?? null,
+        'fullName' => ($user !== null && trim((string)($user['fullName'] ?? '')) !== '')
+            ? (string)$user['fullName']
+            : ($user['username'] ?? null),
+        'jobTitle' => ($user !== null && trim((string)($user['jobTitle'] ?? '')) !== '')
+            ? (string)$user['jobTitle']
+            : null,
     ],
     'permissions' => $permissions,
     'capabilities' => $capabilities,

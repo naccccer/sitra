@@ -83,19 +83,27 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
 
   return (
     <div className="space-y-4 print-hide animate-in fade-in">
-      <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
-        <h2 className="font-black text-slate-800">پیکربندی لیست قیمت و قیمت‌گذاری</h2>
-        <button onClick={handleSaveSettings} className="bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg text-sm font-black flex items-center gap-2 shadow-sm transition-all active:scale-95">
-          <Save size={16} /> ثبت تغییرات
-        </button>
-      </div>
-      
-      <div className="flex bg-white p-1.5 rounded-xl border border-slate-200 shadow-sm overflow-x-auto hide-scrollbar gap-1">
-        {settingsTabs.map(t => (
-          <button key={t.id} onClick={() => setActiveSettingsTab(t.id)} className={`whitespace-nowrap px-4 py-2 rounded-lg text-xs font-black transition-all ${activeSettingsTab === t.id ? 'bg-blue-50 text-blue-700 border border-blue-200' : 'text-slate-500 hover:bg-slate-50'}`}>
-            {t.label}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="text-sm font-black text-slate-800">پیکربندی لیست قیمت</h2>
+          <button onClick={handleSaveSettings} className="inline-flex items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2 text-sm font-black text-white shadow-sm transition-all hover:bg-emerald-500 active:scale-95">
+            <Save size={16} /> ثبت تغییرات
           </button>
-        ))}
+        </div>
+
+        <div className="overflow-x-auto hide-scrollbar">
+          <div className="flex min-w-max items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50/70 p-1.5">
+            {settingsTabs.map(t => (
+              <button
+                key={t.id}
+                onClick={() => setActiveSettingsTab(t.id)}
+                className={`whitespace-nowrap rounded-lg px-4 py-2 text-xs font-black transition-all ${activeSettingsTab === t.id ? 'border border-blue-200 bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:bg-white/70'}`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">

@@ -6,12 +6,6 @@ export const SETTINGS_ROUTE_POLICIES = [
     view: 'catalog',
   },
   {
-    path: 'profile',
-    capability: 'canManageProfile',
-    moduleId: 'master-data',
-    view: 'profile',
-  },
-  {
     path: 'users',
     capability: 'canManageUsers',
     moduleId: 'users-access',
@@ -26,5 +20,5 @@ export const SETTINGS_ROUTE_POLICIES = [
 ]
 
 export const SETTINGS_ALIAS_REDIRECTS = [
-  { path: 'admin', to: '/settings/catalog' },
+  { path: 'admin', to: '/management/catalog' },
 ]

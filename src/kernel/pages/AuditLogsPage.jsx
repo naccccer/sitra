@@ -7,11 +7,13 @@ import gregorianEn from 'react-date-object/locales/gregorian_en'
 import DatePicker from 'react-multi-date-picker'
 import TimePicker from 'react-multi-date-picker/plugins/time_picker'
 import { Eye, Loader2, RotateCcw, Search } from 'lucide-react'
+import { ModalShell } from '@/components/shared/ui'
 import { toPN } from '../../utils/helpers'
 import { auditLogsApi } from '../services/auditLogsApi'
 
 const PAGE_SIZE = 25
 
+// ممیزی فعالیت ها
 const INITIAL_FILTERS = {
   from: null,
   to: null,
@@ -242,76 +244,73 @@ export const AuditLogsPage = () => {
   return (
     <div className="mx-auto max-w-[1300px] space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="mb-3">
-          <h3 className="text-sm font-black text-slate-800">ممیزی فعالیت ها</h3>
-          <p className="mt-1 text-[11px] font-bold text-slate-500">مشاهده اینکه چه کسی چه عملیاتی انجام داده است.</p>
+        <div className="overflow-x-auto hide-scrollbar">
+          <form onSubmit={handleSearch} className="flex min-w-[1040px] items-end gap-2.5">
+            <div className="w-[220px]">
+              <DateTimeFilterField
+                label="از تاریخ و ساعت"
+                value={filters.from}
+                onChange={(nextValue) => setFilters((prev) => ({ ...prev, from: nextValue }))}
+              />
+            </div>
+            <div className="w-[220px]">
+              <DateTimeFilterField
+                label="تا تاریخ و ساعت"
+                value={filters.to}
+                onChange={(nextValue) => setFilters((prev) => ({ ...prev, to: nextValue }))}
+              />
+            </div>
+            <div className="w-[180px]">
+              <label className="mb-1 block text-[10px] font-black text-slate-600">نوع رویداد</label>
+              <select
+                value={filters.eventType}
+                onChange={(e) => setFilters((prev) => ({ ...prev, eventType: e.target.value }))}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700"
+              >
+                <option value="">همه رویدادها</option>
+                {eventTypes.map((eventType) => (
+                  <option key={eventType} value={eventType}>{toAuditEventLabel(eventType)}</option>
+                ))}
+              </select>
+            </div>
+            <div className="w-[180px]">
+              <label className="mb-1 block text-[10px] font-black text-slate-600">کاربر</label>
+              <input
+                type="text"
+                value={filters.actor}
+                onChange={(e) => setFilters((prev) => ({ ...prev, actor: e.target.value }))}
+                placeholder="کاربر"
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700"
+                dir="ltr"
+                list="audit-actor-suggestions"
+              />
+              <datalist id="audit-actor-suggestions">
+                {actorSuggestions.map((actor) => (
+                  <option key={actor.value} value={actor.value}>{actor.hint}</option>
+                ))}
+              </datalist>
+            </div>
+            <div className="flex shrink-0 items-end gap-2">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-black whitespace-nowrap ${isLoading ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
+              >
+                {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+                جستجو
+              </button>
+              <button
+                type="button"
+                onClick={handleReset}
+                disabled={isLoading}
+                className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-black whitespace-nowrap ${isLoading ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
+              >
+                <RotateCcw size={14} />
+                بازنشانی کامل
+              </button>
+            </div>
+          </form>
         </div>
-
-        <form onSubmit={handleSearch} className="grid grid-cols-1 gap-2 lg:grid-cols-12 lg:items-end">
-          <div className="lg:col-span-3">
-            <DateTimeFilterField
-              label="از تاریخ و ساعت"
-              value={filters.from}
-              onChange={(nextValue) => setFilters((prev) => ({ ...prev, from: nextValue }))}
-            />
-          </div>
-          <div className="lg:col-span-3">
-            <DateTimeFilterField
-              label="تا تاریخ و ساعت"
-              value={filters.to}
-              onChange={(nextValue) => setFilters((prev) => ({ ...prev, to: nextValue }))}
-            />
-          </div>
-          <div className="lg:col-span-2">
-            <label className="mb-1 block text-[10px] font-black text-slate-600">نوع رویداد</label>
-            <select
-              value={filters.eventType}
-              onChange={(e) => setFilters((prev) => ({ ...prev, eventType: e.target.value }))}
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700"
-            >
-              <option value="">همه رویدادها</option>
-              {eventTypes.map((eventType) => (
-                <option key={eventType} value={eventType}>{toAuditEventLabel(eventType)}</option>
-              ))}
-            </select>
-          </div>
-          <div className="lg:col-span-2">
-            <label className="mb-1 block text-[10px] font-black text-slate-600">کاربر</label>
-            <input
-              type="text"
-              value={filters.actor}
-              onChange={(e) => setFilters((prev) => ({ ...prev, actor: e.target.value }))}
-              placeholder="کاربر"
-              className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700"
-              dir="ltr"
-              list="audit-actor-suggestions"
-            />
-            <datalist id="audit-actor-suggestions">
-              {actorSuggestions.map((actor) => (
-                <option key={actor.value} value={actor.value}>{actor.hint}</option>
-              ))}
-            </datalist>
-          </div>
-          <div className="flex items-end gap-2 lg:col-span-2">
-            <button
-              type="submit"
-              disabled={isLoading}
-              className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-black ${isLoading ? 'bg-slate-100 text-slate-400' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-            >
-              {isLoading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
-              جستجو
-            </button>
-            <button
-              type="button"
-              onClick={handleReset}
-              disabled={isLoading}
-              className={`inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-xs font-black ${isLoading ? 'bg-slate-100 text-slate-400' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'}`}
-            >
-              <RotateCcw size={14} />
-              بازنشانی
-            </button>
-          </div>
-        </form>
       </div>
 
       {errorMsg && (
@@ -403,23 +402,17 @@ export const AuditLogsPage = () => {
         </div>
       </div>
 
-      {selectedLog && (
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-xs font-black text-slate-800">جزئیات رویداد #{toPN(selectedLog.id)}</div>
-            <button
-              type="button"
-              onClick={() => setSelectedLogId('')}
-              className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-black text-slate-700 hover:bg-slate-100"
-            >
-              بستن
-            </button>
-          </div>
-          <pre className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px] font-mono leading-6 text-slate-700" dir="ltr">
-            {JSON.stringify(selectedLog.payload ?? {}, null, 2)}
-          </pre>
-        </div>
-      )}
+      <ModalShell
+        isOpen={Boolean(selectedLog)}
+        title={selectedLog ? `جزئیات رویداد #${toPN(selectedLog.id)}` : ''}
+        description="نمایش کامل داده‌های ثبت‌شده این رویداد"
+        onClose={() => setSelectedLogId('')}
+        maxWidthClass="max-w-4xl"
+      >
+        <pre className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-3 text-[11px] font-mono leading-6 text-slate-700" dir="ltr">
+          {JSON.stringify(selectedLog?.payload ?? {}, null, 2)}
+        </pre>
+      </ModalShell>
     </div>
   )
 }

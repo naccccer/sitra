@@ -56,6 +56,8 @@ function app_current_user(): ?array
         'id' => (string)$_SESSION['user_id'],
         'role' => (string)($_SESSION['role'] ?? ''),
         'username' => (string)($_SESSION['username'] ?? ''),
+        'fullName' => (string)($_SESSION['full_name'] ?? ''),
+        'jobTitle' => (string)($_SESSION['job_title'] ?? ''),
     ];
 }
 

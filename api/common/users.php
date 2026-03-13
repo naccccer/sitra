@@ -33,6 +33,39 @@ function app_ensure_users_table(PDO $pdo): void
     }
 
     try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'full_name'");
+        if (!$stmt || !$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN full_name VARCHAR(120) NULL AFTER username");
+            $pdo->exec("UPDATE users SET full_name = username WHERE full_name IS NULL OR TRIM(full_name) = ''");
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN full_name VARCHAR(120) NOT NULL");
+        } else {
+            $pdo->exec("UPDATE users SET full_name = username WHERE full_name IS NULL OR TRIM(full_name) = ''");
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN full_name VARCHAR(120) NOT NULL");
+        }
+    } catch (Throwable $e) {
+        // Preserve runtime compatibility even if alter is not permitted.
+    }
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'job_title'");
+        if (!$stmt || !$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN job_title VARCHAR(120) NULL AFTER role");
+        }
+        $pdo->exec(
+            "UPDATE users
+             SET job_title = CASE role
+                WHEN 'admin' THEN 'مالک سیستم'
+                WHEN 'manager' THEN 'مدیر تولید'
+                WHEN 'sales' THEN 'کارشناس فروش'
+                ELSE NULL
+             END
+             WHERE job_title IS NULL OR TRIM(job_title) = ''"
+        );
+    } catch (Throwable $e) {
+        // Preserve runtime compatibility even if alter is not permitted.
+    }
+
+    try {
         $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'");
         $row = $stmt ? $stmt->fetch() : null;
         $type = strtolower((string)($row['Type'] ?? ''));
@@ -67,6 +100,27 @@ function app_users_is_active_column(PDO $pdo): bool
     $detected = app_column_is_queryable($pdo, 'users', 'is_active');
     return $detected;
 }
+
+function app_users_has_identity_columns(PDO $pdo): bool
+{
+    static $detected = null;
+    if ($detected !== null) {
+        return $detected;
+    }
+
+    try {
+        app_ensure_users_table($pdo);
+    } catch (Throwable $e) {
+        // Fall through to queryable checks.
+    }
+
+    $hasFullName = app_column_is_queryable($pdo, 'users', 'full_name');
+    $hasJobTitle = app_column_is_queryable($pdo, 'users', 'job_title');
+    $detected = $hasFullName && $hasJobTitle;
+
+    return $detected;
+}
+
 
 function app_profile_defaults(): array
 {

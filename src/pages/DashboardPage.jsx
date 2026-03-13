@@ -1,7 +1,8 @@
-﻿import React, { useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Clock3, Factory, PackageCheck } from 'lucide-react';
-import { toPN } from '../utils/helpers';
+import { Badge, Card, EmptyState } from '@/components/shared/ui';
+import { toPN } from '@/utils/helpers';
 
 const toSafeNumber = (value) => {
   const n = Number(value);
@@ -39,60 +40,72 @@ export const DashboardPage = ({ orders = [] }) => {
   return (
     <div className="space-y-4">
       <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <Card padding="md">
           <div className="mb-2 inline-flex rounded-lg bg-slate-100 p-2 text-slate-700"><ClipboardList size={16} /></div>
           <div className="text-xs font-bold text-slate-500">سفارشات فعال</div>
-          <div className="mt-1 text-2xl font-black text-slate-900 tabular-nums">{toPN(summary.activeCount)}</div>
-        </div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-slate-900">{toPN(summary.activeCount)}</div>
+        </Card>
 
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 shadow-sm">
+        <Card className="border-amber-200 bg-amber-50" padding="md">
           <div className="mb-2 inline-flex rounded-lg bg-amber-100 p-2 text-amber-700"><Clock3 size={16} /></div>
           <div className="text-xs font-bold text-amber-700">در انتظار</div>
-          <div className="mt-1 text-2xl font-black text-amber-900 tabular-nums">{toPN(summary.pending)}</div>
-        </div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-amber-900">{toPN(summary.pending)}</div>
+        </Card>
 
-        <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 shadow-sm">
+        <Card className="border-blue-200 bg-blue-50" padding="md">
           <div className="mb-2 inline-flex rounded-lg bg-blue-100 p-2 text-blue-700"><Factory size={16} /></div>
           <div className="text-xs font-bold text-blue-700">در حال تولید</div>
-          <div className="mt-1 text-2xl font-black text-blue-900 tabular-nums">{toPN(summary.processing)}</div>
-        </div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-blue-900">{toPN(summary.processing)}</div>
+        </Card>
 
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 shadow-sm">
+        <Card className="border-emerald-200 bg-emerald-50" padding="md">
           <div className="mb-2 inline-flex rounded-lg bg-emerald-100 p-2 text-emerald-700"><PackageCheck size={16} /></div>
           <div className="text-xs font-bold text-emerald-700">تحویل‌شده</div>
-          <div className="mt-1 text-2xl font-black text-emerald-900 tabular-nums">{toPN(summary.delivered)}</div>
-        </div>
+          <div className="mt-1 text-2xl font-black tabular-nums text-emerald-900">{toPN(summary.delivered)}</div>
+        </Card>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-200 px-4 py-3 text-sm font-black text-slate-800">آخرین سفارش‌ها</div>
-        {summary.latest.length === 0 ? (
-          <div className="px-4 py-6 text-xs font-bold text-slate-500">هنوز سفارشی برای نمایش وجود ندارد.</div>
-        ) : (
-          <div className="divide-y divide-slate-100">
-            {summary.latest.map((order) => (
-              <Link
-                key={order.id}
-                to={`/orders/${order.id}`}
-                className="flex items-center justify-between px-4 py-3 transition-colors hover:bg-slate-50"
-              >
-                <div>
-                  <div className="text-xs font-black text-slate-800">{order.customerName || 'بدون نام'}</div>
-                  <div className="text-[11px] font-bold text-slate-500">{order.orderCode || '-'} - {toPN(formatOrderDate(order.date))}</div>
-                </div>
-                <div className="text-xs font-black text-slate-900 tabular-nums">{toPN(toSafeNumber(order.total).toLocaleString())}</div>
-              </Link>
-            ))}
+      <section>
+        <Card className="overflow-hidden" padding="none">
+          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+            <div className="text-sm font-black text-slate-800">آخرین سفارش‌ها</div>
+            <Badge tone="neutral">نمایش {toPN(summary.latest.length)} مورد</Badge>
           </div>
-        )}
+          {summary.latest.length === 0 ? (
+            <div className="p-4">
+              <EmptyState
+                title="سفارشی برای نمایش وجود ندارد"
+                description="پس از ثبت سفارش‌های جدید، آخرین موارد در این بخش نمایش داده می‌شود."
+              />
+            </div>
+          ) : (
+            <div className="divide-y divide-slate-100">
+              {summary.latest.map((order) => (
+                <Link
+                  key={order.id}
+                  to={`/orders/${order.id}`}
+                  className="focus-ring flex items-center justify-between px-4 py-3 transition-colors hover:bg-slate-50"
+                >
+                  <div>
+                    <div className="text-xs font-black text-slate-800">{order.customerName || 'بدون نام'}</div>
+                    <div className="text-[11px] font-bold text-slate-500">{order.orderCode || '-'} - {toPN(formatOrderDate(order.date))}</div>
+                  </div>
+                  <div className="text-xs font-black tabular-nums text-slate-900">{toPN(toSafeNumber(order.total).toLocaleString())}</div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Card>
       </section>
 
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="text-xs font-bold text-slate-500">جمع مبالغ سفارشات فعال</div>
-        <div className="mt-1 text-lg font-black text-slate-900 tabular-nums">
-          {toPN(summary.totalAmount.toLocaleString())}
-          <span className="mr-1 text-[10px] font-bold text-slate-500">تومان</span>
-        </div>
+      <section>
+        <Card padding="md">
+          <div className="text-xs font-bold text-slate-500">جمع مبالغ سفارشات فعال</div>
+          <div className="mt-1 text-lg font-black tabular-nums text-slate-900">
+            {toPN(summary.totalAmount.toLocaleString())}
+            <span className="mr-1 text-[10px] font-bold text-slate-500">تومان</span>
+          </div>
+        </Card>
       </section>
     </div>
   );

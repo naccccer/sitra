@@ -107,9 +107,9 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  const [createDraft, setCreateDraft] = useState({ username: '', password: '', role: 'manager' });
+  const [createDraft, setCreateDraft] = useState({ username: '', fullName: '', jobTitle: '', password: '', role: 'manager' });
   const [editingUserId, setEditingUserId] = useState('');
-  const [editDraft, setEditDraft] = useState({ username: '', role: 'manager', password: '' });
+  const [editDraft, setEditDraft] = useState({ username: '', fullName: '', jobTitle: '', role: 'manager', password: '' });
 
   const [matrixRoles, setMatrixRoles] = useState(availableRoleOptions.map((role) => role.value));
   const [permissionDefinitions, setPermissionDefinitions] = useState([]);
@@ -240,11 +240,17 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
 
   const handleCreateUser = async () => {
     const username = String(createDraft.username || '').trim();
+    const fullName = String(createDraft.fullName || '').trim();
+    const jobTitle = String(createDraft.jobTitle || '').trim();
     const password = String(createDraft.password || '');
     const role = String(createDraft.role || 'manager');
 
     if (!username) {
       setErrorMsg('نام کاربری الزامی است.');
+      return;
+    }
+    if (!fullName) {
+      setErrorMsg('نام کاربر الزامی است.');
       return;
     }
     if (password.length < 6) {
@@ -257,13 +263,13 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
     setSuccessMsg('');
 
     try {
-      const response = await usersAccessApi.createUser({ username, password, role });
+      const response = await usersAccessApi.createUser({ username, fullName, jobTitle, password, role });
       if (response?.user) {
         setUsers((prev) => [response.user, ...prev].sort(userSort));
       } else {
         await loadData();
       }
-      setCreateDraft({ username: '', password: '', role: 'manager' });
+      setCreateDraft({ username: '', fullName: '', jobTitle: '', password: '', role: 'manager' });
       setSuccessMsg('کاربر جدید ایجاد شد.');
     } catch (error) {
       setErrorMsg(error?.message || 'ایجاد کاربر ناموفق بود.');
@@ -273,6 +279,10 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
   };
 
   const handleUpdateUser = async (payload) => {
+    if (String(payload?.fullName || '').trim() === '') {
+      setErrorMsg('نام کاربر الزامی است.');
+      return;
+    }
     setBusyUserId(String(payload.id));
     setErrorMsg('');
     setSuccessMsg('');
@@ -286,7 +296,10 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
       }
 
       setEditingUserId('');
-      setEditDraft({ username: '', role: 'manager', password: '' });
+      setEditDraft({ username: '', fullName: '', jobTitle: '', role: 'manager', password: '' });
+      if (typeof onRefreshSession === 'function') {
+        await onRefreshSession();
+      }
       setSuccessMsg('کاربر به‌روزرسانی شد.');
     } catch (error) {
       setErrorMsg(error?.message || 'ویرایش کاربر ناموفق بود.');
@@ -323,7 +336,7 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
     <div className="space-y-4">
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
         <div className="mb-3 text-sm font-black text-slate-800">ایجاد کاربر جدید</div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-6">
           <input
             type="text"
             value={createDraft.username}
@@ -331,6 +344,20 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
             placeholder="نام کاربری"
             className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold bg-white"
             dir="ltr"
+          />
+          <input
+            type="text"
+            value={createDraft.fullName}
+            onChange={(e) => setCreateDraft((prev) => ({ ...prev, fullName: e.target.value }))}
+            placeholder="نام کاربر *"
+            className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold bg-white"
+          />
+          <input
+            type="text"
+            value={createDraft.jobTitle}
+            onChange={(e) => setCreateDraft((prev) => ({ ...prev, jobTitle: e.target.value }))}
+            placeholder="سمت (اختیاری)"
+            className="h-10 rounded-lg border border-slate-200 px-3 text-sm font-bold bg-white"
           />
           <input
             type="password"
@@ -515,10 +542,12 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
           <div className="p-6 text-center text-xs font-black text-slate-500">کاربری ثبت نشده است.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[960px] text-xs">
+            <table className="w-full min-w-[1180px] text-xs">
               <thead className="bg-slate-50 text-slate-500 border-b border-slate-200">
                 <tr>
                   <th className="p-2 text-right font-black">نام کاربری</th>
+                  <th className="p-2 text-right font-black">نام</th>
+                  <th className="p-2 text-right font-black">سمت</th>
                   <th className="p-2 text-right font-black">نقش</th>
                   <th className="p-2 text-right font-black">وضعیت</th>
                   <th className="p-2 text-right font-black">تاریخ ایجاد</th>
@@ -545,6 +574,31 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
                           />
                         ) : (
                           <span className="font-black text-slate-800">{user.username}</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editDraft.fullName}
+                            onChange={(e) => setEditDraft((prev) => ({ ...prev, fullName: e.target.value }))}
+                            className="h-8 w-full rounded-lg border border-slate-200 px-2 font-bold"
+                          />
+                        ) : (
+                          <span className="font-black text-slate-700">{user.fullName || user.username}</span>
+                        )}
+                      </td>
+                      <td className="p-2">
+                        {isEditing ? (
+                          <input
+                            type="text"
+                            value={editDraft.jobTitle}
+                            onChange={(e) => setEditDraft((prev) => ({ ...prev, jobTitle: e.target.value }))}
+                            className="h-8 w-full rounded-lg border border-slate-200 px-2 font-bold"
+                            placeholder="سمت (اختیاری)"
+                          />
+                        ) : (
+                          <span className="font-bold text-slate-600">{user.jobTitle || '-'}</span>
                         )}
                       </td>
                       <td className="p-2">
@@ -587,6 +641,8 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
                               onClick={() => handleUpdateUser({
                                 id: Number(user.id),
                                 username: String(editDraft.username || '').trim(),
+                                fullName: String(editDraft.fullName || '').trim(),
+                                jobTitle: String(editDraft.jobTitle || '').trim(),
                                 role: String(editDraft.role || 'manager'),
                                 ...(editDraft.password ? { password: editDraft.password } : {}),
                               })}
@@ -600,7 +656,7 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
                               type="button"
                               onClick={() => {
                                 setEditingUserId('');
-                                setEditDraft({ username: '', role: 'manager', password: '' });
+                                setEditDraft({ username: '', fullName: '', jobTitle: '', role: 'manager', password: '' });
                               }}
                               className="h-8 px-2 rounded-lg bg-slate-100 text-slate-700 text-[10px] font-black inline-flex items-center gap-1"
                             >
@@ -616,6 +672,8 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
                                 setEditingUserId(String(user.id));
                                 setEditDraft({
                                   username: String(user.username || ''),
+                                  fullName: String(user.fullName || user.username || ''),
+                                  jobTitle: String(user.jobTitle || ''),
                                   role: String(user.role || 'manager'),
                                   password: '',
                                 });

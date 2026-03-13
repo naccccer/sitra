@@ -2,7 +2,7 @@
 // Run `npm run contracts:types` after modifying contracts/schemas/*.json.
 
 /**
- * @typedef { session: { authenticated: boolean, role: string | null, username: string | null }, permissions?: Array<string>, capabilities?: Record<string, any>, modules?: Array<{ id: string, enabled: boolean, isProtected?: boolean, dependsOn?: Array<string> }>, catalog: Record<string, any>, profile?: Record<string, any>, orders?: { items?: Array<Record<string, any>>, hasMore?: boolean, nextCursor?: string | null }, csrfToken: string } BootstrapResponse
+ * @typedef { session: { authenticated: boolean, role: string | null, username: string | null, fullName: string | null, jobTitle: string | null }, permissions?: Array<string>, capabilities?: Record<string, any>, modules?: Array<{ id: string, enabled: boolean, isProtected?: boolean, dependsOn?: Array<string> }>, catalog: Record<string, any>, profile?: Record<string, any>, orders?: { items?: Array<Record<string, any>>, hasMore?: boolean, nextCursor?: string | null }, csrfToken: string } BootstrapResponse
  */
 export const __type_BootstrapResponse = null
 /**
