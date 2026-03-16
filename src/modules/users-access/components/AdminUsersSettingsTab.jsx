@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ChevronDown, ChevronLeft, Loader2, Pencil, RotateCcw, Save, Trash2, UserPlus, X } from 'lucide-react';
 import { toPN } from '../../../utils/helpers';
 import { usersAccessApi } from '../services/usersAccessApi';
@@ -17,6 +17,7 @@ const ALL_ROLE_OPTIONS = [...OWNER_ROLE_OPTIONS, ...FACTORY_ROLE_OPTIONS];
 const MODULE_LABELS = {
   sales: 'فروش',
   customers: 'مشتریان',
+  inventory: 'انبار',
   'users-access': 'کاربران و دسترسی',
   'master-data': 'داده‌های پایه',
   kernel: 'هسته',

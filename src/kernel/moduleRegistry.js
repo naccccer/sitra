@@ -20,16 +20,17 @@ export const isModuleEnabled = (modules = [], moduleId = '') => {
 }
 
 const MODULE_PERSIAN_LABELS = {
-  auth: 'احراز هویت',
-  'users-access': 'کاربران و دسترسی',
-  sales: 'فروش',
-  customers: 'مشتریان',
-  'master-data': 'داده‌های پایه',
+  auth: '\u0627\u062d\u0631\u0627\u0632 \u0647\u0648\u06cc\u062a',
+  'users-access': '\u06a9\u0627\u0631\u0628\u0631\u0627\u0646 \u0648 \u062f\u0633\u062a\u0631\u0633\u06cc',
+  sales: '\u0641\u0631\u0648\u0634',
+  customers: '\u0645\u0634\u062a\u0631\u06cc\u0627\u0646',
+  inventory: '\u0627\u0646\u0628\u0627\u0631',
+  'master-data': '\u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u067e\u0627\u06cc\u0647',
 }
 
 export const moduleLabelFa = (moduleId = '', modules = []) => {
   const id = String(moduleId || '').trim()
-  if (!id) return 'ماژول'
+  if (!id) return '\u0645\u0627\u0698\u0648\u0644'
   const dynamic = Array.isArray(modules) ? modules.find((module) => String(module?.id || '') === id) : null
   if (dynamic?.label) return String(dynamic.label)
   return MODULE_PERSIAN_LABELS[id] || id

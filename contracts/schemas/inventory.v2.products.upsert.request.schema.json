@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryV2ProductsUpsertRequest",
+  "type": "object",
+  "required": ["name", "productType", "uom"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "productCode": { "type": "string" },
+    "name": { "type": "string" },
+    "productType": { "type": "string", "enum": ["stockable", "consumable", "service"] },
+    "uom": { "type": "string" },
+    "notes": { "type": "string" },
+    "isActive": { "type": "boolean" }
+  }
+}

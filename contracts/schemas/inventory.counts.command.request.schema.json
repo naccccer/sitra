@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryCountsCommandRequest",
+  "type": "object",
+  "required": ["action"],
+  "properties": {
+    "action": { "type": "string", "enum": ["start_session", "upsert_line", "close_session"] },
+    "id": { "type": ["string", "number"] },
+    "sessionId": { "type": ["string", "number"] },
+    "warehouseId": { "type": ["string", "number"] },
+    "countType": { "type": "string", "enum": ["cycle", "annual"] },
+    "itemId": { "type": ["string", "number"] },
+    "countedQuantityBase": { "type": "number" },
+    "countedQuantitySecondary": { "type": "number" },
+    "notes": { "type": "string" }
+  }
+}

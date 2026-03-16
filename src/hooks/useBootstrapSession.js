@@ -31,11 +31,13 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageOrders: true,
       canManageCustomers: true,
       canManageCatalog: true,
-      canManageUsers: true,
-      canViewAuditLogs: true,
-      canManageProfile: true,
-      canManageSystemSettings: normalizedRole === 'admin',
-    }
+        canManageUsers: true,
+        canViewAuditLogs: true,
+        canManageProfile: true,
+        canAccessInventory: true,
+        canManageInventory: true,
+        canManageSystemSettings: normalizedRole === 'admin',
+      }
   }
 
   if (normalizedRole === 'sales') {
@@ -44,11 +46,13 @@ const deriveCapabilitiesFromRole = (role) => {
       canManageOrders: true,
       canManageCustomers: true,
       canManageCatalog: false,
-      canManageUsers: false,
-      canViewAuditLogs: false,
-      canManageProfile: false,
-      canManageSystemSettings: false,
-    }
+        canManageUsers: false,
+        canViewAuditLogs: false,
+        canManageProfile: false,
+        canAccessInventory: true,
+        canManageInventory: false,
+        canManageSystemSettings: false,
+      }
   }
 
   return {
@@ -56,11 +60,13 @@ const deriveCapabilitiesFromRole = (role) => {
     canManageOrders: false,
     canManageCustomers: false,
     canManageCatalog: false,
-    canManageUsers: false,
-    canViewAuditLogs: false,
-    canManageProfile: false,
-    canManageSystemSettings: false,
-  }
+      canManageUsers: false,
+      canViewAuditLogs: false,
+      canManageProfile: false,
+      canAccessInventory: false,
+      canManageInventory: false,
+      canManageSystemSettings: false,
+    }
 }
 
 export function normalizeSession(rawSession, fallbackRole = null, bootstrapData = null) {

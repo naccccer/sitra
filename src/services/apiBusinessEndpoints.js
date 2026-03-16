@@ -4,7 +4,6 @@ export function buildApiBusinessEndpoints(request) {
       const url = cursor ? `/api/orders.php?cursor=${encodeURIComponent(cursor)}` : '/api/orders.php'
       return request(url, { method: 'GET' })
     },
-
     async createOrder(payload, options = {}) {
       const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
       return request('/api/orders.php', {
@@ -15,7 +14,6 @@ export function buildApiBusinessEndpoints(request) {
         }),
       })
     },
-
     async updateOrder(payload, options = {}) {
       const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
       const expectedUpdatedAt = typeof options.expectedUpdatedAt === 'string' ? options.expectedUpdatedAt : null
@@ -28,7 +26,6 @@ export function buildApiBusinessEndpoints(request) {
         }),
       })
     },
-
     async updateOrderStatus(id, status, options = {}) {
       const clientRequestId = typeof options.clientRequestId === 'string' ? options.clientRequestId : null
       const expectedUpdatedAt = typeof options.expectedUpdatedAt === 'string' ? options.expectedUpdatedAt : null
@@ -42,50 +39,42 @@ export function buildApiBusinessEndpoints(request) {
         }),
       })
     },
-
     async deleteOrder(id) {
       return request('/api/orders.php', {
         method: 'DELETE',
         body: JSON.stringify({ id }),
       })
     },
-
     async fetchUsers() {
       return request('/api/users.php', { method: 'GET' })
     },
-
     async createUser(payload) {
       return request('/api/users.php', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
     },
-
     async updateUser(payload) {
       return request('/api/users.php', {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
     },
-
     async setUserActive(id, isActive) {
       return request('/api/users.php', {
         method: 'PATCH',
         body: JSON.stringify({ id, isActive }),
       })
     },
-
     async fetchRolePermissions() {
       return request('/api/role_permissions.php', { method: 'GET' })
     },
-
     async saveRolePermissions(rolePermissions) {
       return request('/api/role_permissions.php', {
         method: 'POST',
         body: JSON.stringify({ rolePermissions }),
       })
     },
-
     async fetchCustomers(filters = {}) {
       const params = new URLSearchParams()
       if (filters?.q) params.set('q', String(filters.q))
@@ -96,28 +85,24 @@ export function buildApiBusinessEndpoints(request) {
       const path = query ? `/api/customers.php?${query}` : '/api/customers.php'
       return request(path, { method: 'GET' })
     },
-
     async createCustomer(payload) {
       return request('/api/customers.php', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
     },
-
     async updateCustomer(payload) {
       return request('/api/customers.php', {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
     },
-
     async setCustomerActive(id, isActive) {
       return request('/api/customers.php', {
         method: 'PATCH',
         body: JSON.stringify({ id, isActive }),
       })
     },
-
     async fetchCustomerProjects(customerId) {
       const params = new URLSearchParams()
       if (customerId !== undefined && customerId !== null) params.set('customerId', String(customerId))
@@ -125,55 +110,156 @@ export function buildApiBusinessEndpoints(request) {
       const path = query ? `/api/customer_projects.php?${query}` : '/api/customer_projects.php'
       return request(path, { method: 'GET' })
     },
-
     async createCustomerProject(payload) {
       return request('/api/customer_projects.php', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
     },
-
     async updateCustomerProject(payload) {
       return request('/api/customer_projects.php', {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
     },
-
     async setCustomerProjectActive(id, isActive) {
       return request('/api/customer_projects.php', {
         method: 'PATCH',
         body: JSON.stringify({ id, isActive }),
       })
     },
-
     async fetchCustomerProjectContacts(projectId) {
       const params = new URLSearchParams()
       params.set('projectId', String(projectId))
       return request(`/api/customer_project_contacts.php?${params.toString()}`, { method: 'GET' })
     },
-
     async createCustomerProjectContact(payload) {
       return request('/api/customer_project_contacts.php', {
         method: 'POST',
         body: JSON.stringify(payload),
       })
     },
-
     async updateCustomerProjectContact(payload) {
       return request('/api/customer_project_contacts.php', {
         method: 'PUT',
         body: JSON.stringify(payload),
       })
     },
-
     async setCustomerProjectContactActive(id, isActive) {
       return request('/api/customer_project_contacts.php', {
         method: 'PATCH',
         body: JSON.stringify({ id, isActive }),
       })
     },
-
+    async fetchInventoryWarehouses({ includeInactive } = {}) {
+      const params = new URLSearchParams()
+      if (typeof includeInactive === 'boolean') params.set('includeInactive', String(includeInactive))
+      const query = params.toString()
+      const path = query ? `/api/inventory_warehouses.php?${query}` : '/api/inventory_warehouses.php'
+      return request(path, { method: 'GET' })
+    },
+    async fetchInventoryItems(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.q) params.set('q', String(filters.q))
+      if (filters?.category) params.set('category', String(filters.category))
+      if (typeof filters?.isActive === 'boolean') params.set('isActive', String(filters.isActive))
+      const query = params.toString()
+      const path = query ? `/api/inventory_items.php?${query}` : '/api/inventory_items.php'
+      return request(path, { method: 'GET' })
+    },
+    async createInventoryItem(payload) {
+      return request('/api/inventory_items.php', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    },
+    async updateInventoryItem(payload) {
+      return request('/api/inventory_items.php', {
+        method: 'PUT',
+        body: JSON.stringify(payload),
+      })
+    },
+    async setInventoryItemActive(id, isActive) {
+      return request('/api/inventory_items.php', {
+        method: 'PATCH',
+        body: JSON.stringify({ id, isActive }),
+      })
+    },
+    async fetchInventoryDocuments(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.docType) params.set('docType', String(filters.docType))
+      if (filters?.status) params.set('status', String(filters.status))
+      if (filters?.warehouseId) params.set('warehouseId', String(filters.warehouseId))
+      if (typeof filters?.includeLines === 'boolean') params.set('includeLines', String(filters.includeLines))
+      const query = params.toString()
+      const path = query ? `/api/inventory_documents.php?${query}` : '/api/inventory_documents.php'
+      return request(path, { method: 'GET' })
+    },
+    async createInventoryDocument(payload) {
+      return request('/api/inventory_documents.php', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    },
+    async patchInventoryDocument(payload) {
+      return request('/api/inventory_documents.php', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    },
+    async fetchInventoryRequests(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.status) params.set('status', String(filters.status))
+      if (typeof filters?.mine === 'boolean') params.set('mine', String(filters.mine))
+      const query = params.toString()
+      const path = query ? `/api/inventory_requests.php?${query}` : '/api/inventory_requests.php'
+      return request(path, { method: 'GET' })
+    },
+    async createInventoryRequest(payload) {
+      return request('/api/inventory_requests.php', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    },
+    async patchInventoryRequest(payload) {
+      return request('/api/inventory_requests.php', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    },
+    async fetchInventoryCounts(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.sessionId) params.set('sessionId', String(filters.sessionId))
+      if (filters?.status) params.set('status', String(filters.status))
+      if (filters?.warehouseId) params.set('warehouseId', String(filters.warehouseId))
+      const query = params.toString()
+      const path = query ? `/api/inventory_counts.php?${query}` : '/api/inventory_counts.php'
+      return request(path, { method: 'GET' })
+    },
+    async createInventoryCount(payload) {
+      return request('/api/inventory_counts.php', {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      })
+    },
+    async patchInventoryCount(payload) {
+      return request('/api/inventory_counts.php', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      })
+    },
+    async fetchInventoryReport(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.report) params.set('report', String(filters.report))
+      if (filters?.warehouseId) params.set('warehouseId', String(filters.warehouseId))
+      if (filters?.itemId) params.set('itemId', String(filters.itemId))
+      if (filters?.status) params.set('status', String(filters.status))
+      if (filters?.from) params.set('from', String(filters.from))
+      if (filters?.to) params.set('to', String(filters.to))
+      const query = params.toString()
+      const path = query ? `/api/inventory_reports.php?${query}` : '/api/inventory_reports.php'
+      return request(path, { method: 'GET' })
+    },
     async uploadLogo(file) {
       const formData = new FormData()
       formData.append('logoFile', file)
@@ -182,7 +268,6 @@ export function buildApiBusinessEndpoints(request) {
         body: formData,
       })
     },
-
     async uploadPatternFile(file) {
       const formData = new FormData()
       formData.append('patternFile', file)
@@ -191,7 +276,6 @@ export function buildApiBusinessEndpoints(request) {
         body: formData,
       })
     },
-
     async uploadReceiptFile(file) {
       const formData = new FormData()
       formData.append('patternFile', file)

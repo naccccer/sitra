@@ -1,4 +1,4 @@
-﻿import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import DateObject from 'react-date-object'
 import persian from 'react-date-object/calendars/persian'
 import gregorian from 'react-date-object/calendars/gregorian'
@@ -45,6 +45,19 @@ const AUDIT_EVENT_LABELS = {
   'customers.project_contact.created': 'ایجاد شماره پروژه',
   'customers.project_contact.updated': 'ویرایش شماره پروژه',
   'customers.project_contact.active.changed': 'تغییر وضعیت شماره پروژه',
+  'inventory.item.created': 'ایجاد کالای انبار',
+  'inventory.item.updated': 'ویرایش کالای انبار',
+  'inventory.item.active.changed': 'تغییر وضعیت کالای انبار',
+  'inventory.document.created': 'ایجاد سند انبار',
+  'inventory.document.posted': 'پست سند انبار',
+  'inventory.document.cancelled': 'لغو سند انبار',
+  'inventory.request.created': 'ایجاد درخواست خروج انبار',
+  'inventory.request.approved': 'تایید درخواست خروج انبار',
+  'inventory.request.rejected': 'رد درخواست خروج انبار',
+  'inventory.request.cancelled': 'لغو درخواست خروج انبار',
+  'inventory.count.started': 'شروع انبارگردانی',
+  'inventory.count.line.upserted': 'ثبت/ویرایش خط شمارش',
+  'inventory.count.closed': 'پایان انبارگردانی',
   'kernel.module_registry.updated': 'تغییر وضعیت ماژول',
 }
 
@@ -57,6 +70,10 @@ const ENTITY_LABELS = {
   customers: 'مشتری',
   customer_projects: 'پروژه مشتری',
   customer_project_contacts: 'شماره پروژه',
+  inventory_item: 'کالای انبار',
+  inventory_document: 'سند انبار',
+  inventory_request: 'درخواست خروج انبار',
+  inventory_count_session: 'نشست انبارگردانی',
 }
 
 const ROLE_LABELS = {

@@ -15,6 +15,12 @@ Current adapter mapping:
 - `api/customers.php` -> `api/modules/customers/customers.php`
 - `api/customer_projects.php` -> `api/modules/customers/customer_projects.php`
 - `api/customer_project_contacts.php` -> `api/modules/customers/customer_project_contacts.php`
+- `api/inventory_warehouses.php` -> `api/modules/inventory/inventory_warehouses.php`
+- `api/inventory_items.php` -> `api/modules/inventory/inventory_items.php`
+- `api/inventory_documents.php` -> `api/modules/inventory/inventory_documents.php`
+- `api/inventory_requests.php` -> `api/modules/inventory/inventory_requests.php`
+- `api/inventory_counts.php` -> `api/modules/inventory/inventory_counts.php`
+- `api/inventory_reports.php` -> `api/modules/inventory/inventory_reports.php`
 - `api/login.php` -> `api/modules/users_access/login.php`
 - `api/logout.php` -> `api/modules/users_access/logout.php`
 - `api/bootstrap.php` -> `api/modules/kernel/bootstrap.php`
@@ -25,5 +31,4 @@ Internal split pattern (applied where logic is large):
 - `users.php` delegates to `users_handlers.php` and `users_shared.php`
 
 Inactive scaffolds:
-- `api/modules/inventory/` (reserved, not active)
 - `api/modules/production/` (reserved, not active)

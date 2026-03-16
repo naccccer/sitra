@@ -47,6 +47,14 @@ function app_module_registry_seed_rows(): array
             'sort_order' => 35,
         ],
         [
+            'module_key' => 'inventory',
+            'label' => 'Inventory',
+            'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 38,
+        ],
+        [
             'module_key' => 'master-data',
             'label' => 'Master Data',
             'phase' => 'active',

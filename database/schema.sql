@@ -1,6 +1,5 @@
 ﻿-- Sitra backend schema for XAMPP MySQL/MariaDB
 -- Import this file in phpMyAdmin after creating the database.
-
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
     username VARCHAR(64) NOT NULL,
@@ -14,14 +13,12 @@ CREATE TABLE IF NOT EXISTS users (
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_username (username)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS system_settings (
     setting_key VARCHAR(100) NOT NULL,
     setting_value LONGTEXT NOT NULL,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (setting_key)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS module_registry (
     module_key VARCHAR(64) NOT NULL,
     label VARCHAR(120) NOT NULL,
@@ -36,7 +33,6 @@ CREATE TABLE IF NOT EXISTS module_registry (
     KEY idx_module_registry_sort (sort_order),
     CONSTRAINT fk_module_registry_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     event_type VARCHAR(120) NOT NULL,
@@ -52,7 +48,6 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     KEY idx_audit_entity (entity_type, entity_id),
     KEY idx_audit_actor_created (actor_user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS customers (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     full_name VARCHAR(200) NOT NULL,
@@ -67,7 +62,6 @@ CREATE TABLE IF NOT EXISTS customers (
     KEY idx_customers_default_phone (default_phone),
     KEY idx_customers_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS customer_projects (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     customer_id BIGINT UNSIGNED NOT NULL,
@@ -83,7 +77,6 @@ CREATE TABLE IF NOT EXISTS customer_projects (
     KEY idx_customer_projects_active (is_active),
     CONSTRAINT fk_customer_projects_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS customer_project_contacts (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     project_id BIGINT UNSIGNED NOT NULL,
@@ -100,7 +93,6 @@ CREATE TABLE IF NOT EXISTS customer_project_contacts (
     KEY idx_customer_project_contacts_phone (phone),
     CONSTRAINT fk_customer_project_contacts_project FOREIGN KEY (project_id) REFERENCES customer_projects (id) ON UPDATE CASCADE ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_code VARCHAR(64) NOT NULL,
@@ -127,7 +119,6 @@ CREATE TABLE IF NOT EXISTS orders (
     CONSTRAINT fk_orders_project_id FOREIGN KEY (project_id) REFERENCES customer_projects (id) ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_orders_project_contact_id FOREIGN KEY (project_contact_id) REFERENCES customer_project_contacts (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
 CREATE TABLE IF NOT EXISTS order_request_idempotency (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     client_request_id VARCHAR(64) NOT NULL,
@@ -143,25 +134,340 @@ CREATE TABLE IF NOT EXISTS order_request_idempotency (
     KEY idx_order_request_idempotency_actor_created (actor_user_id, created_at),
     KEY idx_order_request_idempotency_order (order_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_warehouses (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    warehouse_key VARCHAR(64) NOT NULL,
+    name VARCHAR(120) NOT NULL,
+    flow_type ENUM('raw_input','finished_output') NOT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_warehouses_key (warehouse_key),
+    KEY idx_inventory_warehouses_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_items (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    sku VARCHAR(80) NULL,
+    title VARCHAR(200) NOT NULL,
+    category ENUM('raw_glass','processed_glass','hardware','consumable') NOT NULL,
+    glass_width_mm DECIMAL(10,2) NULL,
+    glass_height_mm DECIMAL(10,2) NULL,
+    glass_thickness_mm DECIMAL(10,2) NULL,
+    glass_color VARCHAR(80) NULL,
+    base_unit VARCHAR(32) NOT NULL,
+    secondary_unit VARCHAR(32) NULL,
+    secondary_per_base DECIMAL(18,6) NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_items_sku (sku),
+    KEY idx_inventory_items_category (category),
+    KEY idx_inventory_items_title (title),
+    KEY idx_inventory_items_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_stock (
+    warehouse_id INT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    quantity_base DECIMAL(18,3) NOT NULL DEFAULT 0,
+    quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (warehouse_id, item_id),
+    CONSTRAINT fk_inventory_stock_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_warehouses (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_inventory_stock_item FOREIGN KEY (item_id) REFERENCES inventory_items (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_documents (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    doc_no VARCHAR(64) NOT NULL,
+    doc_type ENUM('receipt','issue','transfer','adjustment') NOT NULL,
+    status ENUM('draft','posted','cancelled') NOT NULL DEFAULT 'draft',
+    source_warehouse_id INT UNSIGNED NULL,
+    target_warehouse_id INT UNSIGNED NULL,
+    reference_type VARCHAR(50) NULL,
+    reference_id VARCHAR(80) NULL,
+    reference_code VARCHAR(120) NULL,
+    notes TEXT NULL,
+    created_by_user_id INT UNSIGNED NULL,
+    approved_by_user_id INT UNSIGNED NULL,
+    posted_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_documents_doc_no (doc_no),
+    KEY idx_inventory_documents_type_status (doc_type, status),
+    KEY idx_inventory_documents_created_at (created_at),
+    KEY idx_inventory_documents_reference_type (reference_type),
+    CONSTRAINT fk_inventory_documents_source_warehouse FOREIGN KEY (source_warehouse_id) REFERENCES inventory_warehouses (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_documents_target_warehouse FOREIGN KEY (target_warehouse_id) REFERENCES inventory_warehouses (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_documents_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_documents_approved_by FOREIGN KEY (approved_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_document_lines (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    document_id BIGINT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    quantity_base DECIMAL(18,3) NOT NULL,
+    quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    unit_price BIGINT NULL,
+    notes VARCHAR(255) NULL,
+    PRIMARY KEY (id),
+    KEY idx_inventory_document_lines_document (document_id),
+    KEY idx_inventory_document_lines_item (item_id),
+    CONSTRAINT fk_inventory_document_lines_document FOREIGN KEY (document_id) REFERENCES inventory_documents (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_inventory_document_lines_item FOREIGN KEY (item_id) REFERENCES inventory_items (id) ON UPDATE CASCADE ON DELETE RESTRICT
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_requests (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    status ENUM('pending','approved','rejected','cancelled') NOT NULL DEFAULT 'pending',
+    warehouse_id INT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    quantity_base DECIMAL(18,3) NOT NULL,
+    quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    request_notes TEXT NULL,
+    resolution_notes TEXT NULL,
+    requested_by_user_id INT UNSIGNED NULL,
+    approved_by_user_id INT UNSIGNED NULL,
+    document_id BIGINT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_inventory_requests_status (status),
+    KEY idx_inventory_requests_warehouse (warehouse_id),
+    KEY idx_inventory_requests_item (item_id),
+    KEY idx_inventory_requests_requested_by (requested_by_user_id),
+    CONSTRAINT fk_inventory_requests_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_requests_item FOREIGN KEY (item_id) REFERENCES inventory_items (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_requests_requested_by FOREIGN KEY (requested_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_requests_approved_by FOREIGN KEY (approved_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_requests_document FOREIGN KEY (document_id) REFERENCES inventory_documents (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_count_sessions (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    warehouse_id INT UNSIGNED NOT NULL,
+    count_type ENUM('cycle','annual') NOT NULL,
+    status ENUM('open','closed') NOT NULL DEFAULT 'open',
+    started_by_user_id INT UNSIGNED NULL,
+    closed_by_user_id INT UNSIGNED NULL,
+    notes TEXT NULL,
+    started_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    closed_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_inventory_count_sessions_status (warehouse_id, status),
+    KEY idx_inventory_count_sessions_type (count_type),
+    CONSTRAINT fk_inventory_count_sessions_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_count_sessions_started_by FOREIGN KEY (started_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_count_sessions_closed_by FOREIGN KEY (closed_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_count_lines (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    session_id BIGINT UNSIGNED NOT NULL,
+    item_id BIGINT UNSIGNED NOT NULL,
+    system_quantity_base DECIMAL(18,3) NOT NULL DEFAULT 0,
+    system_quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    counted_quantity_base DECIMAL(18,3) NOT NULL DEFAULT 0,
+    counted_quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    diff_quantity_base DECIMAL(18,3) NOT NULL DEFAULT 0,
+    diff_quantity_secondary DECIMAL(18,3) NOT NULL DEFAULT 0,
+    adjustment_document_id BIGINT UNSIGNED NULL,
+    notes TEXT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_count_lines_session_item (session_id, item_id),
+    KEY idx_inventory_count_lines_item (item_id),
+    CONSTRAINT fk_inventory_count_lines_session FOREIGN KEY (session_id) REFERENCES inventory_count_sessions (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_inventory_count_lines_item FOREIGN KEY (item_id) REFERENCES inventory_items (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_count_lines_adjustment_document FOREIGN KEY (adjustment_document_id) REFERENCES inventory_documents (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_products (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_code VARCHAR(64) NULL,
+    name VARCHAR(180) NOT NULL,
+    product_type ENUM('stockable','consumable','service') NOT NULL DEFAULT 'stockable',
+    uom VARCHAR(32) NOT NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_products_code (product_code),
+    KEY idx_inventory_v2_products_name (name),
+    KEY idx_inventory_v2_products_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_variants (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_id BIGINT UNSIGNED NOT NULL,
+    sku VARCHAR(80) NULL,
+    variant_code VARCHAR(80) NULL,
+    attributes_json LONGTEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_variants_sku (sku),
+    UNIQUE KEY uq_inventory_v2_variant_product_code (product_id, variant_code),
+    KEY idx_inventory_v2_variants_product (product_id),
+    CONSTRAINT fk_inventory_v2_variants_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_warehouses (
+    id INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    warehouse_key VARCHAR(64) NOT NULL,
+    name VARCHAR(140) NOT NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_warehouses_key (warehouse_key),
+    KEY idx_inventory_v2_warehouses_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_locations (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    warehouse_id INT UNSIGNED NOT NULL,
+    parent_location_id BIGINT UNSIGNED NULL,
+    location_key VARCHAR(80) NOT NULL,
+    name VARCHAR(140) NOT NULL,
+    usage_type ENUM('internal','supplier','customer','inventory','production') NOT NULL DEFAULT 'internal',
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_locations_key (warehouse_id, location_key),
+    KEY idx_inventory_v2_locations_parent (parent_location_id),
+    KEY idx_inventory_v2_locations_warehouse (warehouse_id),
+    CONSTRAINT fk_inventory_v2_locations_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_locations_parent FOREIGN KEY (parent_location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_lots (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    lot_code VARCHAR(90) NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
+    variant_id BIGINT UNSIGNED NULL,
+    expiry_date DATE NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_lots_code (lot_code),
+    KEY idx_inventory_v2_lots_product (product_id),
+    CONSTRAINT fk_inventory_v2_lots_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_lots_variant FOREIGN KEY (variant_id) REFERENCES inventory_v2_variants (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_quants (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    product_id BIGINT UNSIGNED NOT NULL,
+    variant_id BIGINT UNSIGNED NULL,
+    warehouse_id INT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    lot_id BIGINT UNSIGNED NULL,
+    quantity_on_hand DECIMAL(18,3) NOT NULL DEFAULT 0,
+    quantity_reserved DECIMAL(18,3) NOT NULL DEFAULT 0,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_quants_dim (product_id, variant_id, warehouse_id, location_id, lot_id),
+    KEY idx_inventory_v2_quants_warehouse_location (warehouse_id, location_id),
+    CONSTRAINT fk_inventory_v2_quants_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_quants_variant FOREIGN KEY (variant_id) REFERENCES inventory_v2_variants (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_quants_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_quants_location FOREIGN KEY (location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_quants_lot FOREIGN KEY (lot_id) REFERENCES inventory_v2_lots (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_operation_headers (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    operation_no VARCHAR(80) NOT NULL,
+    operation_type ENUM('receipt','delivery','transfer','production_move','adjustment','count') NOT NULL,
+    status ENUM('draft','submitted','approved','posted','cancelled') NOT NULL DEFAULT 'draft',
+    source_warehouse_id INT UNSIGNED NULL,
+    target_warehouse_id INT UNSIGNED NULL,
+    reference_type VARCHAR(50) NULL,
+    reference_id VARCHAR(80) NULL,
+    reference_code VARCHAR(120) NULL,
+    notes TEXT NULL,
+    created_by_user_id INT UNSIGNED NULL,
+    approved_by_user_id INT UNSIGNED NULL,
+    posted_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_inventory_v2_operation_headers_no (operation_no),
+    KEY idx_inventory_v2_operation_headers_type_status (operation_type, status),
+    CONSTRAINT fk_inventory_v2_op_headers_source_wh FOREIGN KEY (source_warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_headers_target_wh FOREIGN KEY (target_warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_headers_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_headers_approved_by FOREIGN KEY (approved_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_operation_lines (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    operation_id BIGINT UNSIGNED NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
+    variant_id BIGINT UNSIGNED NULL,
+    lot_id BIGINT UNSIGNED NULL,
+    source_location_id BIGINT UNSIGNED NULL,
+    target_location_id BIGINT UNSIGNED NULL,
+    quantity_requested DECIMAL(18,3) NOT NULL DEFAULT 0,
+    quantity_done DECIMAL(18,3) NOT NULL DEFAULT 0,
+    uom VARCHAR(32) NOT NULL,
+    notes VARCHAR(255) NULL,
+    PRIMARY KEY (id),
+    KEY idx_inventory_v2_operation_lines_operation (operation_id),
+    CONSTRAINT fk_inventory_v2_op_lines_operation FOREIGN KEY (operation_id) REFERENCES inventory_v2_operation_headers (id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_inventory_v2_op_lines_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_op_lines_variant FOREIGN KEY (variant_id) REFERENCES inventory_v2_variants (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_lines_lot FOREIGN KEY (lot_id) REFERENCES inventory_v2_lots (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_lines_source_loc FOREIGN KEY (source_location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_op_lines_target_loc FOREIGN KEY (target_location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS inventory_v2_stock_ledger (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    operation_id BIGINT UNSIGNED NULL,
+    operation_line_id BIGINT UNSIGNED NULL,
+    movement_type ENUM('in','out','reserve','release') NOT NULL,
+    product_id BIGINT UNSIGNED NOT NULL,
+    variant_id BIGINT UNSIGNED NULL,
+    lot_id BIGINT UNSIGNED NULL,
+    warehouse_id INT UNSIGNED NOT NULL,
+    location_id BIGINT UNSIGNED NOT NULL,
+    quantity_on_hand_delta DECIMAL(18,3) NOT NULL DEFAULT 0,
+    quantity_reserved_delta DECIMAL(18,3) NOT NULL DEFAULT 0,
+    reference_type VARCHAR(50) NULL,
+    reference_id VARCHAR(80) NULL,
+    reference_code VARCHAR(120) NULL,
+    actor_user_id INT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_inventory_v2_stock_ledger_product_created (product_id, created_at),
+    CONSTRAINT fk_inventory_v2_stock_ledger_operation FOREIGN KEY (operation_id) REFERENCES inventory_v2_operation_headers (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_stock_ledger_operation_line FOREIGN KEY (operation_line_id) REFERENCES inventory_v2_operation_lines (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_stock_ledger_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_stock_ledger_variant FOREIGN KEY (variant_id) REFERENCES inventory_v2_variants (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_stock_ledger_lot FOREIGN KEY (lot_id) REFERENCES inventory_v2_lots (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_inventory_v2_stock_ledger_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_stock_ledger_location FOREIGN KEY (location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+    CONSTRAINT fk_inventory_v2_stock_ledger_actor FOREIGN KEY (actor_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT INTO module_registry (module_key, label, phase, is_enabled, is_protected, sort_order) VALUES
+    ('auth', 'Auth', 'active', 1, 1, 10), ('users-access', 'Users Access', 'active', 1, 1, 20),
+    ('sales', 'Sales', 'active', 1, 0, 30), ('customers', 'Customers', 'active', 1, 0, 35),
+    ('inventory', 'Inventory', 'active', 1, 0, 38), ('master-data', 'Master Data', 'active', 1, 0, 40)
+ON DUPLICATE KEY UPDATE label = VALUES(label), phase = VALUES(phase), is_protected = VALUES(is_protected), sort_order = VALUES(sort_order);
+INSERT INTO inventory_warehouses (warehouse_key, name, flow_type, is_active) VALUES
+    ('raw-input', 'Ø§Ù†Ø¨Ø§Ø± ÙˆØ±ÙˆØ¯ÛŒ Ø¬Ø§Ù…', 'raw_input', 1), ('finished-output', 'Ø§Ù†Ø¨Ø§Ø± Ø®Ø±ÙˆØ¬ÛŒ Ù…Ø­ØµÙˆÙ„', 'finished_output', 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name), flow_type = VALUES(flow_type), is_active = VALUES(is_active);
+INSERT INTO inventory_v2_warehouses (warehouse_key, name, notes, is_active) VALUES
+    ('v2-raw-input', 'انبار ورودی مواد', 'Seeded by Inventory V2 foundation', 1),
+    ('v2-finished-output', 'انبار خروجی محصول', 'Seeded by Inventory V2 foundation', 1)
+ON DUPLICATE KEY UPDATE name = VALUES(name), notes = VALUES(notes), is_active = VALUES(is_active);
+INSERT INTO inventory_v2_locations (warehouse_id, parent_location_id, location_key, name, usage_type, notes, is_active)
+SELECT w.id, NULL, 'stock', 'قفسه اصلی', 'internal', 'Default location', 1
+FROM inventory_v2_warehouses w
+ON DUPLICATE KEY UPDATE name = VALUES(name), usage_type = VALUES(usage_type), notes = VALUES(notes), is_active = VALUES(is_active);
+INSERT INTO users (username, full_name, password, role, job_title) VALUES
+    ('admin', 'admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin', 'Ù…Ø§Ù„Ú© Ø³ÛŒØ³ØªÙ…')
+ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), password = VALUES(password), role = VALUES(role), job_title = VALUES(job_title);
 
-INSERT INTO module_registry (module_key, label, phase, is_enabled, is_protected, sort_order)
-VALUES
-    ('auth', 'Auth', 'active', 1, 1, 10),
-    ('users-access', 'Users Access', 'active', 1, 1, 20),
-    ('sales', 'Sales', 'active', 1, 0, 30),
-    ('customers', 'Customers', 'active', 1, 0, 35),
-    ('master-data', 'Master Data', 'active', 1, 0, 40)
-ON DUPLICATE KEY UPDATE
-    label = VALUES(label),
-    phase = VALUES(phase),
-    is_protected = VALUES(is_protected),
-    sort_order = VALUES(sort_order);
-
-INSERT INTO users (username, full_name, password, role, job_title)
-VALUES
-    ('admin', 'admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin', 'مالک سیستم')
-ON DUPLICATE KEY UPDATE
-    full_name = VALUES(full_name),
-    password = VALUES(password),
-    role = VALUES(role),
-    job_title = VALUES(job_title);

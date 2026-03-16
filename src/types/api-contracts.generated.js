@@ -10,6 +10,42 @@ export const __type_BootstrapResponse = null
  */
 export const __type_CatalogSaveRequest = null
 /**
+ * @typedef { action: "start_session" | "upsert_line" | "close_session", id?: string | number, sessionId?: string | number, warehouseId?: string | number, countType?: "cycle" | "annual", itemId?: string | number, countedQuantityBase?: number, countedQuantitySecondary?: number, notes?: string } InventoryCountsCommandRequest
+ */
+export const __type_InventoryCountsCommandRequest = null
+/**
+ * @typedef { docType: "receipt" | "issue" | "transfer" | "adjustment", sourceWarehouseId?: string | number | null, targetWarehouseId?: string | number | null, referenceType?: string, referenceId?: string, referenceCode?: string, postImmediately?: boolean, notes?: string, lines: Array<{ itemId: string | number, quantityBase: number, quantitySecondary?: number, unitPrice?: number, notes?: string }> } InventoryDocumentsCreateRequest
+ */
+export const __type_InventoryDocumentsCreateRequest = null
+/**
+ * @typedef { id?: string | number, sku?: string, title: string, category: "raw_glass" | "processed_glass" | "hardware" | "consumable", glassWidthMm?: number, glassHeightMm?: number, glassThicknessMm?: number, glassColor?: string, baseUnit: string, secondaryUnit?: string, secondaryPerBase?: number, notes?: string } InventoryItemsUpsertRequest
+ */
+export const __type_InventoryItemsUpsertRequest = null
+/**
+ * @typedef { warehouseId: string | number, itemId: string | number, quantityBase: number, quantitySecondary?: number, requestNotes?: string } InventoryRequestsCreateRequest
+ */
+export const __type_InventoryRequestsCreateRequest = null
+/**
+ * @typedef { id: string | number, action: "approve" | "reject" | "cancel", resolutionNotes?: string } InventoryRequestsPatchRequest
+ */
+export const __type_InventoryRequestsPatchRequest = null
+/**
+ * @typedef { id?: string | number, warehouseId: string | number, parentLocationId?: string | number | null, locationKey: string, name: string, usageType: "internal" | "supplier" | "customer" | "inventory" | "production", notes?: string, isActive?: boolean } InventoryV2LocationsUpsertRequest
+ */
+export const __type_InventoryV2LocationsUpsertRequest = null
+/**
+ * @typedef { id?: string | number, lotCode: string, productId: string | number, variantId?: string | number | null, expiryDate?: string | null, notes?: string, isActive?: boolean } InventoryV2LotsUpsertRequest
+ */
+export const __type_InventoryV2LotsUpsertRequest = null
+/**
+ * @typedef { id?: string | number, productCode?: string, name: string, productType: "stockable" | "consumable" | "service", uom: string, notes?: string, isActive?: boolean } InventoryV2ProductsUpsertRequest
+ */
+export const __type_InventoryV2ProductsUpsertRequest = null
+/**
+ * @typedef { id?: string | number, warehouseKey: string, name: string, notes?: string, isActive?: boolean } InventoryV2WarehousesUpsertRequest
+ */
+export const __type_InventoryV2WarehousesUpsertRequest = null
+/**
  * @typedef { customerName: string, phone: string, date: string, status?: "pending" | "processing" | "delivered" | "archived", items: Array<{ id: string | number, title: string, quantity: number, unitPrice?: number, totalPrice?: number }>, financials?: Record<string, any> | null, payments?: Array<Record<string, any>>, invoiceNotes?: string, clientRequestId?: string } OrdersCreateRequest
  */
 export const __type_OrdersCreateRequest = null

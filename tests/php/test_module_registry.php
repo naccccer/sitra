@@ -49,6 +49,7 @@ $moduleKeys = array_column($seeds, 'module_key');
 test_assert_contains('auth', $moduleKeys, 'includes auth module');
 test_assert_contains('sales', $moduleKeys, 'includes sales module');
 test_assert_contains('customers', $moduleKeys, 'includes customers module');
+test_assert_contains('inventory', $moduleKeys, 'includes inventory module');
 test_assert_contains('master-data', $moduleKeys, 'includes master-data module');
 test_assert_contains('users-access', $moduleKeys, 'includes users-access module');
 
@@ -121,7 +122,7 @@ test_assert(isset($deps['sales']), 'sales dependency entry exists');
 test_assert_contains('customers', $deps['sales'], 'sales depends on customers');
 
 // ------------------------------------------------------------------
-// app_module_registry (no DB — seed fallback)
+// app_module_registry (no DB â€” seed fallback)
 // ------------------------------------------------------------------
 
 test_suite('app_module_registry (no DB)');
@@ -134,6 +135,7 @@ $ids = array_column($registry, 'id');
 test_assert_contains('auth', $ids, 'includes auth without DB');
 test_assert_contains('sales', $ids, 'includes sales without DB');
 test_assert_contains('customers', $ids, 'includes customers without DB');
+test_assert_contains('inventory', $ids, 'includes inventory without DB');
 
 // Print machine-readable summary for the runner
 $r = test_summary();

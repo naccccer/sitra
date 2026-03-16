@@ -1,4 +1,4 @@
-﻿# Sitra ERP Module Contracts
+# Sitra ERP Module Contracts
 
 ## Purpose
 - Defines stable contracts between modules in the modular monolith.
@@ -146,6 +146,90 @@
 - Output:
   - `contacts: array`
 
+## Inventory Contracts
+
+### `inventory.item_list_write.v1`
+- Owner: `inventory`
+- Input:
+  - list filters for item queries
+  - item payload for create/update (`title`, `category`, `baseUnit`, optional glass attributes and secondary unit ratio)
+- Output:
+  - `items: array`
+  - `item: object`
+
+### `inventory.document_create_post.v1`
+- Owner: `inventory`
+- Input:
+  - document payload (`docType`, `sourceWarehouseId?`, `targetWarehouseId?`, `lines[]`, optional reference fields)
+  - `action: 'post' | 'cancel'` for `PATCH`
+- Output:
+  - `document: object`
+
+### `inventory.request_flow.v1`
+- Owner: `inventory`
+- Input:
+  - request payload (`warehouseId`, `itemId`, `quantityBase`, `quantitySecondary`, `requestNotes?`)
+  - `action: 'approve' | 'reject' | 'cancel'` for `PATCH`
+- Output:
+  - `request: object`
+  - `document?: object` (auto-generated issue document on approve)
+
+### `inventory.count_session.v1`
+- Owner: `inventory`
+- Input:
+  - `action: 'start_session' | 'upsert_line' | 'close_session'`
+  - session payload (`warehouseId`, `countType`, notes)
+  - line payload (`sessionId`, `itemId`, counted quantities)
+- Output:
+  - `session: object`
+  - `lines?: array`
+  - `adjustmentDocumentId?: string | null`
+
+### `inventory.report_query.v1`
+- Owner: `inventory`
+- Input:
+  - `report: 'stock' | 'ledger' | 'documents' | 'count_variance' | 'requests'`
+  - optional filters (`warehouseId`, `itemId`, `status`, `from`, `to`)
+- Output:
+  - `report: string`
+  - `rows: array`
+
+### `inventory.v2_products_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`q`, `includeInactive`)
+  - write payload (`productCode?`, `name`, `productType`, `uom`, `notes?`, `isActive?`)
+- Output:
+  - `products: array`
+  - `product: object`
+
+### `inventory.v2_warehouses_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`q`, `includeInactive`)
+  - write payload (`warehouseKey`, `name`, `notes?`, `isActive?`)
+- Output:
+  - `warehouses: array`
+  - `warehouse: object`
+
+### `inventory.v2_locations_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`warehouseId?`, `includeInactive`)
+  - write payload (`warehouseId`, `parentLocationId?`, `locationKey`, `name`, `usageType`, `notes?`, `isActive?`)
+- Output:
+  - `locations: array`
+  - `location: object`
+
+### `inventory.v2_lots_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`productId?`, `includeInactive`)
+  - write payload (`lotCode`, `productId`, `variantId?`, `expiryDate?`, `notes?`, `isActive?`)
+- Output:
+  - `lots: array`
+  - `lot: object`
+
 ## Users & Access Contracts
 
 ### `users_access.user_list.v1`
@@ -200,6 +284,16 @@
 - `/api/customers.php` -> customers contracts
 - `/api/customer_projects.php` -> customers contracts
 - `/api/customer_project_contacts.php` -> customers contracts
+- `/api/inventory_warehouses.php` -> inventory contracts
+- `/api/inventory_items.php` -> inventory contracts
+- `/api/inventory_documents.php` -> inventory contracts
+- `/api/inventory_requests.php` -> inventory contracts
+- `/api/inventory_counts.php` -> inventory contracts
+- `/api/inventory_reports.php` -> inventory contracts
+- `/api/inventory_v2_products.php` -> inventory v2 contracts
+- `/api/inventory_v2_warehouses.php` -> inventory v2 contracts
+- `/api/inventory_v2_locations.php` -> inventory v2 contracts
+- `/api/inventory_v2_lots.php` -> inventory v2 contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
 - `/api/users.php` -> users-access user contracts

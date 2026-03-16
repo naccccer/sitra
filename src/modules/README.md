@@ -1,4 +1,4 @@
-﻿# Frontend Modules
+# Frontend Modules
 
 Business modules live here.
 
@@ -10,9 +10,9 @@ Rules:
 Active modules:
 - `sales`
 - `customers`
+- `inventory`
 - `master-data`
 - `users-access`
 
 Inactive scaffolds (do not implement business logic unless explicitly activated):
-- `inventory`
 - `production`

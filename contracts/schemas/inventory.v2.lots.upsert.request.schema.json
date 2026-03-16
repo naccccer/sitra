@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryV2LotsUpsertRequest",
+  "type": "object",
+  "required": ["lotCode", "productId"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "lotCode": { "type": "string" },
+    "productId": { "type": ["string", "number"] },
+    "variantId": { "type": ["string", "number", "null"] },
+    "expiryDate": { "type": ["string", "null"] },
+    "notes": { "type": "string" },
+    "isActive": { "type": "boolean" }
+  }
+}

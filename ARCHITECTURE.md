@@ -1,4 +1,4 @@
-﻿# Sitra ERP Architecture Rulebook
+# Sitra ERP Architecture Rulebook
 
 ## 1) Purpose and Authority
 - This file is the source of truth for architecture decisions.
@@ -26,6 +26,9 @@
   - Orders, order items payload, invoice/payment context.
 - `customers`
   - Customer registry, customer projects, and project contacts.
+- `inventory`
+  - Warehouse master data, stock documents, inventory requests, count sessions, reports.
+  - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
 - `users-access`
   - Users, role assignment, activation/deactivation.
 
@@ -58,6 +61,16 @@
   - `/api/customers.php`
   - `/api/customer_projects.php`
   - `/api/customer_project_contacts.php`
+  - `/api/inventory_warehouses.php`
+  - `/api/inventory_items.php`
+  - `/api/inventory_documents.php`
+  - `/api/inventory_requests.php`
+  - `/api/inventory_counts.php`
+  - `/api/inventory_reports.php`
+  - `/api/inventory_v2_products.php`
+  - `/api/inventory_v2_warehouses.php`
+  - `/api/inventory_v2_locations.php`
+  - `/api/inventory_v2_lots.php`
   - `/api/catalog.php`
   - `/api/profile.php`
   - `/api/users.php`
