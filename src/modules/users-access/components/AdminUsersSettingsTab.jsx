@@ -16,6 +16,7 @@ const ALL_ROLE_OPTIONS = [...OWNER_ROLE_OPTIONS, ...FACTORY_ROLE_OPTIONS];
 
 const MODULE_LABELS = {
   sales: 'فروش',
+  customers: 'مشتریان',
   'users-access': 'کاربران و دسترسی',
   'master-data': 'داده‌های پایه',
   kernel: 'هسته',

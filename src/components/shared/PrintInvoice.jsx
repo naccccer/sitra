@@ -3,6 +3,7 @@ import { toPN } from '../../utils/helpers';
 import { StructureDetails } from './StructureDetails';
 import { getPaymentMethodLabel, normalizePaymentMethod } from '../../utils/invoice';
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
+import { resolveApiFileUrl } from '@/utils/url';
 
 const OPERATION_ICON_BASE_PATH = '/icons/operations';
 
@@ -12,6 +13,16 @@ const getDataUrlMimeType = (dataUrl = '') => {
   if (semiIndex <= 5) return '';
   return dataUrl.slice(5, semiIndex).toLowerCase();
 };
+
+const getFileExtension = (fileName = '') => {
+  const normalized = String(fileName || '').trim().toLowerCase();
+  if (!normalized.includes('.')) return '';
+  const parts = normalized.split('.');
+  return parts[parts.length - 1] || '';
+};
+
+const isImageMime = (mime = '') => String(mime || '').toLowerCase().startsWith('image/');
+const isPdfMime = (mime = '') => String(mime || '').toLowerCase() === 'application/pdf';
 
 const parsePositiveNumber = (value) => {
   const numeric = Number(value);
@@ -223,9 +234,25 @@ const PatternPreview = ({ pattern, width, height }) => {
 
   const fileName = pattern?.fileName || 'pattern-file';
   const previewDataUrl = pattern?.previewDataUrl || '';
-  const mimeType = getDataUrlMimeType(previewDataUrl);
-  const isImage = previewDataUrl.startsWith('data:image/');
-  const canTryEmbeddedPreview = Boolean(previewDataUrl) && !isImage;
+  const filePath = pattern?.filePath || pattern?.path || pattern?.url || '';
+  const resolvedFileUrl = resolveApiFileUrl(filePath);
+  const mimeType = String(pattern?.mimeType || getDataUrlMimeType(previewDataUrl)).toLowerCase();
+  const fileExtension = getFileExtension(fileName) || getFileExtension(filePath);
+  const hasPreviewSource = Boolean(previewDataUrl || resolvedFileUrl);
+  const isCad = ['dwg', 'dxf'].includes(fileExtension)
+    || mimeType.includes('vnd.dwg')
+    || mimeType.includes('vnd.dxf')
+    || mimeType.includes('/dxf')
+    || mimeType.includes('/dwg');
+  const isImage = hasPreviewSource && (
+    previewDataUrl.startsWith('data:image/')
+    || (!previewDataUrl && (isImageMime(mimeType) || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExtension)))
+  );
+  const canTryEmbeddedPreview = hasPreviewSource
+    && !isImage
+    && !isCad
+    && (isPdfMime(mimeType) || fileExtension === 'pdf');
+  const previewSource = previewDataUrl || resolvedFileUrl;
 
   return (
     <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -235,9 +262,9 @@ const PatternPreview = ({ pattern, width, height }) => {
 
       {isImage && (
         <img
-          src={previewDataUrl}
+          src={previewSource}
           alt={fileName}
-          loading="lazy"
+          loading="eager"
           className="pattern-preview-thumb w-full rounded-lg border border-slate-200 bg-white object-contain"
         />
       )}
@@ -245,7 +272,7 @@ const PatternPreview = ({ pattern, width, height }) => {
       {canTryEmbeddedPreview && (
         <div className="space-y-2">
           <object
-            data={previewDataUrl}
+            data={previewSource}
             type={mimeType || 'application/pdf'}
             className="pattern-preview-thumb w-full rounded-lg border border-slate-200 bg-white"
             aria-label={`preview-${fileName}`}
@@ -260,7 +287,30 @@ const PatternPreview = ({ pattern, width, height }) => {
         </div>
       )}
 
-      {!previewDataUrl && (
+      {hasPreviewSource && isCad && (
+        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[10px] font-bold text-amber-700">
+          پیش‌نمایش مستقیم فایل‌های CAD (DWG/DXF) در فاکتور پشتیبانی نمی‌شود. فایل را باز یا دانلود کنید.
+        </div>
+      )}
+
+      {hasPreviewSource && !isImage && !canTryEmbeddedPreview && !isCad && (
+        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-[10px] font-bold text-slate-500">
+          پیش‌نمایش مستقیم برای این نوع فایل در فاکتور قابل نمایش نیست.
+        </div>
+      )}
+
+      {resolvedFileUrl && (
+        <a
+          href={resolvedFileUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-fit items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700"
+        >
+          باز کردن فایل الگو
+        </a>
+      )}
+
+      {!hasPreviewSource && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-[10px] font-bold text-slate-500">
           پیش‌نمایش فایل در داده سفارش موجود نیست.
         </div>

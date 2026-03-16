@@ -80,8 +80,8 @@ export const OrderItemsSection = ({
 
         <div className="divide-y divide-slate-100 lg:hidden">
           {orderItems.map((item, index) => (
-            <div key={item.id} className="flex items-start justify-between p-3 transition-colors hover:bg-slate-50">
-              <div className="flex w-[75%] gap-2">
+            <div key={item.id} className="flex items-start justify-between gap-2 p-3 transition-colors hover:bg-slate-50">
+              <div className="flex min-w-0 flex-1 gap-2">
                 <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded bg-slate-100 text-[10px] font-black text-slate-400">{toPN(index + 1)}</span>
                 <div>
                   <div className="text-[11px] font-black leading-tight text-slate-800">

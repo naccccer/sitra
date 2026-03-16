@@ -23,6 +23,7 @@ const MODULE_PERSIAN_LABELS = {
   auth: 'احراز هویت',
   'users-access': 'کاربران و دسترسی',
   sales: 'فروش',
+  customers: 'مشتریان',
   'master-data': 'داده‌های پایه',
 }
 

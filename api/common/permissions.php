@@ -9,6 +9,8 @@ function app_permission_definitions(): array
         ['key' => 'sales.orders.update', 'module' => 'sales', 'label' => 'ویرایش سفارش'],
         ['key' => 'sales.orders.status', 'module' => 'sales', 'label' => 'تغییر وضعیت سفارش'],
         ['key' => 'sales.orders.delete', 'module' => 'sales', 'label' => 'حذف سفارش بایگانی‌شده'],
+        ['key' => 'customers.read', 'module' => 'customers', 'label' => 'مشاهده مشتریان و پروژه‌ها'],
+        ['key' => 'customers.write', 'module' => 'customers', 'label' => 'مدیریت مشتریان و پروژه‌ها'],
         ['key' => 'master_data.catalog.read', 'module' => 'master-data', 'label' => 'مشاهده لیست قیمت'],
         ['key' => 'master_data.catalog.write', 'module' => 'master-data', 'label' => 'ویرایش لیست قیمت'],
         ['key' => 'users_access.users.read', 'module' => 'users-access', 'label' => 'مشاهده کاربران'],
@@ -66,6 +68,8 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.update',
             'sales.orders.status',
             'sales.orders.delete',
+            'customers.read',
+            'customers.write',
             'master_data.catalog.read',
             'master_data.catalog.write',
             'users_access.users.read',
@@ -79,6 +83,7 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.create',
             'sales.orders.update',
             'sales.orders.status',
+            'customers.read',
             'master_data.catalog.read',
             'profile.read',
         ],
@@ -236,6 +241,7 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
     $capabilities = [
         'canAccessDashboard' => in_array('sales.orders.read', $permissions, true),
         'canManageOrders' => in_array('sales.orders.read', $permissions, true),
+        'canManageCustomers' => in_array('customers.read', $permissions, true),
         'canManageCatalog' => in_array('master_data.catalog.write', $permissions, true),
         'canManageUsers' => in_array('users_access.users.write', $permissions, true),
         'canViewAuditLogs' => in_array('kernel.audit.read', $permissions, true),
@@ -249,11 +255,13 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
 
     $enabledMap = app_module_registry_enabled_map($modules);
     $salesEnabled = $enabledMap['sales'] ?? true;
+    $customersEnabled = $enabledMap['customers'] ?? true;
     $masterDataEnabled = $enabledMap['master-data'] ?? true;
     $usersAccessEnabled = $enabledMap['users-access'] ?? true;
 
     $capabilities['canAccessDashboard'] = $capabilities['canAccessDashboard'] && $salesEnabled;
     $capabilities['canManageOrders'] = $capabilities['canManageOrders'] && $salesEnabled;
+    $capabilities['canManageCustomers'] = $capabilities['canManageCustomers'] && $customersEnabled;
     $capabilities['canManageCatalog'] = $capabilities['canManageCatalog'] && $masterDataEnabled;
     $capabilities['canManageProfile'] = $capabilities['canManageProfile'] && $masterDataEnabled;
     $capabilities['canManageUsers'] = $capabilities['canManageUsers'] && $usersAccessEnabled;

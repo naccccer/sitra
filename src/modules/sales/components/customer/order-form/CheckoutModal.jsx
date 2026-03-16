@@ -1,19 +1,25 @@
-import React from 'react';
-import { Phone, Save, User } from 'lucide-react';
+import React from 'react'
+import { Phone, PlusCircle, Save, User } from 'lucide-react'
 
 export const CheckoutModal = ({
   isOpen,
+  isStaffContext = false,
   editingOrder,
   customerInfo,
+  customerLinks = null,
   onCustomerInfoChange,
   onClose,
   onSubmit,
 }) => {
-  if (!isOpen) return null;
+  if (!isOpen) return null
+
+  const customers = Array.isArray(customerLinks?.customers) ? customerLinks.customers : []
+  const projects = Array.isArray(customerLinks?.projects) ? customerLinks.projects : []
+  const projectContacts = Array.isArray(customerLinks?.projectContacts) ? customerLinks.projectContacts : []
 
   return (
     <div className="print-hide fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
+      <div className="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl animate-in zoom-in-95 duration-200">
         <div className="bg-emerald-500 p-5 text-center text-white">
           <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
             <User size={32} />
@@ -22,6 +28,60 @@ export const CheckoutModal = ({
         </div>
 
         <div className="space-y-4 p-6">
+          {isStaffContext && customerLinks ? (
+            <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <div className="flex items-center justify-between">
+                <div className="text-xs font-black text-slate-700">اتصال سفارش به مشتری/پروژه</div>
+                <div className="flex gap-1">
+                  <button type="button" onClick={() => void customerLinks.createQuickCustomer?.()} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700">
+                    <PlusCircle size={11} />
+                    مشتری
+                  </button>
+                  <button type="button" onClick={() => void customerLinks.createQuickProject?.()} disabled={!customerLinks.selectedCustomerId} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700 disabled:opacity-50">
+                    <PlusCircle size={11} />
+                    پروژه
+                  </button>
+                  <button type="button" onClick={() => void customerLinks.createQuickProjectContact?.()} disabled={!customerLinks.selectedProjectId} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700 disabled:opacity-50">
+                    <PlusCircle size={11} />
+                    شماره
+                  </button>
+                </div>
+              </div>
+
+              <select value={customerLinks.selectedCustomerId || ''} onChange={(event) => customerLinks.setSelectedCustomerId?.(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700">
+                <option value="">انتخاب مشتری</option>
+                {customers.map((customer) => (
+                  <option key={customer.id} value={String(customer.id)}>
+                    {customer.fullName}
+                  </option>
+                ))}
+              </select>
+
+              <select value={customerLinks.selectedProjectId || ''} onChange={(event) => customerLinks.setSelectedProjectId?.(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" disabled={!customerLinks.selectedCustomerId}>
+                <option value="">انتخاب پروژه</option>
+                {projects.map((project) => (
+                  <option key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </option>
+                ))}
+              </select>
+
+              <div className="flex items-center gap-2">
+                <select value={customerLinks.selectedProjectContactId || ''} onChange={(event) => customerLinks.setSelectedProjectContactId?.(event.target.value)} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" disabled={!customerLinks.selectedProjectId}>
+                  <option value="">شماره پروژه</option>
+                  {projectContacts.map((contact) => (
+                    <option key={contact.id} value={String(contact.id)}>
+                      {(contact.label ? `${contact.label} - ` : '') + contact.phone}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => void customerLinks.editQuickCustomer?.()} disabled={!customerLinks.selectedCustomerId} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 disabled:opacity-50">
+                  ویرایش مشتری
+                </button>
+              </div>
+            </div>
+          ) : null}
+
           <div>
             <label className="mb-1.5 flex items-center gap-1.5 text-xs font-bold text-slate-500"><User size={14} /> نام و نام خانوادگی / شرکت</label>
             <input type="text" value={customerInfo.name} onChange={(event) => onCustomerInfoChange('name', event.target.value)} className="w-full rounded-xl border-2 border-slate-100 bg-slate-50 p-3.5 text-sm font-black outline-none transition-colors focus:border-emerald-400" placeholder="مثال: علی حسینی" />
@@ -41,5 +101,5 @@ export const CheckoutModal = ({
         </div>
       </div>
     </div>
-  );
-};
+  )
+}

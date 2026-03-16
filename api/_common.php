@@ -14,9 +14,12 @@ declare(strict_types=1);
  *   3. audit.php       — audit log table + logging helper
  *   4. orders_domain.php — order status, payment methods, order code, serialization
  *   5. schema.php      — schema introspection, idempotency, orders table, catalog read
- *   6. users.php       — users table, profile read/write
- *   7. module_registry.php — module registry, user roles
- *   8. permissions.php — RBAC, capabilities
+ *   6. customers_schema.php — customers/projects schema + order refs
+ *   7. customers_domain.php — customers/projects domain helpers
+ *   8. customers_order_links.php — order/customer linking helpers
+ *   9. users.php       — users table, profile read/write
+ *  10. module_registry.php — module registry, user roles
+ *  11. permissions.php — RBAC, capabilities
  */
 
 require_once __DIR__ . '/../config/env.php';
@@ -27,6 +30,9 @@ require_once __DIR__ . '/common/auth.php';
 require_once __DIR__ . '/common/audit.php';
 require_once __DIR__ . '/common/orders_domain.php';
 require_once __DIR__ . '/common/schema.php';
+require_once __DIR__ . '/common/customers_schema.php';
+require_once __DIR__ . '/common/customers_domain.php';
+require_once __DIR__ . '/common/customers_order_links.php';
 require_once __DIR__ . '/common/users.php';
 require_once __DIR__ . '/common/module_registry.php';
 require_once __DIR__ . '/common/permissions.php';

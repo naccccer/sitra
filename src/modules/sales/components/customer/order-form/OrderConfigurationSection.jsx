@@ -11,24 +11,24 @@ const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) 
   const layerLabel = isUnavailable ? 'ناموجود' : 'شیشه';
 
   return (
-    <div data-layer-key={layerKey} className={`relative mx-1 flex h-11 overflow-hidden rounded-xl border shadow-sm ${isUnavailable ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
-      <div className={`${isUnavailable ? 'bg-red-600' : 'bg-slate-900'} flex w-8 shrink-0 items-center justify-center text-[10px] font-black text-white`} style={{ writingMode: 'vertical-rl' }}>
-        <span className="rotate-180">{layerLabel}</span>
+    <div data-layer-key={layerKey} className={`relative mx-1 flex flex-col overflow-hidden rounded-xl border shadow-sm sm:h-11 sm:flex-row ${isUnavailable ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
+      <div className={`${isUnavailable ? 'bg-red-600' : 'bg-slate-900'} flex h-7 w-full shrink-0 items-center justify-center text-[10px] font-black text-white sm:h-auto sm:w-8 sm:[writing-mode:vertical-rl]`}>
+        <span className="sm:rotate-180">{layerLabel}</span>
       </div>
-      <div className={`flex flex-1 items-center gap-1.5 p-1 ${isUnavailable ? 'bg-red-50/20' : 'bg-white'}`}>
-        <select value={data.glassId} onChange={(event) => onChange('glassId', event.target.value)} className={`h-full flex-[2] rounded-lg border bg-slate-50 px-2 py-1.5 text-[11px] font-black outline-none ${isUnavailable ? 'border-red-300 text-red-700' : 'border-slate-200'}`}>
+      <div className={`flex flex-1 flex-wrap items-center gap-1.5 p-1 ${isUnavailable ? 'bg-red-50/20' : 'bg-white'}`}>
+        <select value={data.glassId} onChange={(event) => onChange('glassId', event.target.value)} className={`h-8 min-w-0 grow basis-[130px] rounded-lg border bg-slate-50 px-2 py-1.5 text-[11px] font-black outline-none ${isUnavailable ? 'border-red-300 text-red-700' : 'border-slate-200'}`}>
           {!selectedExists && selectedGlass && <option value={selectedGlass.id}>{selectedGlass.title} (ناموجود)</option>}
           {glassOptions.map((glass) => <option key={glass.id} value={glass.id}>{glass.title}</option>)}
         </select>
-        <select value={data.thick} onChange={(event) => onChange('thick', parseInt(event.target.value, 10))} className="h-full w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center text-[11px] font-black outline-none">
+        <select value={data.thick} onChange={(event) => onChange('thick', parseInt(event.target.value, 10))} className="h-8 w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center text-[11px] font-black outline-none">
           {catalog.thicknesses.map((thickness) => <option key={thickness} value={thickness}>{toPN(thickness)} میل</option>)}
         </select>
-        <label className={`flex h-full flex-[1] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.isSekurit ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-slate-200 bg-white text-slate-400'}`}>
+        <label className={`flex h-8 grow basis-[95px] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.isSekurit ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-slate-200 bg-white text-slate-400'}`}>
           <input type="checkbox" checked={data.isSekurit} onChange={(event) => onChange('isSekurit', event.target.checked)} className="hidden" />
           <Flame size={12} />
           سکوریت
         </label>
-        <label className={`flex h-full flex-[1] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.hasEdge ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-400'}`}>
+        <label className={`flex h-8 grow basis-[95px] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.hasEdge ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-400'}`}>
           <input type="checkbox" checked={data.hasEdge} onChange={(event) => onChange('hasEdge', event.target.checked)} className="hidden" />
           <Ruler size={12} />
           ابزار
@@ -107,9 +107,9 @@ export const OrderConfigurationSection = ({
   onOpenSettingsModal,
 }) => (
   <div className="print-hide overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-    <div className="flex gap-3 border-b border-slate-200 bg-slate-50 p-3">
+    <div className="flex flex-wrap gap-2 border-b border-slate-200 bg-slate-50 p-3 sm:gap-3">
       {[{ id: 'single', label: 'تک جداره' }, { id: 'double', label: 'دوجداره' }, { id: 'laminate', label: 'لمینت' }].map((tab) => (
-        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex-1 rounded-xl py-3.5 text-sm font-black transition-colors ${activeTab === tab.id ? 'bg-emerald-500 text-white shadow-md' : 'border bg-white text-slate-500 hover:bg-slate-100'}`}>
+        <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`min-w-[95px] flex-1 rounded-xl py-3.5 text-sm font-black transition-colors ${activeTab === tab.id ? 'bg-emerald-500 text-white shadow-md' : 'border bg-white text-slate-500 hover:bg-slate-100'}`}>
           {tab.label}
         </button>
       ))}

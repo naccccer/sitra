@@ -7,11 +7,15 @@ import {
   resolveOrderStageId,
   toSafeAmount,
 } from '@/modules/sales/components/admin/orders-workspace/ordersWorkspaceUtils';
+import { printInvoiceWithOrderCode } from '@/utils/print';
 
 const buildOrderUpdatePayload = (order, nextStatus, nextFinancials) => ({
   id: Number(order.id),
   customerName: order.customerName,
   phone: order.phone,
+  customerId: order.customerId || null,
+  projectId: order.projectId || null,
+  projectContactId: order.projectContactId || null,
   date: order.date,
   total: toSafeAmount(nextFinancials?.grandTotal ?? order.total),
   status: nextStatus,
@@ -131,7 +135,13 @@ export const useOrdersWorkflowController = ({
   const printFactoryOrder = (order) => {
     if (!order) return;
     setViewingOrder(order);
-    setTimeout(() => window.print(), 100);
+    setTimeout(() => {
+      void printInvoiceWithOrderCode({
+        orderCode: order.orderCode || '',
+        items: order.items,
+        fallbackTitle: 'سفارش کارگاهی',
+      });
+    }, 120);
   };
 
   const handleLoadMoreOrders = async () => {

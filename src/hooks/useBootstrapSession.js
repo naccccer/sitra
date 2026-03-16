@@ -29,6 +29,7 @@ const deriveCapabilitiesFromRole = (role) => {
     return {
       canAccessDashboard: true,
       canManageOrders: true,
+      canManageCustomers: true,
       canManageCatalog: true,
       canManageUsers: true,
       canViewAuditLogs: true,
@@ -41,6 +42,7 @@ const deriveCapabilitiesFromRole = (role) => {
     return {
       canAccessDashboard: true,
       canManageOrders: true,
+      canManageCustomers: true,
       canManageCatalog: false,
       canManageUsers: false,
       canViewAuditLogs: false,
@@ -52,6 +54,7 @@ const deriveCapabilitiesFromRole = (role) => {
   return {
     canAccessDashboard: false,
     canManageOrders: false,
+    canManageCustomers: false,
     canManageCatalog: false,
     canManageUsers: false,
     canViewAuditLogs: false,

@@ -4,11 +4,10 @@ import { AccessDenied } from '@/components/shared/AccessDenied';
 import { Card } from '@/components/shared/ui';
 import { isModuleEnabled } from '@/kernel/moduleRegistry';
 
-// تنظیمات
 const SETTINGS_TABS = [
-  { id: 'catalog', to: '/management/catalog', label: 'قیمت‌ها', capability: 'canManageCatalog', moduleId: 'master-data' },
-  { id: 'users', to: '/management/users', label: 'کاربران', capability: 'canManageUsers', moduleId: 'users-access' },
-  { id: 'audit', to: '/management/audit', label: 'فعالیت‌ها', capability: 'canViewAuditLogs' },
+  { id: 'catalog', to: '/management/catalog', label: 'مدیریت قیمت‌ها', capability: 'canManageCatalog', moduleId: 'master-data' },
+  { id: 'users', to: '/management/users', label: 'مدیریت کاربران', capability: 'canManageUsers', moduleId: 'users-access' },
+  { id: 'audit', to: '/management/audit', label: 'ممیزی فعالیت‌ها', capability: 'canViewAuditLogs' },
 ];
 
 const tabClassName = (isActive) => (
@@ -32,6 +31,7 @@ export const SettingsPage = ({ session }) => {
       return true;
     });
   }, [session]);
+
   const visibleTabs = useMemo(() => visibleRoutes.filter((tab) => tab.showInTabs !== false), [visibleRoutes]);
 
   if (visibleRoutes.length === 0) {
@@ -47,6 +47,7 @@ export const SettingsPage = ({ session }) => {
 
   return (
     <div className="mx-auto max-w-[1300px] space-y-4" dir="rtl">
+      <h1 className="sr-only">تنظیمات</h1>
       <Card className="border-slate-200/90" padding="sm">
         <div className="overflow-x-auto hide-scrollbar">
           <div className="flex min-w-max items-center gap-2">

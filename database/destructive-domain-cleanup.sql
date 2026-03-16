@@ -12,12 +12,12 @@ ALTER TABLE users
 MODIFY COLUMN role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager';
 
 DELETE FROM module_registry
-WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'master-data');
+WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'customers', 'master-data');
 
 DELETE FROM audit_logs
 WHERE event_type IS NULL
    OR event_type = ''
-   OR SUBSTRING_INDEX(event_type, '.', 1) NOT IN ('auth', 'users_access', 'master_data', 'sales', 'kernel');
+   OR SUBSTRING_INDEX(event_type, '.', 1) NOT IN ('auth', 'users_access', 'master_data', 'sales', 'customers', 'kernel');
 
 SELECT GROUP_CONCAT(CONCAT('`', table_name, '`') ORDER BY table_name SEPARATOR ', ')
 INTO @drop_list
@@ -28,6 +28,9 @@ WHERE table_schema = @schema_name
     'system_settings',
     'module_registry',
     'audit_logs',
+    'customers',
+    'customer_projects',
+    'customer_project_contacts',
     'orders',
     'order_request_idempotency'
   );

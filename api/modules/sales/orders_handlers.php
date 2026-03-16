@@ -70,8 +70,12 @@ function app_sales_orders_handle_post(PDO $pdo): void
 
     $isStaff = app_user_has_permission($currentUser, 'sales.orders.create', $pdo);
 
-    $customerName = trim((string)($payload['customerName'] ?? ''));
-    $phone = trim((string)($payload['phone'] ?? ''));
+    $resolvedCustomerContext = app_customers_resolve_order_context($pdo, $payload, true);
+    $customerName = trim((string)($resolvedCustomerContext['customerName'] ?? ($payload['customerName'] ?? '')));
+    $phone = trim((string)($resolvedCustomerContext['phone'] ?? ($payload['phone'] ?? '')));
+    $customerId = app_customers_parse_id($resolvedCustomerContext['customerId'] ?? null);
+    $projectId = app_customers_parse_id($resolvedCustomerContext['projectId'] ?? null);
+    $projectContactId = app_customers_parse_id($resolvedCustomerContext['projectContactId'] ?? null);
     $items = $payload['items'] ?? [];
     $total = (int)($payload['total'] ?? 0);
     $status = trim((string)($payload['status'] ?? 'pending'));
@@ -126,6 +130,9 @@ function app_sales_orders_handle_post(PDO $pdo): void
 
     $itemsColumn = app_orders_items_column($pdo);
     $metaColumn = app_orders_meta_column($pdo);
+    $customerIdColumn = app_orders_customer_id_column($pdo);
+    $projectIdColumn = app_orders_project_id_column($pdo);
+    $projectContactIdColumn = app_orders_project_contact_id_column($pdo);
 
     $inserted = false;
     $lastInsertError = null;
@@ -157,6 +164,21 @@ function app_sales_orders_handle_post(PDO $pdo): void
                     'status' => $status,
                     'items_json' => $itemsJson,
                 ];
+                if ($customerIdColumn !== null) {
+                    $insertCols .= ", {$customerIdColumn}";
+                    $insertVals .= ', :customer_id';
+                    $insertParams['customer_id'] = $customerId;
+                }
+                if ($projectIdColumn !== null) {
+                    $insertCols .= ", {$projectIdColumn}";
+                    $insertVals .= ', :project_id';
+                    $insertParams['project_id'] = $projectId;
+                }
+                if ($projectContactIdColumn !== null) {
+                    $insertCols .= ", {$projectContactIdColumn}";
+                    $insertVals .= ', :project_contact_id';
+                    $insertParams['project_contact_id'] = $projectContactId;
+                }
                 if ($metaColumn !== null) {
                     $insertCols .= ", {$metaColumn}";
                     $insertVals .= ', :order_meta_json';
@@ -276,8 +298,12 @@ function app_sales_orders_handle_put(PDO $pdo): void
         app_sales_respond_order_conflict($currentOrderRow);
     }
 
-    $customerName = trim((string)($payload['customerName'] ?? ''));
-    $phone = trim((string)($payload['phone'] ?? ''));
+    $resolvedCustomerContext = app_customers_resolve_order_context($pdo, $payload, true);
+    $customerName = trim((string)($resolvedCustomerContext['customerName'] ?? ($payload['customerName'] ?? '')));
+    $phone = trim((string)($resolvedCustomerContext['phone'] ?? ($payload['phone'] ?? '')));
+    $customerId = app_customers_parse_id($resolvedCustomerContext['customerId'] ?? null);
+    $projectId = app_customers_parse_id($resolvedCustomerContext['projectId'] ?? null);
+    $projectContactId = app_customers_parse_id($resolvedCustomerContext['projectContactId'] ?? null);
     $items = $payload['items'] ?? [];
     $total = (int)($payload['total'] ?? 0);
     $status = trim((string)($payload['status'] ?? 'pending'));
@@ -321,6 +347,9 @@ function app_sales_orders_handle_put(PDO $pdo): void
 
     $itemsColumn = app_orders_items_column($pdo);
     $metaColumn = app_orders_meta_column($pdo);
+    $customerIdColumn = app_orders_customer_id_column($pdo);
+    $projectIdColumn = app_orders_project_id_column($pdo);
+    $projectContactIdColumn = app_orders_project_contact_id_column($pdo);
 
     $updated = false;
     $lastUpdateError = null;
@@ -336,6 +365,18 @@ function app_sales_orders_handle_put(PDO $pdo): void
                 'status' => $status,
                 'items_json' => $itemsJson,
             ];
+            if ($customerIdColumn !== null) {
+                $setClause .= ", {$customerIdColumn} = :customer_id";
+                $updateParams['customer_id'] = $customerId;
+            }
+            if ($projectIdColumn !== null) {
+                $setClause .= ", {$projectIdColumn} = :project_id";
+                $updateParams['project_id'] = $projectId;
+            }
+            if ($projectContactIdColumn !== null) {
+                $setClause .= ", {$projectContactIdColumn} = :project_contact_id";
+                $updateParams['project_contact_id'] = $projectContactId;
+            }
             if ($metaColumn !== null) {
                 $setClause .= ", {$metaColumn} = :order_meta_json";
                 $updateParams['order_meta_json'] = $orderMetaJson;

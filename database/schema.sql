@@ -53,11 +53,62 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     KEY idx_audit_actor_created (actor_user_id, created_at)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+CREATE TABLE IF NOT EXISTS customers (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    full_name VARCHAR(200) NOT NULL,
+    default_phone VARCHAR(40) NULL,
+    address TEXT NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_customers_name (full_name),
+    KEY idx_customers_default_phone (default_phone),
+    KEY idx_customers_is_active (is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS customer_projects (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    customer_id BIGINT UNSIGNED NOT NULL,
+    name VARCHAR(200) NOT NULL,
+    notes TEXT NULL,
+    is_default TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_customer_projects_customer (customer_id),
+    KEY idx_customer_projects_default (customer_id, is_default),
+    KEY idx_customer_projects_active (is_active),
+    CONSTRAINT fk_customer_projects_customer FOREIGN KEY (customer_id) REFERENCES customers (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS customer_project_contacts (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    project_id BIGINT UNSIGNED NOT NULL,
+    label VARCHAR(120) NOT NULL DEFAULT 'main',
+    phone VARCHAR(40) NOT NULL,
+    is_primary TINYINT(1) NOT NULL DEFAULT 0,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    sort_order INT NOT NULL DEFAULT 100,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    KEY idx_customer_project_contacts_project (project_id),
+    KEY idx_customer_project_contacts_primary (project_id, is_primary),
+    KEY idx_customer_project_contacts_phone (phone),
+    CONSTRAINT fk_customer_project_contacts_project FOREIGN KEY (project_id) REFERENCES customer_projects (id) ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 CREATE TABLE IF NOT EXISTS orders (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     order_code VARCHAR(64) NOT NULL,
     customer_name VARCHAR(200) NOT NULL,
     phone VARCHAR(40) NOT NULL,
+    customer_id BIGINT UNSIGNED NULL,
+    project_id BIGINT UNSIGNED NULL,
+    project_contact_id BIGINT UNSIGNED NULL,
     order_date VARCHAR(40) NOT NULL,
     total BIGINT NOT NULL DEFAULT 0,
     status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
@@ -67,8 +118,14 @@ CREATE TABLE IF NOT EXISTS orders (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_orders_order_code (order_code),
+    KEY idx_orders_customer_id (customer_id),
+    KEY idx_orders_project_id (project_id),
+    KEY idx_orders_project_contact_id (project_contact_id),
     KEY idx_orders_status (status),
-    KEY idx_orders_created_at (created_at)
+    KEY idx_orders_created_at (created_at),
+    CONSTRAINT fk_orders_customer_id FOREIGN KEY (customer_id) REFERENCES customers (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_orders_project_id FOREIGN KEY (project_id) REFERENCES customer_projects (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_orders_project_contact_id FOREIGN KEY (project_contact_id) REFERENCES customer_project_contacts (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 CREATE TABLE IF NOT EXISTS order_request_idempotency (
@@ -92,6 +149,7 @@ VALUES
     ('auth', 'Auth', 'active', 1, 1, 10),
     ('users-access', 'Users Access', 'active', 1, 1, 20),
     ('sales', 'Sales', 'active', 1, 0, 30),
+    ('customers', 'Customers', 'active', 1, 0, 35),
     ('master-data', 'Master Data', 'active', 1, 0, 40)
 ON DUPLICATE KEY UPDATE
     label = VALUES(label),

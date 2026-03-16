@@ -36,6 +36,15 @@ const AUDIT_EVENT_LABELS = {
   'sales.order.updated': 'ویرایش سفارش',
   'sales.order.status.changed': 'تغییر وضعیت سفارش',
   'sales.order.deleted': 'حذف سفارش بایگانی شده',
+  'customers.customer.created': 'ایجاد مشتری',
+  'customers.customer.updated': 'ویرایش مشتری',
+  'customers.customer.active.changed': 'تغییر وضعیت مشتری',
+  'customers.project.created': 'ایجاد پروژه مشتری',
+  'customers.project.updated': 'ویرایش/انتقال پروژه مشتری',
+  'customers.project.active.changed': 'تغییر وضعیت پروژه مشتری',
+  'customers.project_contact.created': 'ایجاد شماره پروژه',
+  'customers.project_contact.updated': 'ویرایش شماره پروژه',
+  'customers.project_contact.active.changed': 'تغییر وضعیت شماره پروژه',
   'kernel.module_registry.updated': 'تغییر وضعیت ماژول',
 }
 
@@ -45,6 +54,9 @@ const ENTITY_LABELS = {
   orders: 'سفارش',
   system_settings: 'تنظیمات سیستم',
   module_registry: 'رجیستری ماژول ها',
+  customers: 'مشتری',
+  customer_projects: 'پروژه مشتری',
+  customer_project_contacts: 'شماره پروژه',
 }
 
 const ROLE_LABELS = {

@@ -6,6 +6,7 @@ import {
   Cog,
   Edit3,
   FileText,
+  Link2,
   Printer,
   Trash2,
 } from 'lucide-react';
@@ -46,7 +47,9 @@ export const OrdersWorkspaceTable = ({
             <th className="border-l border-slate-100 p-3 font-black">موبایل</th>
             <th className="border-l border-slate-100 p-3 text-center font-black">تاریخ ثبت</th>
             <th className="border-l border-slate-100 p-3 text-center font-black">مبلغ کل</th>
-            <th className="border-l border-slate-100 p-3 text-center font-black">مانده</th>
+            <th className="border-l border-slate-100 p-3 text-center font-black">
+              <Link2 size={12} className="mx-auto text-slate-400" />
+            </th>
             <th className="border-l border-slate-100 p-3 text-center font-black">وضعیت مالی</th>
             <th className="border-l border-slate-100 p-3 text-center font-black">وضعیت سفارش</th>
             <th className="p-3 text-center font-black">عملیات</th>
@@ -65,6 +68,7 @@ export const OrdersWorkspaceTable = ({
               const paymentPill = paymentStatusPill(financialSummary.status);
               const orderStageId = resolveOrderStageId(order);
               const orderStage = ORDER_STAGE_MAP[orderStageId] || ORDER_STAGE_MAP.registered;
+              const hasCustomerLink = Boolean(order.customerId || order.projectId || order.projectContactId);
 
               return (
                 <React.Fragment key={order.id}>
@@ -80,7 +84,12 @@ export const OrdersWorkspaceTable = ({
                     <td className="border-l border-slate-50 p-3 font-bold text-slate-600 tabular-nums" dir="ltr">{toPN(order.phone)}</td>
                     <td className="border-l border-slate-50 p-3 text-center font-bold text-slate-500">{formatPersianDate(order.date)}</td>
                     <td className="border-l border-slate-50 p-3 text-center font-black tabular-nums text-slate-900">{toPN(financialSummary.total.toLocaleString())}</td>
-                    <td className="border-l border-slate-50 p-3 text-center font-black tabular-nums text-rose-600">{toPN(financialSummary.due.toLocaleString())}</td>
+                    <td className="border-l border-slate-50 p-3 text-center">
+                      <Link2
+                        size={14}
+                        className={`mx-auto ${hasCustomerLink ? 'text-emerald-600' : 'text-slate-300'}`}
+                      />
+                    </td>
                     <td className="border-l border-slate-50 p-3 text-center">
                       <Badge className={`rounded ${paymentPill.className}`} tone="neutral">{paymentPill.label}</Badge>
                     </td>

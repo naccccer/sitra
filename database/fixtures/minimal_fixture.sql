@@ -5,6 +5,9 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 TRUNCATE TABLE order_request_idempotency;
 TRUNCATE TABLE orders;
+TRUNCATE TABLE customer_project_contacts;
+TRUNCATE TABLE customer_projects;
+TRUNCATE TABLE customers;
 TRUNCATE TABLE audit_logs;
 TRUNCATE TABLE module_registry;
 TRUNCATE TABLE system_settings;
@@ -27,6 +30,7 @@ VALUES
   ('auth', 'Auth', 'active', 1, 1, 10),
   ('users-access', 'Users Access', 'active', 1, 1, 20),
   ('sales', 'Sales', 'active', 1, 0, 30),
+  ('customers', 'Customers', 'active', 1, 0, 35),
   ('master-data', 'Master Data', 'active', 1, 0, 40)
 ON DUPLICATE KEY UPDATE
   label = VALUES(label),

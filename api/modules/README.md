@@ -12,6 +12,9 @@ Current adapter mapping:
 - `api/catalog.php` -> `api/modules/master_data/catalog.php`
 - `api/profile.php` -> `api/modules/master_data/profile.php`
 - `api/users.php` -> `api/modules/users_access/users.php`
+- `api/customers.php` -> `api/modules/customers/customers.php`
+- `api/customer_projects.php` -> `api/modules/customers/customer_projects.php`
+- `api/customer_project_contacts.php` -> `api/modules/customers/customer_project_contacts.php`
 - `api/login.php` -> `api/modules/users_access/login.php`
 - `api/logout.php` -> `api/modules/users_access/logout.php`
 - `api/bootstrap.php` -> `api/modules/kernel/bootstrap.php`

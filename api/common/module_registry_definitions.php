@@ -39,6 +39,14 @@ function app_module_registry_seed_rows(): array
             'sort_order' => 30,
         ],
         [
+            'module_key' => 'customers',
+            'label' => 'Customers',
+            'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 35,
+        ],
+        [
             'module_key' => 'master-data',
             'label' => 'Master Data',
             'phase' => 'active',
@@ -51,7 +59,9 @@ function app_module_registry_seed_rows(): array
 
 function app_module_dependency_map(): array
 {
-    return [];
+    return [
+        'sales' => ['customers'],
+    ];
 }
 
 function app_module_registry_row_to_response(array $row): array

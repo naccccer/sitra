@@ -97,6 +97,55 @@
 - Output:
   - `order: object`
 
+## Customers Contracts
+
+### `customers.customer_list.v1`
+- Owner: `customers`
+- Output:
+  - `customers: array`
+
+### `customers.customer_create.v1`
+- Owner: `customers`
+- Input:
+  - `fullName: string`
+  - `defaultPhone?: string`
+  - `address?: string`
+  - `notes?: string`
+- Output:
+  - `customer: object`
+
+### `customers.customer_update.v1`
+- Owner: `customers`
+- Input:
+  - `id: number`
+  - mutable fields subset (`fullName`, `defaultPhone`, `address`, `notes`)
+  - `applyToOrderHistory?: boolean`
+- Output:
+  - `customer: object`
+
+### `customers.project_list.v1`
+- Owner: `customers`
+- Input:
+  - `customerId?: number`
+- Output:
+  - `projects: array`
+
+### `customers.project_create_update.v1`
+- Owner: `customers`
+- Input:
+  - `customerId: number`
+  - `name: string`
+  - `targetCustomerId?: number` (project transfer)
+- Output:
+  - `project: object`
+
+### `customers.project_contact_list_write.v1`
+- Owner: `customers`
+- Input:
+  - `projectId: number`
+- Output:
+  - `contacts: array`
+
 ## Users & Access Contracts
 
 ### `users_access.user_list.v1`
@@ -148,6 +197,9 @@
 ## API Adapter Mapping
 - `/api/bootstrap.php` -> kernel + read models
 - `/api/orders.php` -> sales contracts
+- `/api/customers.php` -> customers contracts
+- `/api/customer_projects.php` -> customers contracts
+- `/api/customer_project_contacts.php` -> customers contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
 - `/api/users.php` -> users-access user contracts

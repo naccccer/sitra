@@ -10,8 +10,8 @@ const EXPLICIT_INPUTS = ARGUMENTS.filter((arg) => !arg.startsWith('--'))
 
 const JS_EXTENSIONS = new Set(['.js', '.jsx', '.ts', '.tsx'])
 const PHP_EXTENSIONS = new Set(['.php'])
-const ALLOWED_MODULE_IDS = new Set(['auth', 'users-access', 'master-data', 'sales', 'kernel'])
-const ALLOWED_SNAKE_NAMESPACES = new Set(['auth', 'users_access', 'master_data', 'sales', 'kernel'])
+const ALLOWED_MODULE_IDS = new Set(['auth', 'users-access', 'master-data', 'sales', 'customers', 'kernel'])
+const ALLOWED_SNAKE_NAMESPACES = new Set(['auth', 'users_access', 'master_data', 'sales', 'customers', 'kernel'])
 const violations = []
 
 function normalizeRelative(filePath) {
@@ -122,7 +122,7 @@ function checkAuditEventTypes(filePath, source) {
   let match
   while ((match = regex.exec(source)) !== null) {
     const eventType = match[1]
-    if (!/^(auth|users_access|master_data|sales|kernel)\.[a-z_]+(\.[a-z_]+)+$/.test(eventType)) {
+    if (!/^(auth|users_access|master_data|sales|customers|kernel)\.[a-z_]+(\.[a-z_]+)+$/.test(eventType)) {
       pushViolation(filePath, `audit event type '${eventType}' must follow snake_case namespace.event.action`)
     }
   }

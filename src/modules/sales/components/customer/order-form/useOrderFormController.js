@@ -15,6 +15,7 @@ import {
   parseNumber,
 } from '@/modules/sales/components/customer/order-form/orderFormUtils';
 import { createOrderFormHandlers } from '@/modules/sales/components/customer/order-form/orderFormHandlers';
+import { useOrderCustomerLinks } from '@/modules/sales/components/customer/order-form/useOrderCustomerLinks';
 
 const buildInitialConfig = (catalog) => {
   const suggestInterlayer = (totalThick) => {
@@ -88,6 +89,13 @@ export const useOrderFormController = ({
     editingOrder?.payments && Array.isArray(editingOrder.payments) ? editingOrder.payments.map(normalizePayment) : []
   ));
   const [config, setConfig] = useState(() => buildInitialConfig(catalog));
+
+  const customerLinks = useOrderCustomerLinks({
+    isStaffContext,
+    editingOrder,
+    customerInfo,
+    setCustomerInfo,
+  });
 
   const suggestInterlayer = (totalThick) => {
     const rule = catalog.pvbLogic.find((item) => (
@@ -213,6 +221,9 @@ export const useOrderFormController = ({
     onCancelEdit,
     orderItems,
     payments,
+    selectedCustomerId: customerLinks.selectedCustomerId,
+    selectedProjectId: customerLinks.selectedProjectId,
+    selectedProjectContactId: customerLinks.selectedProjectContactId,
     setActiveTab,
     setConfig,
     setCustomerInfo,
@@ -244,6 +255,7 @@ export const useOrderFormController = ({
     isCheckoutOpen,
     setIsCheckoutOpen,
     customerInfo,
+    customerLinks,
     invoiceNotes,
     payments,
     config,

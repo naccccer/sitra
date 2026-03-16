@@ -23,6 +23,8 @@ test_assert(count($defs) > 0, 'returns at least one permission');
 
 $keys = array_column($defs, 'key');
 test_assert_contains('sales.orders.read', $keys, 'contains sales.orders.read');
+test_assert_contains('customers.read', $keys, 'contains customers.read');
+test_assert_contains('customers.write', $keys, 'contains customers.write');
 test_assert_contains('master_data.catalog.write', $keys, 'contains master_data.catalog.write');
 test_assert_contains('users_access.users.write', $keys, 'contains users_access.users.write');
 test_assert_contains('kernel.audit.read', $keys, 'contains kernel.audit.read');
@@ -75,6 +77,8 @@ test_assert_contains('sales.orders.read', $matrix['sales'], 'sales has sales.ord
 
 // Manager should have users_access.users.write
 test_assert_contains('users_access.users.write', $matrix['manager'], 'manager has users_access.users.write');
+test_assert_contains('customers.write', $matrix['manager'], 'manager has customers.write');
+test_assert_contains('customers.read', $matrix['sales'], 'sales has customers.read');
 
 // ------------------------------------------------------------------
 // app_normalize_role_permissions_matrix
@@ -154,6 +158,10 @@ test_assert_true(
     app_user_has_permission($salesUser, 'sales.orders.read'),
     'sales user has sales.orders.read'
 );
+test_assert_true(
+    app_user_has_permission($salesUser, 'customers.read'),
+    'sales user has customers.read'
+);
 test_assert_false(
     app_user_has_permission($salesUser, 'master_data.catalog.write'),
     'sales user does not have master_data.catalog.write'
@@ -189,6 +197,7 @@ $caps = app_module_capabilities('admin');
 test_assert(isset(
     $caps['canAccessDashboard'],
     $caps['canManageOrders'],
+    $caps['canManageCustomers'],
     $caps['canManageCatalog'],
     $caps['canManageUsers'],
     $caps['canViewAuditLogs'],
@@ -197,10 +206,12 @@ test_assert(isset(
 test_assert_true($caps['canAccessDashboard'], 'admin canAccessDashboard');
 test_assert_true($caps['canManageCatalog'], 'admin canManageCatalog');
 test_assert_true($caps['canManageUsers'], 'admin canManageUsers');
+test_assert_true($caps['canManageCustomers'], 'admin canManageCustomers');
 test_assert_false($caps['canManageSystemSettings'], 'canManageSystemSettings always false');
 
 $salesCaps = app_module_capabilities('sales');
 test_assert_true($salesCaps['canManageOrders'], 'sales canManageOrders');
+test_assert_true($salesCaps['canManageCustomers'], 'sales canManageCustomers');
 test_assert_false($salesCaps['canManageCatalog'], 'sales cannot manage catalog (no write)');
 test_assert_false($salesCaps['canManageUsers'], 'sales cannot manage users');
 
@@ -221,11 +232,13 @@ $masterDataDisabledModules = [
     ['id' => 'auth', 'enabled' => true],
     ['id' => 'users-access', 'enabled' => true],
     ['id' => 'sales', 'enabled' => true],
+    ['id' => 'customers', 'enabled' => false],
     ['id' => 'master-data', 'enabled' => false],
 ];
 $adminCapsWhenMasterDataDisabled = app_module_capabilities('admin', $masterDataDisabledModules);
 test_assert_false($adminCapsWhenMasterDataDisabled['canManageCatalog'], 'master-data disabled removes canManageCatalog');
 test_assert_false($adminCapsWhenMasterDataDisabled['canManageProfile'], 'master-data disabled removes canManageProfile');
+test_assert_false($adminCapsWhenMasterDataDisabled['canManageCustomers'], 'customers disabled removes canManageCustomers');
 
 // Print machine-readable summary for the runner
 $r = test_summary();

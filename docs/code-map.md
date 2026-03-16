@@ -4,6 +4,7 @@
 |---|---|---|---|---|
 | Bootstrap + Session + Capabilities | `src/kernel`, `src/hooks/useBootstrap.js` | `api/modules/kernel` | `users`, `system_settings`, `module_registry`, `orders` | `GET /api/bootstrap.php` |
 | Sales Orders Lifecycle | `src/modules/sales` | `api/modules/sales` | `orders`, `order_request_idempotency` | `GET|POST|PUT|PATCH|DELETE /api/orders.php` |
+| Customers Directory + Projects | `src/modules/customers` | `api/modules/customers` | `customers`, `customer_projects`, `customer_project_contacts` | `GET|POST|PUT|PATCH /api/customers.php`, `GET|POST|PUT|PATCH /api/customer_projects.php`, `GET|POST|PUT|PATCH /api/customer_project_contacts.php` |
 | Catalog Management | `src/modules/master-data` | `api/modules/master_data` | `system_settings` (`catalog`) | `GET|POST /api/catalog.php` |
 | Business Profile | `src/pages/ProfilePage.jsx` + kernel settings shell | `api/modules/master_data` | `system_settings` (`profile`) | `GET|POST /api/profile.php` |
 | Users and Permissions | `src/modules/users-access` | `api/modules/users_access` | `users`, `system_settings` (`role_permissions`) | `GET|POST|PUT|PATCH /api/users.php`, `GET|POST /api/role_permissions.php` |

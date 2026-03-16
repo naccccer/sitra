@@ -43,11 +43,12 @@ test_suite('app_module_registry_seed_rows');
 
 $seeds = app_module_registry_seed_rows();
 test_assert(is_array($seeds), 'returns array');
-test_assert(count($seeds) >= 4, 'has at least 4 seed modules');
+test_assert(count($seeds) >= 5, 'has at least 5 seed modules');
 
 $moduleKeys = array_column($seeds, 'module_key');
 test_assert_contains('auth', $moduleKeys, 'includes auth module');
 test_assert_contains('sales', $moduleKeys, 'includes sales module');
+test_assert_contains('customers', $moduleKeys, 'includes customers module');
 test_assert_contains('master-data', $moduleKeys, 'includes master-data module');
 test_assert_contains('users-access', $moduleKeys, 'includes users-access module');
 
@@ -116,8 +117,8 @@ test_suite('app_module_dependency_map');
 
 $deps = app_module_dependency_map();
 test_assert(is_array($deps), 'returns array');
-// Currently empty — if it grows, these tests should be updated
-// For now just verify it returns an array without error
+test_assert(isset($deps['sales']), 'sales dependency entry exists');
+test_assert_contains('customers', $deps['sales'], 'sales depends on customers');
 
 // ------------------------------------------------------------------
 // app_module_registry (no DB — seed fallback)
@@ -127,11 +128,12 @@ test_suite('app_module_registry (no DB)');
 
 $registry = app_module_registry(null);
 test_assert(is_array($registry), 'returns array without DB');
-test_assert(count($registry) >= 4, 'has at least 4 modules without DB');
+test_assert(count($registry) >= 5, 'has at least 5 modules without DB');
 
 $ids = array_column($registry, 'id');
 test_assert_contains('auth', $ids, 'includes auth without DB');
 test_assert_contains('sales', $ids, 'includes sales without DB');
+test_assert_contains('customers', $ids, 'includes customers without DB');
 
 // Print machine-readable summary for the runner
 $r = test_summary();

@@ -258,6 +258,10 @@ function app_ensure_orders_table(PDO $pdo): void
     } catch (Throwable $e) {
         // Keep runtime compatibility if alter is not possible.
     }
+
+    if (function_exists('app_ensure_orders_customer_columns')) {
+        app_ensure_orders_customer_columns($pdo);
+    }
 }
 
 /**
@@ -344,14 +348,20 @@ function app_orders_select_fields(PDO $pdo): string
     $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
     $createdAtColumn = app_find_orders_column($pdo, ['created_at']);
     $updatedAtColumn = app_find_orders_column($pdo, ['updated_at']);
+    $customerIdColumn = app_find_orders_column($pdo, ['customer_id']);
+    $projectIdColumn = app_find_orders_column($pdo, ['project_id']);
+    $projectContactIdColumn = app_find_orders_column($pdo, ['project_contact_id']);
     $createdAtSelect = $createdAtColumn !== null ? $createdAtColumn : 'NULL AS created_at';
     $updatedAtSelect = $updatedAtColumn !== null ? $updatedAtColumn : 'NULL AS updated_at';
+    $customerIdSelect = $customerIdColumn !== null ? $customerIdColumn : 'NULL AS customer_id';
+    $projectIdSelect = $projectIdColumn !== null ? $projectIdColumn : 'NULL AS project_id';
+    $projectContactIdSelect = $projectContactIdColumn !== null ? $projectContactIdColumn : 'NULL AS project_contact_id';
 
     if ($itemsColumn === 'items') {
-        return 'id, order_code, customer_name, phone, ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+        return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
     }
 
-    return 'id, order_code, customer_name, phone, ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+    return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
 }
 
 function app_orders_sort_clause(PDO $pdo): string

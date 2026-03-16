@@ -8,6 +8,7 @@ import {
   Settings,
   ShieldCheck,
   SlidersHorizontal,
+  Users,
   X,
 } from 'lucide-react';
 import { isModuleEnabled } from '@/kernel/moduleRegistry';
@@ -21,6 +22,7 @@ const navSections = [
     items: [
       { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
+      { to: '/customers', label: 'مشتریان', icon: Users, capability: 'canManageCustomers', moduleId: 'customers' },
     ],
   },
   {
@@ -90,7 +92,7 @@ export const Sidebar = ({
 
   return (
     <aside
-      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-72 shrink-0 flex-col border-l border-slate-200/90 bg-white/95 px-4 py-4 shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:min-h-screen lg:translate-x-0 lg:shadow-none ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
+      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-72 shrink-0 flex-col overflow-hidden border-l border-slate-200/90 bg-white/95 px-4 py-4 shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:h-screen lg:translate-x-0 lg:shadow-none ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}
       dir="rtl"
     >
       <button
@@ -123,7 +125,8 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <nav className="space-y-4">
+      <div className="min-h-0 flex-1 overflow-y-auto pe-1">
+        <nav className="space-y-4">
         {visibleSections.map((section) => (
           <div key={section.id} className="space-y-2">
             <div className={`px-1 text-[10px] font-black text-slate-400 ${isCollapsed ? 'lg:hidden' : ''}`}>{section.label}</div>
@@ -147,9 +150,9 @@ export const Sidebar = ({
             </div>
           </div>
         ))}
-      </nav>
+        </nav>
 
-      <div className="mt-3">
+        <div className="mt-3">
         {canCreateOrders && (
           <NavLink
             to="/orders/new"
@@ -161,6 +164,8 @@ export const Sidebar = ({
             <span className={isCollapsed ? 'lg:hidden' : ''}>ثبت سفارش جدید</span>
           </NavLink>
         )}
+      </div>
+
       </div>
 
       <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">

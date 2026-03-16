@@ -73,11 +73,11 @@
   }
 
   .app-content-wrap {
-    @apply mx-auto flex min-h-screen w-full max-w-[1400px] flex-col lg:flex-row;
+    @apply mx-auto flex min-h-screen w-full max-w-[1600px] flex-col lg:flex-row;
   }
 
   .app-content-area {
-    @apply mx-auto w-full max-w-[1300px];
+    @apply mx-auto w-full max-w-[1500px];
   }
 
   .surface-card {

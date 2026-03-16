@@ -21,6 +21,9 @@ export const createOrderFormHandlers = ({
   onCancelEdit,
   orderItems,
   payments,
+  selectedCustomerId,
+  selectedProjectId,
+  selectedProjectContactId,
   setActiveTab,
   setConfig,
   setCustomerInfo,
@@ -182,10 +185,8 @@ export const createOrderFormHandlers = ({
     const trimmedPhone = customerInfo.phone.trim();
     if (!trimmedName) return alert('لطفاً نام و نام خانوادگی را وارد کنید.');
     if (trimmedName.length < 2) return alert('نام باید حداقل ۲ کاراکتر باشد.');
-    if (!trimmedPhone) return alert('لطفاً شماره موبایل را وارد کنید.');
-    if (!/^(09\d{9}|(\+98|0098)9\d{9})$/.test(trimmedPhone)) {
-      return alert('شماره موبایل وارد شده معتبر نیست. مثال: 09123456789');
-    }
+    if (!trimmedPhone) return alert('لطفاً شماره تماس را وارد کنید.');
+    if (trimmedPhone.length < 5) return alert('شماره تماس معتبر نیست.');
 
     try {
       if (editingOrder) {
@@ -193,6 +194,9 @@ export const createOrderFormHandlers = ({
           id: Number(editingOrder.id),
           customerName: trimmedName,
           phone: trimmedPhone,
+          customerId: selectedCustomerId || editingOrder.customerId || null,
+          projectId: selectedProjectId || editingOrder.projectId || null,
+          projectContactId: selectedProjectContactId || editingOrder.projectContactId || null,
           date: editingOrder.date,
           total: grandTotal,
           status: editingOrder.status || 'pending',
@@ -213,6 +217,9 @@ export const createOrderFormHandlers = ({
       const createPayload = {
         customerName: trimmedName,
         phone: trimmedPhone,
+        customerId: selectedCustomerId || null,
+        projectId: selectedProjectId || null,
+        projectContactId: selectedProjectContactId || null,
         date: new Date().toLocaleDateString('fa-IR'),
         total: isStaffContext
           ? grandTotal

@@ -6,7 +6,7 @@ export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders,
   const navigate = useNavigate();
 
   return (
-    <div className="mx-auto max-w-[1300px]">
+    <div className="mx-auto w-full">
       <AdminOrdersView
         orders={orders}
         hasMoreOrders={ordersHasMore}

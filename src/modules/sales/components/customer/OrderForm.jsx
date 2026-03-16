@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Menu, User } from 'lucide-react';
+import { Menu, Phone, User } from 'lucide-react';
 import { SettingsModal } from '@/modules/sales/components/customer/SettingsModal';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
 import { CheckoutModal } from '@/modules/sales/components/customer/order-form/CheckoutModal';
@@ -32,6 +32,7 @@ export const OrderForm = ({
     isCheckoutOpen,
     setIsCheckoutOpen,
     customerInfo,
+    customerLinks,
     handleCustomerInfoChange,
     invoiceNotes,
     payments,
@@ -69,7 +70,7 @@ export const OrderForm = ({
   const isEditingCatalogItem = Boolean(editingItemId && editingItemType === 'catalog');
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className={`mx-auto max-w-6xl ${editingOrder ? 'space-y-3' : 'space-y-6'}`}>
       {!editingOrder && !staffMode && (
         <header className="print-hide mx-auto mb-6 flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white shadow-md">
           <div className="flex items-center gap-3">
@@ -99,13 +100,50 @@ export const OrderForm = ({
       )}
 
       {editingOrder && (
-        <div className="print-hide flex items-center justify-between rounded-2xl border-2 border-amber-400 bg-amber-100 p-4 shadow-md">
-          <div className="flex flex-col">
-            <span className="text-lg font-black text-amber-900">در حال ویرایش سفارش</span>
-            <span className="mt-1 text-xs font-bold text-amber-700">کد رهگیری: {editingOrder.orderCode} - مشتری: {editingOrder.customerName}</span>
+        <section className="print-hide rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2.5 shadow-sm">
+          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+            <div className="min-w-0">
+              <span className="text-sm font-black text-amber-900">در حال ویرایش سفارش</span>
+              <span className="mt-0.5 block truncate text-[11px] font-bold text-amber-700">کد رهگیری: {editingOrder.orderCode} - مشتری: {editingOrder.customerName}</span>
+            </div>
+            <button
+              onClick={onCancelEdit}
+              className="w-full rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm hover:bg-slate-50 lg:w-auto"
+            >
+              انصراف از ویرایش
+            </button>
           </div>
-          <button onClick={onCancelEdit} className="rounded-lg bg-white px-4 py-2 text-sm font-bold text-slate-700 shadow-sm hover:bg-slate-50">انصراف از ویرایش</button>
-        </div>
+
+          <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
+            <label className="block">
+              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                <User size={12} />
+                نام و نام خانوادگی / شرکت
+              </span>
+              <input
+                type="text"
+                value={customerInfo.name}
+                onChange={(event) => handleCustomerInfoChange('name', event.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-black outline-none transition-colors focus:border-emerald-400"
+                placeholder="مثال: علی حسینی"
+              />
+            </label>
+            <label className="block">
+              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+                <Phone size={12} />
+                شماره موبایل
+              </span>
+              <input
+                type="tel"
+                value={customerInfo.phone}
+                onChange={(event) => handleCustomerInfoChange('phone', event.target.value)}
+                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-black outline-none transition-colors focus:border-emerald-400"
+                placeholder="09123456789"
+                dir="ltr"
+              />
+            </label>
+          </div>
+        </section>
       )}
 
       <OrderConfigurationSection
@@ -168,8 +206,10 @@ export const OrderForm = ({
 
       <CheckoutModal
         isOpen={isCheckoutOpen}
+        isStaffContext={isStaffContext}
         editingOrder={editingOrder}
         customerInfo={customerInfo}
+        customerLinks={customerLinks}
         onCustomerInfoChange={handleCustomerInfoChange}
         onClose={() => setIsCheckoutOpen(false)}
         onSubmit={submitOrderToServer}

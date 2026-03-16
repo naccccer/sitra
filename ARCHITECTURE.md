@@ -24,6 +24,8 @@
   - Business profile settings.
 - `sales`
   - Orders, order items payload, invoice/payment context.
+- `customers`
+  - Customer registry, customer projects, and project contacts.
 - `users-access`
   - Users, role assignment, activation/deactivation.
 
@@ -53,6 +55,9 @@
 - Core endpoints remain operational:
   - `/api/bootstrap.php`
   - `/api/orders.php`
+  - `/api/customers.php`
+  - `/api/customer_projects.php`
+  - `/api/customer_project_contacts.php`
   - `/api/catalog.php`
   - `/api/profile.php`
   - `/api/users.php`
