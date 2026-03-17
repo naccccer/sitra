@@ -4,6 +4,7 @@ import { toPN } from '@/utils/helpers'
 import { useAccReports } from '../../hooks/useAccReports'
 import { useAccounts } from '../../hooks/useAccounts'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
+import { ShamsiDateInput, toShamsiDisplay } from '../../utils/dateUtils'
 
 function fmtAmt(v) {
   return toPN(Number(v).toLocaleString())
@@ -49,13 +50,13 @@ export function GeneralLedgerReport() {
         </div>
         <div>
           <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
-          <input type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-            value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+          <ShamsiDateInput value={dateFrom} onChange={setDateFrom}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
         </div>
         <div>
           <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
-          <input type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-            value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+          <ShamsiDateInput value={dateTo} onChange={setDateTo}
+            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
         </div>
         <Button variant="primary" onClick={handleRun} disabled={loading}>
           {loading ? 'در حال محاسبه...' : 'نمایش گردش'}
@@ -88,7 +89,7 @@ export function GeneralLedgerReport() {
               {rows.map((row, idx) => (
                 <tr key={idx} className="hover:bg-slate-50">
                   <td className="px-3 py-1.5 font-mono font-black">{toPN(row.voucherNo)}</td>
-                  <td className="px-3 py-1.5 tabular-nums text-slate-600">{row.voucherDate}</td>
+                  <td className="px-3 py-1.5 tabular-nums text-slate-600">{toShamsiDisplay(row.voucherDate)}</td>
                   <td className="px-3 py-1.5 text-slate-700 max-w-[200px] truncate">
                     {row.sourceCode ? `[${row.sourceCode}] ` : ''}{row.description}
                   </td>

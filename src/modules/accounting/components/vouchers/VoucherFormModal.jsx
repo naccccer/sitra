@@ -4,6 +4,7 @@ import { toPN } from '@/utils/helpers'
 import { usePostableAccounts } from '../../hooks/useAccounts'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { accountingApi } from '../../services/accountingApi'
+import { ShamsiDateInput, todayGregorian } from '../../utils/dateUtils'
 
 function newLine() {
   return { accountId: '', description: '', debitAmount: '', creditAmount: '' }
@@ -18,7 +19,7 @@ export function VoucherFormModal({ voucher, session, onClose, onSaved }) {
     voucher?.fiscalYearId ?? currentDefault?.id ?? ''
   )
   const [voucherDate, setVoucherDate] = useState(
-    voucher?.voucherDate ?? new Date().toISOString().slice(0, 10)
+    voucher?.voucherDate ?? todayGregorian()
   )
   const [description, setDescription] = useState(voucher?.description ?? '')
   const [lines, setLines] = useState(
@@ -119,11 +120,8 @@ export function VoucherFormModal({ voucher, session, onClose, onSaved }) {
         )}
         <div>
           <label className="block text-xs font-black text-slate-700 mb-1">تاریخ سند *</label>
-          <input
-            type="date"
-            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-            value={voucherDate} onChange={(e) => setVoucherDate(e.target.value)}
-          />
+          <ShamsiDateInput value={voucherDate} onChange={setVoucherDate}
+            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
         </div>
         <div className={isEdit ? 'sm:col-span-2' : ''}>
           <label className="block text-xs font-black text-slate-700 mb-1">شرح سند</label>

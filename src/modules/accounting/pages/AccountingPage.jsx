@@ -9,16 +9,19 @@ import { ArSummaryReport } from '../components/reports/ArSummaryReport'
 import { PnlSummaryReport } from '../components/reports/PnlSummaryReport'
 import { FiscalYearPanel } from '../components/settings/FiscalYearPanel'
 import { SalesBridgePanel } from '../components/bridge/SalesBridgePanel'
+import { HelpPanel } from '../components/help/HelpPanel'
+import { useTabSettings } from '../hooks/useTabSettings'
 
 const TAB_DEFINITIONS = [
-  { id: 'vouchers',       label: 'اسناد',            permission: 'accounting.vouchers.read' },
-  { id: 'accounts',      label: 'سرفصل حساب‌ها',    permission: 'accounting.accounts.read' },
-  { id: 'trial_balance', label: 'تراز آزمایشی',     permission: 'accounting.reports.read' },
-  { id: 'general_ledger',label: 'دفتر کل',           permission: 'accounting.reports.read' },
-  { id: 'ar_summary',    label: 'مانده مشتریان',     permission: 'accounting.reports.read' },
-  { id: 'pnl',           label: 'درآمد/هزینه',       permission: 'accounting.reports.read' },
-  { id: 'bridge',        label: 'پل فروش',           permission: 'accounting.sales_bridge.read' },
-  { id: 'settings',      label: 'تنظیمات',           permission: 'accounting.fiscal_years.read' },
+  { id: 'vouchers',        label: 'اسناد',            permission: 'accounting.vouchers.read',      configurable: true },
+  { id: 'accounts',        label: 'سرفصل حساب‌ها',    permission: 'accounting.accounts.read',      configurable: true },
+  { id: 'trial_balance',   label: 'تراز آزمایشی',     permission: 'accounting.reports.read',       configurable: true },
+  { id: 'general_ledger',  label: 'دفتر کل',           permission: 'accounting.reports.read',       configurable: true },
+  { id: 'ar_summary',      label: 'مانده مشتریان',     permission: 'accounting.reports.read',       configurable: true },
+  { id: 'pnl',             label: 'درآمد/هزینه',       permission: 'accounting.reports.read',       configurable: true },
+  { id: 'bridge',          label: 'پل فروش',           permission: 'accounting.sales_bridge.read',  configurable: true },
+  { id: 'settings',        label: 'تنظیمات',           permission: 'accounting.fiscal_years.read',  configurable: false },
+  { id: 'help',            label: 'راهنما',             permission: null,                            configurable: false },
 ]
 
 export const AccountingPage = ({ session }) => {
@@ -29,9 +32,15 @@ export const AccountingPage = ({ session }) => {
   const capabilities = session?.capabilities ?? {}
   const canAccessAccounting = Boolean(capabilities.canAccessAccounting)
 
+  const { isVisible } = useTabSettings()
+
   const visibleTabs = useMemo(
-    () => TAB_DEFINITIONS.filter((t) => !t.permission || permissions.includes(t.permission)),
-    [permissions]
+    () => TAB_DEFINITIONS.filter((t) => {
+      if (t.permission && !permissions.includes(t.permission)) return false
+      if (t.configurable && !isVisible(t.id)) return false
+      return true
+    }),
+    [permissions, isVisible]
   )
 
   const [activeTab, setActiveTab] = useState('vouchers')
@@ -51,6 +60,7 @@ export const AccountingPage = ({ session }) => {
       case 'pnl':             return <PnlSummaryReport />
       case 'bridge':          return <SalesBridgePanel session={session} />
       case 'settings':        return <FiscalYearPanel session={session} />
+      case 'help':            return <HelpPanel />
       default:                return null
     }
   }

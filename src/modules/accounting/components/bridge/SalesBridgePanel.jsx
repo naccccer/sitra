@@ -3,6 +3,7 @@ import { Button, Card } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { accountingApi } from '../../services/accountingApi'
+import { ShamsiDateInput } from '../../utils/dateUtils'
 
 export function SalesBridgePanel({ session }) {
   const permissions = session?.permissions ?? []
@@ -71,13 +72,13 @@ export function SalesBridgePanel({ session }) {
           <>
             <div>
               <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
-              <input type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-                value={dateFrom} onChange={(e) => setDateFrom(e.target.value)} />
+              <ShamsiDateInput value={dateFrom} onChange={setDateFrom}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
             </div>
             <div>
               <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
-              <input type="date" className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-                value={dateTo} onChange={(e) => setDateTo(e.target.value)} />
+              <ShamsiDateInput value={dateTo} onChange={setDateTo}
+                className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
             </div>
           </>
         )}
