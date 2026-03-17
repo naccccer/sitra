@@ -50,6 +50,14 @@ export const __type_InventoryV2OperationsCreateRequest = null
  */
 export const __type_InventoryV2ProductsUpsertRequest = null
 /**
+ * @typedef { id?: string, productId: string, warehouseId: string, minQty: number, maxQty: number, notes?: string } InventoryV2ReplenishmentRuleUpsertRequest
+ */
+export const __type_InventoryV2ReplenishmentRuleUpsertRequest = null
+/**
+ * @typedef { report: "on_hand" | "cardex" | "operations", productId?: string, warehouseId?: string, dateFrom?: string, dateTo?: string } InventoryV2ReportsQueryRequest
+ */
+export const __type_InventoryV2ReportsQueryRequest = null
+/**
  * @typedef { productId: string | number, variantId?: string | number | null, lotId?: string | number | null, warehouseId: string | number, locationId: string | number, quantityReserved: number, referenceType?: string, referenceId?: string, referenceCode?: string, notes?: string } InventoryV2ReservationsCreateRequest
  */
 export const __type_InventoryV2ReservationsCreateRequest = null
