@@ -6,6 +6,7 @@ import { InventoryReceiptsPanel } from '@/modules/inventory/components/Inventory
 import { InventoryDeliveriesPanel } from '@/modules/inventory/components/InventoryDeliveriesPanel'
 import { InventoryTransfersPanel } from '@/modules/inventory/components/InventoryTransfersPanel'
 import { InventoryAdjustmentsPanel } from '@/modules/inventory/components/InventoryAdjustmentsPanel'
+import { InventoryProductionPanel } from '@/modules/inventory/components/InventoryProductionPanel'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const EMPTY_PERMISSIONS = Object.freeze([])
@@ -26,7 +27,6 @@ const TAB_DEFINITIONS = [
 
 const SCAFFOLD_META = {
   products:        { title: 'Products',         description: 'Product templates and variants.', columns: ['Name', 'Type', 'UoM', 'Status'] },
-  productionMoves: { title: 'Production Moves', description: 'Production consume/output — Phase 3.', columns: ['Operation', 'Type', 'Status', 'Created At'] },
   counts:          { title: 'Counts',           description: 'Cycle and annual count sessions — Phase 4.', columns: ['Session', 'Warehouse', 'Status', 'Started At'] },
   replenishment:   { title: 'Replenishment',    description: 'Min/Max proposals — Phase 4.', columns: ['Product', 'Available', 'Min', 'Suggested Qty'] },
   reports:         { title: 'Reports',          description: 'Operational reports — Phase 4.', columns: ['Report', 'Range', 'Rows', 'Updated At'] },
@@ -93,6 +93,8 @@ export const InventoryV2Page = ({ session }) => {
         return <InventoryTransfersPanel session={session} />
       case 'adjustments':
         return <InventoryAdjustmentsPanel session={session} />
+      case 'productionMoves':
+        return <InventoryProductionPanel session={session} />
       case 'products': {
         const m = SCAFFOLD_META.products
         return <InventoryV2TableScaffold title={m.title} description={m.description} columns={m.columns} rows={productRows} />
@@ -110,7 +112,7 @@ export const InventoryV2Page = ({ session }) => {
       <Card padding="md" className="space-y-3">
         <div>
           <div className="text-base font-black text-slate-900">Inventory V2</div>
-          <div className="text-xs font-bold text-slate-500">Phase 2 — Core Stock Operations active</div>
+          <div className="text-xs font-bold text-slate-500">Phase 3 — Sales + Production Integration active</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (

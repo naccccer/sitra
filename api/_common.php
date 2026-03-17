@@ -23,10 +23,11 @@ declare(strict_types=1);
  *  12. inventory_v2_schema.php - Inventory V2 schema and seeds
  *  13. inventory_v2_helpers.php - Inventory V2 data mappers and guards
  *  14. inventory_v2_operations.php - Inventory V2 posting engine and operation helpers
- *  15. inventory_posting.php - stock mutation and document posting
- *  16. inventory_counts.php - inventory counting domain helpers
- *  17. module_registry.php - module registry, user roles
- *  18. permissions.php - RBAC, capabilities
+ *  15. inventory_v2_reservations.php - Inventory V2 reservation helpers
+ *  16. inventory_posting.php - stock mutation and document posting
+ *  17. inventory_counts.php - inventory counting domain helpers
+ *  18. module_registry.php - module registry, user roles
+ *  19. permissions.php - RBAC, capabilities
  */
 
 require_once __DIR__ . '/../config/env.php';
@@ -46,6 +47,7 @@ require_once __DIR__ . '/common/inventory_helpers.php';
 require_once __DIR__ . '/common/inventory_v2_schema.php';
 require_once __DIR__ . '/common/inventory_v2_helpers.php';
 require_once __DIR__ . '/common/inventory_v2_operations.php';
+require_once __DIR__ . '/common/inventory_v2_reservations.php';
 require_once __DIR__ . '/common/inventory_posting.php';
 require_once __DIR__ . '/common/inventory_counts.php';
 require_once __DIR__ . '/common/module_registry.php';

@@ -50,6 +50,10 @@ export const __type_InventoryV2OperationsCreateRequest = null
  */
 export const __type_InventoryV2ProductsUpsertRequest = null
 /**
+ * @typedef { productId: string | number, variantId?: string | number | null, lotId?: string | number | null, warehouseId: string | number, locationId: string | number, quantityReserved: number, referenceType?: string, referenceId?: string, referenceCode?: string, notes?: string } InventoryV2ReservationsCreateRequest
+ */
+export const __type_InventoryV2ReservationsCreateRequest = null
+/**
  * @typedef { id?: string | number, warehouseKey: string, name: string, notes?: string, isActive?: boolean } InventoryV2WarehousesUpsertRequest
  */
 export const __type_InventoryV2WarehousesUpsertRequest = null

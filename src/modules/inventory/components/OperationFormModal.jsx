@@ -3,10 +3,12 @@ import { Button } from '@/components/shared/ui'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const TYPE_CONFIG = {
-  receipt:    { needsTarget: true,  needsSource: false, label: 'رسید انبار' },
-  delivery:   { needsTarget: false, needsSource: true,  label: 'حواله انبار' },
-  transfer:   { needsTarget: true,  needsSource: true,  label: 'انتقال انبار' },
-  adjustment: { needsTarget: true,  needsSource: false, label: 'تعدیل موجودی' },
+  receipt:            { needsTarget: true,  needsSource: false, label: 'رسید انبار' },
+  delivery:           { needsTarget: false, needsSource: true,  label: 'حواله انبار' },
+  transfer:           { needsTarget: true,  needsSource: true,  label: 'انتقال انبار' },
+  adjustment:         { needsTarget: true,  needsSource: false, label: 'تعدیل موجودی' },
+  production_consume: { needsTarget: false, needsSource: true,  label: 'مصرف تولید' },
+  production_output:  { needsTarget: true,  needsSource: false, label: 'خروجی تولید' },
 }
 
 const EMPTY_LINE = () => ({

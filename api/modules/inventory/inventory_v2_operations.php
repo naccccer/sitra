@@ -59,7 +59,7 @@ function inv_v2_op_fetch(PDO $pdo, int $id): ?array
     return $row ? app_inventory_v2_operation_header_from_row($row) : null;
 }
 
-$validTypes    = ['receipt', 'delivery', 'transfer', 'production_move', 'adjustment', 'count'];
+$validTypes    = ['receipt', 'delivery', 'transfer', 'production_move', 'production_consume', 'production_output', 'adjustment', 'count'];
 $validStatuses = ['draft', 'submitted', 'approved', 'posted', 'cancelled'];
 
 // ─── GET ─────────────────────────────────────────────────────────────────────

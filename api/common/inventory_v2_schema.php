@@ -245,4 +245,47 @@ function app_ensure_inventory_v2_schema(PDO $pdo): void
         'usage_type' => 'internal',
         'notes' => 'Default location',
     ]);
+
+    // Extend operation_type ENUM with Phase 3 production types (idempotent)
+    $pdo->exec(
+        "ALTER TABLE inventory_v2_operation_headers
+         MODIFY COLUMN operation_type ENUM(
+             'receipt','delivery','transfer','production_move',
+             'production_consume','production_output','adjustment','count'
+         ) NOT NULL"
+    );
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS inventory_v2_reservations (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            reservation_no VARCHAR(80) NOT NULL,
+            product_id BIGINT UNSIGNED NOT NULL,
+            variant_id BIGINT UNSIGNED NULL,
+            lot_id BIGINT UNSIGNED NULL,
+            warehouse_id INT UNSIGNED NOT NULL,
+            location_id BIGINT UNSIGNED NOT NULL,
+            quantity_reserved DECIMAL(18,3) NOT NULL DEFAULT 0,
+            status ENUM('active','fulfilled','released','expired') NOT NULL DEFAULT 'active',
+            reference_type VARCHAR(50) NULL,
+            reference_id VARCHAR(80) NULL,
+            reference_code VARCHAR(120) NULL,
+            operation_id BIGINT UNSIGNED NULL,
+            notes TEXT NULL,
+            created_by_user_id INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            UNIQUE KEY uq_inventory_v2_reservations_no (reservation_no),
+            KEY idx_inventory_v2_reservations_ref (reference_type, reference_id),
+            KEY idx_inventory_v2_reservations_status (status),
+            KEY idx_inventory_v2_reservations_product (product_id),
+            CONSTRAINT fk_inventory_v2_res_product FOREIGN KEY (product_id) REFERENCES inventory_v2_products (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT fk_inventory_v2_res_variant FOREIGN KEY (variant_id) REFERENCES inventory_v2_variants (id) ON UPDATE CASCADE ON DELETE SET NULL,
+            CONSTRAINT fk_inventory_v2_res_lot FOREIGN KEY (lot_id) REFERENCES inventory_v2_lots (id) ON UPDATE CASCADE ON DELETE SET NULL,
+            CONSTRAINT fk_inventory_v2_res_warehouse FOREIGN KEY (warehouse_id) REFERENCES inventory_v2_warehouses (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT fk_inventory_v2_res_location FOREIGN KEY (location_id) REFERENCES inventory_v2_locations (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT fk_inventory_v2_res_operation FOREIGN KEY (operation_id) REFERENCES inventory_v2_operation_headers (id) ON UPDATE CASCADE ON DELETE SET NULL,
+            CONSTRAINT fk_inventory_v2_res_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
 }

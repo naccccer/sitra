@@ -11,12 +11,14 @@ const STATUS_MAP = {
 }
 
 const TYPE_LABELS = {
-  receipt:         'رسید',
-  delivery:        'حواله',
-  transfer:        'انتقال',
-  production_move: 'تولید',
-  adjustment:      'تعدیل',
-  count:           'شمارش',
+  receipt:            'رسید',
+  delivery:           'حواله',
+  transfer:           'انتقال',
+  production_move:    'تولید',
+  production_consume: 'مصرف تولید',
+  production_output:  'خروجی تولید',
+  adjustment:         'تعدیل',
+  count:              'شمارش',
 }
 
 export const OperationsPanel = ({ operationType, session, onNew }) => {
@@ -122,6 +124,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
                 <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">نوع</th>
                 <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">انبار مبدأ</th>
                 <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">انبار مقصد</th>
+                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">کد مرجع</th>
                 <th className="border border-slate-200 px-3 py-2 text-center font-medium text-slate-600">وضعیت</th>
                 <th className="border border-slate-200 px-3 py-2 text-center font-medium text-slate-600">خطوط</th>
                 <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">تاریخ</th>
@@ -131,7 +134,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-sm text-slate-400">
+                  <td colSpan={9} className="py-8 text-center text-sm text-slate-400">
                     رکوردی یافت نشد
                   </td>
                 </tr>
@@ -145,6 +148,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
                     <td className="border border-slate-200 px-3 py-2 text-xs">{TYPE_LABELS[op.operationType] ?? op.operationType}</td>
                     <td className="border border-slate-200 px-3 py-2 text-xs">{op.sourceWarehouseName || '—'}</td>
                     <td className="border border-slate-200 px-3 py-2 text-xs">{op.targetWarehouseName || '—'}</td>
+                    <td className="border border-slate-200 px-3 py-2 text-xs text-slate-500">{op.referenceCode || '—'}</td>
                     <td className="border border-slate-200 px-3 py-2 text-center">
                       <span className={`rounded px-2 py-0.5 text-xs font-medium ${st.cls}`}>{st.label}</span>
                     </td>

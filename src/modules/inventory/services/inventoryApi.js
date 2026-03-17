@@ -115,4 +115,16 @@ export const inventoryApi = {
   async operationAction(payload) {
     return request('/api/inventory_v2_operations.php', { method: 'PATCH', body: JSON.stringify(payload) })
   },
+
+  async fetchV2Reservations(filters = {}) {
+    return request(`/api/inventory_v2_reservations.php${buildQuery(filters)}`, { method: 'GET' })
+  },
+
+  async createV2Reservation(payload) {
+    return request('/api/inventory_v2_reservations.php', { method: 'POST', body: JSON.stringify(payload) })
+  },
+
+  async reservationAction(payload) {
+    return request('/api/inventory_v2_reservations.php', { method: 'PATCH', body: JSON.stringify(payload) })
+  },
 }
