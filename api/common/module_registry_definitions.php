@@ -16,7 +16,7 @@ function app_module_registry_seed_rows(): array
     return [
         [
             'module_key' => 'auth',
-            'label' => 'Auth',
+            'label' => 'احراز هویت',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 1,
@@ -24,7 +24,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'users-access',
-            'label' => 'Users Access',
+            'label' => 'کاربران و دسترسی',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 1,
@@ -32,7 +32,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'sales',
-            'label' => 'Sales',
+            'label' => 'فروش',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 0,
@@ -40,7 +40,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'customers',
-            'label' => 'Customers',
+            'label' => 'مشتریان',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 0,
@@ -48,7 +48,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'inventory',
-            'label' => 'Inventory',
+            'label' => 'انبار',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 0,
@@ -56,7 +56,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'master-data',
-            'label' => 'Master Data',
+            'label' => 'داده‌های پایه',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 0,
