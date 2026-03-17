@@ -35,6 +35,8 @@ $isOwner = app_kernel_is_owner($user);
 $permissions = app_permissions_without_kernel_control(app_role_permissions((string)$role, $pdo));
 $capabilities = app_module_capabilities($role, $modules, $pdo);
 $capabilities['canManageSystemSettings'] = $isOwner;
+$csrfToken = app_csrf_token();
+app_release_session_lock();
 
 // Load only the 50 most recent orders to keep bootstrap fast.
 // The frontend can load more on demand via GET /api/orders.php?cursor=<id>.
@@ -91,7 +93,7 @@ $response = [
     ],
     'permissions' => $permissions,
     'capabilities' => $capabilities,
-    'csrfToken' => app_csrf_token(),
+    'csrfToken' => $csrfToken,
     'catalog' => $catalog,
     'profile' => $profile,
     'orders' => [

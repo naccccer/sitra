@@ -80,3 +80,10 @@ function app_require_auth(?array $roles = null): array
 
     return $user;
 }
+
+function app_release_session_lock(): void
+{
+    if (session_status() === PHP_SESSION_ACTIVE) {
+        session_write_close();
+    }
+}

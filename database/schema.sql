@@ -468,6 +468,6 @@ SELECT w.id, NULL, 'stock', 'قفسه اصلی', 'internal', 'Default location',
 FROM inventory_v2_warehouses w
 ON DUPLICATE KEY UPDATE name = VALUES(name), usage_type = VALUES(usage_type), notes = VALUES(notes), is_active = VALUES(is_active);
 INSERT INTO users (username, full_name, password, role, job_title) VALUES
-    ('admin', 'admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin', 'Ù…Ø§Ù„Ú© Ø³ÛŒØ³ØªÙ…')
+    ('admin', 'admin', '$2y$10$ril0ig/MBvoyVsmOaNYUNOucfIgRc/CwTWbFaTxNnjRad6AYzuD7C', 'admin', 'Owner')
 ON DUPLICATE KEY UPDATE full_name = VALUES(full_name), password = VALUES(password), role = VALUES(role), job_title = VALUES(job_title);
 

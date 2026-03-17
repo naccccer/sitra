@@ -31,7 +31,7 @@ function inv_v2_res_fetch(PDO $pdo, int $id): ?array
     return $row ? app_inventory_v2_reservation_from_row($row) : null;
 }
 
-// ─── GET ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($method === 'GET') {
     $status   = app_inventory_v2_normalize_text($_GET['status'] ?? '');
     $refType  = app_inventory_v2_normalize_text($_GET['referenceType'] ?? '');
@@ -88,7 +88,7 @@ if ($method === 'GET') {
 
 $payload = app_read_json_body();
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($method === 'POST') {
     $productId  = app_inventory_v2_parse_id($payload['productId'] ?? null);
     $variantId  = app_inventory_v2_parse_id($payload['variantId'] ?? null);
@@ -157,7 +157,7 @@ if ($method === 'POST') {
     app_json(['success' => true, 'reservation' => inv_v2_res_fetch($pdo, $resId)], 201);
 }
 
-// ─── PATCH ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PATCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $id     = app_inventory_v2_parse_id($payload['id'] ?? null);
 $action = app_inventory_v2_normalize_text($payload['action'] ?? '');
 if ($id === null || $action === '') {
@@ -204,3 +204,5 @@ try {
 }
 app_audit_log($pdo, 'inventory.vtwo_reservations.released', 'inventory_v2_reservation', (string)$id, [], $actor);
 app_json(['success' => true, 'reservation' => inv_v2_res_fetch($pdo, $id)]);
+
+

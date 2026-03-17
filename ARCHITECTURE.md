@@ -27,10 +27,9 @@
 - `customers`
   - Customer registry, customer projects, and project contacts.
 - `inventory`
-  - Warehouse master data, stock documents, inventory requests, count sessions, reports.
   - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
-  - Inventory V2 Phase 2: operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
-  - Inventory V2 Phase 3: reservation subsystem (reserve/release/fulfill), production operation types (production_consume, production_output), delivery-fulfills-reservation integration.
+  - Operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
+  - Reservation subsystem (reserve/release/fulfill), production operation types (production_consume, production_output), delivery-fulfills-reservation integration.
 - `users-access`
   - Users, role assignment, activation/deactivation.
 
@@ -72,12 +71,6 @@
   - `/api/customers.php`
   - `/api/customer_projects.php`
   - `/api/customer_project_contacts.php`
-  - `/api/inventory_warehouses.php`
-  - `/api/inventory_items.php`
-  - `/api/inventory_documents.php`
-  - `/api/inventory_requests.php`
-  - `/api/inventory_counts.php`
-  - `/api/inventory_reports.php`
   - `/api/inventory_v2_products.php`
   - `/api/inventory_v2_warehouses.php`
   - `/api/inventory_v2_locations.php`

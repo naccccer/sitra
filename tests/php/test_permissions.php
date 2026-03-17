@@ -25,9 +25,9 @@ $keys = array_column($defs, 'key');
 test_assert_contains('sales.orders.read', $keys, 'contains sales.orders.read');
 test_assert_contains('customers.read', $keys, 'contains customers.read');
 test_assert_contains('customers.write', $keys, 'contains customers.write');
-test_assert_contains('inventory.items.read', $keys, 'contains inventory.items.read');
-test_assert_contains('inventory.requests.create', $keys, 'contains inventory.requests.create');
-test_assert_contains('inventory.reports.read', $keys, 'contains inventory.reports.read');
+test_assert_contains('inventory.v2_products.read', $keys, 'contains inventory.v2_products.read');
+test_assert_contains('inventory.v2_operations.write', $keys, 'contains inventory.v2_operations.write');
+test_assert_contains('inventory.v2_reports.read', $keys, 'contains inventory.v2_reports.read');
 test_assert_contains('master_data.catalog.write', $keys, 'contains master_data.catalog.write');
 test_assert_contains('users_access.users.write', $keys, 'contains users_access.users.write');
 test_assert_contains('kernel.audit.read', $keys, 'contains kernel.audit.read');
@@ -82,7 +82,7 @@ test_assert_contains('sales.orders.read', $matrix['sales'], 'sales has sales.ord
 test_assert_contains('users_access.users.write', $matrix['manager'], 'manager has users_access.users.write');
 test_assert_contains('customers.write', $matrix['manager'], 'manager has customers.write');
 test_assert_contains('customers.read', $matrix['sales'], 'sales has customers.read');
-test_assert_contains('inventory.requests.create', $matrix['sales'], 'sales has inventory.requests.create');
+test_assert_contains('inventory.v2_operations.read', $matrix['sales'], 'sales has inventory.v2_operations.read');
 
 // ------------------------------------------------------------------
 // app_normalize_role_permissions_matrix

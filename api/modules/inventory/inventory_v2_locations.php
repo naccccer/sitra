@@ -11,9 +11,9 @@ app_ensure_inventory_v2_schema($pdo);
 
 $actor = app_require_auth(['admin', 'manager']);
 if ($method === 'GET') {
-    app_inventory_v2_require_permission($actor, 'inventory.vtwo_locations.read', $pdo);
+    app_inventory_v2_require_permission($actor, 'inventory.v2_locations.read', $pdo);
 } else {
-    app_inventory_v2_require_permission($actor, 'inventory.vtwo_locations.write', $pdo);
+    app_inventory_v2_require_permission($actor, 'inventory.v2_locations.write', $pdo);
     app_require_csrf();
 }
 
@@ -154,3 +154,5 @@ if (!$row) {
 
 app_audit_log($pdo, 'inventory.vtwo_locations.active_changed', 'inventory_v2_location', (string)$id, ['isActive' => $isActive], $actor);
 app_json(['success' => true, 'location' => app_inventory_v2_location_from_row($row)]);
+
+

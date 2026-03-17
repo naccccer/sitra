@@ -1,4 +1,3 @@
-import { api } from '@/services/api'
 import { request } from '@/services/apiRequest'
 
 const buildQuery = (filters = {}) => {
@@ -12,66 +11,6 @@ const buildQuery = (filters = {}) => {
 }
 
 export const inventoryApi = {
-  async fetchWarehouses(options = {}) {
-    return api.fetchInventoryWarehouses(options)
-  },
-
-  async fetchItems(filters = {}) {
-    return api.fetchInventoryItems(filters)
-  },
-
-  async createItem(payload) {
-    return api.createInventoryItem(payload)
-  },
-
-  async updateItem(payload) {
-    return api.updateInventoryItem(payload)
-  },
-
-  async setItemActive(id, isActive) {
-    return api.setInventoryItemActive(id, isActive)
-  },
-
-  async fetchDocuments(filters = {}) {
-    return api.fetchInventoryDocuments(filters)
-  },
-
-  async createDocument(payload) {
-    return api.createInventoryDocument(payload)
-  },
-
-  async patchDocument(payload) {
-    return api.patchInventoryDocument(payload)
-  },
-
-  async fetchRequests(filters = {}) {
-    return api.fetchInventoryRequests(filters)
-  },
-
-  async createRequest(payload) {
-    return api.createInventoryRequest(payload)
-  },
-
-  async patchRequest(payload) {
-    return api.patchInventoryRequest(payload)
-  },
-
-  async fetchCounts(filters = {}) {
-    return api.fetchInventoryCounts(filters)
-  },
-
-  async createCount(payload) {
-    return api.createInventoryCount(payload)
-  },
-
-  async patchCount(payload) {
-    return api.patchInventoryCount(payload)
-  },
-
-  async fetchReport(filters = {}) {
-    return api.fetchInventoryReport(filters)
-  },
-
   async fetchV2Products(filters = {}) {
     return request(`/api/inventory_v2_products.php${buildQuery(filters)}`, { method: 'GET' })
   },

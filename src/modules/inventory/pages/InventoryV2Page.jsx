@@ -12,29 +12,55 @@ import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 const EMPTY_PERMISSIONS = Object.freeze([])
 
 const TAB_DEFINITIONS = [
-  { id: 'dashboard',       label: 'Dashboard',       permission: null },
-  { id: 'products',        label: 'Products',         permission: 'inventory.v2_products.read' },
-  { id: 'receipts',        label: 'Receipts',         permission: 'inventory.v2_operations.read' },
-  { id: 'deliveries',      label: 'Deliveries',       permission: 'inventory.v2_operations.read' },
-  { id: 'transfers',       label: 'Transfers',        permission: 'inventory.v2_operations.read' },
-  { id: 'productionMoves', label: 'Production Moves', permission: 'inventory.v2_operations.read' },
-  { id: 'adjustments',     label: 'Adjustments',      permission: 'inventory.v2_operations.read' },
-  { id: 'counts',          label: 'Counts',           permission: 'inventory.v2_operations.read' },
-  { id: 'replenishment',   label: 'Replenishment',    permission: 'inventory.v2_reports.read' },
-  { id: 'reports',         label: 'Reports',          permission: 'inventory.v2_reports.read' },
-  { id: 'settings',        label: 'Settings',         permission: 'inventory.v2_settings.read' },
+  { id: 'dashboard', label: 'داشبورد', permission: null },
+  { id: 'products', label: 'محصولات', permission: 'inventory.v2_products.read' },
+  { id: 'receipts', label: 'رسیدها', permission: 'inventory.v2_operations.read' },
+  { id: 'deliveries', label: 'حواله ها', permission: 'inventory.v2_operations.read' },
+  { id: 'transfers', label: 'انتقال ها', permission: 'inventory.v2_operations.read' },
+  { id: 'productionMoves', label: 'حرکت های تولید', permission: 'inventory.v2_operations.read' },
+  { id: 'adjustments', label: 'تعدیلات', permission: 'inventory.v2_operations.read' },
+  { id: 'counts', label: 'شمارش ها', permission: 'inventory.v2_operations.read' },
+  { id: 'replenishment', label: 'تامین مجدد', permission: 'inventory.v2_reports.read' },
+  { id: 'reports', label: 'گزارشات', permission: 'inventory.v2_reports.read' },
+  { id: 'settings', label: 'تنظیمات', permission: 'inventory.v2_settings.read' },
 ]
 
 const SCAFFOLD_META = {
-  products:        { title: 'Products',         description: 'Product templates and variants.', columns: ['Name', 'Type', 'UoM', 'Status'] },
-  counts:          { title: 'Counts',           description: 'Cycle and annual count sessions — Phase 4.', columns: ['Session', 'Warehouse', 'Status', 'Started At'] },
-  replenishment:   { title: 'Replenishment',    description: 'Min/Max proposals — Phase 4.', columns: ['Product', 'Available', 'Min', 'Suggested Qty'] },
-  reports:         { title: 'Reports',          description: 'Operational reports — Phase 4.', columns: ['Report', 'Range', 'Rows', 'Updated At'] },
-  settings:        { title: 'Settings',         description: 'Inventory V2 configuration.', columns: ['Setting', 'Value', 'Scope', 'Updated At'] },
+  products: {
+    title: 'محصولات',
+    description: 'تعریف قالب محصول و گونه های محصول.',
+    columns: ['نام', 'نوع', 'واحد', 'وضعیت'],
+  },
+  counts: {
+    title: 'شمارش ها',
+    description: 'نشست های شمارش دوره ای و سالانه.',
+    columns: ['کد نشست', 'انبار', 'وضعیت', 'تاریخ شروع'],
+  },
+  replenishment: {
+    title: 'تامین مجدد',
+    description: 'پیشنهاد خرید/تولید بر اساس حداقل و حداکثر.',
+    columns: ['محصول', 'موجودی قابل دسترس', 'حداقل', 'پیشنهاد'],
+  },
+  reports: {
+    title: 'گزارشات',
+    description: 'خروجی های عملیاتی و کاردکس.',
+    columns: ['گزارش', 'بازه', 'تعداد ردیف', 'آخرین به روزرسانی'],
+  },
+  settings: {
+    title: 'تنظیمات',
+    description: 'پیکربندی ماژول انبار نسخه ۲.',
+    columns: ['کلید', 'مقدار', 'دامنه', 'آخرین تغییر'],
+  },
+}
+
+const PRODUCT_TYPE_LABELS = {
+  stockable: 'انبارشونده',
+  consumable: 'مصرفی',
+  service: 'خدماتی',
 }
 
 export const InventoryV2Page = ({ session }) => {
-  const permissions  = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
+  const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}
   const canAccessInventory = Boolean(capabilities.canAccessInventory)
 
@@ -44,32 +70,41 @@ export const InventoryV2Page = ({ session }) => {
   )
 
   const [activeTab, setActiveTab] = useState('dashboard')
-  const [products, setProducts]   = useState([])
+  const [products, setProducts] = useState([])
 
   useEffect(() => {
     if (!permissions.includes('inventory.v2_products.read')) return
     let mounted = true
     inventoryApi.fetchV2Products().then((res) => {
       if (mounted) setProducts(Array.isArray(res?.products) ? res.products : [])
-    }).catch(() => { if (mounted) setProducts([]) })
-    return () => { mounted = false }
+    }).catch(() => {
+      if (mounted) setProducts([])
+    })
+    return () => {
+      mounted = false
+    }
   }, [permissions])
 
-  const resolvedTab = visibleTabs.find((t) => t.id === activeTab) ? activeTab : (visibleTabs[0]?.id ?? 'dashboard')
+  const resolvedTab = visibleTabs.find((tab) => tab.id === activeTab) ? activeTab : (visibleTabs[0]?.id ?? 'dashboard')
 
   if (!canAccessInventory) {
     return <AccessDenied message="دسترسی کافی برای ماژول انبار وجود ندارد." />
   }
 
   const dashboardCards = [
-    { label: 'Products',   value: products.length },
-    { label: 'Warehouses', value: permissions.includes('inventory.v2_warehouses.read') ? 'Enabled' : 'Hidden' },
-    { label: 'Locations',  value: permissions.includes('inventory.v2_locations.read')  ? 'Enabled' : 'Hidden' },
-    { label: 'Lots',       value: permissions.includes('inventory.v2_lots.read')       ? 'Enabled' : 'Hidden' },
+    { label: 'تعداد محصولات', value: products.length },
+    { label: 'انبارها', value: permissions.includes('inventory.v2_warehouses.read') ? 'فعال' : 'مخفی' },
+    { label: 'مکان ها', value: permissions.includes('inventory.v2_locations.read') ? 'فعال' : 'مخفی' },
+    { label: 'لات ها', value: permissions.includes('inventory.v2_lots.read') ? 'فعال' : 'مخفی' },
   ]
 
   const productRows = permissions.includes('inventory.v2_products.read')
-    ? products.slice(0, 25).map((p) => [p?.name ?? '-', p?.productType ?? '-', p?.uom ?? '-', p?.isActive ? 'Active' : 'Inactive'])
+    ? products.slice(0, 25).map((product) => [
+      product?.name ?? '-',
+      PRODUCT_TYPE_LABELS[product?.productType] ?? '-',
+      product?.uom ?? '-',
+      product?.isActive ? 'فعال' : 'غیرفعال',
+    ])
     : []
 
   const renderContent = () => {
@@ -96,8 +131,8 @@ export const InventoryV2Page = ({ session }) => {
       case 'productionMoves':
         return <InventoryProductionPanel session={session} />
       case 'products': {
-        const m = SCAFFOLD_META.products
-        return <InventoryV2TableScaffold title={m.title} description={m.description} columns={m.columns} rows={productRows} />
+        const meta = SCAFFOLD_META.products
+        return <InventoryV2TableScaffold title={meta.title} description={meta.description} columns={meta.columns} rows={productRows} />
       }
       default: {
         const meta = SCAFFOLD_META[resolvedTab]
@@ -111,8 +146,8 @@ export const InventoryV2Page = ({ session }) => {
     <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
       <Card padding="md" className="space-y-3">
         <div>
-          <div className="text-base font-black text-slate-900">Inventory V2</div>
-          <div className="text-xs font-bold text-slate-500">Phase 3 — Sales + Production Integration active</div>
+          <div className="text-base font-black text-slate-900">انبار نسخه ۲</div>
+          <div className="text-xs font-bold text-slate-500">نسخه عملیاتی کامل با یکپارچگی فروش و تولید</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (
@@ -127,7 +162,6 @@ export const InventoryV2Page = ({ session }) => {
           ))}
         </div>
       </Card>
-
       {renderContent()}
     </div>
   )

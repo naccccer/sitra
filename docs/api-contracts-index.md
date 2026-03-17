@@ -19,16 +19,12 @@ This index links endpoint behavior, request/response examples, permissions, and 
 | `GET|POST|PUT|PATCH /api/customers.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
 | `GET|POST|PUT|PATCH /api/customer_projects.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
 | `GET|POST|PUT|PATCH /api/customer_project_contacts.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
-| `GET /api/inventory_warehouses.php` | protected | no | `inventory.warehouses.read` | inventory contracts in `MODULE_CONTRACTS.md` |
-| `GET|POST|PUT|PATCH /api/inventory_items.php` | protected | yes on write | `inventory.items.read/write` | `contracts/schemas/inventory.items.upsert.request.schema.json` |
-| `GET|POST|PATCH /api/inventory_documents.php` | protected | yes on write | `inventory.documents.read/write` | `contracts/schemas/inventory.documents.create.request.schema.json` |
-| `GET|POST|PATCH /api/inventory_requests.php` | protected | yes on write | `inventory.requests.*` | `contracts/schemas/inventory.requests.create.request.schema.json`, `contracts/schemas/inventory.requests.patch.request.schema.json` |
-| `GET|POST|PATCH /api/inventory_counts.php` | protected | yes on write | `inventory.counts.*` | `contracts/schemas/inventory.counts.command.request.schema.json` |
-| `GET /api/inventory_reports.php` | protected | no | `inventory.reports.read` | report query shape in `MODULE_CONTRACTS.md` |
 | `GET|POST|PUT|PATCH /api/inventory_v2_products.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_products.read/write` | `contracts/schemas/inventory.v2.products.upsert.request.schema.json` |
 | `GET|POST|PUT|PATCH /api/inventory_v2_warehouses.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_warehouses.read/write` | `contracts/schemas/inventory.v2.warehouses.upsert.request.schema.json` |
 | `GET|POST|PUT|PATCH /api/inventory_v2_locations.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_locations.read/write` | `contracts/schemas/inventory.v2.locations.upsert.request.schema.json` |
 | `GET|POST|PUT|PATCH /api/inventory_v2_lots.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_lots.read/write` | `contracts/schemas/inventory.v2.lots.upsert.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_operations.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_operations.read/write` | `contracts/schemas/inventory.v2.operations.create.request.schema.json`, `contracts/schemas/inventory.v2.operations.action.request.schema.json` |
+| `GET|POST|PATCH /api/inventory_v2_reservations.php` | protected (`admin`/`manager`/`sales`) | yes on write | `inventory.v2_operations.read/write` | `contracts/schemas/inventory.v2.reservations.create.request.schema.json` |
 | `GET|POST /api/catalog.php` | GET public, POST protected | POST yes | `master_data.catalog.write` | `contracts/schemas/catalog.save.request.schema.json`, `examples/catalog.save.request.json` |
 | `GET|POST /api/profile.php` | read/write protected in runtime | POST yes | `profile.read` / `profile.write` | profile shape in bootstrap + API docs |
 | `GET|POST|PUT|PATCH /api/users.php` | protected | yes on write | `users_access.users.read/write` | users-access contract in `MODULE_CONTRACTS.md` |

@@ -11,9 +11,9 @@ app_ensure_inventory_v2_schema($pdo);
 
 $actor = app_require_auth(['admin', 'manager']);
 if ($method === 'GET') {
-    app_inventory_v2_require_permission($actor, 'inventory.vtwo_products.read', $pdo);
+    app_inventory_v2_require_permission($actor, 'inventory.v2_products.read', $pdo);
 } else {
-    app_inventory_v2_require_permission($actor, 'inventory.vtwo_products.write', $pdo);
+    app_inventory_v2_require_permission($actor, 'inventory.v2_products.write', $pdo);
     app_require_csrf();
 }
 
@@ -147,3 +147,5 @@ if (!$row) {
 
 app_audit_log($pdo, 'inventory.vtwo_products.active_changed', 'inventory_v2_product', (string)$id, ['isActive' => $isActive], $actor);
 app_json(['success' => true, 'product' => app_inventory_v2_product_from_row($row)]);
+
+

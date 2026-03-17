@@ -11,17 +11,6 @@ function app_permission_definitions(): array
         ['key' => 'sales.orders.delete', 'module' => 'sales', 'label' => 'Delete archived orders'],
         ['key' => 'customers.read', 'module' => 'customers', 'label' => 'View customers and projects'],
         ['key' => 'customers.write', 'module' => 'customers', 'label' => 'Manage customers and projects'],
-        ['key' => 'inventory.warehouses.read', 'module' => 'inventory', 'label' => 'View warehouses'],
-        ['key' => 'inventory.items.read', 'module' => 'inventory', 'label' => 'View inventory items'],
-        ['key' => 'inventory.items.write', 'module' => 'inventory', 'label' => 'Manage inventory items'],
-        ['key' => 'inventory.documents.read', 'module' => 'inventory', 'label' => 'View inventory documents'],
-        ['key' => 'inventory.documents.write', 'module' => 'inventory', 'label' => 'Create and post inventory documents'],
-        ['key' => 'inventory.requests.read', 'module' => 'inventory', 'label' => 'View inventory issue requests'],
-        ['key' => 'inventory.requests.create', 'module' => 'inventory', 'label' => 'Create inventory issue requests'],
-        ['key' => 'inventory.requests.approve', 'module' => 'inventory', 'label' => 'Approve inventory issue requests'],
-        ['key' => 'inventory.counts.read', 'module' => 'inventory', 'label' => 'View inventory count sessions'],
-        ['key' => 'inventory.counts.write', 'module' => 'inventory', 'label' => 'Manage inventory count sessions'],
-        ['key' => 'inventory.reports.read', 'module' => 'inventory', 'label' => 'View inventory reports'],
         ...app_inventory_v2_permission_definitions(),
         ['key' => 'master_data.catalog.read', 'module' => 'master-data', 'label' => 'View catalog'],
         ['key' => 'master_data.catalog.write', 'module' => 'master-data', 'label' => 'Edit catalog'],
@@ -73,17 +62,6 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.delete',
             'customers.read',
             'customers.write',
-            'inventory.warehouses.read',
-            'inventory.items.read',
-            'inventory.items.write',
-            'inventory.documents.read',
-            'inventory.documents.write',
-            'inventory.requests.read',
-            'inventory.requests.create',
-            'inventory.requests.approve',
-            'inventory.counts.read',
-            'inventory.counts.write',
-            'inventory.reports.read',
             'master_data.catalog.read',
             'master_data.catalog.write',
             'users_access.users.read',
@@ -98,11 +76,6 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.update',
             'sales.orders.status',
             'customers.read',
-            'inventory.warehouses.read',
-            'inventory.items.read',
-            'inventory.requests.read',
-            'inventory.requests.create',
-            'inventory.reports.read',
             'master_data.catalog.read',
             'profile.read',
         ], app_inventory_v2_sales_default_permissions()),
@@ -215,26 +188,14 @@ function app_require_any_permission(array $permissions, ?PDO $pdo = null): array
 function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pdo = null): array
 {
     $permissions = app_permissions_without_kernel_control(app_role_permissions((string)$role, $pdo));
-    $canAccessInventory = (
-        in_array('inventory.items.read', $permissions, true)
-        || in_array('inventory.documents.read', $permissions, true)
-        || in_array('inventory.requests.read', $permissions, true)
-        || in_array('inventory.requests.create', $permissions, true)
-        || in_array('inventory.counts.read', $permissions, true)
-        || in_array('inventory.reports.read', $permissions, true)
-    );
+    $canAccessInventory = false;
     foreach (app_inventory_v2_read_permissions() as $permission) {
         if (in_array($permission, $permissions, true)) {
             $canAccessInventory = true;
             break;
         }
     }
-    $canManageInventory = (
-        in_array('inventory.items.write', $permissions, true)
-        || in_array('inventory.documents.write', $permissions, true)
-        || in_array('inventory.requests.approve', $permissions, true)
-        || in_array('inventory.counts.write', $permissions, true)
-    );
+    $canManageInventory = false;
     foreach (app_inventory_v2_write_permissions() as $permission) {
         if (in_array($permission, $permissions, true)) {
             $canManageInventory = true;

@@ -62,7 +62,7 @@ function inv_v2_op_fetch(PDO $pdo, int $id): ?array
 $validTypes    = ['receipt', 'delivery', 'transfer', 'production_move', 'production_consume', 'production_output', 'adjustment', 'count'];
 $validStatuses = ['draft', 'submitted', 'approved', 'posted', 'cancelled'];
 
-// ─── GET ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($method === 'GET') {
     $opType   = app_inventory_v2_normalize_text($_GET['type'] ?? '');
     $status   = app_inventory_v2_normalize_text($_GET['status'] ?? '');
@@ -119,7 +119,7 @@ if ($method === 'GET') {
 
 $payload = app_read_json_body();
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($method === 'POST') {
     $opType  = app_inventory_v2_normalize_text($payload['operationType'] ?? '');
     if (!in_array($opType, $validTypes, true)) {
@@ -173,7 +173,7 @@ if ($method === 'POST') {
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $operationId)], 201);
 }
 
-// ─── PUT ──────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 if ($method === 'PUT') {
     $id = app_inventory_v2_parse_id($payload['id'] ?? null);
     if ($id === null) {
@@ -212,7 +212,7 @@ if ($method === 'PUT') {
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
 }
 
-// ─── PATCH ────────────────────────────────────────────────────────────────────
+// â”€â”€â”€ PATCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 $id     = app_inventory_v2_parse_id($payload['id'] ?? null);
 $action = app_inventory_v2_normalize_text($payload['action'] ?? '');
 if ($id === null || $action === '') {
@@ -251,3 +251,5 @@ $pdo->prepare('UPDATE inventory_v2_operation_headers SET status = :status WHERE 
     ->execute(['status' => $t['to'], 'id' => $id]);
 app_audit_log($pdo, "inventory.vtwo_operations.{$action}", 'inventory_v2_operation', (string)$id, ['newStatus' => $t['to']], $actor);
 app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
+
+

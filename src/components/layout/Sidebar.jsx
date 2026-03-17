@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   ClipboardList,
   LayoutDashboard,
   LogOut,
+  Package,
   PlusCircle,
   Settings,
   ShieldCheck,
@@ -23,6 +24,7 @@ const navSections = [
       { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
       { to: '/customers', label: 'مشتریان', icon: Users, capability: 'canManageCustomers', moduleId: 'customers' },
+      { to: '/inventory', label: 'انبار', icon: Package, capability: 'canAccessInventory', moduleId: 'inventory' },
     ],
   },
   {
@@ -193,3 +195,4 @@ export const Sidebar = ({
     </aside>
   );
 };
+

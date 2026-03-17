@@ -1,4 +1,4 @@
-# Inventory V2 Session Prompts
+﻿# Inventory V2 Session Prompts
 
 ## 1. How To Use
 1. Start a new Codex session per phase.
@@ -165,4 +165,112 @@ Final output format:
 3. Verification and smoke results.
 4. Rollback notes.
 5. Explicit proof that no legacy inventory runtime path remains.
+```
+
+## 8. Phase 6 Prompt
+```text
+Implement Inventory V2 Phase 6 (Complete All Tabs: UI + CRUD + Persian UX) per roadmap.
+
+Goals:
+1. Complete all 11 tabs so none remains scaffold-only.
+2. Implement full UI CRUD for Products (template + variant) with search/filter/active-state controls.
+3. Complete Warehouses/Locations/Lots management views and forms with validation.
+4. Complete Counts/Replenishment/Reports/Settings tabs with real workflows (not placeholders).
+5. Convert all Inventory V2 user-facing labels/messages to clean Persian and remove mojibake.
+
+Deliverables:
+1. Tab-complete frontend flows.
+2. Missing API contracts/schemas for completed tab interactions.
+3. Updated docs/contracts for each finalized tab.
+4. UX consistency fixes for RTL + Persian copy.
+
+Validation:
+- npm run verify:safe
+
+Final output format:
+1. Tab completion matrix (Done/Partial -> Done).
+2. File list changed.
+3. Verification results.
+4. Any remaining blockers for Phase 7.
+```
+
+## 9. Phase 7 Prompt
+```text
+Implement Inventory V2 Phase 7 (Advanced Integration: Sales, Procurement, Planning) per roadmap.
+
+Goals:
+1. Bind sales fulfillment states to inventory reservation/delivery truth.
+2. Add replenishment outputs that can generate procurement/planning requests.
+3. Add end-to-end traceability references across sales, production, operations, and ledger.
+4. Expose integration read models/indicators for operational monitoring.
+
+Deliverables:
+1. Integration API/service layer updates.
+2. Cross-module mapping logic and status synchronization.
+3. Traceability fields and UI visibility updates.
+4. Contracts/docs updates for integration interfaces.
+
+Validation:
+- npm run verify:safe
+- Smoke flow: sales reference -> reservation -> delivery -> fulfillment status sync
+
+Final output format:
+1. Integration coverage summary.
+2. File list changed.
+3. Verification results.
+4. Deferred items for Phase 8.
+```
+
+## 10. Phase 8 Prompt
+```text
+Implement Inventory V2 Phase 8 (Performance, Reliability, Observability) per roadmap.
+
+Goals:
+1. Optimize heavy inventory queries and pagination/sort/search consistency.
+2. Harden concurrency and idempotency in critical mutation paths.
+3. Expand structured logs/audit coverage and operational diagnostics.
+4. Add backup/restore verification utilities for Inventory V2 data safety.
+
+Deliverables:
+1. Query/index optimization changes with measured before/after notes.
+2. Reliability guards (race condition + idempotency handling).
+3. Observability/runbook updates.
+4. Test coverage updates for failure and concurrency scenarios.
+
+Validation:
+- npm run verify:safe
+- Targeted stress/regression checks for high-write/high-read paths
+
+Final output format:
+1. Performance and reliability improvements summary.
+2. File list changed.
+3. Verification + benchmark/check results.
+4. Residual risks and mitigations for Phase 9.
+```
+
+## 11. Phase 9 Prompt
+```text
+Implement Inventory V2 Phase 9 (Production Stabilization + Legacy Schema Retirement) per roadmap.
+
+Goals:
+1. Run extended stabilization/UAT cycle and close critical defects.
+2. Retire legacy inventory schema objects in a controlled maintenance window.
+3. Finalize long-term runbook, ownership, and escalation paths.
+4. Deliver final proof that Inventory V2 is the sole supported runtime path.
+
+Deliverables:
+1. Stabilization defect closure report.
+2. Legacy schema retirement changes and rollback artifacts.
+3. Final operational runbook updates.
+4. Final architecture/contracts consistency pass.
+
+Validation:
+- npm run verify:safe
+- Production-like smoke pack across all Inventory V2 tabs
+
+Final output format:
+1. Stabilization and retirement summary.
+2. File list changed.
+3. Verification + smoke results.
+4. Final handover checklist.
 ```
