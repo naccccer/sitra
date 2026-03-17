@@ -235,7 +235,7 @@
 - Endpoint: `/api/inventory_v2_operations.php`
 - GET filters: `type`, `status`, `q`, `page`, `pageSize`, `sortBy`, `sortDir`
 - POST input (create draft):
-  - `operationType: 'receipt'|'delivery'|'transfer'|'production_move'|'adjustment'|'count'`
+  - `operationType: 'receipt'|'delivery'|'transfer'|'production_move'|'production_consume'|'production_output'|'adjustment'|'count'`
   - `sourceWarehouseId?: string|null` (required for delivery/transfer)
   - `targetWarehouseId?: string|null` (required for receipt/transfer/adjustment)
   - `referenceType?`, `referenceId?`, `referenceCode?`, `notes?`
@@ -249,6 +249,27 @@
 - Stock rule: posting delivery/transfer/negative-adjustment validates no-negative available quantity
 - Ledger: posting writes immutable entries to `inventory_v2_stock_ledger`
 - Schemas: `inventory.v2.operations.create.request.schema.json`, `inventory.v2.operations.action.request.schema.json`
+- Phase 3: `production_consume` deducts from source warehouse; `production_output` adds to target warehouse
+- Phase 3: delivery posting fulfills matching active reservations automatically
+
+### `inventory.v2_reservations.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_reservations.php`
+- GET filters: `status`, `referenceType`, `referenceId`, `productId`, `page`, `pageSize`
+- POST input (create reservation):
+  - `productId: string|number`
+  - `warehouseId: string|number`
+  - `locationId: string|number`
+  - `quantityReserved: number` (> 0)
+  - `variantId?`, `lotId?`, `referenceType?`, `referenceId?`, `referenceCode?`, `notes?`
+- PATCH input (action): `id`, `action: 'release'`
+- Output:
+  - GET: `{ reservations: array, total, page, pageSize }`
+  - POST/PATCH: `{ reservation: object }`
+- Stock rule: creation checks available quantity; increments `quantity_reserved` in quants
+- Lifecycle: `active` → `fulfilled` (auto on delivery post) | `released` (manual)
+- Ledger: `reserve` entry on creation; `release` entry on release or fulfillment
+- Schema: `inventory.v2.reservations.create.request.schema.json`
 
 ## Users & Access Contracts
 

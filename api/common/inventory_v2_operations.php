@@ -47,12 +47,14 @@ function app_inventory_v2_operation_line_from_row(array $row): array
 function app_inventory_v2_generate_operation_no(PDO $pdo, string $type): string
 {
     $prefixes = [
-        'receipt'         => 'REC',
-        'delivery'        => 'DEL',
-        'transfer'        => 'TRF',
-        'production_move' => 'PRD',
-        'adjustment'      => 'ADJ',
-        'count'           => 'CNT',
+        'receipt'            => 'REC',
+        'delivery'           => 'DEL',
+        'transfer'           => 'TRF',
+        'production_move'    => 'PRD',
+        'production_consume' => 'PCO',
+        'production_output'  => 'POU',
+        'adjustment'         => 'ADJ',
+        'count'              => 'CNT',
     ];
     $prefix = $prefixes[$type] ?? 'OPR';
     $today = date('Ymd');
@@ -71,11 +73,14 @@ function app_inventory_v2_get_available_qty(
     ?int $variantId,
     int $warehouseId,
     int $locationId,
-    ?int $lotId
+    ?int $lotId,
+    bool $onHandOnly = false
 ): float {
-    $sql = 'SELECT COALESCE(quantity_on_hand, 0) - COALESCE(quantity_reserved, 0)
-            FROM inventory_v2_quants
-            WHERE product_id = :pid AND warehouse_id = :wid AND location_id = :lid';
+    $expr = $onHandOnly
+        ? 'COALESCE(quantity_on_hand, 0)'
+        : 'COALESCE(quantity_on_hand, 0) - COALESCE(quantity_reserved, 0)';
+    $sql = "SELECT {$expr} FROM inventory_v2_quants
+            WHERE product_id = :pid AND warehouse_id = :wid AND location_id = :lid";
     $params = ['pid' => $productId, 'wid' => $warehouseId, 'lid' => $locationId];
     $sql .= $variantId !== null ? ' AND variant_id = :vid' : ' AND variant_id IS NULL';
     if ($variantId !== null) {
@@ -195,44 +200,33 @@ function app_inventory_v2_post_operation(PDO $pdo, int $operationId, array $acto
 
         // Pre-validate no-negative stock before any mutations
         foreach ($lines as $line) {
-            $qty = (float)$line['quantity_done'];
-            $pid = (int)$line['product_id'];
-            $vid = $line['variant_id'] !== null ? (int)$line['variant_id'] : null;
-            $lid = $line['lot_id'] !== null ? (int)$line['lot_id'] : null;
-
-            if ($opType === 'delivery') {
-                $wid  = (int)$op['source_warehouse_id'];
-                $locId = (int)$line['source_location_id'];
-                if (!$locId || !$wid) {
-                    throw new RuntimeException('Source location required for delivery.');
-                }
-                $avail = app_inventory_v2_get_available_qty($pdo, $pid, $vid, $wid, $locId, $lid);
-                if ($avail < $qty - 0.0005) {
-                    throw new RuntimeException(
-                        "Insufficient stock for product_id={$pid}. Available: {$avail}, Requested: {$qty}."
-                    );
-                }
-            } elseif ($opType === 'transfer') {
+            $qty   = (float)$line['quantity_done'];
+            $pid   = (int)$line['product_id'];
+            $vid   = $line['variant_id'] !== null ? (int)$line['variant_id'] : null;
+            $lid   = $line['lot_id'] !== null ? (int)$line['lot_id'] : null;
+            if (in_array($opType, ['delivery', 'transfer', 'production_consume'], true)) {
                 $wid   = (int)$op['source_warehouse_id'];
                 $locId = (int)$line['source_location_id'];
                 if (!$locId || !$wid) {
-                    throw new RuntimeException('Source location required for transfer.');
+                    throw new RuntimeException("Source location required for {$opType}.");
                 }
                 $avail = app_inventory_v2_get_available_qty($pdo, $pid, $vid, $wid, $locId, $lid);
+                if ($avail < $qty - 0.0005 && $opType === 'delivery' && $refType !== '' && $refId !== '') {
+                    $rs = $pdo->prepare('SELECT 1 FROM inventory_v2_reservations WHERE product_id=:p AND warehouse_id=:w AND location_id=:l AND status=\'active\' AND reference_type=:rt AND reference_id=:ri LIMIT 1');
+                    $rs->execute(['p' => $pid, 'w' => $wid, 'l' => $locId, 'rt' => $refType, 'ri' => $refId]);
+                    if ($rs->fetchColumn()) {
+                        $avail = app_inventory_v2_get_available_qty($pdo, $pid, $vid, $wid, $locId, $lid, true);
+                    }
+                }
                 if ($avail < $qty - 0.0005) {
-                    throw new RuntimeException(
-                        "Insufficient stock for product_id={$pid}. Available: {$avail}, Requested: {$qty}."
-                    );
+                    throw new RuntimeException("Insufficient stock for product_id={$pid}. Available: {$avail}, Requested: {$qty}.");
                 }
             } elseif ($opType === 'adjustment' && $qty < 0) {
                 $wid   = (int)$op['target_warehouse_id'];
                 $locId = (int)$line['target_location_id'];
-                $absQty = abs($qty);
                 $avail = app_inventory_v2_get_available_qty($pdo, $pid, $vid, $wid, $locId, $lid);
-                if ($avail < $absQty - 0.0005) {
-                    throw new RuntimeException(
-                        "Insufficient stock for adjustment product_id={$pid}."
-                    );
+                if ($avail < abs($qty) - 0.0005) {
+                    throw new RuntimeException("Insufficient stock for adjustment product_id={$pid}.");
                 }
             }
         }
@@ -256,6 +250,7 @@ function app_inventory_v2_post_operation(PDO $pdo, int $operationId, array $acto
                 $sLoc = (int)$line['source_location_id'];
                 app_inventory_v2_adjust_quant($pdo, $pid, $vid, $sWid, $sLoc, $lid, -$qty);
                 app_inventory_v2_write_ledger($pdo, $base + ['movement_type' => 'out', 'warehouse_id' => $sWid, 'location_id' => $sLoc, 'qty_delta' => -$qty]);
+                app_inventory_v2_try_fulfill_reservation($pdo, $pid, $vid, $sWid, $sLoc, $lid, $qty, $refType, $refId, $actorId, $operationId);
             } elseif ($opType === 'transfer') {
                 $sWid = (int)$op['source_warehouse_id'];
                 $sLoc = (int)$line['source_location_id'];
@@ -266,11 +261,21 @@ function app_inventory_v2_post_operation(PDO $pdo, int $operationId, array $acto
                 app_inventory_v2_adjust_quant($pdo, $pid, $vid, $tWid, $tLoc, $lid, $qty);
                 app_inventory_v2_write_ledger($pdo, $base + ['movement_type' => 'in', 'warehouse_id' => $tWid, 'location_id' => $tLoc, 'qty_delta' => $qty]);
             } elseif ($opType === 'adjustment') {
-                $tWid = (int)$op['target_warehouse_id'];
-                $tLoc = (int)$line['target_location_id'];
+                $tWid   = (int)$op['target_warehouse_id'];
+                $tLoc   = (int)$line['target_location_id'];
                 $mvType = $qty >= 0 ? 'in' : 'out';
                 app_inventory_v2_adjust_quant($pdo, $pid, $vid, $tWid, $tLoc, $lid, $qty);
                 app_inventory_v2_write_ledger($pdo, $base + ['movement_type' => $mvType, 'warehouse_id' => $tWid, 'location_id' => $tLoc, 'qty_delta' => $qty]);
+            } elseif ($opType === 'production_consume') {
+                $sWid = (int)$op['source_warehouse_id'];
+                $sLoc = (int)$line['source_location_id'];
+                app_inventory_v2_adjust_quant($pdo, $pid, $vid, $sWid, $sLoc, $lid, -$qty);
+                app_inventory_v2_write_ledger($pdo, $base + ['movement_type' => 'out', 'warehouse_id' => $sWid, 'location_id' => $sLoc, 'qty_delta' => -$qty]);
+            } elseif ($opType === 'production_output') {
+                $tWid = (int)$op['target_warehouse_id'];
+                $tLoc = (int)$line['target_location_id'];
+                app_inventory_v2_adjust_quant($pdo, $pid, $vid, $tWid, $tLoc, $lid, $qty);
+                app_inventory_v2_write_ledger($pdo, $base + ['movement_type' => 'in', 'warehouse_id' => $tWid, 'location_id' => $tLoc, 'qty_delta' => $qty]);
             }
         }
 
