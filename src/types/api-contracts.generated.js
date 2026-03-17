@@ -38,6 +38,14 @@ export const __type_InventoryV2LocationsUpsertRequest = null
  */
 export const __type_InventoryV2LotsUpsertRequest = null
 /**
+ * @typedef { id: string | number, action: "submit" | "approve" | "post" | "cancel" } InventoryV2OperationsActionRequest
+ */
+export const __type_InventoryV2OperationsActionRequest = null
+/**
+ * @typedef { operationType: "receipt" | "delivery" | "transfer" | "production_move" | "adjustment" | "count", sourceWarehouseId?: string | number | null, targetWarehouseId?: string | number | null, referenceType?: string, referenceId?: string, referenceCode?: string, notes?: string, lines: Array<{ productId: string | number, variantId?: string | number | null, lotId?: string | number | null, sourceLocationId?: string | number | null, targetLocationId?: string | number | null, quantityRequested: number, quantityDone?: number, uom?: string, notes?: string }> } InventoryV2OperationsCreateRequest
+ */
+export const __type_InventoryV2OperationsCreateRequest = null
+/**
  * @typedef { id?: string | number, productCode?: string, name: string, productType: "stockable" | "consumable" | "service", uom: string, notes?: string, isActive?: boolean } InventoryV2ProductsUpsertRequest
  */
 export const __type_InventoryV2ProductsUpsertRequest = null

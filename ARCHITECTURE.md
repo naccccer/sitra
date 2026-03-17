@@ -29,6 +29,7 @@
 - `inventory`
   - Warehouse master data, stock documents, inventory requests, count sessions, reports.
   - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
+  - Inventory V2 Phase 2: operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
 - `users-access`
   - Users, role assignment, activation/deactivation.
 
@@ -53,6 +54,11 @@
   - `processing`
   - `delivered`
   - `archived`
+- Inventory V2 operation status lifecycle:
+  - `draft` → `submitted` → `approved` → `posted`
+  - Any non-posted status → `cancelled`
+  - Only `approved` operations may be posted; posting is irreversible.
+  - Stock mutations and ledger writes occur exclusively at post time.
 
 ## 7) API Contract Rules
 - Core endpoints remain operational:
@@ -71,6 +77,7 @@
   - `/api/inventory_v2_warehouses.php`
   - `/api/inventory_v2_locations.php`
   - `/api/inventory_v2_lots.php`
+  - `/api/inventory_v2_operations.php`
   - `/api/catalog.php`
   - `/api/profile.php`
   - `/api/users.php`

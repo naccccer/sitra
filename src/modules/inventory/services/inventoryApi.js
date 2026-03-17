@@ -99,4 +99,20 @@ export const inventoryApi = {
   async fetchV2Lots(filters = {}) {
     return request(`/api/inventory_v2_lots.php${buildQuery(filters)}`, { method: 'GET' })
   },
+
+  async fetchV2Operations(filters = {}) {
+    return request(`/api/inventory_v2_operations.php${buildQuery(filters)}`, { method: 'GET' })
+  },
+
+  async createV2Operation(payload) {
+    return request('/api/inventory_v2_operations.php', { method: 'POST', body: JSON.stringify(payload) })
+  },
+
+  async updateV2Operation(payload) {
+    return request('/api/inventory_v2_operations.php', { method: 'PUT', body: JSON.stringify(payload) })
+  },
+
+  async operationAction(payload) {
+    return request('/api/inventory_v2_operations.php', { method: 'PATCH', body: JSON.stringify(payload) })
+  },
 }
