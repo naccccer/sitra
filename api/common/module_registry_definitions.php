@@ -62,6 +62,14 @@ function app_module_registry_seed_rows(): array
             'is_protected' => 0,
             'sort_order' => 40,
         ],
+        [
+            'module_key' => 'accounting',
+            'label' => 'حسابداری',
+            'phase' => 'active',
+            'is_enabled' => 1,
+            'is_protected' => 0,
+            'sort_order' => 50,
+        ],
     ];
 }
 
@@ -69,6 +77,7 @@ function app_module_dependency_map(): array
 {
     return [
         'sales' => ['customers'],
+        'accounting' => ['sales', 'customers'],
     ];
 }
 

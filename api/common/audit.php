@@ -31,7 +31,7 @@ function app_ensure_audit_logs_table(PDO $pdo): void
         "DELETE FROM audit_logs
          WHERE event_type IS NULL
             OR event_type = ''
-            OR SUBSTRING_INDEX(event_type, '.', 1) NOT IN ('auth', 'users_access', 'master_data', 'sales', 'customers', 'inventory', 'kernel')"
+            OR SUBSTRING_INDEX(event_type, '.', 1) NOT IN ('auth', 'users_access', 'master_data', 'sales', 'customers', 'inventory', 'kernel', 'accounting')"
     );
 }
 

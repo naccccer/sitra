@@ -44,5 +44,6 @@ require_once __DIR__ . '/common/inventory_v2_operations.php';
 require_once __DIR__ . '/common/inventory_v2_reservations.php';
 require_once __DIR__ . '/common/module_registry.php';
 require_once __DIR__ . '/common/permissions.php';
+require_once __DIR__ . '/common/accounting_schema.php';
 
 app_install_exception_handler();
