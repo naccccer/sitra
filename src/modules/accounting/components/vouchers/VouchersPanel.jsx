@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Button, Card, EmptyState } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
+import { toShamsiDisplay } from '../../utils/dateUtils'
 import { useVouchers } from '../../hooks/useVouchers'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { VoucherFormModal } from './VoucherFormModal'
@@ -100,7 +101,7 @@ export function VouchersPanel({ session }) {
                   return (
                     <tr key={v.id} className="hover:bg-slate-50">
                       <td className="px-3 py-2 font-mono font-black text-slate-900">{toPN(v.voucherNo)}</td>
-                      <td className="px-3 py-2 font-bold text-slate-600 tabular-nums">{v.voucherDate}</td>
+                      <td className="px-3 py-2 font-bold text-slate-600 tabular-nums">{toShamsiDisplay(v.voucherDate)}</td>
                       <td className="px-3 py-2 max-w-[200px] truncate text-slate-700">{v.description || '-'}</td>
                       <td className="px-3 py-2 font-black tabular-nums text-slate-900">{fmtAmount(debitTotal)}</td>
                       <td className="px-3 py-2 text-slate-500">{v.sourceCode ?? v.sourceType ?? '-'}</td>
