@@ -225,6 +225,28 @@
 - Ledger: `reserve` entry on creation; `release` entry on release or fulfillment
 - Schema: `inventory.v2.reservations.create.request.schema.json`
 
+### `inventory.v2_replenishment.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_replenishment.php`
+- GET (list rules): returns `{ rules: array }` — active min/max rules
+- GET (suggestions): `?action=suggest` — returns `{ suggestions: array }` filtered to products below min_qty
+- POST input (create rule): `productId, warehouseId, minQty, maxQty, notes?`
+- PUT input (update rule): `id, minQty?, maxQty?, notes?`
+- PATCH input (soft-delete): `{ id }` — deactivates the rule
+- Auth: GET requires `inventory.v2_reports.read`; POST/PUT/PATCH require `inventory.v2_settings.write` + CSRF
+- Schema: `inventory.v2.replenishment.rules.upsert.request.schema.json`
+
+### `inventory.v2_reports.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_reports.php`
+- Method: GET only
+- Query params: `report` (required: `on_hand|cardex|operations`), optional `productId`, `warehouseId`, `dateFrom`, `dateTo`
+- `on_hand`: joins quants + products + warehouses + locations; returns per-location stock summary
+- `cardex`: queries stock_ledger with optional product/warehouse/date filters; limit 300 rows
+- `operations`: aggregates operation_headers by type+status with count and date range
+- Auth: requires `inventory.v2_reports.read`
+- Schema: `inventory.v2.reports.query.request.schema.json`
+
 ## Users & Access Contracts
 
 ### `users_access.user_list.v1`
@@ -285,6 +307,8 @@
 - `/api/inventory_v2_lots.php` -> inventory v2 contracts
 - `/api/inventory_v2_operations.php` -> inventory v2 contracts
 - `/api/inventory_v2_reservations.php` -> inventory v2 contracts
+- `/api/inventory_v2_replenishment.php` -> inventory v2 replenishment contracts
+- `/api/inventory_v2_reports.php` -> inventory v2 reports contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
 - `/api/users.php` -> users-access user contracts

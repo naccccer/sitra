@@ -1,0 +1,33 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inventory V2 Reports Query Request",
+  "description": "Query parameters for GET /api/inventory_v2_reports.php",
+  "type": "object",
+  "required": ["report"],
+  "properties": {
+    "report": {
+      "type": "string",
+      "enum": ["on_hand", "cardex", "operations"],
+      "description": "Report type to run."
+    },
+    "productId": {
+      "type": "string",
+      "description": "Filter by product ID (on_hand, cardex)."
+    },
+    "warehouseId": {
+      "type": "string",
+      "description": "Filter by warehouse ID (on_hand, cardex)."
+    },
+    "dateFrom": {
+      "type": "string",
+      "format": "date",
+      "description": "Start date filter (cardex)."
+    },
+    "dateTo": {
+      "type": "string",
+      "format": "date",
+      "description": "End date filter (cardex)."
+    }
+  },
+  "additionalProperties": false
+}

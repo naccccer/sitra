@@ -1,0 +1,36 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Inventory V2 Replenishment Rule Upsert Request",
+  "description": "Payload for creating or updating a min/max replenishment rule (POST = create, PUT = update).",
+  "type": "object",
+  "required": ["productId", "warehouseId", "minQty", "maxQty"],
+  "properties": {
+    "id": {
+      "type": "string",
+      "description": "Rule ID (required for PUT/update)."
+    },
+    "productId": {
+      "type": "string",
+      "description": "ID of the product this rule applies to."
+    },
+    "warehouseId": {
+      "type": "string",
+      "description": "ID of the warehouse this rule applies to."
+    },
+    "minQty": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Minimum stock threshold below which replenishment is triggered."
+    },
+    "maxQty": {
+      "type": "number",
+      "minimum": 0,
+      "description": "Maximum stock target. Suggested order quantity = maxQty - availableQty."
+    },
+    "notes": {
+      "type": "string",
+      "description": "Optional notes for the rule."
+    }
+  },
+  "additionalProperties": false
+}
