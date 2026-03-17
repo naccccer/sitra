@@ -75,10 +75,7 @@ function app_module_registry_seed_rows(): array
 
 function app_module_dependency_map(): array
 {
-    return [
-        'sales' => ['customers'],
-        'accounting' => ['sales', 'customers'],
-    ];
+    return [];
 }
 
 function app_module_registry_row_to_response(array $row): array
