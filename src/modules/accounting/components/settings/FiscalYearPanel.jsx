@@ -3,10 +3,13 @@ import { Button, Card } from '@/components/shared/ui'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { useAccounts } from '../../hooks/useAccounts'
 import { accountingApi } from '../../services/accountingApi'
+import { ShamsiDateInput, toShamsiDisplay } from '../../utils/dateUtils'
+import { useTabSettings, CONFIGURABLE_TABS } from '../../hooks/useTabSettings'
 
 export function FiscalYearPanel({ session }) {
   const permissions = session?.permissions ?? []
   const canWrite = permissions.includes('accounting.settings.write')
+  const { visibility, save: saveTabSettings, saving: savingTabs } = useTabSettings()
 
   const { fiscalYears, currentDefault, loading, error, reload } = useFiscalYears()
   const { accounts: postableAccounts } = useAccounts({ postableOnly: true })
@@ -98,8 +101,8 @@ export function FiscalYearPanel({ session }) {
                     {fy.title}
                     {fy.isDefault && <span className="mr-1 rounded bg-blue-100 px-1.5 text-[10px] font-black text-blue-700">پیش‌فرض</span>}
                   </td>
-                  <td className="px-3 py-2 tabular-nums">{fy.startDate}</td>
-                  <td className="px-3 py-2 tabular-nums">{fy.endDate}</td>
+                  <td className="px-3 py-2 tabular-nums">{toShamsiDisplay(fy.startDate)}</td>
+                  <td className="px-3 py-2 tabular-nums">{toShamsiDisplay(fy.endDate)}</td>
                   <td className="px-3 py-2">
                     <span className={`rounded px-1.5 py-0.5 text-[10px] font-black ${fy.status === 'open' ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
                       {fy.status === 'open' ? 'باز' : 'بسته'}
@@ -135,13 +138,13 @@ export function FiscalYearPanel({ session }) {
               </div>
               <div>
                 <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
-                <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-                  value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
+                <ShamsiDateInput value={startDate} onChange={setStartDate}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
               </div>
               <div>
                 <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
-                <input type="date" className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900"
-                  value={endDate} onChange={(e) => setEndDate(e.target.value)} required />
+                <ShamsiDateInput value={endDate} onChange={setEndDate}
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
               </div>
             </div>
             <Button type="submit" variant="primary" size="sm" disabled={saving}>
@@ -149,6 +152,39 @@ export function FiscalYearPanel({ session }) {
             </Button>
           </form>
         )}
+      </Card>
+
+      {/* Tab visibility */}
+      <Card padding="md" className="space-y-3">
+        <div>
+          <div className="text-sm font-black text-slate-900">تب‌های فعال</div>
+          <div className="text-xs font-bold text-slate-500">
+            تب‌های غیرفعال در منوی بالای صفحه نمایش داده نمی‌شوند.
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+          {CONFIGURABLE_TABS.map((tab) => {
+            const enabled = visibility === null ? true : (visibility[tab.id] !== false)
+            return (
+              <label key={tab.id}
+                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors
+                  ${enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
+                <input
+                  type="checkbox"
+                  className="accent-emerald-600"
+                  checked={enabled}
+                  onChange={(e) => {
+                    const next = { ...(visibility ?? {}), [tab.id]: e.target.checked }
+                    saveTabSettings(next)
+                  }}
+                  disabled={savingTabs}
+                />
+                {tab.label}
+              </label>
+            )
+          })}
+        </div>
+        {savingTabs && <div className="text-xs font-bold text-slate-500">در حال ذخیره...</div>}
       </Card>
 
       {/* Bridge account map */}

@@ -66,11 +66,29 @@ export const accountingApi = {
     return request('/api/acc_sales_bridge.php', { method: 'POST', body: JSON.stringify(payload) })
   },
 
-  // ─── Settings (bridge account map) ────────────────────────────────────────
+  // ─── Settings ──────────────────────────────────────────────────────────────
+  async fetchSetting(key) {
+    return request(`/api/acc_settings.php?key=${encodeURIComponent(key)}`, { method: 'GET' })
+  },
+  async saveSetting(key, value) {
+    return request('/api/acc_settings.php', {
+      method: 'POST',
+      body: JSON.stringify({ key, value: JSON.stringify(value) }),
+    })
+  },
   async saveBridgeAccountMap(accountMap) {
-    return request('/api/system_settings.php', {
+    return request('/api/acc_settings.php', {
       method: 'POST',
       body: JSON.stringify({ key: 'accounting.bridge.account_map', value: JSON.stringify(accountMap) }),
+    })
+  },
+  async fetchTabVisibility() {
+    return request('/api/acc_settings.php?key=accounting.tab_visibility', { method: 'GET' })
+  },
+  async saveTabVisibility(visibility) {
+    return request('/api/acc_settings.php', {
+      method: 'POST',
+      body: JSON.stringify({ key: 'accounting.tab_visibility', value: JSON.stringify(visibility) }),
     })
   },
 }
