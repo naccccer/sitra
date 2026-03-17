@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryV2OperationsActionRequest",
+  "type": "object",
+  "required": ["id", "action"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "action": {
+      "type": "string",
+      "enum": ["submit", "approve", "post", "cancel"]
+    }
+  }
+}

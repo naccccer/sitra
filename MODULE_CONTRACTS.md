@@ -230,6 +230,26 @@
   - `lots: array`
   - `lot: object`
 
+### `inventory.v2_operations.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_operations.php`
+- GET filters: `type`, `status`, `q`, `page`, `pageSize`, `sortBy`, `sortDir`
+- POST input (create draft):
+  - `operationType: 'receipt'|'delivery'|'transfer'|'production_move'|'adjustment'|'count'`
+  - `sourceWarehouseId?: string|null` (required for delivery/transfer)
+  - `targetWarehouseId?: string|null` (required for receipt/transfer/adjustment)
+  - `referenceType?`, `referenceId?`, `referenceCode?`, `notes?`
+  - `lines: array` — each item: `productId`, `quantityRequested`, `quantityDone?`, `uom?`, `sourceLocationId?`, `targetLocationId?`, `lotId?`, `variantId?`, `notes?`
+- PUT input (update draft): `id`, plus same optional fields as POST plus `lines?`
+- PATCH input (action): `id`, `action: 'submit'|'approve'|'post'|'cancel'`
+- Output:
+  - GET: `{ operations: array, total, page, pageSize }`
+  - POST/PUT/PATCH: `{ operation: object }`
+- Lifecycle: `draft` → `submitted` → `approved` → `posted` | `cancelled`
+- Stock rule: posting delivery/transfer/negative-adjustment validates no-negative available quantity
+- Ledger: posting writes immutable entries to `inventory_v2_stock_ledger`
+- Schemas: `inventory.v2.operations.create.request.schema.json`, `inventory.v2.operations.action.request.schema.json`
+
 ## Users & Access Contracts
 
 ### `users_access.user_list.v1`
