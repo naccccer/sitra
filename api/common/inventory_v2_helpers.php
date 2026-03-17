@@ -3,17 +3,32 @@ declare(strict_types=1);
 
 function app_inventory_v2_parse_id($value): ?int
 {
-    return app_inventory_parse_id($value);
+    $raw = trim((string)$value);
+    if ($raw === '' || !ctype_digit($raw)) {
+        return null;
+    }
+    $id = (int)$raw;
+    return $id > 0 ? $id : null;
 }
 
 function app_inventory_v2_parse_bool($value, bool $fallback = false): bool
 {
-    return app_inventory_bool($value, $fallback);
+    if (is_bool($value)) {
+        return $value;
+    }
+    $raw = strtolower(trim((string)$value));
+    if (in_array($raw, ['1', 'true', 'yes', 'on'], true)) {
+        return true;
+    }
+    if (in_array($raw, ['0', 'false', 'no', 'off'], true)) {
+        return false;
+    }
+    return $fallback;
 }
 
 function app_inventory_v2_normalize_text($value): string
 {
-    return app_inventory_normalize_text($value);
+    return trim((string)$value);
 }
 
 function app_inventory_v2_require_permission(array $actor, string $permission, PDO $pdo): void

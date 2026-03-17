@@ -1,20 +1,29 @@
+import { fixPossibleMojibake, isLikelyMojibakeText } from '@/utils/textEncoding'
+
 export const ROLE_LABELS = {
-  admin: 'ادمین',
-  manager: 'مدیر',
-  sales: 'فروش',
+  admin: '\u0627\u062f\u0645\u06cc\u0646',
+  manager: '\u0645\u062f\u06cc\u0631',
+  sales: '\u0641\u0631\u0648\u0634',
 }
 
-export const roleLabel = (role) => ROLE_LABELS[String(role || '').trim()] || String(role || 'کاربر')
+const DEFAULT_USER_LABEL = '\u06a9\u0627\u0631\u0628\u0631'
+
+export const roleLabel = (role) => {
+  const normalized = String(role || '').trim()
+  const label = ROLE_LABELS[normalized] || String(role || DEFAULT_USER_LABEL)
+  return fixPossibleMojibake(label)
+}
 
 export const identityDisplayName = (session) => {
-  const fullName = String(session?.fullName || '').trim()
+  const fullName = fixPossibleMojibake(String(session?.fullName || '').trim())
   if (fullName !== '') return fullName
-  return String(session?.username || 'کاربر').trim() || 'کاربر'
+  return fixPossibleMojibake(String(session?.username || DEFAULT_USER_LABEL).trim() || DEFAULT_USER_LABEL)
 }
 
 export const identityDisplayJobTitle = (session) => {
-  const jobTitle = String(session?.jobTitle || '').trim()
-  if (jobTitle !== '') return jobTitle
+  const rawJobTitle = String(session?.jobTitle || '').trim()
+  const jobTitle = fixPossibleMojibake(rawJobTitle)
+  if (jobTitle !== '' && !isLikelyMojibakeText(jobTitle)) return jobTitle
   return roleLabel(session?.role)
 }
 

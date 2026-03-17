@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Button } from '@/components/shared/ui'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const TYPE_CONFIG = {
-  receipt:            { needsTarget: true,  needsSource: false, label: 'رسید انبار' },
-  delivery:           { needsTarget: false, needsSource: true,  label: 'حواله انبار' },
-  transfer:           { needsTarget: true,  needsSource: true,  label: 'انتقال انبار' },
-  adjustment:         { needsTarget: true,  needsSource: false, label: 'تعدیل موجودی' },
-  production_consume: { needsTarget: false, needsSource: true,  label: 'مصرف تولید' },
-  production_output:  { needsTarget: true,  needsSource: false, label: 'خروجی تولید' },
+  receipt: { needsTarget: true, needsSource: false, label: 'رسید انبار' },
+  delivery: { needsTarget: false, needsSource: true, label: 'حواله انبار' },
+  transfer: { needsTarget: true, needsSource: true, label: 'انتقال انبار' },
+  adjustment: { needsTarget: true, needsSource: false, label: 'تعدیل موجودی' },
+  production_consume: { needsTarget: false, needsSource: true, label: 'مصرف تولید' },
+  production_output: { needsTarget: true, needsSource: false, label: 'خروجی تولید' },
 }
 
-const EMPTY_LINE = () => ({
+const buildEmptyLine = () => ({
   _key: Date.now() + Math.random(),
   productId: '',
   quantityRequested: '',
@@ -23,61 +23,59 @@ const EMPTY_LINE = () => ({
 })
 
 export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
-  const cfg = TYPE_CONFIG[operationType] ?? TYPE_CONFIG.receipt
+  const config = TYPE_CONFIG[operationType] ?? TYPE_CONFIG.receipt
 
   const [warehouses, setWarehouses] = useState([])
-  const [products, setProducts]     = useState([])
+  const [products, setProducts] = useState([])
   const [sourceWarehouseId, setSourceWarehouseId] = useState('')
   const [targetWarehouseId, setTargetWarehouseId] = useState('')
-  const [notes, setNotes]           = useState('')
-  const [lines, setLines]           = useState([EMPTY_LINE()])
+  const [notes, setNotes] = useState('')
+  const [lines, setLines] = useState([buildEmptyLine()])
   const [submitting, setSubmitting] = useState(false)
-  const [error, setError]           = useState(null)
+  const [error, setError] = useState(null)
 
   useEffect(() => {
-    inventoryApi.fetchV2Warehouses({ includeInactive: false }).then((r) => {
-      setWarehouses(Array.isArray(r?.warehouses) ? r.warehouses : [])
+    inventoryApi.fetchV2Warehouses({ includeInactive: false }).then((response) => {
+      setWarehouses(Array.isArray(response?.warehouses) ? response.warehouses : [])
     }).catch(() => setWarehouses([]))
 
-    inventoryApi.fetchV2Products({ includeInactive: false }).then((r) => {
-      setProducts(Array.isArray(r?.products) ? r.products : [])
+    inventoryApi.fetchV2Products({ includeInactive: false }).then((response) => {
+      setProducts(Array.isArray(response?.products) ? response.products : [])
     }).catch(() => setProducts([]))
   }, [])
 
   const setLine = (key, field, value) => {
-    setLines((prev) =>
-      prev.map((l) => (l._key === key ? { ...l, [field]: value } : l))
-    )
+    setLines((prev) => prev.map((line) => (line._key === key ? { ...line, [field]: value } : line)))
   }
 
-  const addLine = () => setLines((prev) => [...prev, EMPTY_LINE()])
+  const addLine = () => setLines((prev) => [...prev, buildEmptyLine()])
 
   const removeLine = (key) => {
     setLines((prev) => {
-      const next = prev.filter((l) => l._key !== key)
-      return next.length > 0 ? next : [EMPTY_LINE()]
+      const next = prev.filter((line) => line._key !== key)
+      return next.length > 0 ? next : [buildEmptyLine()]
     })
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
+  const handleSubmit = async (event) => {
+    event.preventDefault()
     setError(null)
 
     const payload = {
       operationType,
-      sourceWarehouseId: cfg.needsSource ? sourceWarehouseId || null : null,
-      targetWarehouseId: cfg.needsTarget ? targetWarehouseId || null : null,
+      sourceWarehouseId: config.needsSource ? sourceWarehouseId || null : null,
+      targetWarehouseId: config.needsTarget ? targetWarehouseId || null : null,
       notes,
       lines: lines
-        .filter((l) => l.productId)
-        .map((l) => ({
-          productId:         l.productId,
-          quantityRequested: parseFloat(l.quantityRequested) || 0,
-          quantityDone:      parseFloat(l.quantityDone || l.quantityRequested) || 0,
-          uom:               l.uom,
-          sourceLocationId:  l.sourceLocationId || null,
-          targetLocationId:  l.targetLocationId || null,
-          notes:             l.notes,
+        .filter((line) => line.productId)
+        .map((line) => ({
+          productId: line.productId,
+          quantityRequested: parseFloat(line.quantityRequested) || 0,
+          quantityDone: parseFloat(line.quantityDone || line.quantityRequested) || 0,
+          uom: line.uom,
+          sourceLocationId: line.sourceLocationId || null,
+          targetLocationId: line.targetLocationId || null,
+          notes: line.notes,
         })),
     }
 
@@ -88,12 +86,12 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
 
     setSubmitting(true)
     try {
-      const res = await inventoryApi.createV2Operation(payload)
-      if (!res?.success) {
-        setError(res?.error || 'خطا در ذخیره‌سازی')
+      const response = await inventoryApi.createV2Operation(payload)
+      if (!response?.success) {
+        setError(response?.error || 'خطا در ذخیره سازی')
         return
       }
-      onCreated(res.operation)
+      onCreated(response.operation)
     } catch (err) {
       setError(err?.message || 'خطا در ارتباط با سرور')
     } finally {
@@ -102,70 +100,61 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
   }
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40"
-      role="dialog"
-      aria-modal="true"
-      dir="rtl"
-    >
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" dir="rtl">
       <div className="flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-xl bg-white shadow-2xl">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-base font-bold text-slate-800">{cfg.label} — جدید</h2>
-          <button
-            onClick={onClose}
-            className="text-slate-400 hover:text-slate-600"
-            aria-label="بستن"
-          >
-            ✕
+          <h2 className="text-base font-bold text-slate-800">{config.label} - جدید</h2>
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600" aria-label="بستن">
+            x
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-1 flex-col overflow-hidden">
-          <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
-            {error && (
-              <div className="rounded bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>
-            )}
+          <div className="flex-1 space-y-4 overflow-y-auto px-6 py-4">
+            {error && <div className="rounded bg-red-50 px-4 py-2 text-sm text-red-600">{error}</div>}
 
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              {cfg.needsSource && (
+              {config.needsSource && (
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-slate-600">انبار مبدأ</label>
+                  <label className="mb-1 block text-xs font-medium text-slate-600">انبار مبدا</label>
                   <select
                     className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
                     value={sourceWarehouseId}
-                    onChange={(e) => setSourceWarehouseId(e.target.value)}
+                    onChange={(event) => setSourceWarehouseId(event.target.value)}
                     required
                   >
-                    <option value="">انتخاب انبار...</option>
-                    {warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
+                    <option value="">انتخاب انبار</option>
+                    {warehouses.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
                     ))}
                   </select>
                 </div>
               )}
-              {cfg.needsTarget && (
+
+              {config.needsTarget && (
                 <div>
                   <label className="mb-1 block text-xs font-medium text-slate-600">انبار مقصد</label>
                   <select
                     className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
                     value={targetWarehouseId}
-                    onChange={(e) => setTargetWarehouseId(e.target.value)}
+                    onChange={(event) => setTargetWarehouseId(event.target.value)}
                     required
                   >
-                    <option value="">انتخاب انبار...</option>
-                    {warehouses.map((w) => (
-                      <option key={w.id} value={w.id}>{w.name}</option>
+                    <option value="">انتخاب انبار</option>
+                    {warehouses.map((warehouse) => (
+                      <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>
                     ))}
                   </select>
                 </div>
               )}
-              <div className={cfg.needsSource && cfg.needsTarget ? 'sm:col-span-2' : ''}>
+
+              <div className={config.needsSource && config.needsTarget ? 'sm:col-span-2' : ''}>
                 <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
                 <input
                   type="text"
                   className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm"
                   value={notes}
-                  onChange={(e) => setNotes(e.target.value)}
+                  onChange={(event) => setNotes(event.target.value)}
                   placeholder="اختیاری"
                 />
               </div>
@@ -177,34 +166,36 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
                 <Button type="button" size="xs" variant="secondary" onClick={addLine}>+ خط جدید</Button>
               </div>
               <div className="space-y-2">
-                {lines.map((line, idx) => (
+                {lines.map((line, index) => (
                   <div key={line._key} className="grid grid-cols-12 gap-2 rounded border border-slate-200 p-2">
                     <div className="col-span-4">
                       <label className="mb-0.5 block text-xs text-slate-500">محصول</label>
                       <select
                         className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
                         value={line.productId}
-                        onChange={(e) => setLine(line._key, 'productId', e.target.value)}
+                        onChange={(event) => setLine(line._key, 'productId', event.target.value)}
                         required
                       >
-                        <option value="">انتخاب...</option>
-                        {products.map((p) => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
+                        <option value="">انتخاب</option>
+                        {products.map((product) => (
+                          <option key={product.id} value={product.id}>{product.name}</option>
                         ))}
                       </select>
                     </div>
+
                     <div className="col-span-2">
-                      <label className="mb-0.5 block text-xs text-slate-500">مقدار درخواست</label>
+                      <label className="mb-0.5 block text-xs text-slate-500">مقدار درخواستی</label>
                       <input
                         type="number"
                         min="0"
                         step="0.001"
                         className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
                         value={line.quantityRequested}
-                        onChange={(e) => setLine(line._key, 'quantityRequested', e.target.value)}
+                        onChange={(event) => setLine(line._key, 'quantityRequested', event.target.value)}
                         required
                       />
                     </div>
+
                     <div className="col-span-2">
                       <label className="mb-0.5 block text-xs text-slate-500">مقدار انجام شده</label>
                       <input
@@ -214,24 +205,24 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
                         className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
                         value={line.quantityDone}
                         placeholder={line.quantityRequested}
-                        onChange={(e) => setLine(line._key, 'quantityDone', e.target.value)}
+                        onChange={(event) => setLine(line._key, 'quantityDone', event.target.value)}
                       />
                     </div>
+
                     <div className="col-span-2">
                       <label className="mb-0.5 block text-xs text-slate-500">واحد</label>
                       <input
                         type="text"
                         className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
                         value={line.uom}
-                        onChange={(e) => setLine(line._key, 'uom', e.target.value)}
+                        onChange={(event) => setLine(line._key, 'uom', event.target.value)}
                         placeholder="مثال: کیلوگرم"
                       />
                     </div>
+
                     <div className="col-span-2 flex items-end justify-end">
-                      {idx > 0 && (
-                        <Button type="button" size="xs" variant="danger" onClick={() => removeLine(line._key)}>
-                          حذف
-                        </Button>
+                      {index > 0 && (
+                        <Button type="button" size="xs" variant="danger" onClick={() => removeLine(line._key)}>حذف</Button>
                       )}
                     </div>
                   </div>
@@ -243,7 +234,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
           <div className="flex items-center justify-end gap-3 border-t px-6 py-4">
             <Button type="button" variant="ghost" onClick={onClose}>انصراف</Button>
             <Button type="submit" variant="primary" disabled={submitting}>
-              {submitting ? 'در حال ذخیره...' : 'ذخیره پیش‌نویس'}
+              {submitting ? 'در حال ذخیره...' : 'ذخیره پیش نویس'}
             </Button>
           </div>
         </form>
