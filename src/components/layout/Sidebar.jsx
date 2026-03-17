@@ -1,6 +1,7 @@
 ﻿import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
+  BookOpen,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -25,6 +26,7 @@ const navSections = [
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
       { to: '/customers', label: 'مشتریان', icon: Users, capability: 'canManageCustomers', moduleId: 'customers' },
       { to: '/inventory', label: 'انبار', icon: Package, capability: 'canAccessInventory', moduleId: 'inventory' },
+      { to: '/accounting', label: 'حسابداری', icon: BookOpen, capability: 'canAccessAccounting', moduleId: 'accounting' },
     ],
   },
   {
