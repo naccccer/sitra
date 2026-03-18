@@ -1,4 +1,4 @@
-﻿-- Minimal fixture dataset for reproducible local development.
+-- Minimal fixture dataset for reproducible local development.
 -- Use with: php scripts/reset-minimal-fixture.php
 --
 -- After applying this fixture, the first request to any accounting endpoint
