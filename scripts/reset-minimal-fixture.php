@@ -37,17 +37,12 @@ foreach (explode(';', $sql) as $chunk) {
 }
 
 try {
-    $pdo->beginTransaction();
     foreach ($statements as $statement) {
         $pdo->exec($statement);
     }
-    $pdo->commit();
     fwrite(STDOUT, "Minimal fixture applied successfully.\n");
     exit(0);
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     fwrite(STDERR, "Failed to apply fixture: {$e->getMessage()}\n");
     exit(1);
 }
