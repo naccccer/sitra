@@ -195,3 +195,79 @@ function acc_build_account_tree(array $flatAccounts): array
     }
     return $roots;
 }
+
+function acc_read_setting_value(PDO $pdo, string $key): ?string
+{
+    app_ensure_system_settings_table($pdo);
+    $stmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :key LIMIT 1');
+    $stmt->execute(['key' => $key]);
+    $row = $stmt->fetch();
+    if (!$row || !array_key_exists('setting_value', $row)) {
+        return null;
+    }
+    return (string)$row['setting_value'];
+}
+
+function acc_read_json_setting(PDO $pdo, string $key, array $fallback = []): array
+{
+    $raw = acc_read_setting_value($pdo, $key);
+    if ($raw === null || trim($raw) === '') {
+        return $fallback;
+    }
+    $decoded = json_decode($raw, true);
+    return is_array($decoded) ? $decoded : $fallback;
+}
+
+function acc_accounting_allowed_setting_keys(): array
+{
+    return [
+        'accounting.bridge.account_map',
+        'accounting.tab_visibility',
+        'accounting.payroll.account_map',
+        'accounting.payroll.formulas',
+    ];
+}
+
+function acc_is_allowed_setting_key(string $key): bool
+{
+    return in_array(trim($key), acc_accounting_allowed_setting_keys(), true);
+}
+
+function acc_find_fiscal_year_for_date(PDO $pdo, string $date): ?array
+{
+    $stmt = $pdo->prepare(
+        'SELECT *
+         FROM acc_fiscal_years
+         WHERE start_date <= :date AND end_date >= :date
+         ORDER BY is_default DESC, start_date DESC
+         LIMIT 1'
+    );
+    $stmt->execute(['date' => $date]);
+    $row = $stmt->fetch();
+    return is_array($row) ? $row : null;
+}
+
+function acc_find_postable_account(PDO $pdo, $candidate): ?array
+{
+    $accountId = acc_parse_id($candidate);
+    if ($accountId !== null) {
+        $stmt = $pdo->prepare(
+            'SELECT * FROM acc_accounts WHERE id = :id AND is_active = 1 AND is_postable = 1 LIMIT 1'
+        );
+        $stmt->execute(['id' => $accountId]);
+        $row = $stmt->fetch();
+        return is_array($row) ? $row : null;
+    }
+
+    $code = acc_normalize_text($candidate);
+    if ($code === '') {
+        return null;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT * FROM acc_accounts WHERE code = :code AND is_active = 1 AND is_postable = 1 LIMIT 1'
+    );
+    $stmt->execute(['code' => $code]);
+    $row = $stmt->fetch();
+    return is_array($row) ? $row : null;
+}

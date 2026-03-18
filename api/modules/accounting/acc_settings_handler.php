@@ -12,56 +12,58 @@ app_ensure_accounting_schema($pdo);
 
 $actor = app_require_auth(['admin', 'manager']);
 
-// ─── GET ──────────────────────────────────────────────────────────────────────
-if ($method === 'GET') {
-    acc_require_permission($actor, 'accounting.settings.read', $pdo);
+function acc_settings_permission_for_key(string $key, string $method): string
+{
+    if (str_starts_with($key, 'accounting.payroll.')) {
+        return 'accounting.payroll.settings';
+    }
+    return $method === 'GET' ? 'accounting.settings.read' : 'accounting.settings.write';
+}
 
+if ($method === 'GET') {
     $key = acc_normalize_text($_GET['key'] ?? '');
     if ($key === '') {
         app_json(['success' => false, 'error' => 'Missing key.'], 400);
     }
-
-    // Only allow accounting.* keys
-    if (!str_starts_with($key, 'accounting.')) {
-        app_json(['success' => false, 'error' => 'Invalid key.'], 400);
+    if (!acc_is_allowed_setting_key($key)) {
+        app_json(['success' => false, 'error' => 'Unknown accounting setting key.'], 400);
     }
 
+    acc_require_permission($actor, acc_settings_permission_for_key($key, 'GET'), $pdo);
+
     try {
-        $stmt = $pdo->prepare('SELECT setting_value FROM system_settings WHERE setting_key = :k LIMIT 1');
-        $stmt->execute(['k' => $key]);
-        $row = $stmt->fetch();
+        $value = acc_read_setting_value($pdo, $key);
     } catch (Throwable $e) {
         app_json(['success' => false, 'error' => 'DB error.'], 500);
     }
 
-    app_json(['success' => true, 'key' => $key, 'value' => $row ? (string)$row['setting_value'] : null]);
+    app_json(['success' => true, 'key' => $key, 'value' => $value]);
 }
 
-// ─── POST ─────────────────────────────────────────────────────────────────────
-acc_require_permission($actor, 'accounting.settings.write', $pdo);
 app_require_csrf();
-
 $payload = app_read_json_body();
-$key     = acc_normalize_text($payload['key'] ?? '');
-$value   = isset($payload['value']) ? (string)$payload['value'] : '';
+$key = acc_normalize_text($payload['key'] ?? '');
+$value = isset($payload['value']) ? (string)$payload['value'] : '';
 
 if ($key === '') {
     app_json(['success' => false, 'error' => 'Missing key.'], 400);
 }
-if (!str_starts_with($key, 'accounting.')) {
-    app_json(['success' => false, 'error' => 'Invalid key prefix.'], 400);
+if (!acc_is_allowed_setting_key($key)) {
+    app_json(['success' => false, 'error' => 'Unknown accounting setting key.'], 400);
 }
+
+acc_require_permission($actor, acc_settings_permission_for_key($key, 'POST'), $pdo);
 
 try {
     app_ensure_system_settings_table($pdo);
     $stmt = $pdo->prepare(
         'INSERT INTO system_settings (setting_key, setting_value)
-         VALUES (:k, :v)
-         ON DUPLICATE KEY UPDATE setting_value = :v2'
+         VALUES (:key, :value)
+         ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value), updated_at = CURRENT_TIMESTAMP'
     );
-    $stmt->execute(['k' => $key, 'v' => $value, 'v2' => $value]);
+    $stmt->execute(['key' => $key, 'value' => $value]);
 } catch (Throwable $e) {
-    app_json(['success' => false, 'error' => 'DB error: ' . $e->getMessage()], 500);
+    app_json(['success' => false, 'error' => 'DB error.'], 500);
 }
 
-app_json(['success' => true]);
+app_json(['success' => true, 'key' => $key]);
