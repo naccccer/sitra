@@ -20,9 +20,21 @@ if ($sql === false) {
     exit(1);
 }
 
-$statements = array_filter(array_map('trim', explode(';', $sql)), static function (string $statement): bool {
-    return $statement !== '' && !str_starts_with($statement, '--');
-});
+// Strip BOM if present
+$sql = ltrim($sql, "\xEF\xBB\xBF");
+
+// Split on ; and strip -- comment lines from each chunk before executing
+$statements = [];
+foreach (explode(';', $sql) as $chunk) {
+    $lines = array_filter(
+        explode("\n", $chunk),
+        static fn(string $l) => !str_starts_with(trim($l), '--')
+    );
+    $statement = trim(implode("\n", $lines));
+    if ($statement !== '') {
+        $statements[] = $statement;
+    }
+}
 
 try {
     $pdo->beginTransaction();
