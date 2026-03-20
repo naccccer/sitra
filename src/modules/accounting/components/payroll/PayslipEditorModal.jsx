@@ -1,5 +1,6 @@
-﻿import { useMemo, useState } from 'react'
-import { Button, Input, ModalShell } from '@/components/shared/ui'
+import { useMemo, useState } from 'react'
+import { Button, Input, ModalShell, Select } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
 
 const EDIT_FIELDS = [
@@ -20,18 +21,60 @@ const EDIT_FIELDS = [
   ['otherDeductions', 'سایر کسورات'],
 ]
 
-export function PayslipEditorModal({ busy, onClose, onSave, onUploadPdf, payslip, run }) {
+export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
   const [file, setFile] = useState(null)
+  const [error, setError] = useState('')
+  const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
+  const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
+  const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
   const totals = useMemo(() => calculatePayslipTotals(draft ?? payslip), [draft, payslip])
 
   if (!payslip) return null
+
+  const employeeName = selectedEmployee?.fullName || selectedEmployee?.name || draft?.employeeName || payslip?.employeeName || ''
+  const employeeCode = resolveEmployeeCode(selectedEmployee) || draft?.employeeCode || payslip?.employeeCode || ''
+  const employeeDepartment = selectedEmployee?.department || draft?.department || payslip?.department || ''
+  const hasValidEmployee = Boolean(draft?.employeeId) && employeeMap.has(String(draft?.employeeId))
+
+  const handleEmployeeChange = (nextEmployeeId) => {
+    const employee = employeeMap.get(nextEmployeeId)
+    setDraft((current) => ({
+      ...current,
+      employeeId: nextEmployeeId,
+      employeeName: employee?.fullName || employee?.name || '',
+      employeeCode: resolveEmployeeCode(employee),
+      department: employee?.department || '',
+    }))
+    setError('')
+  }
+
+  const handleSave = () => {
+    const employeeId = String(draft?.employeeId || '').trim()
+    if (!employeeId) {
+      setError('لطفاً پرسنل را انتخاب کنید.')
+      return
+    }
+    if (!employeeMap.has(employeeId)) {
+      setError('پرسنل انتخاب‌شده معتبر نیست. لطفاً از لیست پرسنل انتخاب کنید.')
+      return
+    }
+    const employee = employeeMap.get(employeeId)
+    setError('')
+    onSave({
+      ...draft,
+      employeeId,
+      employeeName: employee?.fullName || employee?.name || draft?.employeeName || '',
+      employeeCode: resolveEmployeeCode(employee) || draft?.employeeCode || '',
+      department: employee?.department || draft?.department || '',
+    })
+  }
 
   return (
     <ModalShell
       isOpen={Boolean(payslip)}
       onClose={onClose}
-      title={`ویرایش فیش ${payslip.employeeName}`}
+      title={`ویرایش فیش ${employeeName || 'بدون نام'}`}
       description={`دوره ${run?.title || run?.periodKey || '-'}`}
       maxWidthClass="max-w-4xl"
       footer={(
@@ -39,16 +82,31 @@ export function PayslipEditorModal({ busy, onClose, onSave, onUploadPdf, payslip
           <div className="text-xs font-bold text-slate-500">جمع خالص قابل پرداخت: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span></div>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onClose}>انصراف</Button>
-            <Button size="sm" variant="primary" disabled={busy} onClick={() => onSave(draft)}>{busy ? 'در حال ذخیره...' : 'ذخیره فیش'}</Button>
+            <Button size="sm" variant="primary" disabled={busy} onClick={handleSave}>{busy ? 'در حال ذخیره...' : 'ذخیره فیش'}</Button>
           </div>
         </div>
       )}
     >
       <div className="space-y-4">
+        <label className="block space-y-1">
+          <span className="block text-xs font-black text-slate-600">پرسنل</span>
+          <Select value={String(draft?.employeeId || '')} onChange={(event) => handleEmployeeChange(String(event.target.value || ''))}>
+            <option value="">انتخاب پرسنل</option>
+            {draft?.employeeId && !hasValidEmployee && (
+              <option value={String(draft.employeeId)}>{formatEmployeeOption({ fullName: draft.employeeName, employeeCode: draft.employeeCode })}</option>
+            )}
+            {employeeList.map((employee) => (
+              <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
+            ))}
+          </Select>
+          {error && <span className="block text-xs font-bold text-rose-600">{error}</span>}
+          {employeeList.length === 0 && <span className="block text-[11px] font-bold text-amber-700">لیست پرسنل از HR دریافت نشده است.</span>}
+        </label>
+
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
-          <Info label="کد پرسنلی" value={payslip.employeeCode || '-'} />
-          <Info label="واحد" value={payslip.department || '-'} />
-          <Info label="وضعیت فیش" value={payslip.status || 'draft'} />
+          <Info label="کد پرسنلی" value={toPN(employeeCode || '-')} />
+          <Info label="واحد" value={employeeDepartment || '-'} />
+          <Info label="وضعیت فیش" value={draft?.status || payslip.status || 'draft'} />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -86,6 +144,16 @@ export function PayslipEditorModal({ busy, onClose, onSave, onUploadPdf, payslip
       </div>
     </ModalShell>
   )
+}
+
+function resolveEmployeeCode(employee = {}) {
+  return String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').trim()
+}
+
+function formatEmployeeOption(employee = {}) {
+  const fullName = String(employee?.fullName || employee?.name || '').trim() || 'بدون نام'
+  const employeeCode = resolveEmployeeCode(employee)
+  return `${fullName} + ${toPN(employeeCode || 'بدون کد')}`
 }
 
 function Info({ label, value }) {

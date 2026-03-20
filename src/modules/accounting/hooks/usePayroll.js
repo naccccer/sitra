@@ -4,102 +4,48 @@ import {
   buildPayrollRun,
   normalizePayrollDetailPayslip,
   normalizePayrollEmployee,
-  normalizePayrollListPayslip,
   normalizePayrollPeriod,
   safeNumber,
 } from '../components/payroll/payrollMath'
+import { DEFAULT_PAYROLL_SETTINGS, fetchAllPayrollPayslips, normalizePayrollSettings, PAYROLL_INPUT_FIELDS } from './payrollDataUtils'
+import { usePayrollWorkflow } from './usePayrollWorkflow'
+import { trackPayrollEvent } from '../utils/payrollTelemetry'
 import { shamsiMonthKeyToGregorianRange } from '../utils/dateUtils'
-const DEFAULT_SETTINGS = {
-  companyName: 'سامانه حقوق و دستمزد',
-  companyId: '',
-  signatureLabel: 'امضا و تایید',
-  signatoryName: '',
-  signatoryTitle: '',
-  signatureNote: '',
-  footerNote: 'این فیش به صورت سیستمی تولید شده است.',
-}
-const PAYROLL_INPUT_FIELDS = [
-  'baseSalary',
-  'housingAllowance',
-  'foodAllowance',
-  'childAllowance',
-  'seniorityAllowance',
-  'overtimeHours',
-  'overtimePay',
-  'bonus',
-  'otherAdditions',
-  'insurance',
-  'tax',
-  'loanDeduction',
-  'advanceDeduction',
-  'absenceDeduction',
-  'otherDeductions',
-]
+
 const EMPTY_FILTERS = {}
-function normalizePayrollSettings(value) {
-  if (!value) return { ...DEFAULT_SETTINGS }
-  try {
-    const parsed = typeof value === 'string' ? JSON.parse(value) : value
-    return { ...DEFAULT_SETTINGS, ...(parsed && typeof parsed === 'object' ? parsed : {}) }
-  } catch {
-    return { ...DEFAULT_SETTINGS }
-  }
-}
-function splitFullName(payload = {}) {
-  const firstName = String(payload.firstName || '').trim()
-  const lastName = String(payload.lastName || '').trim()
-  if (firstName && lastName) {
-    return { firstName, lastName }
-  }
-  const fullName = String(payload.fullName || '').trim()
-  if (!fullName) {
-    return { firstName: '', lastName: '' }
-  }
-  const parts = fullName.split(/\s+/).filter(Boolean)
-  const derivedFirst = parts.shift() || ''
-  const derivedLast = parts.join(' ') || derivedFirst
-  return { firstName: derivedFirst, lastName: derivedLast }
-}
-async function fetchAllPayrollPayslips(filters = {}) {
-  const firstPage = await accountingApi.fetchPayrollPayslips({ ...filters, page: 1, pageSize: 100 })
-  const firstItems = Array.isArray(firstPage?.payslips) ? firstPage.payslips : []
-  const totalPages = Math.max(1, Number(firstPage?.totalPages || 1))
-  if (totalPages === 1) {
-    return firstItems.map(normalizePayrollListPayslip)
-  }
-  const rest = await Promise.all(
-    Array.from({ length: totalPages - 1 }, (_, index) => accountingApi.fetchPayrollPayslips({
-      ...filters,
-      page: index + 2,
-      pageSize: 100,
-    })),
-  )
-  return [...firstItems, ...rest.flatMap((page) => Array.isArray(page?.payslips) ? page.payslips : [])]
-    .map(normalizePayrollListPayslip)
-}
+
 export function usePayroll(filters = EMPTY_FILTERS) {
   const [employees, setEmployees] = useState([])
   const [periods, setPeriods] = useState([])
   const [payslips, setPayslips] = useState([])
   const [selectedRunId, setSelectedRunId] = useState('')
   const [selectedRun, setSelectedRun] = useState(null)
-  const [settings, setSettings] = useState(DEFAULT_SETTINGS)
+  const [settings, setSettings] = useState(DEFAULT_PAYROLL_SETTINGS)
+  const [workspace, setWorkspace] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [busyKey, setBusyKey] = useState('')
+
   const loadEmployees = useCallback(async () => {
     const data = await accountingApi.fetchPayrollEmployees()
     setEmployees((Array.isArray(data?.employees) ? data.employees : []).map(normalizePayrollEmployee))
   }, [])
+
   const loadPeriods = useCallback(async () => {
     const data = await accountingApi.fetchPayrollPeriods(filters)
     const nextPeriods = (Array.isArray(data?.periods) ? data.periods : []).map(normalizePayrollPeriod)
     setPeriods(nextPeriods)
-    setSelectedRunId((current) => current || nextPeriods[0]?.id || '')
+    setSelectedRunId((current) => {
+      if (nextPeriods.length === 0) return ''
+      if (current && nextPeriods.some((item) => item.id === current)) return current
+      return nextPeriods[0]?.id || ''
+    })
   }, [filters])
+
   const loadPayslips = useCallback(async () => {
     setPayslips(await fetchAllPayrollPayslips(filters))
   }, [filters])
+
   const loadSettings = useCallback(async () => {
     try {
       const data = await accountingApi.fetchPayrollSettings()
@@ -108,6 +54,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       setSettings((current) => normalizePayrollSettings(current))
     }
   }, [])
+
   const loadSelectedRun = useCallback(async (runId) => {
     if (!runId) {
       setSelectedRun(null)
@@ -129,6 +76,20 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     }))
     setSelectedRun(buildPayrollRun(period, detailed.length > 0 ? detailed : basePayslips))
   }, [periods, payslips])
+
+  const loadWorkspace = useCallback(async (runId) => {
+    if (!runId) {
+      setWorkspace(null)
+      return
+    }
+    try {
+      const data = await accountingApi.fetchPayrollWorkspace(runId)
+      setWorkspace(data?.workspace || null)
+    } catch {
+      setWorkspace(null)
+    }
+  }, [])
+
   const loadAll = useCallback(async () => {
     setLoading(true)
     setError(null)
@@ -140,10 +101,15 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       setLoading(false)
     }
   }, [loadEmployees, loadPeriods, loadPayslips, loadSettings])
+
   useEffect(() => { loadAll() }, [loadAll])
   useEffect(() => {
     loadSelectedRun(selectedRunId).catch((loadError) => setError(loadError.message))
   }, [loadSelectedRun, selectedRunId])
+  useEffect(() => {
+    loadWorkspace(selectedRunId).catch(() => {})
+  }, [loadWorkspace, selectedRunId, payslips.length])
+
   const mutate = useCallback(async (key, action) => {
     setBusyKey(key)
     setError(null)
@@ -158,25 +124,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       setBusyKey('')
     }
   }, [loadAll])
-  const saveEmployee = useCallback((payload) => mutate('employee', async () => {
-    const names = splitFullName(payload)
-    await accountingApi.savePayrollEmployee({
-      id: payload?.id,
-      employeeCode: payload?.employeeCode || '',
-      firstName: names.firstName,
-      lastName: names.lastName,
-      personnelNo: payload?.personnelNo || '',
-      nationalId: payload?.nationalId || '',
-      mobile: payload?.mobile || '',
-      bankName: payload?.bankName || '',
-      bankAccountNo: payload?.bankAccountNo || payload?.bankAccount || '',
-      bankSheba: payload?.bankSheba || '',
-      baseSalary: safeNumber(payload?.baseSalary),
-      defaultInputs: payload?.defaultInputs || {},
-      notes: payload?.notes || payload?.department || '',
-      isActive: payload?.isActive !== false,
-    })
-  }), [mutate])
+
   const saveRun = useCallback((payload) => mutate('run', async () => {
     const range = shamsiMonthKeyToGregorianRange(payload?.periodKey)
     const result = await accountingApi.savePayrollPeriod({
@@ -189,6 +137,14 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     if (nextId) setSelectedRunId(nextId)
     return result
   }), [mutate])
+
+  const deleteRun = useCallback((runId) => mutate('run-delete', async () => {
+    if (!runId) {
+      throw new Error('Payroll period id is required.')
+    }
+    return accountingApi.deletePayrollPeriod(runId)
+  }), [mutate])
+
   const updatePayslip = useCallback((periodId, payslip) => mutate('payslip', async () => {
     if (!periodId) {
       throw new Error('Payroll period is required.')
@@ -205,11 +161,22 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       notes: payslip.notes || '',
     })
   }), [mutate])
+
   const runAction = useCallback((payload) => mutate(`action:${payload?.action || 'run'}`, async () => {
     const action = payload?.action
+    if (Array.isArray(payload?.ids) && payload.ids.length > 0) {
+      const result = await accountingApi.runPayrollBulkAction({ action, ids: payload.ids })
+      trackPayrollEvent('payroll_bulk_action_result', { action, successCount: safeNumber(result?.succeeded), failCount: safeNumber(result?.failed) })
+      if (action === 'issue' && safeNumber(result?.failed) === 0) {
+        trackPayrollEvent('payroll_run_completed', { periodId: payload?.id || selectedRunId })
+      }
+      if (safeNumber(result?.succeeded) <= 0) throw new Error(result?.error || 'No payslips were updated for this action.')
+      return result
+    }
     if (payload?.payslipId) {
-      await accountingApi.runPayrollAction({ id: payload.payslipId, action })
-      return
+      const result = await accountingApi.runPayrollAction({ id: payload.payslipId, action })
+      trackPayrollEvent('payroll_bulk_action_result', { action, successCount: 1, failCount: 0 })
+      return result
     }
     const periodId = payload?.id || selectedRunId
     const period = periods.find((item) => item.id === periodId) || {}
@@ -220,15 +187,18 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       : action === 'issue'
         ? items.filter((item) => item.status === 'approved')
         : []
-    if (targetPayslips.length === 0) {
-      throw new Error('No eligible payslips found for this action.')
+    if (targetPayslips.length === 0) throw new Error('No eligible payslips found for this action.')
+    const result = await accountingApi.runPayrollBulkAction({ action, ids: targetPayslips.map((payslip) => payslip.id) })
+    trackPayrollEvent('payroll_bulk_action_result', { action, successCount: safeNumber(result?.succeeded), failCount: safeNumber(result?.failed) })
+    if (action === 'issue' && safeNumber(result?.failed) === 0) {
+      trackPayrollEvent('payroll_run_completed', { periodId })
     }
-    for (const payslip of targetPayslips) {
-      await accountingApi.runPayrollAction({ id: payslip.id, action })
-    }
+    if (safeNumber(result?.succeeded) <= 0) throw new Error(result?.error || 'No eligible payslips were updated for this action.')
+    return result
   }), [mutate, periods, payslips, selectedRun, selectedRunId])
+
   const recordPayment = useCallback((payslipId, payment) => mutate('payment', async () => {
-    await accountingApi.runPayrollAction({
+    const result = await accountingApi.runPayrollAction({
       id: payslipId,
       action: 'record_payment',
       amount: safeNumber(payment.amount),
@@ -238,13 +208,20 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       notes: payment.notes,
       accountId: payment.accountId || null,
     })
+    trackPayrollEvent('payroll_payment_recorded', { payslipId, amount: safeNumber(payment.amount) })
+    return result
   }), [mutate])
+
   const applyImport = useCallback((payload) => mutate('import', async () => {
     await accountingApi.importPayroll(payload)
   }), [mutate])
+
+  const previewImport = useCallback(async (payload) => accountingApi.previewPayrollImport(payload), [])
+
   const uploadPdf = useCallback((file, payslipId) => mutate('pdf', async () => {
     await accountingApi.uploadPayrollFile(payslipId, file)
   }), [mutate])
+
   const saveSettings = useCallback(async (nextSettings) => {
     setBusyKey('settings')
     setError(null)
@@ -258,16 +235,21 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       setBusyKey('')
     }
   }, [loadSettings])
+
   const runs = useMemo(() => periods.map((period) => {
     const periodPayslips = payslips.filter((item) => item.periodId === period.id)
     return buildPayrollRun(period, periodPayslips)
   }), [periods, payslips])
+
   const dashboard = useMemo(() => runs.reduce((summary, run) => ({
     employees: employees.length,
     runs: summary.runs + 1,
     net: summary.net + safeNumber(run.summary?.net),
     due: summary.due + safeNumber(run.summary?.due),
   }), { employees: employees.length, runs: 0, net: 0, due: 0 }), [employees.length, runs])
+
+  const workflow = usePayrollWorkflow(selectedRun)
+
   return {
     employees,
     runs,
@@ -275,16 +257,19 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     selectedRunId,
     setSelectedRunId,
     settings,
+    workspace,
     dashboard,
+    workflow,
     loading,
     error,
     busyKey,
-    saveEmployee,
     saveRun,
+    deleteRun,
     updatePayslip,
     runAction,
     recordPayment,
     applyImport,
+    previewImport,
     uploadPdf,
     saveSettings,
     reload: loadAll,

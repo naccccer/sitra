@@ -315,12 +315,51 @@
 - Output:
   - normalized permission matrix
 
+## Human Resources Contracts
+
+### `human_resources.employee_directory.v1`
+- Owner: `human-resources`
+- Endpoint: `/api/hr_employees.php`
+- Permission gates:
+  - `human_resources.employees.read` for list/detail reads
+  - `human_resources.employees.write` for create/update/activate/deactivate
+- Input (`GET`):
+  - `id?: string | number`
+  - `q?: string`
+  - `isActive?: boolean`
+- Input (`POST` / `PUT`):
+  - `id?: string | number` on `PUT`
+  - `employeeCode: string`
+  - `firstName: string`
+  - `lastName: string`
+  - `personnelNo?: string`
+  - `nationalId?: string`
+  - `mobile?: string`
+  - `department?: string`
+  - `jobTitle?: string`
+  - `bankName?: string`
+  - `bankAccountNo?: string`
+  - `bankSheba?: string`
+  - `baseSalary?: number`
+  - `defaultInputs?: array | object`
+  - `notes?: string`
+  - `isActive?: boolean`
+- Input (`PATCH`):
+  - `id: string | number`
+  - `isActive?: boolean`
+  - `active?: boolean`
+- Output:
+  - GET: `{ employee }` or `{ employees }`
+  - POST/PUT/PATCH: `{ employee }`
+- Employee records are the source of truth for payroll consumers.
+- Schema: `human_resources.employee_directory.request.schema.json`
+
 ## Accounting Payroll Contracts
 
 ### `accounting.payroll.v1`
 - Owner: `accounting`
 - Endpoint: `/api/acc_payroll.php`
-- Entities: `period`, `employee`, `payslip`
+- Entities: `period`, `employee`, `payslip`, `workspace`
 - Permission gates:
   - `accounting.payroll.read` for list/detail reads
   - `accounting.payroll.write` for period, employee, and payslip create/update plus payslip cancel
@@ -328,8 +367,9 @@
   - `accounting.payroll.issue` for issuing approved payslips
   - `accounting.payroll.payments` or `accounting.payroll.record_payment` for recording payments
 - Input (`GET`):
-  - `entity?: 'period' | 'employee'`
+  - `entity?: 'period' | 'employee' | 'workspace'`
   - `id?: string | number`
+  - `periodId?: string | number` (for workspace)
   - `status?`, `q?`, `page?`, `pageSize?`, `employeeId?`, `periodId?`, `periodKey?`, `isActive?`
 - Input (`POST` / `PUT`):
   - `entity?: 'period' | 'employee' | 'payslip'`
@@ -368,7 +408,8 @@
     - `inputs?: array | object`
     - `notes?: string`
 - Input (`PATCH` action):
-  - `id: string | number`
+  - `id?: string | number`
+  - `ids?: array<string | number>` for bulk action
   - `action: 'approve' | 'issue' | 'record_payment' | 'cancel'`
   - `amount?: number`
   - `paymentMethod?: string`
@@ -379,14 +420,17 @@
 - Output:
   - GET period: `{ period }` or `{ periods }`
   - GET employee: `{ employee }` or `{ employees }`
+  - GET workspace: `{ workspace }`
   - GET payslip detail: `{ payslip }`
   - GET payslip list: `{ payslips, total, page, pageSize, totalPages }`
   - POST/PUT: `{ period }`, `{ employee }`, or `{ payslip }`
-  - PATCH: `{ payslip }`
+  - PATCH single: `{ payslip }`
+  - PATCH bulk: `{ action, total, succeeded, failed, results }`
 - Response roots commonly: `period`, `employee`, `payslip`, `periods`, `employees`, `payslips`
+- Employee ownership is backed by `human_resources.employee_directory.v1`; `/api/acc_payroll.php?entity=employee` remains a compatibility adapter over HR data.
 - Workflow: `draft` -> `approved` -> `issued` -> `cancelled`
 - Settings: `GET|POST /api/acc_settings.php?key=accounting.payroll.settings`
-- Schemas: `accounting.payroll.create.request.schema.json`, `accounting.payroll.update.request.schema.json`, `accounting.payroll.action.request.schema.json`, `accounting.payroll.import.request.schema.json`
+- Schemas: `accounting.payroll.create.request.schema.json`, `accounting.payroll.update.request.schema.json`, `accounting.payroll.action.request.schema.json`, `accounting.payroll.workspace.response.schema.json`, `accounting.payroll.action.bulk.response.schema.json`, `accounting.payroll.import.request.schema.json`, `accounting.payroll.import.preview.response.schema.json`
 
 ### `accounting.payroll.import.v1`
 - Owner: `accounting`
@@ -394,6 +438,7 @@
 - Permission gates:
   - `accounting.payroll.write` or `accounting.payroll.import` for batch imports
 - Input (`POST`):
+  - `dryRun?: boolean` (preview without DB write)
   - `periodId?: string | number`
   - `periodKey?: string`
   - `year?: number`
@@ -406,11 +451,13 @@
 - `rows` entry:
   - `employeeId: string | number`
   - `employeeCode?: string`
+  - `nationalId?: string`
   - `inputs?: array | object`
   - `notes?: string`
 - Output:
-  - `{ success, period, created, updated, results, warnings, errors }`
-- Import workflow: resolves the payroll period first, then matches each row by employee id or employee code, creates or updates draft payslips, and records row-level warnings/errors
+  - commit mode: `{ success, dryRun:false, period, created, updated, results, warnings, errors }`
+  - preview mode: `{ success, dryRun:true, period, created, updated, results, warnings, errors }`
+- Import workflow: resolves the payroll period first, then matches each row by employee id, employee code, or national ID, creates or updates draft payslips, and records row-level warnings/errors
 - Schema: `accounting.payroll.import.request.schema.json`
 
 ## API Adapter Mapping
@@ -419,6 +466,7 @@
 - `/api/customers.php` -> customers contracts
 - `/api/customer_projects.php` -> customers contracts
 - `/api/customer_project_contacts.php` -> customers contracts
+- `/api/hr_employees.php` -> human resources employee directory
 - `/api/inventory_v2_products.php` -> inventory v2 contracts
 - `/api/inventory_v2_warehouses.php` -> inventory v2 contracts
 - `/api/inventory_v2_locations.php` -> inventory v2 contracts

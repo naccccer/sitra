@@ -1,19 +1,35 @@
-﻿import { useMemo, useState } from 'react'
-import { Button, Card, Input } from '@/components/shared/ui'
+import { useMemo, useState } from 'react'
+import { Button, Card, Input, Select } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
+import { trackPayrollEvent } from '../../utils/payrollTelemetry'
 import { parsePayrollImportFile } from './payrollImportXlsx'
 
-export function PayrollImportPanel({ busy, employees, run, onApply }) {
+export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, onPreviewImport, run }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [manualEmployeeId, setManualEmployeeId] = useState('')
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
+  const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
+  const runPayslipByEmployeeId = useMemo(() => {
+    const map = new Map()
+    for (const payslip of (run?.payslips || [])) {
+      map.set(String(payslip?.employeeId || ''), payslip)
+    }
+    return map
+  }, [run?.payslips])
+  const selectedEmployee = useMemo(
+    () => employeeList.find((employee) => String(employee.id) === manualEmployeeId) || null,
+    [employeeList, manualEmployeeId],
+  )
+  const selectedEmployeePayslip = selectedEmployee ? runPayslipByEmployeeId.get(String(selectedEmployee.id)) || null : null
 
   const handleFile = async (file) => {
     if (!file) return
     setLoading(true)
     setError('')
     try {
-      setPreview(await parsePayrollImportFile(file, employees))
+      setPreview(await parsePayrollImportFile(file, employeeList))
     } catch (parseError) {
       setPreview(null)
       setError(parseError.message)
@@ -22,9 +38,14 @@ export function PayrollImportPanel({ busy, employees, run, onApply }) {
     }
   }
 
+  const handleManualEntry = () => {
+    if (!run?.id || !selectedEmployee || !onManualEntry) return
+    onManualEntry({ employee: selectedEmployee, payslip: selectedEmployeePayslip })
+  }
+
   const applyImport = async () => {
     if (!run?.id || !preview) return
-    await onApply({
+    const payload = {
       periodId: run.id,
       periodKey: run.periodKey,
       rows: preview.rows.filter((row) => row.errors.length === 0).map((row) => ({
@@ -32,23 +53,67 @@ export function PayrollImportPanel({ busy, employees, run, onApply }) {
         inputs: Object.fromEntries(Object.entries(row.values).filter(([key]) => key !== 'notes')),
         notes: row.values.notes || '',
       })),
+    }
+    if (onPreviewImport) {
+      const dryRun = await onPreviewImport(payload)
+      const previewErrors = Array.isArray(dryRun?.errors) ? dryRun.errors : []
+      trackPayrollEvent('payroll_import_applied', {
+        rowsTotal: preview?.summary?.total || payload.rows.length,
+        rowsValid: payload.rows.length,
+        warnings: Array.isArray(dryRun?.warnings) ? dryRun.warnings.length : (preview?.summary?.warnings || 0),
+        errors: previewErrors.length,
+      })
+      if (previewErrors.length > 0) {
+        setError('پیش نمایش سرور خطا دارد. ابتدا خطاهای فایل را اصلاح کنید.')
+        return
+      }
+    }
+    await onApply(payload)
+    trackPayrollEvent('payroll_import_applied', {
+      rowsTotal: preview?.summary?.total || payload.rows.length,
+      rowsValid: payload.rows.length,
+      warnings: preview?.summary?.warnings || 0,
+      errors: preview?.summary?.errors || 0,
     })
     setPreview(null)
   }
 
   return (
     <Card padding="md" className="space-y-4">
+      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="text-sm font-black text-slate-900">ورود دستی فیش</div>
+            <div className="text-xs font-bold text-slate-500">یک پرسنل را انتخاب کنید تا فیش همان دوره را به صورت دستی ثبت یا ویرایش کنید.</div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={manualEmployeeId} onChange={(event) => setManualEmployeeId(String(event.target.value || ''))} className="min-w-52">
+              <option value="">انتخاب پرسنل</option>
+              {employeeList.map((employee) => (
+                <option key={String(employee.id)} value={String(employee.id)}>
+                  {formatEmployeeOption(employee)}
+                </option>
+              ))}
+            </Select>
+            <Button size="sm" variant="primary" disabled={!run?.id || !manualEmployeeId} onClick={handleManualEntry}>
+              {selectedEmployeePayslip ? 'ویرایش فیش' : 'ثبت دستی فیش'}
+            </Button>
+          </div>
+        </div>
+        {!run?.id && <div className="mt-2 text-[11px] font-bold text-amber-700">برای ورود دستی، ابتدا یک دوره حقوق را انتخاب کنید.</div>}
+        {run?.id && manualEmployeeId && selectedEmployeePayslip && (
+          <div className="mt-2 text-[11px] font-bold text-slate-600">
+            برای این پرسنل قبلا فیش ثبت شده است؛ با زدن دکمه، همان فیش باز می شود.
+          </div>
+        )}
+      </div>
+
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-sm font-black text-slate-900">ورود اکسل ماهانه</div>
           <div className="text-xs font-bold text-slate-500">فقط فیلدهای متغیر ماهانه مانند اضافه کار، پاداش و کسورات اعمال می شوند.</div>
         </div>
-        <Input
-          type="file"
-          accept=".xlsx,.xls"
-          className="h-10 max-w-72 cursor-pointer file:me-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-black file:text-white"
-          onChange={(event) => handleFile(event.target.files?.[0] || null)}
-        />
+        <Input type="file" accept=".xlsx,.xls" className="h-10 max-w-72 cursor-pointer file:me-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
       </div>
 
       {!run?.id && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">برای اعمال فایل، ابتدا یک دوره حقوق را انتخاب کنید.</div>}
@@ -103,6 +168,12 @@ export function PayrollImportPanel({ busy, employees, run, onApply }) {
       )}
     </Card>
   )
+}
+
+function formatEmployeeOption(employee = {}) {
+  const fullName = String(employee?.fullName || employee?.name || '').trim() || 'بدون نام'
+  const employeeCode = String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').trim()
+  return `${fullName} (${toPN(employeeCode || 'بدون کد')})`
 }
 
 function Summary({ label, value }) {

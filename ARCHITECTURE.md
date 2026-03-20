@@ -26,6 +26,8 @@
   - Orders, order items payload, invoice/payment context.
 - `customers`
   - Customer registry, customer projects, and project contacts.
+- `human-resources`
+  - Employee directory and other HR-owned reference data.
 - `inventory`
   - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
   - Operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
@@ -71,6 +73,7 @@
   - `/api/customers.php`
   - `/api/customer_projects.php`
   - `/api/customer_project_contacts.php`
+  - `/api/hr_employees.php`
   - `/api/inventory_v2_products.php`
   - `/api/inventory_v2_warehouses.php`
   - `/api/inventory_v2_locations.php`

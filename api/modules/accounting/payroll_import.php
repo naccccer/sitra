@@ -22,15 +22,35 @@ if (
 app_require_csrf();
 
 $payload = app_read_json_body();
+$dryRun = acc_parse_bool($payload['dryRun'] ?? false, false) === true;
 $rows = $payload['rows'] ?? null;
 if (!is_array($rows) || $rows === []) {
     app_json(['success' => false, 'error' => 'rows array is required.'], 400);
 }
 
-try {
-    $period = acc_payroll_find_or_create_period($pdo, $payload, $actor);
-} catch (Throwable $e) {
-    app_json(['success' => false, 'error' => $e->getMessage()], 422);
+$period = null;
+if ($dryRun) {
+    $periodId = acc_parse_id($payload['periodId'] ?? null);
+    if ($periodId !== null) {
+        $period = acc_payroll_fetch_period($pdo, $periodId);
+    } else {
+        $periodKey = acc_normalize_text($payload['periodKey'] ?? '');
+        if ($periodKey !== '') {
+            $stmt = $pdo->prepare('SELECT * FROM acc_payroll_periods WHERE period_key = :period_key LIMIT 1');
+            $stmt->execute(['period_key' => $periodKey]);
+            $row = $stmt->fetch();
+            $period = is_array($row) ? $row : null;
+        }
+    }
+    if (!$period) {
+        app_json(['success' => false, 'error' => 'For dryRun, an existing periodId or periodKey is required.'], 422);
+    }
+} else {
+    try {
+        $period = acc_payroll_find_or_create_period($pdo, $payload, $actor);
+    } catch (Throwable $e) {
+        app_json(['success' => false, 'error' => $e->getMessage()], 422);
+    }
 }
 
 $results = [];
@@ -39,7 +59,6 @@ $errors = [];
 $created = 0;
 $updated = 0;
 
-$findByCode = $pdo->prepare('SELECT * FROM acc_payroll_employees WHERE employee_code = :employee_code LIMIT 1');
 $findPayslip = $pdo->prepare('SELECT id, status FROM acc_payslips WHERE employee_id = :employee_id AND period_id = :period_id LIMIT 1');
 
 foreach ($rows as $index => $row) {
@@ -48,15 +67,20 @@ foreach ($rows as $index => $row) {
         continue;
     }
 
-    $employeeId = acc_parse_id($row['employeeId'] ?? null);
-    $employeeCode = acc_normalize_text($row['employeeCode'] ?? '');
+    $employeeId = acc_parse_id($row['employeeId'] ?? ($row['employee_id'] ?? null));
+    $employeeCode = acc_normalize_text($row['employeeCode'] ?? ($row['employee_code'] ?? ''));
+    $nationalId = acc_normalize_text($row['nationalId'] ?? ($row['national_id'] ?? ''));
     $employee = null;
 
     if ($employeeId !== null) {
         $employee = acc_payroll_fetch_employee($pdo, $employeeId);
     } elseif ($employeeCode !== '') {
-        $findByCode->execute(['employee_code' => $employeeCode]);
-        $employee = $findByCode->fetch() ?: null;
+        $employee = app_hr_find_employee_by_code($pdo, $employeeCode);
+        if (!$employee && $nationalId !== '') {
+            $employee = app_hr_find_employee_by_national_id($pdo, $nationalId);
+        }
+    } elseif ($nationalId !== '') {
+        $employee = app_hr_find_employee_by_national_id($pdo, $nationalId);
     }
 
     if (!$employee) {
@@ -77,6 +101,23 @@ foreach ($rows as $index => $row) {
     }
 
     try {
+        if ($dryRun) {
+            $computed = acc_payroll_compute_items($pdo, $employee, $inputs);
+            if ($existing) {
+                $updated++;
+            } else {
+                $created++;
+            }
+            $results[] = [
+                'rowIndex' => $index,
+                'status' => $existing ? 'preview_update' : 'preview_create',
+                'employeeId' => (string)$employee['id'],
+                'payslipId' => $existing ? (string)$existing['id'] : null,
+                'netTotal' => (int)($computed['netTotal'] ?? 0),
+            ];
+            continue;
+        }
+
         $pdo->beginTransaction();
         $payslip = acc_payroll_store_payslip($pdo, [
             'employeeId' => (int)$employee['id'],
@@ -85,13 +126,11 @@ foreach ($rows as $index => $row) {
             'notes' => acc_normalize_text($row['notes'] ?? ''),
         ], $actor, $existing ? (int)$existing['id'] : null);
         $pdo->commit();
-
         if ($existing) {
             $updated++;
         } else {
             $created++;
         }
-
         $results[] = [
             'rowIndex' => $index,
             'status' => $existing ? 'updated' : 'created',
@@ -107,15 +146,18 @@ foreach ($rows as $index => $row) {
     }
 }
 
-app_audit_log($pdo, 'accounting.payroll.imported', 'acc_payroll_periods', (string)$period['id'], [
-    'created' => $created,
-    'updated' => $updated,
-    'warnings' => count($warnings),
-    'errors' => count($errors),
-], $actor);
+if (!$dryRun) {
+    app_audit_log($pdo, 'accounting.payroll.imported', 'acc_payroll_periods', (string)$period['id'], [
+        'created' => $created,
+        'updated' => $updated,
+        'warnings' => count($warnings),
+        'errors' => count($errors),
+    ], $actor);
+}
 
 app_json([
     'success' => true,
+    'dryRun' => $dryRun,
     'period' => acc_payroll_period_from_row($period),
     'created' => $created,
     'updated' => $updated,

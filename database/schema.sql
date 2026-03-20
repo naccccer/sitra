@@ -33,6 +33,35 @@ CREATE TABLE IF NOT EXISTS module_registry (
     KEY idx_module_registry_sort (sort_order),
     CONSTRAINT fk_module_registry_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS hr_employees (
+    id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    employee_code VARCHAR(40) NOT NULL,
+    personnel_no VARCHAR(40) NULL,
+    first_name VARCHAR(120) NOT NULL,
+    last_name VARCHAR(120) NOT NULL,
+    national_id VARCHAR(20) NULL,
+    mobile VARCHAR(40) NULL,
+    department VARCHAR(120) NULL,
+    job_title VARCHAR(120) NULL,
+    bank_name VARCHAR(120) NULL,
+    bank_account_no VARCHAR(80) NULL,
+    bank_sheba VARCHAR(40) NULL,
+    base_salary BIGINT NOT NULL DEFAULT 0,
+    default_inputs_json LONGTEXT NULL,
+    notes TEXT NULL,
+    is_active TINYINT(1) NOT NULL DEFAULT 1,
+    created_by_user_id INT UNSIGNED NULL,
+    updated_by_user_id INT UNSIGNED NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_hr_employees_code (employee_code),
+    UNIQUE KEY uq_hr_employees_personnel_no (personnel_no),
+    KEY idx_hr_employees_active (is_active),
+    KEY idx_hr_employees_name (last_name, first_name),
+    CONSTRAINT fk_hr_employee_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_hr_employee_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS audit_logs (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     event_type VARCHAR(120) NOT NULL,
@@ -467,7 +496,8 @@ CREATE TABLE IF NOT EXISTS inventory_v2_stock_ledger (
 INSERT INTO module_registry (module_key, label, phase, is_enabled, is_protected, sort_order) VALUES
     ('auth', 'Auth', 'active', 1, 1, 10), ('users-access', 'Users Access', 'active', 1, 1, 20),
     ('sales', 'Sales', 'active', 1, 0, 30), ('customers', 'Customers', 'active', 1, 0, 35),
-    ('inventory', 'Inventory', 'active', 1, 0, 38), ('master-data', 'Master Data', 'active', 1, 0, 40)
+    ('inventory', 'Inventory', 'active', 1, 0, 38), ('master-data', 'Master Data', 'active', 1, 0, 40),
+    ('human-resources', 'منابع انسانی', 'active', 1, 0, 45), ('accounting', 'Accounting', 'active', 1, 0, 50)
 ON DUPLICATE KEY UPDATE label = VALUES(label), phase = VALUES(phase), is_protected = VALUES(is_protected), sort_order = VALUES(sort_order);
 INSERT INTO inventory_warehouses (warehouse_key, name, flow_type, is_active) VALUES
     ('raw-input', 'Ø§Ù†Ø¨Ø§Ø± ÙˆØ±ÙˆØ¯ÛŒ Ø¬Ø§Ù…', 'raw_input', 1), ('finished-output', 'Ø§Ù†Ø¨Ø§Ø± Ø®Ø±ÙˆØ¬ÛŒ Ù…Ø­ØµÙˆÙ„', 'finished_output', 1)

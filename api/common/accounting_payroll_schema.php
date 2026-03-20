@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/human_resources.php';
+
 function app_ensure_accounting_payroll_schema(PDO $pdo): void
 {
     static $ensured = false;
@@ -10,37 +12,8 @@ function app_ensure_accounting_payroll_schema(PDO $pdo): void
     $ensured = true;
 
     app_ensure_accounting_schema($pdo);
+    app_ensure_human_resources_schema($pdo);
     app_ensure_system_settings_table($pdo);
-
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS acc_payroll_employees (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            employee_code VARCHAR(40) NOT NULL,
-            personnel_no VARCHAR(40) NULL,
-            first_name VARCHAR(120) NOT NULL,
-            last_name VARCHAR(120) NOT NULL,
-            national_id VARCHAR(20) NULL,
-            mobile VARCHAR(40) NULL,
-            bank_name VARCHAR(120) NULL,
-            bank_account_no VARCHAR(80) NULL,
-            bank_sheba VARCHAR(40) NULL,
-            base_salary BIGINT NOT NULL DEFAULT 0,
-            default_inputs_json LONGTEXT NULL,
-            notes TEXT NULL,
-            is_active TINYINT(1) NOT NULL DEFAULT 1,
-            created_by_user_id INT UNSIGNED NULL,
-            updated_by_user_id INT UNSIGNED NULL,
-            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            UNIQUE KEY uq_acc_payroll_employees_code (employee_code),
-            UNIQUE KEY uq_acc_payroll_employees_personnel_no (personnel_no),
-            KEY idx_acc_payroll_employees_active (is_active),
-            KEY idx_acc_payroll_employees_name (last_name, first_name),
-            CONSTRAINT fk_acc_payroll_emp_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
-            CONSTRAINT fk_acc_payroll_emp_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    );
 
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS acc_payroll_periods (
@@ -103,7 +76,7 @@ function app_ensure_accounting_payroll_schema(PDO $pdo): void
             KEY idx_acc_payslips_period (period_id),
             KEY idx_acc_payslips_accrual_voucher (accrual_voucher_id),
             CONSTRAINT fk_acc_payslips_period FOREIGN KEY (period_id) REFERENCES acc_payroll_periods (id) ON UPDATE CASCADE ON DELETE RESTRICT,
-            CONSTRAINT fk_acc_payslips_employee FOREIGN KEY (employee_id) REFERENCES acc_payroll_employees (id) ON UPDATE CASCADE ON DELETE RESTRICT,
+            CONSTRAINT fk_acc_payslips_employee FOREIGN KEY (employee_id) REFERENCES hr_employees (id) ON UPDATE CASCADE ON DELETE RESTRICT,
             CONSTRAINT fk_acc_payslips_accrual_voucher FOREIGN KEY (accrual_voucher_id) REFERENCES acc_vouchers (id) ON UPDATE CASCADE ON DELETE SET NULL,
             CONSTRAINT fk_acc_payslips_approved_by FOREIGN KEY (approved_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,
             CONSTRAINT fk_acc_payslips_issued_by FOREIGN KEY (issued_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL,

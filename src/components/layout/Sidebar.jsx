@@ -25,6 +25,7 @@ const navSections = [
       { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
       { to: '/customers', label: 'مشتریان', icon: Users, capability: 'canManageCustomers', moduleId: 'customers' },
+      { to: '/human-resources', label: 'منابع انسانی', icon: Users, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
       { to: '/inventory', label: 'انبار', icon: Package, capability: 'canAccessInventory', moduleId: 'inventory' },
       { to: '/accounting', label: 'حسابداری', icon: BookOpen, capability: 'canAccessAccounting', moduleId: 'accounting' },
     ],

@@ -23,7 +23,7 @@ function acc_payroll_ensure(PDO $pdo): void
 function acc_payroll_schema_ready(PDO $pdo): bool
 {
     $tables = [
-        'acc_payroll_employees',
+        'hr_employees',
         'acc_payroll_periods',
         'acc_payslips',
         'acc_payslip_items',
@@ -43,25 +43,7 @@ function acc_payroll_schema_ready(PDO $pdo): bool
 
 function acc_payroll_employee_from_row(array $row): array
 {
-    return [
-        'id' => (string)$row['id'],
-        'employeeCode' => (string)$row['employee_code'],
-        'personnelNo' => $row['personnel_no'] ?: null,
-        'firstName' => (string)$row['first_name'],
-        'lastName' => (string)$row['last_name'],
-        'fullName' => trim((string)$row['first_name'] . ' ' . (string)$row['last_name']),
-        'nationalId' => $row['national_id'] ?: null,
-        'mobile' => $row['mobile'] ?: null,
-        'bankName' => $row['bank_name'] ?: null,
-        'bankAccountNo' => $row['bank_account_no'] ?: null,
-        'bankSheba' => $row['bank_sheba'] ?: null,
-        'baseSalary' => (int)$row['base_salary'],
-        'defaultInputs' => json_decode((string)($row['default_inputs_json'] ?? 'null'), true) ?: [],
-        'notes' => $row['notes'] ?: null,
-        'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
-        'createdAt' => (string)($row['created_at'] ?? ''),
-        'updatedAt' => (string)($row['updated_at'] ?? ''),
-    ];
+    return app_hr_employee_from_row($row);
 }
 
 function acc_payroll_period_from_row(array $row): array
@@ -81,10 +63,7 @@ function acc_payroll_period_from_row(array $row): array
 
 function acc_payroll_fetch_employee(PDO $pdo, int $employeeId): ?array
 {
-    $stmt = $pdo->prepare('SELECT * FROM acc_payroll_employees WHERE id = :id LIMIT 1');
-    $stmt->execute(['id' => $employeeId]);
-    $row = $stmt->fetch();
-    return is_array($row) ? $row : null;
+    return app_hr_fetch_employee($pdo, $employeeId);
 }
 
 function acc_payroll_fetch_period(PDO $pdo, int $periodId): ?array
@@ -97,59 +76,12 @@ function acc_payroll_fetch_period(PDO $pdo, int $periodId): ?array
 
 function acc_payroll_list_employees(PDO $pdo, string $q, ?bool $isActive): array
 {
-    $where = [];
-    $params = [];
-    if ($q !== '') {
-        $where[] = '(employee_code LIKE :q OR personnel_no LIKE :q OR first_name LIKE :q OR last_name LIKE :q)';
-        $params['q'] = '%' . $q . '%';
-    }
-    if ($isActive !== null) {
-        $where[] = 'is_active = :is_active';
-        $params['is_active'] = $isActive ? 1 : 0;
-    }
-    $stmt = $pdo->prepare('SELECT * FROM acc_payroll_employees' . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . ' ORDER BY last_name ASC, first_name ASC, id ASC');
-    $stmt->execute($params);
-    return array_map('acc_payroll_employee_from_row', $stmt->fetchAll() ?: []);
+    return app_hr_list_employees($pdo, $q, $isActive);
 }
 
 function acc_payroll_save_employee(PDO $pdo, array $payload, array $actor, ?int $employeeId = null): array
 {
-    $employeeCode = acc_normalize_text($payload['employeeCode'] ?? '');
-    $firstName = acc_normalize_text($payload['firstName'] ?? '');
-    $lastName = acc_normalize_text($payload['lastName'] ?? '');
-    if ($employeeCode === '' || $firstName === '' || $lastName === '') {
-        app_json(['success' => false, 'error' => 'employeeCode, firstName and lastName are required.'], 400);
-    }
-
-    $values = [
-        'employee_code' => $employeeCode,
-        'personnel_no' => ($v = acc_normalize_text($payload['personnelNo'] ?? '')) !== '' ? $v : null,
-        'first_name' => $firstName,
-        'last_name' => $lastName,
-        'national_id' => ($v = acc_normalize_text($payload['nationalId'] ?? '')) !== '' ? $v : null,
-        'mobile' => ($v = acc_normalize_text($payload['mobile'] ?? '')) !== '' ? $v : null,
-        'bank_name' => ($v = acc_normalize_text($payload['bankName'] ?? '')) !== '' ? $v : null,
-        'bank_account_no' => ($v = acc_normalize_text($payload['bankAccountNo'] ?? '')) !== '' ? $v : null,
-        'bank_sheba' => ($v = acc_normalize_text($payload['bankSheba'] ?? '')) !== '' ? $v : null,
-        'base_salary' => max(0, (int)($payload['baseSalary'] ?? 0)),
-        'default_inputs_json' => json_encode(is_array($payload['defaultInputs'] ?? null) ? $payload['defaultInputs'] : [], JSON_UNESCAPED_UNICODE),
-        'notes' => ($v = acc_normalize_text($payload['notes'] ?? '')) !== '' ? $v : null,
-        'is_active' => acc_parse_bool($payload['isActive'] ?? true, true) ? 1 : 0,
-    ];
-
-    if ($employeeId === null) {
-        $sql = 'INSERT INTO acc_payroll_employees (employee_code, personnel_no, first_name, last_name, national_id, mobile, bank_name, bank_account_no, bank_sheba, base_salary, default_inputs_json, notes, is_active, created_by_user_id, updated_by_user_id) VALUES (:employee_code, :personnel_no, :first_name, :last_name, :national_id, :mobile, :bank_name, :bank_account_no, :bank_sheba, :base_salary, :default_inputs_json, :notes, :is_active, :user_id, :user_id2)';
-        $pdo->prepare($sql)->execute($values + ['user_id' => (int)$actor['id'], 'user_id2' => (int)$actor['id']]);
-        $employeeId = (int)$pdo->lastInsertId();
-        app_audit_log($pdo, 'accounting.payroll.employee.created', 'acc_payroll_employees', (string)$employeeId, ['employeeCode' => $employeeCode], $actor);
-    } else {
-        $sql = 'UPDATE acc_payroll_employees SET employee_code = :employee_code, personnel_no = :personnel_no, first_name = :first_name, last_name = :last_name, national_id = :national_id, mobile = :mobile, bank_name = :bank_name, bank_account_no = :bank_account_no, bank_sheba = :bank_sheba, base_salary = :base_salary, default_inputs_json = :default_inputs_json, notes = :notes, is_active = :is_active, updated_by_user_id = :user_id WHERE id = :id';
-        $pdo->prepare($sql)->execute($values + ['user_id' => (int)$actor['id'], 'id' => $employeeId]);
-        app_audit_log($pdo, 'accounting.payroll.employee.updated', 'acc_payroll_employees', (string)$employeeId, ['employeeCode' => $employeeCode], $actor);
-    }
-
-    $row = acc_payroll_fetch_employee($pdo, $employeeId);
-    return acc_payroll_employee_from_row($row ?: []);
+    return app_hr_save_employee($pdo, $payload, $actor, $employeeId);
 }
 
 function acc_payroll_find_or_create_period(PDO $pdo, array $payload, array $actor): array
@@ -295,4 +227,103 @@ function acc_payroll_store_payslip(PDO $pdo, array $payload, array $actor, ?int 
     }
 
     return acc_payroll_fetch_payslip_detail($pdo, $payslipId) ?: [];
+}
+
+function acc_payroll_fetch_latest_period(PDO $pdo): ?array
+{
+    $stmt = $pdo->query('SELECT * FROM acc_payroll_periods ORDER BY period_key DESC, id DESC LIMIT 1');
+    $row = $stmt ? $stmt->fetch() : false;
+    return is_array($row) ? $row : null;
+}
+
+function acc_payroll_fetch_workspace(PDO $pdo, ?int $periodId = null): ?array
+{
+    $period = $periodId !== null ? acc_payroll_fetch_period($pdo, $periodId) : acc_payroll_fetch_latest_period($pdo);
+    if (!$period) {
+        return null;
+    }
+
+    $stmt = $pdo->prepare(
+        'SELECT id, status, net_total, payments_total, balance_due
+         FROM acc_payslips
+         WHERE period_id = :period_id
+         ORDER BY id ASC'
+    );
+    $stmt->execute(['period_id' => (int)$period['id']]);
+    $rows = $stmt->fetchAll() ?: [];
+
+    $summary = [
+        'employees' => 0,
+        'draft' => 0,
+        'approved' => 0,
+        'issued' => 0,
+        'cancelled' => 0,
+        'net' => 0,
+        'paid' => 0,
+        'due' => 0,
+    ];
+    $actionable = [
+        'approve' => [],
+        'issue' => [],
+        'payments' => [],
+    ];
+
+    foreach ($rows as $row) {
+        $status = (string)($row['status'] ?? 'draft');
+        $id = (string)($row['id'] ?? '');
+        $due = (int)($row['balance_due'] ?? 0);
+        $summary['employees']++;
+        $summary['net'] += (int)($row['net_total'] ?? 0);
+        $summary['paid'] += (int)($row['payments_total'] ?? 0);
+        $summary['due'] += $due;
+
+        if (array_key_exists($status, $summary)) {
+            $summary[$status]++;
+        }
+        if ($status === 'draft' && $id !== '') {
+            $actionable['approve'][] = $id;
+        }
+        if ($status === 'approved' && $id !== '') {
+            $actionable['issue'][] = $id;
+        }
+        if ($status === 'issued' && $id !== '' && $due > 0) {
+            $actionable['payments'][] = $id;
+        }
+    }
+
+    $blockers = [];
+    if ($summary['employees'] === 0) {
+        $blockers[] = [
+            'step' => 'prepare',
+            'code' => 'no_payslips',
+            'message' => 'برای این دوره هنوز فیشی ثبت نشده است.',
+        ];
+    }
+    if (($summary['draft'] + $summary['approved']) === 0 && $summary['issued'] === 0) {
+        $blockers[] = [
+            'step' => 'approve_issue',
+            'code' => 'no_actionable_payslips',
+            'message' => 'هیچ فیشی برای تایید یا صدور وجود ندارد.',
+        ];
+    }
+    if ($summary['issued'] === 0) {
+        $blockers[] = [
+            'step' => 'payments',
+            'code' => 'no_issued_payslips',
+            'message' => 'ابتدا حداقل یک فیش را صادر کنید.',
+        ];
+    }
+
+    return [
+        'period' => acc_payroll_period_from_row($period),
+        'summary' => $summary,
+        'actionable' => $actionable,
+        'stepStatus' => [
+            'period' => 'ready',
+            'prepare' => $summary['employees'] > 0 ? 'ready' : 'blocked',
+            'approve_issue' => ($summary['draft'] + $summary['approved']) > 0 ? 'ready' : ($summary['issued'] > 0 ? 'completed' : 'blocked'),
+            'payments' => $summary['issued'] > 0 ? ($summary['due'] > 0 ? 'ready' : 'completed') : 'blocked',
+        ],
+        'blockers' => $blockers,
+    ];
 }

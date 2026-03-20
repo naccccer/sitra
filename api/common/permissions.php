@@ -2,6 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/permissions_inventory_v2.php';
 require_once __DIR__ . '/permissions_accounting.php';
+require_once __DIR__ . '/permissions_human_resources.php';
 function app_permission_definitions(): array
 {
     return [
@@ -14,6 +15,7 @@ function app_permission_definitions(): array
         ['key' => 'customers.write', 'module' => 'customers', 'label' => 'Manage customers and projects'],
         ...app_inventory_v2_permission_definitions(),
         ...app_accounting_permission_definitions(),
+        ...app_human_resources_permission_definitions(),
         ['key' => 'master_data.catalog.read', 'module' => 'master-data', 'label' => 'View catalog'],
         ['key' => 'master_data.catalog.write', 'module' => 'master-data', 'label' => 'Edit catalog'],
         ['key' => 'users_access.users.read', 'module' => 'users-access', 'label' => 'View users'],
@@ -71,7 +73,7 @@ function app_default_role_permissions_matrix(): array
             'kernel.audit.read',
             'profile.read',
             'profile.write',
-        ], array_merge(app_inventory_v2_manager_default_permissions(), app_accounting_manager_default_permissions())),
+        ], array_merge(app_inventory_v2_manager_default_permissions(), app_accounting_manager_default_permissions(), app_human_resources_manager_default_permissions())),
         'sales' => array_merge([
             'sales.orders.read',
             'sales.orders.create',
@@ -211,6 +213,13 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
             break;
         }
     }
+    $canAccessHumanResources = false;
+    foreach (app_human_resources_read_permissions() as $permission) {
+        if (in_array($permission, $permissions, true)) {
+            $canAccessHumanResources = true;
+            break;
+        }
+    }
     $capabilities = [
         'canAccessDashboard' => in_array('sales.orders.read', $permissions, true),
         'canManageOrders' => in_array('sales.orders.read', $permissions, true),
@@ -223,6 +232,7 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
         'canManageInventory' => $canManageInventory,
         'canManageSystemSettings' => false,
         'canAccessAccounting' => $canAccessAccounting,
+        'canAccessHumanResources' => $canAccessHumanResources,
     ];
     if (!is_array($modules)) {
         return $capabilities;
@@ -233,6 +243,7 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
     $masterDataEnabled = $enabledMap['master-data'] ?? true;
     $usersAccessEnabled = $enabledMap['users-access'] ?? true;
     $inventoryEnabled = $enabledMap['inventory'] ?? true;
+    $humanResourcesEnabled = $enabledMap['human-resources'] ?? true;
     $capabilities['canAccessDashboard'] = $capabilities['canAccessDashboard'] && $salesEnabled;
     $capabilities['canManageOrders'] = $capabilities['canManageOrders'] && $salesEnabled;
     $capabilities['canManageCustomers'] = $capabilities['canManageCustomers'] && $customersEnabled;
@@ -243,5 +254,6 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
     $capabilities['canManageInventory'] = $capabilities['canManageInventory'] && $inventoryEnabled;
     $accountingEnabled = $enabledMap['accounting'] ?? true;
     $capabilities['canAccessAccounting'] = $capabilities['canAccessAccounting'] && $accountingEnabled;
+    $capabilities['canAccessHumanResources'] = $capabilities['canAccessHumanResources'] && $humanResourcesEnabled;
     return $capabilities;
 }
