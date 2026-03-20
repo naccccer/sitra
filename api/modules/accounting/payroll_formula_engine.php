@@ -10,14 +10,18 @@ function acc_payroll_default_formulas(): array
         'items' => [
             ['key' => 'base_salary', 'label' => 'Base salary', 'type' => 'earning', 'source' => 'baseSalary', 'accountKey' => 'base_salary', 'sortOrder' => 10],
             ['key' => 'housing_allowance', 'label' => 'Housing allowance', 'type' => 'earning', 'source' => 'housingAllowance', 'accountKey' => 'housing_allowance', 'sortOrder' => 20],
-            ['key' => 'transport_allowance', 'label' => 'Transport allowance', 'type' => 'earning', 'source' => 'transportAllowance', 'accountKey' => 'transport_allowance', 'sortOrder' => 30],
-            ['key' => 'overtime', 'label' => 'Overtime', 'type' => 'earning', 'expression' => 'overtimeHours * overtimeRate', 'accountKey' => 'overtime', 'sortOrder' => 40],
-            ['key' => 'bonus', 'label' => 'Bonus', 'type' => 'earning', 'source' => 'bonus', 'accountKey' => 'bonus', 'sortOrder' => 50],
-            ['key' => 'other_earnings', 'label' => 'Other earnings', 'type' => 'earning', 'source' => 'otherEarnings', 'accountKey' => 'other_earnings', 'sortOrder' => 60],
-            ['key' => 'insurance', 'label' => 'Insurance', 'type' => 'deduction', 'source' => 'insuranceDeduction', 'accountKey' => 'insurance', 'sortOrder' => 70],
-            ['key' => 'tax', 'label' => 'Tax', 'type' => 'deduction', 'source' => 'taxDeduction', 'accountKey' => 'tax', 'sortOrder' => 80],
-            ['key' => 'loan', 'label' => 'Loan', 'type' => 'deduction', 'source' => 'loanDeduction', 'accountKey' => 'loan', 'sortOrder' => 90],
-            ['key' => 'other_deductions', 'label' => 'Other deductions', 'type' => 'deduction', 'source' => 'otherDeductions', 'accountKey' => 'other_deductions', 'sortOrder' => 100],
+            ['key' => 'food_allowance', 'label' => 'Food allowance', 'type' => 'earning', 'source' => 'foodAllowance', 'accountKey' => 'transport_allowance', 'sortOrder' => 30],
+            ['key' => 'child_allowance', 'label' => 'Child allowance', 'type' => 'earning', 'source' => 'childAllowance', 'accountKey' => 'base_salary', 'sortOrder' => 40],
+            ['key' => 'seniority_allowance', 'label' => 'Seniority allowance', 'type' => 'earning', 'source' => 'seniorityAllowance', 'accountKey' => 'base_salary', 'sortOrder' => 50],
+            ['key' => 'overtime', 'label' => 'Overtime', 'type' => 'earning', 'source' => 'overtimePay', 'accountKey' => 'overtime', 'sortOrder' => 60],
+            ['key' => 'bonus', 'label' => 'Bonus', 'type' => 'earning', 'source' => 'bonus', 'accountKey' => 'bonus', 'sortOrder' => 70],
+            ['key' => 'other_earnings', 'label' => 'Other earnings', 'type' => 'earning', 'source' => 'otherAdditions', 'accountKey' => 'other_earnings', 'sortOrder' => 80],
+            ['key' => 'insurance', 'label' => 'Insurance', 'type' => 'deduction', 'source' => 'insurance', 'accountKey' => 'insurance', 'sortOrder' => 90],
+            ['key' => 'tax', 'label' => 'Tax', 'type' => 'deduction', 'source' => 'tax', 'accountKey' => 'tax', 'sortOrder' => 100],
+            ['key' => 'loan', 'label' => 'Loan', 'type' => 'deduction', 'source' => 'loanDeduction', 'accountKey' => 'loan', 'sortOrder' => 110],
+            ['key' => 'advance_deduction', 'label' => 'Advance deduction', 'type' => 'deduction', 'source' => 'advanceDeduction', 'accountKey' => 'loan', 'sortOrder' => 120],
+            ['key' => 'absence_deduction', 'label' => 'Absence deduction', 'type' => 'deduction', 'source' => 'absenceDeduction', 'accountKey' => 'other_deductions', 'sortOrder' => 130],
+            ['key' => 'other_deductions', 'label' => 'Other deductions', 'type' => 'deduction', 'source' => 'otherDeductions', 'accountKey' => 'other_deductions', 'sortOrder' => 140],
         ],
     ];
 }
@@ -84,10 +88,12 @@ function acc_payroll_compute_items(PDO $pdo, array $employee, array $inputs): ar
 
     foreach ($formulas['items'] as $formula) {
         $rawAmount = 0.0;
-        if ($formula['expression'] !== '') {
-            $rawAmount = acc_payroll_eval_expression($formula['expression'], $context);
-        } elseif ($formula['source'] !== '') {
-            $rawAmount = (float)($context[$formula['source']] ?? 0);
+        $expression = acc_normalize_text($formula['expression'] ?? '');
+        $source = acc_normalize_text($formula['source'] ?? '');
+        if ($expression !== '') {
+            $rawAmount = acc_payroll_eval_expression($expression, $context);
+        } elseif ($source !== '') {
+            $rawAmount = (float)($context[$source] ?? 0);
         }
 
         $amount = (int)round($rawAmount, 0, PHP_ROUND_HALF_UP);
@@ -113,7 +119,7 @@ function acc_payroll_compute_items(PDO $pdo, array $employee, array $inputs): ar
             'accountKey' => $formula['accountKey'],
             'amount' => $amount,
             'sortOrder' => $formula['sortOrder'],
-            'formulaMeta' => ['source' => $formula['source'], 'expression' => $formula['expression']],
+            'formulaMeta' => ['source' => $source, 'expression' => $expression],
         ];
     }
 
@@ -164,12 +170,13 @@ function acc_payroll_tokenize_expression(string $expression): array
             throw new RuntimeException('Invalid payroll formula expression.');
         }
         $offset += strlen($matches[0]);
-        if ($matches[1] !== '') {
+        if (($matches[1] ?? '') !== '') {
             $tokens[] = ['type' => 'number', 'value' => (float)$matches[1]];
-        } elseif ($matches[2] !== '') {
+        } elseif (($matches[2] ?? '') !== '') {
             $tokens[] = ['type' => 'identifier', 'value' => $matches[2]];
         } else {
-            $tokens[] = ['type' => $matches[3], 'value' => $matches[3]];
+            $operator = $matches[3] ?? '';
+            $tokens[] = ['type' => $operator, 'value' => $operator];
         }
     }
     $tokens[] = ['type' => 'eof', 'value' => null];

@@ -1,56 +1,6 @@
 <?php
 declare(strict_types=1);
 
-function app_schema_column_exists(PDO $pdo, string $table, string $column): bool
-{
-    if (!app_schema_is_safe_identifier($table) || !app_schema_is_safe_identifier($column)) {
-        return false;
-    }
-    try {
-        $stmt = $pdo->query("SHOW COLUMNS FROM `{$table}` LIKE '{$column}'");
-        return (bool)($stmt && $stmt->fetch());
-    } catch (Throwable $e) {
-        return false;
-    }
-}
-
-function app_schema_index_exists(PDO $pdo, string $table, string $index): bool
-{
-    if (!app_schema_is_safe_identifier($table) || !app_schema_is_safe_identifier($index)) {
-        return false;
-    }
-    try {
-        $stmt = $pdo->query("SHOW INDEX FROM `{$table}` WHERE Key_name = '{$index}'");
-        return (bool)($stmt && $stmt->fetch());
-    } catch (Throwable $e) {
-        return false;
-    }
-}
-
-function app_schema_fk_exists(PDO $pdo, string $table, string $constraint): bool
-{
-    if (!app_schema_is_safe_identifier($table) || !app_schema_is_safe_identifier($constraint)) {
-        return false;
-    }
-    try {
-        $sql = "SELECT 1
-                FROM information_schema.TABLE_CONSTRAINTS
-                WHERE CONSTRAINT_SCHEMA = DATABASE()
-                  AND TABLE_NAME = :table_name
-                  AND CONSTRAINT_NAME = :constraint_name
-                  AND CONSTRAINT_TYPE = 'FOREIGN KEY'
-                LIMIT 1";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            'table_name' => $table,
-            'constraint_name' => $constraint,
-        ]);
-        return (bool)$stmt->fetch();
-    } catch (Throwable $e) {
-        return false;
-    }
-}
-
 function app_ensure_customers_table(PDO $pdo): void
 {
     static $ensured = false;
@@ -63,7 +13,17 @@ function app_ensure_customers_table(PDO $pdo): void
         "CREATE TABLE IF NOT EXISTS customers (
             id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
             full_name VARCHAR(200) NOT NULL,
+            customer_code VARCHAR(40) NULL,
+            customer_type ENUM('individual','company') NOT NULL DEFAULT 'individual',
+            company_name VARCHAR(200) NULL,
             default_phone VARCHAR(40) NULL,
+            national_id VARCHAR(40) NULL,
+            economic_code VARCHAR(40) NULL,
+            email VARCHAR(190) NULL,
+            province VARCHAR(120) NULL,
+            city VARCHAR(120) NULL,
+            credit_limit BIGINT UNSIGNED NULL,
+            payment_term_days INT UNSIGNED NULL,
             address TEXT NULL,
             notes TEXT NULL,
             is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -71,10 +31,70 @@ function app_ensure_customers_table(PDO $pdo): void
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
             KEY idx_customers_name (full_name),
+            UNIQUE KEY uq_customers_customer_code (customer_code),
+            KEY idx_customers_customer_type (customer_type),
+            KEY idx_customers_province_city (province, city),
             KEY idx_customers_default_phone (default_phone),
             KEY idx_customers_is_active (is_active)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+}
+function app_ensure_customer_crm_columns(PDO $pdo): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
+    app_ensure_customers_table($pdo);
+
+    $additions = [
+        "customer_code VARCHAR(40) NULL AFTER full_name",
+        "customer_type ENUM('individual','company') NOT NULL DEFAULT 'individual' AFTER customer_code",
+        "company_name VARCHAR(200) NULL AFTER customer_type",
+        "national_id VARCHAR(40) NULL AFTER company_name",
+        "economic_code VARCHAR(40) NULL AFTER national_id",
+        "email VARCHAR(190) NULL AFTER economic_code",
+        "province VARCHAR(120) NULL AFTER email",
+        "city VARCHAR(120) NULL AFTER province",
+        "credit_limit BIGINT UNSIGNED NULL AFTER city",
+        "payment_term_days INT UNSIGNED NULL AFTER credit_limit",
+    ];
+
+    foreach ($additions as $definition) {
+        $column = explode(' ', $definition, 2)[0];
+        if (!app_schema_column_exists($pdo, 'customers', $column)) {
+            try {
+                $pdo->exec("ALTER TABLE customers ADD COLUMN {$definition}");
+            } catch (Throwable $e) {
+                // Keep runtime compatibility if alter fails.
+            }
+        }
+    }
+
+    try {
+        $pdo->exec(
+            "UPDATE customers
+             SET customer_code = CONCAT('C', LPAD(id, 6, '0'))
+             WHERE customer_code IS NULL OR customer_code = ''"
+        );
+    } catch (Throwable $e) {
+        // Keep runtime compatibility if backfill fails.
+    }
+
+    try {
+        if (!app_schema_index_exists($pdo, 'customers', 'uq_customers_customer_code')) {
+            $pdo->exec("ALTER TABLE customers ADD UNIQUE KEY uq_customers_customer_code (customer_code)");
+        }
+        if (!app_schema_index_exists($pdo, 'customers', 'idx_customers_customer_type')) {
+            $pdo->exec("ALTER TABLE customers ADD KEY idx_customers_customer_type (customer_type)");
+        }
+        if (!app_schema_index_exists($pdo, 'customers', 'idx_customers_province_city')) {
+            $pdo->exec("ALTER TABLE customers ADD KEY idx_customers_province_city (province, city)");
+        }
+    } catch (Throwable $e) {
+    }
 }
 
 function app_ensure_customer_projects_table(PDO $pdo): void
@@ -219,6 +239,7 @@ function app_ensure_orders_customer_columns(PDO $pdo): void
 
 function app_ensure_customers_domain_schema(PDO $pdo): void
 {
+    app_ensure_customer_crm_columns($pdo);
     app_ensure_customer_project_contacts_table($pdo);
     app_ensure_orders_customer_columns($pdo);
 }

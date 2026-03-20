@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 import { Button, Card } from '@/components/shared/ui'
 import { AccountsPanel } from '../components/accounts/AccountsPanel'
+import { PayrollPanel } from '../components/payroll/PayrollPanel'
 import { VouchersPanel } from '../components/vouchers/VouchersPanel'
 import { TrialBalanceReport } from '../components/reports/TrialBalanceReport'
 import { GeneralLedgerReport } from '../components/reports/GeneralLedgerReport'
@@ -13,38 +14,32 @@ import { HelpPanel } from '../components/help/HelpPanel'
 import { useTabSettings } from '../hooks/useTabSettings'
 
 const TAB_DEFINITIONS = [
-  { id: 'vouchers',        label: 'اسناد',            permission: 'accounting.vouchers.read',      configurable: true },
-  { id: 'accounts',        label: 'سرفصل حساب‌ها',    permission: 'accounting.accounts.read',      configurable: true },
-  { id: 'trial_balance',   label: 'تراز آزمایشی',     permission: 'accounting.reports.read',       configurable: true },
-  { id: 'general_ledger',  label: 'دفتر کل',           permission: 'accounting.reports.read',       configurable: true },
-  { id: 'ar_summary',      label: 'مانده مشتریان',     permission: 'accounting.reports.read',       configurable: true },
-  { id: 'pnl',             label: 'درآمد/هزینه',       permission: 'accounting.reports.read',       configurable: true },
-  { id: 'bridge',          label: 'پل فروش',           permission: 'accounting.sales_bridge.read',  configurable: true },
-  { id: 'settings',        label: 'تنظیمات',           permission: 'accounting.fiscal_years.read',  configurable: false },
-  { id: 'help',            label: 'راهنما',             permission: null,                            configurable: false },
+  { id: 'vouchers', label: 'اسناد', permission: 'accounting.vouchers.read', configurable: true },
+  { id: 'accounts', label: 'سرفصل حساب ها', permission: 'accounting.accounts.read', configurable: true },
+  { id: 'trial_balance', label: 'تراز آزمایشی', permission: 'accounting.reports.read', configurable: true },
+  { id: 'general_ledger', label: 'دفتر کل', permission: 'accounting.reports.read', configurable: true },
+  { id: 'ar_summary', label: 'مانده مشتریان', permission: 'accounting.reports.read', configurable: true },
+  { id: 'pnl', label: 'درآمد/هزینه', permission: 'accounting.reports.read', configurable: true },
+  { id: 'bridge', label: 'پل فروش', permission: 'accounting.sales_bridge.read', configurable: true },
+  { id: 'payroll', label: 'حقوق و دستمزد', permission: 'accounting.payroll.read', configurable: true },
+  { id: 'settings', label: 'تنظیمات', permission: 'accounting.fiscal_years.read', configurable: false },
+  { id: 'help', label: 'راهنما', permission: null, configurable: false },
 ]
 
 export const AccountingPage = ({ session }) => {
-  const permissions = useMemo(
-    () => (Array.isArray(session?.permissions) ? session.permissions : []),
-    [session]
-  )
+  const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session])
   const capabilities = session?.capabilities ?? {}
   const canAccessAccounting = Boolean(capabilities.canAccessAccounting)
-
   const { isVisible } = useTabSettings()
 
-  const visibleTabs = useMemo(
-    () => TAB_DEFINITIONS.filter((t) => {
-      if (t.permission && !permissions.includes(t.permission)) return false
-      if (t.configurable && !isVisible(t.id)) return false
-      return true
-    }),
-    [permissions, isVisible]
-  )
+  const visibleTabs = useMemo(() => TAB_DEFINITIONS.filter((tab) => {
+    if (tab.permission && !permissions.includes(tab.permission)) return false
+    if (tab.configurable && !isVisible(tab.id)) return false
+    return true
+  }), [permissions, isVisible])
 
   const [activeTab, setActiveTab] = useState('vouchers')
-  const resolvedTab = visibleTabs.find((t) => t.id === activeTab)?.id ?? visibleTabs[0]?.id
+  const resolvedTab = visibleTabs.find((tab) => tab.id === activeTab)?.id ?? visibleTabs[0]?.id
 
   if (!canAccessAccounting) {
     return <AccessDenied message="دسترسی کافی برای ماژول حسابداری وجود ندارد." />
@@ -52,16 +47,17 @@ export const AccountingPage = ({ session }) => {
 
   const renderContent = () => {
     switch (resolvedTab) {
-      case 'vouchers':        return <VouchersPanel session={session} />
-      case 'accounts':        return <AccountsPanel session={session} />
-      case 'trial_balance':   return <TrialBalanceReport />
-      case 'general_ledger':  return <GeneralLedgerReport />
-      case 'ar_summary':      return <ArSummaryReport />
-      case 'pnl':             return <PnlSummaryReport />
-      case 'bridge':          return <SalesBridgePanel session={session} />
-      case 'settings':        return <FiscalYearPanel session={session} />
-      case 'help':            return <HelpPanel />
-      default:                return null
+      case 'vouchers': return <VouchersPanel session={session} />
+      case 'accounts': return <AccountsPanel session={session} />
+      case 'trial_balance': return <TrialBalanceReport />
+      case 'general_ledger': return <GeneralLedgerReport />
+      case 'ar_summary': return <ArSummaryReport />
+      case 'pnl': return <PnlSummaryReport />
+      case 'bridge': return <SalesBridgePanel session={session} />
+      case 'payroll': return <PayrollPanel session={session} />
+      case 'settings': return <FiscalYearPanel session={session} />
+      case 'help': return <HelpPanel />
+      default: return null
     }
   }
 
@@ -70,18 +66,11 @@ export const AccountingPage = ({ session }) => {
       <Card padding="md" className="space-y-3">
         <div>
           <div className="text-base font-black text-slate-900">حسابداری</div>
-          <div className="text-xs font-bold text-slate-500">
-            ثبت دوطرفه — سرفصل‌های استاندارد ایران — گزارشات مالی
-          </div>
+          <div className="text-xs font-bold text-slate-500">ثبت دوطرفه، سرفصل های استاندارد ایران، گزارشات مالی و عملیات حقوق و دستمزد</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (
-            <Button
-              key={tab.id}
-              size="sm"
-              variant={resolvedTab === tab.id ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab(tab.id)}
-            >
+            <Button key={tab.id} size="sm" variant={resolvedTab === tab.id ? 'primary' : 'secondary'} onClick={() => setActiveTab(tab.id)}>
               {tab.label}
             </Button>
           ))}

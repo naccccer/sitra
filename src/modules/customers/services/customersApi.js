@@ -2,7 +2,17 @@ import { api } from '../../../services/api'
 
 export const customersApi = {
   async fetchCustomers(filters = {}) {
-    return api.fetchCustomers(filters)
+    return api.fetchCustomers({
+      scope: 'directory',
+      ...filters,
+    })
+  },
+
+  async fetchCustomerDirectory(filters = {}) {
+    return api.fetchCustomers({
+      scope: 'directory',
+      ...filters,
+    })
   },
 
   async createCustomer(payload) {

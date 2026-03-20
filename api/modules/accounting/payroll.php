@@ -1,23 +1,45 @@
 <?php
 declare(strict_types=1);
-
 require_once __DIR__ . '/../../_common.php';
 require_once __DIR__ . '/../../../config/db.php';
 require_once __DIR__ . '/accounting_helpers.php';
 require_once __DIR__ . '/payroll_helpers.php';
-
 app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 app_require_module_enabled($pdo, 'accounting');
-app_ensure_accounting_schema($pdo);
 acc_payroll_ensure($pdo);
-
 $actor = app_require_auth(['admin', 'manager']);
 $entity = acc_normalize_text($_GET['entity'] ?? '');
-
 if ($method === 'GET') {
     acc_require_permission($actor, 'accounting.payroll.read', $pdo);
-
+    if ($entity === 'period') {
+        $periodId = acc_parse_id($_GET['id'] ?? null);
+        if ($periodId !== null) {
+            $period = acc_payroll_fetch_period($pdo, $periodId);
+            if (!$period) {
+                app_json(['success' => false, 'error' => 'Payroll period not found.'], 404);
+            }
+            app_json(['success' => true, 'period' => acc_payroll_period_from_row($period)]);
+        }
+        $status = acc_normalize_text($_GET['status'] ?? '');
+        $where = [];
+        $params = [];
+        if ($status !== '' && in_array($status, ['open', 'issued', 'closed'], true)) {
+            $where[] = 'status = :status';
+            $params['status'] = $status;
+        }
+        $stmt = $pdo->prepare(
+            'SELECT * FROM acc_payroll_periods'
+            . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
+            . ' ORDER BY period_key DESC, id DESC'
+        );
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll() ?: [];
+        app_json([
+            'success' => true,
+            'periods' => array_map('acc_payroll_period_from_row', $rows),
+        ]);
+    }
     if ($entity === 'employee') {
         $employeeId = acc_parse_id($_GET['id'] ?? null);
         if ($employeeId !== null) {
@@ -27,12 +49,10 @@ if ($method === 'GET') {
             }
             app_json(['success' => true, 'employee' => acc_payroll_employee_from_row($employee)]);
         }
-
         $q = acc_normalize_text($_GET['q'] ?? '');
         $isActive = array_key_exists('isActive', $_GET) ? acc_parse_bool($_GET['isActive'], true) : null;
         app_json(['success' => true, 'employees' => acc_payroll_list_employees($pdo, $q, $isActive)]);
     }
-
     $payslipId = acc_parse_id($_GET['id'] ?? null);
     if ($payslipId !== null) {
         $payslip = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
@@ -41,7 +61,6 @@ if ($method === 'GET') {
         }
         app_json(['success' => true, 'payslip' => $payslip]);
     }
-
     $where = [];
     $params = [];
     $employeeId = acc_parse_id($_GET['employeeId'] ?? null);
@@ -52,7 +71,6 @@ if ($method === 'GET') {
     $page = max(1, (int)($_GET['page'] ?? 1));
     $pageSize = min(100, max(10, (int)($_GET['pageSize'] ?? 20)));
     $offset = ($page - 1) * $pageSize;
-
     if ($employeeId !== null) {
         $where[] = 'ps.employee_id = :employee_id';
         $params['employee_id'] = $employeeId;
@@ -73,12 +91,10 @@ if ($method === 'GET') {
         $where[] = '(ps.slip_no LIKE :q OR e.employee_code LIKE :q OR e.first_name LIKE :q OR e.last_name LIKE :q)';
         $params['q'] = '%' . $q . '%';
     }
-
     $whereSql = $where ? ' WHERE ' . implode(' AND ', $where) : '';
     $countStmt = $pdo->prepare('SELECT COUNT(*) AS total FROM acc_payslips ps JOIN acc_payroll_employees e ON e.id = ps.employee_id JOIN acc_payroll_periods p ON p.id = ps.period_id' . $whereSql);
     $countStmt->execute($params);
     $total = (int)($countStmt->fetch()['total'] ?? 0);
-
     $sql = 'SELECT ps.*, e.employee_code, e.first_name, e.last_name, p.period_key, p.title AS period_title, p.pay_date FROM acc_payslips ps JOIN acc_payroll_employees e ON e.id = ps.employee_id JOIN acc_payroll_periods p ON p.id = ps.period_id' . $whereSql . ' ORDER BY p.period_key DESC, e.last_name ASC, e.first_name ASC LIMIT :limit OFFSET :offset';
     $stmt = $pdo->prepare($sql);
     foreach ($params as $key => $value) {
@@ -88,7 +104,6 @@ if ($method === 'GET') {
     $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
     $stmt->execute();
     $rows = $stmt->fetchAll() ?: [];
-
     $payslips = array_map(static function (array $row): array {
         return [
             'id' => (string)$row['id'],
@@ -100,17 +115,23 @@ if ($method === 'GET') {
             'issuedAt' => $row['issued_at'] ?: null,
         ];
     }, $rows);
-
     app_json(['success' => true, 'payslips' => $payslips, 'total' => $total, 'page' => $page, 'pageSize' => $pageSize, 'totalPages' => max(1, (int)ceil($total / $pageSize))]);
 }
-
 $payload = app_read_json_body();
 if ($method !== 'GET') {
     app_require_csrf();
 }
-
 if ($method === 'POST') {
     $entity = acc_normalize_text($payload['entity'] ?? $entity);
+    if ($entity === 'period') {
+        acc_require_permission($actor, 'accounting.payroll.write', $pdo);
+        try {
+            $period = acc_payroll_find_or_create_period($pdo, $payload, $actor);
+            app_json(['success' => true, 'period' => acc_payroll_period_from_row($period)], 201);
+        } catch (Throwable $e) {
+            app_json(['success' => false, 'error' => $e->getMessage()], 422);
+        }
+    }
     acc_require_permission($actor, 'accounting.payroll.write', $pdo);
     try {
         if ($entity === 'employee') {
@@ -127,9 +148,42 @@ if ($method === 'POST') {
         app_json(['success' => false, 'error' => $e->getMessage()], 422);
     }
 }
-
 if ($method === 'PUT') {
     $entity = acc_normalize_text($payload['entity'] ?? $entity);
+    if ($entity === 'period') {
+        acc_require_permission($actor, 'accounting.payroll.write', $pdo);
+        $periodId = acc_parse_id($payload['id'] ?? null);
+        if ($periodId === null) {
+            app_json(['success' => false, 'error' => 'Valid period id is required.'], 400);
+        }
+        $existing = acc_payroll_fetch_period($pdo, $periodId);
+        if (!$existing) {
+            app_json(['success' => false, 'error' => 'Payroll period not found.'], 404);
+        }
+        $title = ($v = acc_normalize_text($payload['title'] ?? (string)$existing['title'])) !== '' ? $v : (string)$existing['title'];
+        $startDate = acc_parse_date(acc_normalize_text($payload['startDate'] ?? '')) ?? (string)$existing['start_date'];
+        $endDate = acc_parse_date(acc_normalize_text($payload['endDate'] ?? '')) ?? (string)$existing['end_date'];
+        $payDate = acc_parse_date(acc_normalize_text($payload['payDate'] ?? '')) ?? ($existing['pay_date'] ?: null);
+        $status = acc_normalize_text($payload['status'] ?? (string)$existing['status']);
+        if (!in_array($status, ['open', 'issued', 'closed'], true)) {
+            $status = (string)$existing['status'];
+        }
+        $pdo->prepare(
+            'UPDATE acc_payroll_periods
+             SET title = :title, start_date = :start_date, end_date = :end_date, pay_date = :pay_date, status = :status, updated_by_user_id = :user_id
+             WHERE id = :id'
+        )->execute([
+            'title' => $title,
+            'start_date' => $startDate,
+            'end_date' => $endDate,
+            'pay_date' => $payDate,
+            'status' => $status,
+            'user_id' => (int)$actor['id'],
+            'id' => $periodId,
+        ]);
+        $period = acc_payroll_fetch_period($pdo, $periodId);
+        app_json(['success' => true, 'period' => acc_payroll_period_from_row($period ?: $existing)]);
+    }
     acc_require_permission($actor, 'accounting.payroll.write', $pdo);
     try {
         if ($entity === 'employee') {
@@ -154,18 +208,15 @@ if ($method === 'PUT') {
         app_json(['success' => false, 'error' => $e->getMessage()], 422);
     }
 }
-
 $payslipId = acc_parse_id($payload['id'] ?? null);
 $action = acc_normalize_text($payload['action'] ?? '');
 if ($payslipId === null) {
     app_json(['success' => false, 'error' => 'Valid payslip id is required.'], 400);
 }
-
 $payslip = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
 if (!$payslip) {
     app_json(['success' => false, 'error' => 'Payslip not found.'], 404);
 }
-
 try {
     if ($action === 'approve') {
         acc_require_permission($actor, 'accounting.payroll.approve', $pdo);
@@ -238,6 +289,5 @@ try {
     }
     app_json(['success' => false, 'error' => $e->getMessage()], 422);
 }
-
 $updated = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
 app_json(['success' => true, 'payslip' => $updated]);

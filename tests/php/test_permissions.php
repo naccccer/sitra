@@ -29,6 +29,12 @@ test_assert_contains('inventory.v2_products.read', $keys, 'contains inventory.v2
 test_assert_contains('inventory.v2_operations.write', $keys, 'contains inventory.v2_operations.write');
 test_assert_contains('inventory.v2_reports.read', $keys, 'contains inventory.v2_reports.read');
 test_assert_contains('master_data.catalog.write', $keys, 'contains master_data.catalog.write');
+test_assert_contains('accounting.payroll.read', $keys, 'contains accounting.payroll.read');
+test_assert_contains('accounting.payroll.write', $keys, 'contains accounting.payroll.write');
+test_assert_contains('accounting.payroll.approve', $keys, 'contains accounting.payroll.approve');
+test_assert_contains('accounting.payroll.issue', $keys, 'contains accounting.payroll.issue');
+test_assert_contains('accounting.payroll.record_payment', $keys, 'contains accounting.payroll.record_payment');
+test_assert_contains('accounting.payroll.import', $keys, 'contains accounting.payroll.import');
 test_assert_contains('users_access.users.write', $keys, 'contains users_access.users.write');
 test_assert_contains('kernel.audit.read', $keys, 'contains kernel.audit.read');
 test_assert_contains('profile.read', $keys, 'contains profile.read');
@@ -81,8 +87,26 @@ test_assert_contains('sales.orders.read', $matrix['sales'], 'sales has sales.ord
 // Manager should have users_access.users.write
 test_assert_contains('users_access.users.write', $matrix['manager'], 'manager has users_access.users.write');
 test_assert_contains('customers.write', $matrix['manager'], 'manager has customers.write');
+test_assert_contains('accounting.payroll.read', $matrix['manager'], 'manager has accounting.payroll.read');
+test_assert_contains('accounting.payroll.write', $matrix['manager'], 'manager has accounting.payroll.write');
+test_assert_contains('accounting.payroll.approve', $matrix['manager'], 'manager has accounting.payroll.approve');
+test_assert_contains('accounting.payroll.issue', $matrix['manager'], 'manager has accounting.payroll.issue');
+test_assert_contains('accounting.payroll.record_payment', $matrix['manager'], 'manager has accounting.payroll.record_payment');
+test_assert_contains('accounting.payroll.import', $matrix['manager'], 'manager has accounting.payroll.import');
 test_assert_contains('customers.read', $matrix['sales'], 'sales has customers.read');
 test_assert_contains('inventory.v2_operations.read', $matrix['sales'], 'sales has inventory.v2_operations.read');
+test_assert(
+    !in_array('accounting.payroll.write', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.write'
+);
+test_assert(
+    !in_array('accounting.payroll.issue', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.issue'
+);
+test_assert(
+    !in_array('accounting.payroll.record_payment', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.record_payment'
+);
 
 // ------------------------------------------------------------------
 // app_normalize_role_permissions_matrix

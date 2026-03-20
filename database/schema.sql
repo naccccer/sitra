@@ -51,7 +51,17 @@ CREATE TABLE IF NOT EXISTS audit_logs (
 CREATE TABLE IF NOT EXISTS customers (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     full_name VARCHAR(200) NOT NULL,
+    customer_code VARCHAR(40) NULL,
+    customer_type ENUM('individual','company') NOT NULL DEFAULT 'individual',
+    company_name VARCHAR(200) NULL,
     default_phone VARCHAR(40) NULL,
+    national_id VARCHAR(40) NULL,
+    economic_code VARCHAR(40) NULL,
+    email VARCHAR(190) NULL,
+    province VARCHAR(120) NULL,
+    city VARCHAR(120) NULL,
+    credit_limit BIGINT UNSIGNED NULL,
+    payment_term_days INT UNSIGNED NULL,
     address TEXT NULL,
     notes TEXT NULL,
     is_active TINYINT(1) NOT NULL DEFAULT 1,
@@ -59,6 +69,9 @@ CREATE TABLE IF NOT EXISTS customers (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     KEY idx_customers_name (full_name),
+    UNIQUE KEY uq_customers_customer_code (customer_code),
+    KEY idx_customers_customer_type (customer_type),
+    KEY idx_customers_province_city (province, city),
     KEY idx_customers_default_phone (default_phone),
     KEY idx_customers_is_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

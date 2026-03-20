@@ -14,16 +14,20 @@ declare(strict_types=1);
  *   3. audit.php       - audit log table + logging helper
  *   4. orders_domain.php - order status, payment methods, order code, serialization
  *   5. schema.php      - schema introspection, idempotency, orders table, catalog read
- *   6. customers_schema.php - customers/projects schema + order refs
- *   7. customers_domain.php - customers/projects domain helpers
- *   8. customers_order_links.php - order/customer linking helpers
- *   9. users.php       - users table, profile read/write
- *  10. inventory_v2_schema.php - Inventory V2 schema and seeds
- *  11. inventory_v2_helpers.php - Inventory V2 data mappers and guards
- *  12. inventory_v2_operations.php - Inventory V2 posting engine and operation helpers
- *  13. inventory_v2_reservations.php - Inventory V2 reservation helpers
- *  14. module_registry.php - module registry, user roles
- *  15. permissions.php - RBAC, capabilities
+ *   6. customers_schema_introspection.php - customers schema check helpers
+ *   7. customers_schema.php - customers/projects schema + order refs
+ *   8. customers_crm.php - customers CRM normalization helpers
+ *   9. customers_domain.php - customers/projects domain helpers
+ *  10. customers_directory.php - customers directory read model
+ *  11. customers_mutations.php - customers CRUD helpers
+ *  12. customers_order_links.php - order/customer linking helpers
+ *  13. users.php       - users table, profile read/write
+ *  14. inventory_v2_schema.php - Inventory V2 schema and seeds
+ *  15. inventory_v2_helpers.php - Inventory V2 data mappers and guards
+ *  16. inventory_v2_operations.php - Inventory V2 posting engine and operation helpers
+ *  17. inventory_v2_reservations.php - Inventory V2 reservation helpers
+ *  18. module_registry.php - module registry, user roles
+ *  19. permissions.php - RBAC, capabilities
  */
 
 require_once __DIR__ . '/../config/env.php';
@@ -34,8 +38,12 @@ require_once __DIR__ . '/common/auth.php';
 require_once __DIR__ . '/common/audit.php';
 require_once __DIR__ . '/common/orders_domain.php';
 require_once __DIR__ . '/common/schema.php';
+require_once __DIR__ . '/common/customers_schema_introspection.php';
 require_once __DIR__ . '/common/customers_schema.php';
+require_once __DIR__ . '/common/customers_crm.php';
 require_once __DIR__ . '/common/customers_domain.php';
+require_once __DIR__ . '/common/customers_directory.php';
+require_once __DIR__ . '/common/customers_mutations.php';
 require_once __DIR__ . '/common/customers_order_links.php';
 require_once __DIR__ . '/common/users.php';
 require_once __DIR__ . '/common/inventory_v2_schema.php';

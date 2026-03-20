@@ -21,7 +21,17 @@ function app_customer_from_row(array $row): array
     return [
         'id' => (string)($row['id'] ?? ''),
         'fullName' => (string)($row['full_name'] ?? ''),
+        'customerCode' => (string)($row['customer_code'] ?? ''),
+        'customerType' => (string)($row['customer_type'] ?? 'individual'),
+        'companyName' => (string)($row['company_name'] ?? ''),
         'defaultPhone' => (string)($row['default_phone'] ?? ''),
+        'nationalId' => (string)($row['national_id'] ?? ''),
+        'economicCode' => (string)($row['economic_code'] ?? ''),
+        'email' => (string)($row['email'] ?? ''),
+        'province' => (string)($row['province'] ?? ''),
+        'city' => (string)($row['city'] ?? ''),
+        'creditLimit' => (($row['credit_limit'] ?? null) === null) ? null : (int)$row['credit_limit'],
+        'paymentTermDays' => (($row['payment_term_days'] ?? null) === null) ? null : (int)$row['payment_term_days'],
         'address' => (string)($row['address'] ?? ''),
         'notes' => (string)($row['notes'] ?? ''),
         'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
@@ -67,6 +77,14 @@ function app_customer_find(PDO $pdo, int $id): ?array
     return $row ?: null;
 }
 
+function app_customer_find_by_code(PDO $pdo, string $customerCode): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM customers WHERE customer_code = :customer_code LIMIT 1');
+    $stmt->execute(['customer_code' => $customerCode]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
 function app_customer_project_find(PDO $pdo, int $id): ?array
 {
     $stmt = $pdo->prepare('SELECT * FROM customer_projects WHERE id = :id LIMIT 1');
@@ -93,7 +111,17 @@ function app_customer_create(PDO $pdo, string $fullName, string $defaultPhone = 
         'full_name' => $fullName,
         'default_phone' => $defaultPhone !== '' ? $defaultPhone : null,
     ]);
-    $created = app_customer_find($pdo, (int)$pdo->lastInsertId());
+    $id = (int)$pdo->lastInsertId();
+    try {
+        $pdo->prepare(
+            "UPDATE customers
+             SET customer_code = CONCAT('C', LPAD(id, 6, '0'))
+             WHERE id = :id AND (customer_code IS NULL OR customer_code = '')"
+        )->execute(['id' => $id]);
+    } catch (Throwable $e) {
+        // Keep legacy flow if CRM columns are unavailable.
+    }
+    $created = app_customer_find($pdo, $id);
     return $created ?: [];
 }
 

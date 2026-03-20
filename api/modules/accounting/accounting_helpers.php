@@ -223,6 +223,7 @@ function acc_accounting_allowed_setting_keys(): array
     return [
         'accounting.bridge.account_map',
         'accounting.tab_visibility',
+        'accounting.payroll.settings',
         'accounting.payroll.account_map',
         'accounting.payroll.formulas',
     ];
@@ -249,25 +250,27 @@ function acc_find_fiscal_year_for_date(PDO $pdo, string $date): ?array
 
 function acc_find_postable_account(PDO $pdo, $candidate): ?array
 {
-    $accountId = acc_parse_id($candidate);
-    if ($accountId !== null) {
+    $code = acc_normalize_text($candidate);
+    if ($code !== '') {
         $stmt = $pdo->prepare(
-            'SELECT * FROM acc_accounts WHERE id = :id AND is_active = 1 AND is_postable = 1 LIMIT 1'
+            'SELECT * FROM acc_accounts WHERE code = :code AND is_active = 1 AND is_postable = 1 LIMIT 1'
         );
-        $stmt->execute(['id' => $accountId]);
+        $stmt->execute(['code' => $code]);
         $row = $stmt->fetch();
-        return is_array($row) ? $row : null;
+        if (is_array($row)) {
+            return $row;
+        }
     }
 
-    $code = acc_normalize_text($candidate);
-    if ($code === '') {
+    $accountId = acc_parse_id($candidate);
+    if ($accountId === null) {
         return null;
     }
 
     $stmt = $pdo->prepare(
-        'SELECT * FROM acc_accounts WHERE code = :code AND is_active = 1 AND is_postable = 1 LIMIT 1'
+        'SELECT * FROM acc_accounts WHERE id = :id AND is_active = 1 AND is_postable = 1 LIMIT 1'
     );
-    $stmt->execute(['code' => $code]);
+    $stmt->execute(['id' => $accountId]);
     $row = $stmt->fetch();
     return is_array($row) ? $row : null;
 }

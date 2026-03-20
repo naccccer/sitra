@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccountingPayrollUpdateRequest",
+  "type": "object",
+  "required": ["id"],
+  "properties": {
+    "entity": {
+      "type": "string",
+      "enum": ["period", "employee", "payslip"]
+    },
+    "id": { "type": ["string", "number"] },
+    "periodId": { "type": ["string", "number"] },
+    "periodKey": { "type": "string" },
+    "year": { "type": "integer" },
+    "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+    "title": { "type": "string" },
+    "startDate": { "type": "string" },
+    "endDate": { "type": "string" },
+    "payDate": { "type": "string" },
+    "status": { "type": "string", "enum": ["open", "issued", "closed"] },
+    "employeeId": { "type": ["string", "number"] },
+    "employeeCode": { "type": "string" },
+    "firstName": { "type": "string" },
+    "lastName": { "type": "string" },
+    "personnelNo": { "type": "string" },
+    "nationalId": { "type": "string" },
+    "mobile": { "type": "string" },
+    "bankName": { "type": "string" },
+    "bankAccountNo": { "type": "string" },
+    "bankSheba": { "type": "string" },
+    "baseSalary": { "type": "number", "minimum": 0 },
+    "defaultInputs": {
+      "type": ["array", "object"]
+    },
+    "inputs": {
+      "type": ["array", "object"]
+    },
+    "notes": { "type": "string" },
+    "isActive": { "type": "boolean" }
+  },
+  "additionalProperties": true
+}
