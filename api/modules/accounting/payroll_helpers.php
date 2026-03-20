@@ -7,7 +7,38 @@ require_once __DIR__ . '/payroll_journal.php';
 
 function acc_payroll_ensure(PDO $pdo): void
 {
-    app_ensure_accounting_payroll_schema($pdo);
+    if (acc_payroll_schema_ready($pdo)) {
+        return;
+    }
+
+    try {
+        app_ensure_accounting_payroll_schema($pdo);
+    } catch (Throwable $e) {
+        if (!acc_payroll_schema_ready($pdo)) {
+            throw $e;
+        }
+    }
+}
+
+function acc_payroll_schema_ready(PDO $pdo): bool
+{
+    $tables = [
+        'acc_payroll_employees',
+        'acc_payroll_periods',
+        'acc_payslips',
+        'acc_payslip_items',
+        'acc_payslip_payments',
+        'acc_payslip_documents',
+    ];
+    $placeholders = implode(', ', array_fill(0, count($tables), '?'));
+    $stmt = $pdo->prepare(
+        'SELECT COUNT(*) AS total
+         FROM information_schema.tables
+         WHERE table_schema = DATABASE()
+           AND table_name IN (' . $placeholders . ')'
+    );
+    $stmt->execute($tables);
+    return (int)($stmt->fetch()['total'] ?? 0) === count($tables);
 }
 
 function acc_payroll_employee_from_row(array $row): array
@@ -192,7 +223,7 @@ function acc_payroll_fetch_payslip_detail(PDO $pdo, int $payslipId): ?array
     $docsStmt->execute(['id' => $payslipId]);
 
     return [
-        'id' => (string)$row['payslip_id'],
+        'id' => (string)$row['id'],
         'slipNo' => $row['slip_no'] ?: null,
         'status' => (string)$row['status'],
         'currencyCode' => (string)$row['currency_code'],
@@ -236,7 +267,11 @@ function acc_payroll_store_payslip(PDO $pdo, array $payload, array $actor, ?int 
     }
 
     $computed = acc_payroll_compute_items($pdo, $employee, $inputs);
-    $paymentsTotal = $payslipId !== null ? (int)(acc_payroll_fetch_payslip_detail($pdo, $payslipId)['totals']['paymentsTotal'] ?? 0) : 0;
+    $paymentsTotal = 0;
+    if ($payslipId !== null) {
+        $currentTotals = $current['totals'] ?? [];
+        $paymentsTotal = (int)($currentTotals['paymentsTotal'] ?? 0);
+    }
     $balanceDue = $computed['netTotal'] - $paymentsTotal;
 
     if ($payslipId === null) {

@@ -101,8 +101,26 @@
 
 ### `customers.customer_list.v1`
 - Owner: `customers`
+- Compatibility read model for existing consumers.
 - Output:
   - `customers: array`
+
+### `customers.customer_directory.v1`
+- Owner: `customers`
+- Input:
+  - `q?: string`
+  - `isActive?: boolean`
+  - `customerType?: 'individual' | 'company'`
+  - `hasDue?: boolean`
+  - `page?: number`
+  - `pageSize?: number`
+- Output:
+  - `customers: array`
+  - `pagination: { page, pageSize, total }`
+- Directory rows include:
+  - customer identity fields (`id`, `customerCode`, `fullName`, `customerType`)
+  - CRM profile fields (`companyName`, `nationalId`, `economicCode`, `email`, `province`, `city`, `creditLimit`, `paymentTermDays`)
+  - operational summary (`defaultPhone`, `isActive`, `activeProjectsCount`, `activeContactsCount`, `activeOrdersCount`, `totalAmount`, `paidAmount`, `dueAmount`, `createdAt`, `updatedAt`)
 
 ### `customers.customer_create.v1`
 - Owner: `customers`
@@ -111,6 +129,7 @@
   - `defaultPhone?: string`
   - `address?: string`
   - `notes?: string`
+  - CRM fields (`customerCode?`, `customerType?`, `companyName?`, `nationalId?`, `economicCode?`, `email?`, `province?`, `city?`, `creditLimit?`, `paymentTermDays?`)
 - Output:
   - `customer: object`
 
@@ -119,6 +138,7 @@
 - Input:
   - `id: number`
   - mutable fields subset (`fullName`, `defaultPhone`, `address`, `notes`)
+  - CRM fields (`customerCode?`, `customerType?`, `companyName?`, `nationalId?`, `economicCode?`, `email?`, `province?`, `city?`, `creditLimit?`, `paymentTermDays?`)
   - `applyToOrderHistory?: boolean`
 - Output:
   - `customer: object`
@@ -295,6 +315,104 @@
 - Output:
   - normalized permission matrix
 
+## Accounting Payroll Contracts
+
+### `accounting.payroll.v1`
+- Owner: `accounting`
+- Endpoint: `/api/acc_payroll.php`
+- Entities: `period`, `employee`, `payslip`
+- Permission gates:
+  - `accounting.payroll.read` for list/detail reads
+  - `accounting.payroll.write` for period, employee, and payslip create/update plus payslip cancel
+  - `accounting.payroll.approve` for approving draft payslips
+  - `accounting.payroll.issue` for issuing approved payslips
+  - `accounting.payroll.payments` or `accounting.payroll.record_payment` for recording payments
+- Input (`GET`):
+  - `entity?: 'period' | 'employee'`
+  - `id?: string | number`
+  - `status?`, `q?`, `page?`, `pageSize?`, `employeeId?`, `periodId?`, `periodKey?`, `isActive?`
+- Input (`POST` / `PUT`):
+  - `entity?: 'period' | 'employee' | 'payslip'`
+  - period:
+    - `periodId?: string | number`
+    - `periodKey?: string`
+    - `year?: number`
+    - `month?: number`
+    - `title?: string`
+    - `startDate?: string`
+    - `endDate?: string`
+    - `payDate?: string`
+    - `status?: 'open' | 'issued' | 'closed'`
+  - employee:
+    - `id?: string | number` on `PUT`
+    - `employeeCode: string`
+    - `firstName: string`
+    - `lastName: string`
+    - `personnelNo?: string`
+    - `nationalId?: string`
+    - `mobile?: string`
+    - `bankName?: string`
+    - `bankAccountNo?: string`
+    - `bankSheba?: string`
+    - `baseSalary?: number`
+    - `defaultInputs?: array | object`
+    - `notes?: string`
+    - `isActive?: boolean`
+  - payslip:
+    - `id?: string | number` on `PUT`
+    - `employeeId: string | number`
+    - `periodId?: string | number`
+    - `periodKey?: string`
+    - `year?: number`
+    - `month?: number`
+    - `inputs?: array | object`
+    - `notes?: string`
+- Input (`PATCH` action):
+  - `id: string | number`
+  - `action: 'approve' | 'issue' | 'record_payment' | 'cancel'`
+  - `amount?: number`
+  - `paymentMethod?: string`
+  - `paymentDate?: string`
+  - `accountId?: string | number`
+  - `referenceNo?: string`
+  - `notes?: string`
+- Output:
+  - GET period: `{ period }` or `{ periods }`
+  - GET employee: `{ employee }` or `{ employees }`
+  - GET payslip detail: `{ payslip }`
+  - GET payslip list: `{ payslips, total, page, pageSize, totalPages }`
+  - POST/PUT: `{ period }`, `{ employee }`, or `{ payslip }`
+  - PATCH: `{ payslip }`
+- Response roots commonly: `period`, `employee`, `payslip`, `periods`, `employees`, `payslips`
+- Workflow: `draft` -> `approved` -> `issued` -> `cancelled`
+- Settings: `GET|POST /api/acc_settings.php?key=accounting.payroll.settings`
+- Schemas: `accounting.payroll.create.request.schema.json`, `accounting.payroll.update.request.schema.json`, `accounting.payroll.action.request.schema.json`, `accounting.payroll.import.request.schema.json`
+
+### `accounting.payroll.import.v1`
+- Owner: `accounting`
+- Endpoint: `/api/acc_payroll_import.php`
+- Permission gates:
+  - `accounting.payroll.write` or `accounting.payroll.import` for batch imports
+- Input (`POST`):
+  - `periodId?: string | number`
+  - `periodKey?: string`
+  - `year?: number`
+  - `month?: number`
+  - `title?: string`
+  - `startDate?: string`
+  - `endDate?: string`
+  - `payDate?: string`
+  - `rows: array`
+- `rows` entry:
+  - `employeeId: string | number`
+  - `employeeCode?: string`
+  - `inputs?: array | object`
+  - `notes?: string`
+- Output:
+  - `{ success, period, created, updated, results, warnings, errors }`
+- Import workflow: resolves the payroll period first, then matches each row by employee id or employee code, creates or updates draft payslips, and records row-level warnings/errors
+- Schema: `accounting.payroll.import.request.schema.json`
+
 ## API Adapter Mapping
 - `/api/bootstrap.php` -> kernel + read models
 - `/api/orders.php` -> sales contracts
@@ -309,6 +427,8 @@
 - `/api/inventory_v2_reservations.php` -> inventory v2 contracts
 - `/api/inventory_v2_replenishment.php` -> inventory v2 replenishment contracts
 - `/api/inventory_v2_reports.php` -> inventory v2 reports contracts
+- `/api/acc_payroll.php` -> accounting payroll contracts
+- `/api/acc_payroll_import.php` -> accounting payroll import contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
 - `/api/users.php` -> users-access user contracts

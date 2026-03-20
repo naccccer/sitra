@@ -77,8 +77,11 @@ export function buildApiBusinessEndpoints(request) {
     },
     async fetchCustomers(filters = {}) {
       const params = new URLSearchParams()
+      if (filters?.scope) params.set('scope', String(filters.scope))
       if (filters?.q) params.set('q', String(filters.q))
       if (typeof filters?.isActive === 'boolean') params.set('isActive', String(filters.isActive))
+      if (filters?.customerType) params.set('customerType', String(filters.customerType))
+      if (typeof filters?.hasDue === 'boolean') params.set('hasDue', String(filters.hasDue))
       if (filters?.page) params.set('page', String(filters.page))
       if (filters?.pageSize) params.set('pageSize', String(filters.pageSize))
       const query = params.toString()

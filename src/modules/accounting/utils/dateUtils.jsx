@@ -82,3 +82,24 @@ export function ShamsiDateInput({ value, onChange, className, placeholder = 'Ø§Ù
     />
   )
 }
+
+export function shamsiMonthKeyToGregorianRange(periodKey) {
+  try {
+    const [year, month] = String(periodKey || '').split('-')
+    if (!year || !month) return null
+    const shamsiStart = new DateObject({
+      year: Number(year),
+      month: Number(month),
+      day: 1,
+      calendar: persian,
+      locale: persianFa,
+    })
+    const shamsiEnd = new DateObject(shamsiStart).add(1, 'month').subtract(1, 'day')
+    return {
+      startDate: shamsiStart.convert(gregorian, gregorianEn).format('YYYY-MM-DD'),
+      endDate: shamsiEnd.convert(gregorian, gregorianEn).format('YYYY-MM-DD'),
+    }
+  } catch {
+    return null
+  }
+}
