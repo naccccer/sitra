@@ -4,6 +4,7 @@
   "type": "object",
   "required": ["rows"],
   "properties": {
+    "dryRun": { "type": "boolean" },
     "periodId": { "type": ["string", "number"] },
     "periodKey": { "type": "string" },
     "year": { "type": "integer" },

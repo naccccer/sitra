@@ -66,7 +66,7 @@ export const AccountingPage = ({ session }) => {
       <Card padding="md" className="space-y-3">
         <div>
           <div className="text-base font-black text-slate-900">حسابداری</div>
-          <div className="text-xs font-bold text-slate-500">ثبت دوطرفه، سرفصل های استاندارد ایران، گزارشات مالی و عملیات حقوق و دستمزد</div>
+          <div className="text-xs font-bold text-slate-500">ثبت دوطرفه، سرفصل های استاندارد ایران، گزارشات مالی و حقوق و دستمزد متصل به منابع انسانی</div>
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (

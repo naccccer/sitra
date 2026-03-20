@@ -44,6 +44,9 @@ test_assert(str_contains($moduleContracts, 'record_payment'), 'MODULE_CONTRACTS 
 test_assert(str_contains($moduleContracts, 'accounting.payroll.payments'), 'MODULE_CONTRACTS mentions payment permission');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.settings'), 'MODULE_CONTRACTS mentions payroll settings');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.import.v1'), 'MODULE_CONTRACTS documents payroll import contract');
+test_assert(str_contains($moduleContracts, 'workspace'), 'MODULE_CONTRACTS documents payroll workspace entity');
+test_assert(str_contains($moduleContracts, 'ids?: array<string | number>'), 'MODULE_CONTRACTS documents bulk action ids');
+test_assert(str_contains($moduleContracts, 'dryRun?: boolean'), 'MODULE_CONTRACTS documents payroll import dryRun');
 test_assert(str_contains($moduleContracts, 'periodId'), 'MODULE_CONTRACTS documents periodId context');
 test_assert(str_contains($moduleContracts, 'employeeCode'), 'MODULE_CONTRACTS documents employeeCode import lookup');
 test_assert(str_contains($moduleContracts, 'created, updated, results, warnings, errors'), 'MODULE_CONTRACTS documents import response shape');
@@ -55,6 +58,9 @@ test_assert(str_contains($apiIndex, 'accounting.payroll.settings'), 'API index i
 test_assert(str_contains($apiIndex, '/api/acc_payroll_import.php'), 'API index includes payroll import endpoint');
 test_assert(str_contains($apiIndex, 'accounting.payroll.write'), 'API index documents payroll import write permission');
 test_assert(str_contains($apiIndex, 'accounting.payroll.import'), 'API index documents payroll import permission');
+test_assert(str_contains($apiIndex, 'accounting.payroll.workspace.response.schema.json'), 'API index includes payroll workspace schema');
+test_assert(str_contains($apiIndex, 'accounting.payroll.action.bulk.response.schema.json'), 'API index includes payroll bulk action schema');
+test_assert(str_contains($apiIndex, 'accounting.payroll.import.preview.response.schema.json'), 'API index includes payroll import preview schema');
 
 $codeMap = read_text_file(__DIR__ . '/../../docs/code-map.md');
 test_assert(str_contains($codeMap, 'Accounting Payroll Management'), 'code map includes payroll ownership row');
@@ -92,6 +98,7 @@ test_assert_contains('approve', schema_enum_values($actionSchema, 'action'), 'ac
 test_assert_contains('issue', schema_enum_values($actionSchema, 'action'), 'action schema includes issue');
 test_assert_contains('record_payment', schema_enum_values($actionSchema, 'action'), 'action schema includes record_payment');
 test_assert_contains('cancel', schema_enum_values($actionSchema, 'action'), 'action schema includes cancel');
+test_assert_contains('ids', array_keys($actionSchema['properties'] ?? []), 'action schema exposes ids for bulk operations');
 test_assert_contains('amount', array_keys($actionSchema['properties'] ?? []), 'action schema exposes amount');
 $paymentMethods = $actionSchema['properties']['paymentMethod']['enum'] ?? [];
 test_assert_contains('cash', is_array($paymentMethods) ? $paymentMethods : [], 'action schema includes cash payment method');
@@ -100,11 +107,24 @@ test_assert_contains('bank', is_array($paymentMethods) ? $paymentMethods : [], '
 $importSchema = read_schema(__DIR__ . '/../../contracts/schemas/accounting.payroll.import.request.schema.json');
 test_assert_equals('AccountingPayrollImportRequest', $importSchema['title'] ?? null, 'import schema title');
 test_assert_contains('rows', $importSchema['required'] ?? [], 'import schema requires rows');
+test_assert_contains('dryRun', array_keys($importSchema['properties'] ?? []), 'import schema exposes dryRun flag');
 test_assert_contains('periodId', array_keys($importSchema['properties'] ?? []), 'import schema exposes periodId');
 test_assert_contains('periodKey', array_keys($importSchema['properties'] ?? []), 'import schema exposes periodKey');
 test_assert_contains('employeeId', array_keys($importSchema['properties']['rows']['items']['properties'] ?? []), 'import row exposes employeeId');
 test_assert_contains('employeeCode', array_keys($importSchema['properties']['rows']['items']['properties'] ?? []), 'import row exposes employeeCode');
 test_assert_contains('inputs', array_keys($importSchema['properties']['rows']['items']['properties'] ?? []), 'import row exposes inputs');
+
+$workspaceSchema = read_schema(__DIR__ . '/../../contracts/schemas/accounting.payroll.workspace.response.schema.json');
+test_assert_equals('AccountingPayrollWorkspaceResponse', $workspaceSchema['title'] ?? null, 'workspace schema title');
+test_assert_contains('workspace', array_keys($workspaceSchema['properties'] ?? []), 'workspace schema exposes workspace');
+
+$bulkSchema = read_schema(__DIR__ . '/../../contracts/schemas/accounting.payroll.action.bulk.response.schema.json');
+test_assert_equals('AccountingPayrollActionBulkResponse', $bulkSchema['title'] ?? null, 'bulk response schema title');
+test_assert_contains('results', array_keys($bulkSchema['properties'] ?? []), 'bulk response schema exposes results');
+
+$previewSchema = read_schema(__DIR__ . '/../../contracts/schemas/accounting.payroll.import.preview.response.schema.json');
+test_assert_equals('AccountingPayrollImportPreviewResponse', $previewSchema['title'] ?? null, 'import preview response schema title');
+test_assert_contains('dryRun', array_keys($previewSchema['properties'] ?? []), 'import preview schema exposes dryRun');
 
 // Print machine-readable summary for the runner
 $r = test_summary();

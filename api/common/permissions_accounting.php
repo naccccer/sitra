@@ -16,7 +16,7 @@ function app_accounting_permission_definitions(): array
         ['key' => 'accounting.sales_bridge.read', 'module' => 'accounting', 'label' => 'مشاهده پل فروش-حسابداری'],
         ['key' => 'accounting.sales_bridge.run', 'module' => 'accounting', 'label' => 'اجرای همگام‌سازی پرداخت‌های فروش'],
         ['key' => 'accounting.payroll.read', 'module' => 'accounting', 'label' => 'مشاهده حقوق و دستمزد'],
-        ['key' => 'accounting.payroll.write', 'module' => 'accounting', 'label' => 'مدیریت پرسنل و فیش‌های حقوقی'],
+        ['key' => 'accounting.payroll.write', 'module' => 'accounting', 'label' => 'مدیریت فیش‌های حقوقی'],
         ['key' => 'accounting.payroll.approve', 'module' => 'accounting', 'label' => 'تایید فیش‌های حقوقی'],
         ['key' => 'accounting.payroll.issue', 'module' => 'accounting', 'label' => 'صدور و ثبت سند حقوق و دستمزد'],
         ['key' => 'accounting.payroll.payments', 'module' => 'accounting', 'label' => 'ثبت پرداخت حقوق'],

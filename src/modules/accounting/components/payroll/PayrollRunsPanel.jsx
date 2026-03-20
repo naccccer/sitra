@@ -15,6 +15,7 @@ export function PayrollRunsPanel({
   canIssue,
   canManage,
   onCreateRun,
+  onDeleteRun,
   onEditPayslip,
   onPrint,
   onRunAction,
@@ -26,6 +27,7 @@ export function PayrollRunsPanel({
   const summary = buildRunSummary(selectedRun || {})
   const draftPayslips = selectedRun?.payslips?.filter((payslip) => payslip.status === 'draft') || []
   const approvedPayslips = selectedRun?.payslips?.filter((payslip) => payslip.status === 'approved') || []
+  const deletingRun = busyKey === 'run-delete'
 
   return (
     <div className="space-y-4">
@@ -81,6 +83,21 @@ export function PayrollRunsPanel({
                   <div className="flex flex-wrap gap-2">
                     {canApprove && draftPayslips.length > 0 && <Button size="sm" variant="secondary" disabled={busyKey === 'action:approve'} onClick={() => onRunAction({ id: selectedRun.id, action: 'approve' })}>تایید دوره</Button>}
                     {canIssue && approvedPayslips.length > 0 && <Button size="sm" variant="primary" disabled={busyKey === 'action:issue'} onClick={() => onRunAction({ id: selectedRun.id, action: 'issue' })}>صدور دوره</Button>}
+                    {canManage && onDeleteRun && (
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={deletingRun}
+                        onClick={() => {
+                          if (!selectedRun?.id) return
+                          const ok = window.confirm('این دوره و فیش های پیش نویس آن حذف شود؟')
+                          if (!ok) return
+                          onDeleteRun(selectedRun.id)
+                        }}
+                      >
+                        {deletingRun ? 'در حال حذف...' : 'حذف دوره'}
+                      </Button>
+                    )}
                   </div>
                 </div>
 

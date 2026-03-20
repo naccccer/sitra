@@ -26,8 +26,9 @@ declare(strict_types=1);
  *  15. inventory_v2_helpers.php - Inventory V2 data mappers and guards
  *  16. inventory_v2_operations.php - Inventory V2 posting engine and operation helpers
  *  17. inventory_v2_reservations.php - Inventory V2 reservation helpers
- *  18. module_registry.php - module registry, user roles
- *  19. permissions.php - RBAC, capabilities
+ *  18. human_resources.php - HR schema and employee helpers
+ *  19. module_registry.php - module registry, user roles
+ *  20. permissions.php - RBAC, capabilities
  */
 
 require_once __DIR__ . '/../config/env.php';
@@ -50,6 +51,7 @@ require_once __DIR__ . '/common/inventory_v2_schema.php';
 require_once __DIR__ . '/common/inventory_v2_helpers.php';
 require_once __DIR__ . '/common/inventory_v2_operations.php';
 require_once __DIR__ . '/common/inventory_v2_reservations.php';
+require_once __DIR__ . '/common/human_resources.php';
 require_once __DIR__ . '/common/module_registry.php';
 require_once __DIR__ . '/common/permissions.php';
 require_once __DIR__ . '/common/accounting_schema.php';

@@ -20,6 +20,11 @@ const payrollRequest = (method, payload = {}, query = {}) => request(`/api/acc_p
   body: JSON.stringify(payload),
 })
 
+const hrEmployeeRequest = (method, payload = {}, query = {}) => request(`/api/hr_employees.php${buildQuery(query)}`, {
+  method,
+  body: JSON.stringify(payload),
+})
+
 export const accountingApi = {
   async fetchFiscalYears() {
     return request('/api/acc_fiscal_years.php', { method: 'GET' })
@@ -96,15 +101,18 @@ export const accountingApi = {
   async savePayrollPeriod(payload) {
     return payrollRequest(payload?.id ? 'PUT' : 'POST', { ...payload, entity: 'period' })
   },
+  async deletePayrollPeriod(id) {
+    return payrollRequest('DELETE', { entity: 'period', id }, { entity: 'period', id })
+  },
 
   async fetchPayrollEmployees(filters = {}) {
-    return request(`/api/acc_payroll.php${buildQuery({ entity: 'employee', ...filters })}`, { method: 'GET' })
+    return request(`/api/hr_employees.php${buildQuery(filters)}`, { method: 'GET' })
   },
   async fetchPayrollEmployee(id) {
-    return request(`/api/acc_payroll.php${buildQuery({ entity: 'employee', id })}`, { method: 'GET' })
+    return request(`/api/hr_employees.php${buildQuery({ id })}`, { method: 'GET' })
   },
   async savePayrollEmployee(payload) {
-    return payrollRequest(payload?.id ? 'PUT' : 'POST', { ...payload, entity: 'employee' })
+    return hrEmployeeRequest(payload?.id ? 'PUT' : 'POST', payload)
   },
 
   async fetchPayrollPayslips(filters = {}) {
@@ -113,15 +121,24 @@ export const accountingApi = {
   async fetchPayrollPayslip(id) {
     return request(`/api/acc_payroll.php${buildQuery({ id })}`, { method: 'GET' })
   },
+  async fetchPayrollWorkspace(periodId) {
+    return request(`/api/acc_payroll.php${buildQuery({ entity: 'workspace', periodId })}`, { method: 'GET' })
+  },
   async savePayrollPayslip(payload) {
     return payrollRequest(payload?.id ? 'PUT' : 'POST', payload)
   },
   async runPayrollAction(payload) {
     return request('/api/acc_payroll.php', { method: 'PATCH', body: JSON.stringify(payload) })
   },
+  async runPayrollBulkAction(payload) {
+    return request('/api/acc_payroll.php', { method: 'PATCH', body: JSON.stringify(payload) })
+  },
 
   async importPayroll(payload) {
     return request('/api/acc_payroll_import.php', { method: 'POST', body: JSON.stringify(payload) })
+  },
+  async previewPayrollImport(payload) {
+    return request('/api/acc_payroll_import.php', { method: 'POST', body: JSON.stringify({ ...payload, dryRun: true }) })
   },
   async uploadPayrollFile(payslipId, file) {
     const formData = new FormData()

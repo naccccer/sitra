@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccountingPayrollWorkspaceResponse",
+  "type": "object",
+  "required": ["success", "workspace"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "workspace": {
+      "type": "object",
+      "required": ["period", "summary", "actionable", "stepStatus", "blockers"],
+      "properties": {
+        "period": { "type": "object" },
+        "summary": {
+          "type": "object",
+          "properties": {
+            "employees": { "type": "integer" },
+            "draft": { "type": "integer" },
+            "approved": { "type": "integer" },
+            "issued": { "type": "integer" },
+            "cancelled": { "type": "integer" },
+            "net": { "type": "number" },
+            "paid": { "type": "number" },
+            "due": { "type": "number" }
+          }
+        },
+        "actionable": {
+          "type": "object",
+          "properties": {
+            "approve": { "type": "array", "items": { "type": "string" } },
+            "issue": { "type": "array", "items": { "type": "string" } },
+            "payments": { "type": "array", "items": { "type": "string" } }
+          }
+        },
+        "stepStatus": { "type": "object" },
+        "blockers": { "type": "array", "items": { "type": "object" } }
+      }
+    }
+  },
+  "additionalProperties": true
+}

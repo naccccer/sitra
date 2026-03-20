@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccountingPayrollImportPreviewResponse",
+  "type": "object",
+  "required": ["success", "dryRun", "period", "created", "updated", "results", "warnings", "errors"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "dryRun": { "type": "boolean" },
+    "period": { "type": "object" },
+    "created": { "type": "integer" },
+    "updated": { "type": "integer" },
+    "results": { "type": "array", "items": { "type": "object" } },
+    "warnings": { "type": "array", "items": { "type": "object" } },
+    "errors": { "type": "array", "items": { "type": "object" } }
+  },
+  "additionalProperties": true
+}
