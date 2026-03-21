@@ -114,6 +114,7 @@ export async function request(path, options = {}) {
     try {
       const response = await fetch(resolveRequestPath(path), {
         credentials: 'include',
+        cache: 'no-store',
         ...options,
         signal: controller ? controller.signal : options.signal,
         headers: requestHeaders,
