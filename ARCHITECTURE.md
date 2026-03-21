@@ -17,6 +17,7 @@
 ### 3.1 Kernel (Shared Core)
 - Owns auth/session, CSRF, response conventions, audit logging, permission primitives, module registry.
 - Must not contain business logic from domain modules.
+- JSON API responses are emitted with `no-store` cache headers so list views do not keep stale rows after mutations or direct database changes.
 
 ### 3.2 Business Modules
 - `master-data`
