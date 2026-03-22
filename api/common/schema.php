@@ -321,7 +321,7 @@ function app_ensure_order_financials_tables(PDO $pdo): void
                 created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
                 UNIQUE KEY uq_order_payments_local_id (order_id, local_id),
-                KEY idx_order_payments_order (order_id),
+                KEY idx_order_payments_order_amount (order_id, amount),
                 KEY idx_order_payments_method (method),
                 KEY idx_order_payments_date (payment_date),
                 CONSTRAINT fk_order_payments_order
