@@ -112,18 +112,9 @@ if (count($orderIds) > 0) {
 }
 
 foreach ($orders as $order) {
-    $oid      = (int)$order['id'];
-    $meta     = null;
-    $metaRaw  = $order['order_meta_json'] ?? null;
-    if (is_string($metaRaw) && $metaRaw !== '' && $metaRaw !== 'null') {
-        $meta = json_decode($metaRaw, true);
-    }
-    if (!is_array($meta)) {
-        continue;
-    }
-
-    $payments   = $meta['payments'] ?? [];
-    $customerId = $order['customer_id'] ? (int)$order['customer_id'] : null;
+    $oid        = (int)$order['id'];
+    $payments   = $order['payments'] ?? [];
+    $customerId = $order['customer_id'] !== null ? (int)$order['customer_id'] : null;
     if (!is_array($payments) || count($payments) === 0) {
         continue;
     }
