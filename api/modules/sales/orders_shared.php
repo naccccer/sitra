@@ -133,21 +133,15 @@ function app_sales_normalize_order_meta_payload(array $payload, int $total): arr
     // Accept legacy paidTotal from input only if it exceeds the computed value (compat).
     $derived = app_compute_payment_derived_fields($grandTotal, $payments);
     $inputPaidTotal = max(0, (int)($financials['paidTotal'] ?? 0));
-    $paidTotal = max($derived['paidTotal'], $inputPaidTotal);
 
-    if ($paidTotal !== $derived['paidTotal']) {
-        // Re-derive with the overridden paidTotal for consistency.
-        $dueAmount = max(0, $grandTotal - $paidTotal);
-        $paymentStatus = $dueAmount <= 0 && $grandTotal > 0 ? 'paid'
-            : ($paidTotal > 0 ? 'partial' : ($grandTotal <= 0 ? 'paid' : 'unpaid'));
-    } else {
-        $dueAmount = $derived['dueAmount'];
-        $paymentStatus = $derived['paymentStatus'];
+    if ($inputPaidTotal > $derived['paidTotal']) {
+        // Legacy override: re-derive all fields with the higher paidTotal.
+        $derived = app_compute_payment_derived_fields($grandTotal, [['amount' => $inputPaidTotal]]);
     }
 
-    $financials['paidTotal'] = $paidTotal;
-    $financials['dueAmount'] = $dueAmount;
-    $financials['paymentStatus'] = $paymentStatus;
+    $financials['paidTotal'] = $derived['paidTotal'];
+    $financials['dueAmount'] = $derived['dueAmount'];
+    $financials['paymentStatus'] = $derived['paymentStatus'];
 
     return [
         'financials' => $financials,
