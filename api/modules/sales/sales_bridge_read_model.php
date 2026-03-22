@@ -1,14 +1,14 @@
 <?php
 declare(strict_types=1);
 
-require_once __DIR__ . '/../../common/order_financials_repository.php';
+require_once __DIR__ . '/order_financials_repository.php';
 
 /**
  * Sales-owned read model for accounting bridge jobs.
  * Public facade: consumers call this instead of querying orders directly.
  *
- * Phase 1 (dual-read): Tries order_payments table first, falls back to
- * order_meta_json if the structured table has no rows for a given order.
+ * Tables are the source of truth. Falls back to order_meta_json only
+ * for pre-migration rows that haven't been backfilled yet.
  */
 function app_sales_bridge_fetch_orders_for_accounting(
     PDO $pdo,
@@ -57,26 +57,26 @@ function app_sales_bridge_fetch_orders_for_accounting(
         return [];
     }
 
-    // Enrich each order with structured payments when available.
-    // Falls back to order_meta_json if the order_payments table
-    // has no rows (pre-backfill orders).
+    // Prefer structured table data over JSON blob.
     $useStructuredPayments = app_table_is_queryable($pdo, 'order_payments');
 
     foreach ($rows as &$row) {
         $oid = (int)$row['id'];
-        $structuredPayments = null;
 
-        if ($useStructuredPayments) {
-            try {
-                $structuredPayments = app_read_order_payments($pdo, $oid);
-            } catch (Throwable $e) {
-                $structuredPayments = null;
-            }
+        if (!$useStructuredPayments) {
+            continue;
+        }
+
+        $structuredPayments = null;
+        try {
+            $structuredPayments = app_read_order_payments($pdo, $oid);
+        } catch (Throwable $e) {
+            // Fall through to JSON
         }
 
         if (is_array($structuredPayments) && count($structuredPayments) > 0) {
             // Inject structured payments into the meta so the bridge
-            // consumer code needs zero changes.
+            // consumer (acc_sales_bridge.php) needs zero changes.
             $meta = json_decode((string)($row['order_meta_json'] ?? ''), true);
             if (!is_array($meta)) {
                 $meta = [];
@@ -84,7 +84,6 @@ function app_sales_bridge_fetch_orders_for_accounting(
             $meta['payments'] = $structuredPayments;
             $row['order_meta_json'] = json_encode($meta, JSON_UNESCAPED_UNICODE);
         }
-        // else: keep original order_meta_json as-is (fallback)
     }
     unset($row);
 

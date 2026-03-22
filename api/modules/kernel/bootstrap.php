@@ -66,7 +66,7 @@ if ($user !== null) {
         }
 
         foreach ($rows as $row) {
-            $ordersItems[] = app_order_from_row($row);
+            $ordersItems[] = app_order_from_row($row, $pdo);
         }
 
         if ($ordersHasMore && count($ordersItems) > 0) {

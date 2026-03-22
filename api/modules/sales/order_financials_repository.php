@@ -6,10 +6,52 @@ declare(strict_types=1);
  *
  * Ownership: Sales module (read + write).
  * Accounting module reads via the sales bridge facade only.
+ *
+ * IMPORTANT: paidTotal, dueAmount, and paymentStatus are NEVER stored.
+ * They are derived at read time from order_payments rows + grandTotal.
+ * This ensures order_payments is the single source of truth for payment state.
  */
+
+// ─── DERIVED FIELD COMPUTATION ───────────────────────────────────────────────
+
+/**
+ * Computes paidTotal, dueAmount, paymentStatus from payments array and grandTotal.
+ * This is the single canonical computation — every read path must use this.
+ */
+function app_compute_payment_derived_fields(int $grandTotal, array $payments): array
+{
+    $paidTotal = 0;
+    foreach ($payments as $payment) {
+        if (is_array($payment)) {
+            $paidTotal += max(0, (int)($payment['amount'] ?? 0));
+        }
+    }
+
+    $dueAmount = max(0, $grandTotal - $paidTotal);
+
+    if ($dueAmount <= 0 && $grandTotal > 0) {
+        $paymentStatus = 'paid';
+    } elseif ($paidTotal > 0) {
+        $paymentStatus = 'partial';
+    } elseif ($grandTotal <= 0) {
+        $paymentStatus = 'paid';
+    } else {
+        $paymentStatus = 'unpaid';
+    }
+
+    return [
+        'paidTotal' => $paidTotal,
+        'dueAmount' => $dueAmount,
+        'paymentStatus' => $paymentStatus,
+    ];
+}
 
 // ─── WRITE: order_financials ─────────────────────────────────────────────────
 
+/**
+ * Upserts stored financial fields for an order.
+ * Does NOT write paidTotal/dueAmount/paymentStatus — those are derived.
+ */
 function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, string $invoiceNotes = ''): void
 {
     $stmt = $pdo->prepare(
@@ -17,14 +59,12 @@ function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, 
             (order_id, sub_total, item_discount_total,
              invoice_discount_type, invoice_discount_value, invoice_discount_amount,
              tax_enabled, tax_rate, tax_amount,
-             grand_total, paid_total, due_amount, payment_status,
-             invoice_notes)
+             grand_total, invoice_notes)
          VALUES
             (:order_id, :sub_total, :item_discount_total,
              :invoice_discount_type, :invoice_discount_value, :invoice_discount_amount,
              :tax_enabled, :tax_rate, :tax_amount,
-             :grand_total, :paid_total, :due_amount, :payment_status,
-             :invoice_notes)
+             :grand_total, :invoice_notes)
          ON DUPLICATE KEY UPDATE
             sub_total = VALUES(sub_total),
             item_discount_total = VALUES(item_discount_total),
@@ -35,20 +75,12 @@ function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, 
             tax_rate = VALUES(tax_rate),
             tax_amount = VALUES(tax_amount),
             grand_total = VALUES(grand_total),
-            paid_total = VALUES(paid_total),
-            due_amount = VALUES(due_amount),
-            payment_status = VALUES(payment_status),
             invoice_notes = VALUES(invoice_notes)'
     );
 
     $discountType = (string)($financials['invoiceDiscountType'] ?? 'none');
     if (!in_array($discountType, ['none', 'percent', 'fixed'], true)) {
         $discountType = 'none';
-    }
-
-    $paymentStatus = (string)($financials['paymentStatus'] ?? 'unpaid');
-    if (!in_array($paymentStatus, ['unpaid', 'partial', 'paid'], true)) {
-        $paymentStatus = 'unpaid';
     }
 
     $stmt->execute([
@@ -62,9 +94,6 @@ function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, 
         'tax_rate' => max(0, (int)($financials['taxRate'] ?? 10)),
         'tax_amount' => max(0, (int)($financials['taxAmount'] ?? 0)),
         'grand_total' => max(0, (int)($financials['grandTotal'] ?? 0)),
-        'paid_total' => max(0, (int)($financials['paidTotal'] ?? 0)),
-        'due_amount' => max(0, (int)($financials['dueAmount'] ?? 0)),
-        'payment_status' => $paymentStatus,
         'invoice_notes' => $invoiceNotes,
     ]);
 }
@@ -123,11 +152,12 @@ function app_sync_order_payments(PDO $pdo, int $orderId, array $payments): void
     }
 }
 
-// ─── COMBINED WRITE (dual-write entry point) ─────────────────────────────────
+// ─── COMBINED WRITE (entry point for order create/update) ────────────────────
 
 /**
- * Writes financials + payments to the structured tables.
- * Called alongside the existing order_meta_json write for backward compatibility.
+ * Writes stored financials + payments to structured tables.
+ * JSON blob (order_meta_json) is written separately as a compatibility layer;
+ * tables are the source of truth.
  */
 function app_save_order_financials(PDO $pdo, int $orderId, array $orderMeta): void
 {
@@ -141,13 +171,17 @@ function app_save_order_financials(PDO $pdo, int $orderId, array $orderMeta): vo
         app_upsert_order_financials($pdo, $orderId, $financials, $invoiceNotes);
         app_sync_order_payments($pdo, $orderId, $payments);
     } catch (Throwable $e) {
-        // Dual-write must not break the primary flow.
-        // The JSON blob remains the source of truth during Phase 1.
+        // Table writes must not break the primary flow during migration.
     }
 }
 
-// ─── READ: order_financials ──────────────────────────────────────────────────
+// ─── READ: order_financials (stored fields only) ─────────────────────────────
 
+/**
+ * Returns stored financial fields from order_financials table.
+ * Does NOT include derived fields — caller must compute those via
+ * app_compute_payment_derived_fields().
+ */
 function app_read_order_financials(PDO $pdo, int $orderId): ?array
 {
     $stmt = $pdo->prepare(
@@ -170,21 +204,8 @@ function app_read_order_financials(PDO $pdo, int $orderId): ?array
         'taxRate' => (int)$row['tax_rate'],
         'taxAmount' => (int)$row['tax_amount'],
         'grandTotal' => (int)$row['grand_total'],
-        'paidTotal' => (int)$row['paid_total'],
-        'dueAmount' => (int)$row['due_amount'],
-        'paymentStatus' => (string)$row['payment_status'],
+        'invoiceNotes' => (string)($row['invoice_notes'] ?? ''),
     ];
-}
-
-function app_read_order_invoice_notes(PDO $pdo, int $orderId): string
-{
-    $stmt = $pdo->prepare(
-        'SELECT invoice_notes FROM order_financials WHERE order_id = :order_id LIMIT 1'
-    );
-    $stmt->execute(['order_id' => $orderId]);
-    $row = $stmt->fetch();
-
-    return $row ? (string)($row['invoice_notes'] ?? '') : '';
 }
 
 // ─── READ: order_payments ────────────────────────────────────────────────────
@@ -228,15 +249,39 @@ function app_read_order_payments(PDO $pdo, int $orderId): array
     return $payments;
 }
 
-// ─── READ: payments for accounting bridge ────────────────────────────────────
+// ─── READ: full financials + derived fields (for API responses) ──────────────
 
 /**
- * Fetches payments from order_payments table for the accounting bridge.
- * Returns data in the same shape the bridge expects.
+ * Reads stored financials + payments from tables and computes derived fields.
+ * Returns the complete financials array matching the API response shape.
+ * Returns null if no order_financials row exists (caller should fall back to JSON).
  */
-function app_read_order_payments_for_bridge(PDO $pdo, int $orderId): array
+function app_read_order_financials_complete(PDO $pdo, int $orderId, int $baseTotal): ?array
 {
-    return app_read_order_payments($pdo, $orderId);
+    $stored = app_read_order_financials($pdo, $orderId);
+    if ($stored === null) {
+        return null;
+    }
+
+    $payments = app_read_order_payments($pdo, $orderId);
+
+    $grandTotal = $stored['grandTotal'];
+    if ($grandTotal === 0 && $baseTotal > 0) {
+        $grandTotal = $baseTotal;
+    }
+
+    $derived = app_compute_payment_derived_fields($grandTotal, $payments);
+
+    return [
+        'financials' => array_merge($stored, [
+            'grandTotal' => $grandTotal,
+            'paidTotal' => $derived['paidTotal'],
+            'dueAmount' => $derived['dueAmount'],
+            'paymentStatus' => $derived['paymentStatus'],
+        ]),
+        'payments' => $payments,
+        'invoiceNotes' => $stored['invoiceNotes'],
+    ];
 }
 
 // ─── BACKFILL: migrate from order_meta_json ──────────────────────────────────
@@ -282,17 +327,25 @@ function app_backfill_order_financials_from_json(PDO $pdo, int $batchSize = 500)
             $payments = is_array($meta['payments'] ?? null) ? $meta['payments'] : [];
             $invoiceNotes = (string)($meta['invoiceNotes'] ?? '');
 
-            // Ensure financials have defaults
+            // Ensure financials have defaults for stored fields
             $baseTotal = max(0, (int)$row['total']);
-            $defaults = app_order_meta_defaults($baseTotal);
-            $financials = array_merge($defaults['financials'], $financials);
+            $financials = array_merge([
+                'subTotal' => $baseTotal,
+                'itemDiscountTotal' => 0,
+                'invoiceDiscountType' => 'none',
+                'invoiceDiscountValue' => 0,
+                'invoiceDiscountAmount' => 0,
+                'taxEnabled' => false,
+                'taxRate' => 10,
+                'taxAmount' => 0,
+                'grandTotal' => $baseTotal,
+            ], $financials);
 
             try {
                 app_upsert_order_financials($pdo, $orderId, $financials, $invoiceNotes);
                 app_sync_order_payments($pdo, $orderId, $payments);
                 $processed++;
             } catch (Throwable $e) {
-                // Log but continue with remaining orders
                 error_log("Backfill failed for order {$orderId}: " . $e->getMessage());
             }
         }
