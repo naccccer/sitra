@@ -183,7 +183,7 @@ if ($method === 'DELETE') {
 
     try {
         $payslipCount = acc_payroll_delete_period($pdo, $periodId);
-    } catch (RuntimeException $e) {
+    } catch (Throwable $e) {
         app_json(['success' => false, 'error' => $e->getMessage()], 422);
     }
 
