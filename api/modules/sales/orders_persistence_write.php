@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/orders_idempotency.php';
 require_once __DIR__ . '/orders_normalization.php';
+require_once __DIR__ . '/../../common/order_financials_repository.php';
 
 function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $currentUser): array
 {
@@ -103,6 +104,13 @@ function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $curren
     }
 
     $id = (int)$pdo->lastInsertId();
+
+    // Dual-write: persist financials/payments to structured tables
+    $orderMeta = json_decode($data['orderMetaJson'], true);
+    if (is_array($orderMeta)) {
+        app_save_order_financials($pdo, $id, $orderMeta);
+    }
+
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);
     $row = $select->fetch();
@@ -226,6 +234,12 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
             throw $lastUpdateError;
         }
         throw new RuntimeException('Unable to update order row.');
+    }
+
+    // Dual-write: persist financials/payments to structured tables
+    $orderMeta = json_decode($data['orderMetaJson'], true);
+    if (is_array($orderMeta)) {
+        app_save_order_financials($pdo, $id, $orderMeta);
     }
 
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
