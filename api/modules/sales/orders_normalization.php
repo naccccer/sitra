@@ -70,6 +70,7 @@ function app_sales_orders_prepare_create_payload(PDO $pdo, array $payload, bool 
         'total' => max(0, $total),
         'orderDate' => $orderDate,
         'itemsJson' => $itemsJson,
+        'orderMeta' => $orderMeta,
         'orderMetaJson' => $orderMetaJson,
         'orderCodeDatePrefix' => app_order_code_date_prefix_jalali(),
     ];
@@ -130,6 +131,7 @@ function app_sales_orders_prepare_update_payload(PDO $pdo, array $payload): arra
         'total' => max(0, $total),
         'orderDate' => $orderDate,
         'itemsJson' => $itemsJson,
+        'orderMeta' => $orderMeta,
         'orderMetaJson' => $orderMetaJson,
     ];
 }

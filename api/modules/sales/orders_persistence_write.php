@@ -105,11 +105,9 @@ function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $curren
 
     $id = (int)$pdo->lastInsertId();
 
-    // Dual-write: persist financials/payments to structured tables
-    $orderMeta = json_decode($data['orderMetaJson'], true);
-    if (is_array($orderMeta)) {
-        app_save_order_financials($pdo, $id, $orderMeta);
-    }
+    // Primary write: persist financials/payments to structured tables.
+    // Tables are the source of truth; JSON column is compatibility only.
+    app_save_order_financials($pdo, $id, $data['orderMeta']);
 
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);
@@ -236,11 +234,9 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
         throw new RuntimeException('Unable to update order row.');
     }
 
-    // Dual-write: persist financials/payments to structured tables
-    $orderMeta = json_decode($data['orderMetaJson'], true);
-    if (is_array($orderMeta)) {
-        app_save_order_financials($pdo, $id, $orderMeta);
-    }
+    // Primary write: persist financials/payments to structured tables.
+    // Tables are the source of truth; JSON column is compatibility only.
+    app_save_order_financials($pdo, $id, $data['orderMeta']);
 
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);

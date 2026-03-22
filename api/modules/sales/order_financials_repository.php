@@ -161,18 +161,14 @@ function app_sync_order_payments(PDO $pdo, int $orderId, array $payments): void
  */
 function app_save_order_financials(PDO $pdo, int $orderId, array $orderMeta): void
 {
-    try {
-        app_ensure_order_financials_tables($pdo);
+    app_ensure_order_financials_tables($pdo);
 
-        $financials = is_array($orderMeta['financials'] ?? null) ? $orderMeta['financials'] : [];
-        $payments = is_array($orderMeta['payments'] ?? null) ? $orderMeta['payments'] : [];
-        $invoiceNotes = (string)($orderMeta['invoiceNotes'] ?? '');
+    $financials = is_array($orderMeta['financials'] ?? null) ? $orderMeta['financials'] : [];
+    $payments = is_array($orderMeta['payments'] ?? null) ? $orderMeta['payments'] : [];
+    $invoiceNotes = (string)($orderMeta['invoiceNotes'] ?? '');
 
-        app_upsert_order_financials($pdo, $orderId, $financials, $invoiceNotes);
-        app_sync_order_payments($pdo, $orderId, $payments);
-    } catch (Throwable $e) {
-        // Table writes must not break the primary flow during migration.
-    }
+    app_upsert_order_financials($pdo, $orderId, $financials, $invoiceNotes);
+    app_sync_order_payments($pdo, $orderId, $payments);
 }
 
 // ─── READ: order_financials (stored fields only) ─────────────────────────────
