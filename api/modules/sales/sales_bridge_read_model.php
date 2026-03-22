@@ -59,6 +59,7 @@ function app_sales_bridge_fetch_orders_for_accounting(
 
     // Prefer structured table data over JSON blob.
     $useStructuredPayments = app_table_is_queryable($pdo, 'order_payments');
+    $jsonFallback = app_order_json_fallback_enabled();
 
     foreach ($rows as &$row) {
         $oid = (int)$row['id'];
@@ -71,7 +72,7 @@ function app_sales_bridge_fetch_orders_for_accounting(
         try {
             $structuredPayments = app_read_order_payments($pdo, $oid);
         } catch (Throwable $e) {
-            // Fall through to JSON
+            // Fall through
         }
 
         if (is_array($structuredPayments) && count($structuredPayments) > 0) {
@@ -83,7 +84,16 @@ function app_sales_bridge_fetch_orders_for_accounting(
             }
             $meta['payments'] = $structuredPayments;
             $row['order_meta_json'] = json_encode($meta, JSON_UNESCAPED_UNICODE);
+        } elseif (!$jsonFallback) {
+            // No structured payments and JSON fallback disabled — empty payments.
+            $meta = json_decode((string)($row['order_meta_json'] ?? ''), true);
+            if (!is_array($meta)) {
+                $meta = [];
+            }
+            $meta['payments'] = [];
+            $row['order_meta_json'] = json_encode($meta, JSON_UNESCAPED_UNICODE);
         }
+        // else: JSON fallback enabled — keep original order_meta_json as-is
     }
     unset($row);
 

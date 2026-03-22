@@ -80,7 +80,7 @@ CREATE TABLE IF NOT EXISTS order_payments (
     created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_order_payments_local_id (order_id, local_id),
-    KEY idx_order_payments_order (order_id),
+    KEY idx_order_payments_order_amount (order_id, amount),
     KEY idx_order_payments_method (method),
     KEY idx_order_payments_date (payment_date),
     CONSTRAINT fk_order_payments_order
@@ -222,11 +222,31 @@ app_backfill_order_financials_from_json($pdo);
 Iterates all orders with non-null `order_meta_json`, parses the JSON, and
 inserts/updates into `order_financials` and `order_payments`.
 
+### JSON Fallback Flag
+
+JSON fallback is controlled by the `APP_ORDER_JSON_FALLBACK` environment variable
+via `app_order_json_fallback_enabled()`:
+
+| Value | Behavior |
+|-------|----------|
+| not set / `1` / `true` | Fallback enabled (current default) |
+| `0` / `false` | Fallback disabled — tables only |
+
+Both `app_order_from_row()` and the bridge read model respect this flag.
+
 ### Future: Drop JSON Dependency
 
-1. Stop writing `financials` and `payments` into `order_meta_json`
-2. `order_meta_json` becomes nullable/empty or holds only truly unstructured metadata
-3. Remove fallback reads from `app_order_from_row()`
+1. Run backfill: `app_backfill_order_financials_from_json($pdo)`
+2. Set `APP_ORDER_JSON_FALLBACK=0` — verify everything works
+3. Stop writing `financials` and `payments` into `order_meta_json`
+4. `order_meta_json` becomes nullable/empty or holds only truly unstructured metadata
+5. Remove fallback code paths entirely
+
+### Performance: Covering Index
+
+`order_payments` has a covering index `(order_id, amount)` so that
+`SUM(amount) WHERE order_id = ?` is satisfied from the index alone
+without touching table rows.
 
 ---
 

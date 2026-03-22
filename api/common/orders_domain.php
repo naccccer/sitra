@@ -4,6 +4,25 @@ declare(strict_types=1);
 require_once __DIR__ . '/orders_code.php';
 require_once __DIR__ . '/../modules/sales/order_financials_repository.php';
 
+/**
+ * Controls whether app_order_from_row() falls back to order_meta_json
+ * when structured tables have no data for an order.
+ *
+ * Set to false once all orders have been backfilled and you are ready
+ * to drop JSON dependency. After setting false, any order without
+ * table rows will return default/empty financials instead of parsing JSON.
+ */
+function app_order_json_fallback_enabled(): bool
+{
+    // Environment override: set APP_ORDER_JSON_FALLBACK=0 to disable.
+    $env = getenv('APP_ORDER_JSON_FALLBACK');
+    if ($env !== false) {
+        return $env !== '0' && strtolower($env) !== 'false';
+    }
+
+    return true;
+}
+
 function app_valid_order_status(string $status): bool
 {
     return in_array($status, ['pending', 'processing', 'delivered', 'archived'], true);
@@ -181,8 +200,10 @@ function app_order_from_row(array $row, ?PDO $pdo = null): array
         $financials = $fromTables['financials'];
         $payments = $fromTables['payments'];
         $invoiceNotes = $fromTables['invoiceNotes'];
-    } else {
+    } elseif (app_order_json_fallback_enabled()) {
         // ── Fallback: parse order_meta_json ──────────────────────────────
+        // Controlled by APP_ORDER_JSON_FALLBACK env var.
+        // Set APP_ORDER_JSON_FALLBACK=0 after backfill to remove this path.
         $metaPayload = (string)($row['order_meta_json'] ?? '');
         $metaDecoded = $metaPayload !== '' ? json_decode($metaPayload, true) : null;
         if (!is_array($metaDecoded)) {
@@ -233,6 +254,12 @@ function app_order_from_row(array $row, ?PDO $pdo = null): array
         $financials['paidTotal'] = $derived['paidTotal'];
         $financials['dueAmount'] = $derived['dueAmount'];
         $financials['paymentStatus'] = $derived['paymentStatus'];
+    } else {
+        // ── JSON fallback disabled, tables returned null → use defaults ──
+        $defaults = app_order_meta_defaults($baseTotal);
+        $financials = $defaults['financials'];
+        $payments = [];
+        $invoiceNotes = '';
     }
 
     return [
