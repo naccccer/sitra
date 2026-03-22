@@ -161,6 +161,52 @@ CREATE TABLE IF NOT EXISTS orders (
     CONSTRAINT fk_orders_project_id FOREIGN KEY (project_id) REFERENCES customer_projects (id) ON UPDATE CASCADE ON DELETE SET NULL,
     CONSTRAINT fk_orders_project_contact_id FOREIGN KEY (project_contact_id) REFERENCES customer_project_contacts (id) ON UPDATE CASCADE ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS order_financials (
+    order_id         BIGINT UNSIGNED NOT NULL,
+    sub_total        BIGINT NOT NULL DEFAULT 0,
+    item_discount_total   BIGINT NOT NULL DEFAULT 0,
+    invoice_discount_type ENUM('none','percent','fixed') NOT NULL DEFAULT 'none',
+    invoice_discount_value  BIGINT NOT NULL DEFAULT 0,
+    invoice_discount_amount BIGINT NOT NULL DEFAULT 0,
+    tax_enabled      TINYINT(1) NOT NULL DEFAULT 0,
+    tax_rate         INT NOT NULL DEFAULT 10,
+    tax_amount       BIGINT NOT NULL DEFAULT 0,
+    grand_total      BIGINT NOT NULL DEFAULT 0,
+    paid_total       BIGINT NOT NULL DEFAULT 0,
+    due_amount       BIGINT NOT NULL DEFAULT 0,
+    payment_status   ENUM('unpaid','partial','paid') NOT NULL DEFAULT 'unpaid',
+    invoice_notes    TEXT NULL,
+    updated_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (order_id),
+    KEY idx_order_financials_payment_status (payment_status),
+    KEY idx_order_financials_grand_total (grand_total),
+    CONSTRAINT fk_order_financials_order
+        FOREIGN KEY (order_id) REFERENCES orders (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+CREATE TABLE IF NOT EXISTS order_payments (
+    id               BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+    order_id         BIGINT UNSIGNED NOT NULL,
+    local_id         VARCHAR(64) NOT NULL,
+    payment_date     VARCHAR(40) NOT NULL,
+    amount           BIGINT NOT NULL DEFAULT 0,
+    method           ENUM('cash','card','check','other') NOT NULL DEFAULT 'cash',
+    reference        VARCHAR(200) NULL,
+    note             TEXT NULL,
+    receipt_file_path    VARCHAR(500) NULL,
+    receipt_original_name VARCHAR(255) NULL,
+    receipt_mime_type    VARCHAR(100) NULL,
+    receipt_size         INT UNSIGNED NULL,
+    created_at       TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_order_payments_local_id (order_id, local_id),
+    KEY idx_order_payments_order (order_id),
+    KEY idx_order_payments_method (method),
+    KEY idx_order_payments_date (payment_date),
+    CONSTRAINT fk_order_payments_order
+        FOREIGN KEY (order_id) REFERENCES orders (id)
+        ON UPDATE CASCADE ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 CREATE TABLE IF NOT EXISTS order_request_idempotency (
     id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
     client_request_id VARCHAR(64) NOT NULL,
