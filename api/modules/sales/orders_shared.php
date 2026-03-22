@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/order_financials_repository.php';
+
 function app_sales_payload_has_advanced_order_data(array $payload): bool
 {
     if (array_key_exists('financials', $payload) || array_key_exists('payments', $payload) || array_key_exists('invoiceNotes', $payload)) {
@@ -112,11 +114,6 @@ function app_sales_normalize_order_meta_payload(array $payload, int $total): arr
         ];
     }
 
-    $paidTotal = 0;
-    foreach ($payments as $payment) {
-        $paidTotal += (int)($payment['amount'] ?? 0);
-    }
-
     $financials['subTotal'] = max(0, (int)($financials['subTotal'] ?? 0));
     $financials['itemDiscountTotal'] = max(0, (int)($financials['itemDiscountTotal'] ?? 0));
     $financials['invoiceDiscountType'] = (string)($financials['invoiceDiscountType'] ?? 'none');
@@ -130,22 +127,24 @@ function app_sales_normalize_order_meta_payload(array $payload, int $total): arr
     if ($grandTotal === 0 && $total > 0) {
         $grandTotal = $total;
     }
+    $financials['grandTotal'] = $grandTotal;
 
-    $paidTotal = max($paidTotal, max(0, (int)($financials['paidTotal'] ?? 0)));
-    $dueAmount = max(0, $grandTotal - $paidTotal);
+    // Derive payment fields from the canonical computation.
+    // Accept legacy paidTotal from input only if it exceeds the computed value (compat).
+    $derived = app_compute_payment_derived_fields($grandTotal, $payments);
+    $inputPaidTotal = max(0, (int)($financials['paidTotal'] ?? 0));
+    $paidTotal = max($derived['paidTotal'], $inputPaidTotal);
 
-    $paymentStatus = (string)($financials['paymentStatus'] ?? '');
-    if ($paymentStatus === '') {
-        if ($dueAmount <= 0) {
-            $paymentStatus = 'paid';
-        } elseif ($paidTotal > 0) {
-            $paymentStatus = 'partial';
-        } else {
-            $paymentStatus = 'unpaid';
-        }
+    if ($paidTotal !== $derived['paidTotal']) {
+        // Re-derive with the overridden paidTotal for consistency.
+        $dueAmount = max(0, $grandTotal - $paidTotal);
+        $paymentStatus = $dueAmount <= 0 && $grandTotal > 0 ? 'paid'
+            : ($paidTotal > 0 ? 'partial' : ($grandTotal <= 0 ? 'paid' : 'unpaid'));
+    } else {
+        $dueAmount = $derived['dueAmount'];
+        $paymentStatus = $derived['paymentStatus'];
     }
 
-    $financials['grandTotal'] = $grandTotal;
     $financials['paidTotal'] = $paidTotal;
     $financials['dueAmount'] = $dueAmount;
     $financials['paymentStatus'] = $paymentStatus;
