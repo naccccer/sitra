@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../../_common.php';
 require_once __DIR__ . '/../../../config/db.php';
+require_once __DIR__ . '/inventory_v2_helpers.php';
 
 app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
@@ -17,52 +18,7 @@ if ($method === 'GET') {
     app_require_csrf();
 }
 
-function inv_v2_op_insert_lines(PDO $pdo, int $opId, array $lines): void
-{
-    $stmt = $pdo->prepare(
-        'INSERT INTO inventory_v2_operation_lines
-         (operation_id, product_id, variant_id, lot_id, source_location_id,
-          target_location_id, quantity_requested, quantity_done, uom, notes)
-         VALUES (:op_id,:pid,:vid,:lot_id,:src_loc,:tgt_loc,:qty_req,:qty_done,:uom,:notes)'
-    );
-    foreach ($lines as $line) {
-        $stmt->execute([
-            'op_id'    => $opId,
-            'pid'      => (int)($line['productId'] ?? 0),
-            'vid'      => app_inventory_v2_parse_id($line['variantId'] ?? null),
-            'lot_id'   => app_inventory_v2_parse_id($line['lotId'] ?? null),
-            'src_loc'  => app_inventory_v2_parse_id($line['sourceLocationId'] ?? null),
-            'tgt_loc'  => app_inventory_v2_parse_id($line['targetLocationId'] ?? null),
-            'qty_req'  => (float)($line['quantityRequested'] ?? 0),
-            'qty_done' => (float)($line['quantityDone'] ?? $line['quantityRequested'] ?? 0),
-            'uom'      => app_inventory_v2_normalize_text($line['uom'] ?? ''),
-            'notes'    => app_inventory_v2_normalize_text($line['notes'] ?? '') ?: null,
-        ]);
-    }
-}
-
-function inv_v2_op_fetch(PDO $pdo, int $id): ?array
-{
-    $stmt = $pdo->prepare(
-        'SELECT h.*,
-                sw.name AS source_warehouse_name, tw.name AS target_warehouse_name,
-                u.username AS created_by_username,
-                (SELECT COUNT(*) FROM inventory_v2_operation_lines l WHERE l.operation_id = h.id) AS line_count
-         FROM inventory_v2_operation_headers h
-         LEFT JOIN inventory_v2_warehouses sw ON sw.id = h.source_warehouse_id
-         LEFT JOIN inventory_v2_warehouses tw ON tw.id = h.target_warehouse_id
-         LEFT JOIN users u ON u.id = h.created_by_user_id
-         WHERE h.id = :id LIMIT 1'
-    );
-    $stmt->execute(['id' => $id]);
-    $row = $stmt->fetch();
-    return $row ? app_inventory_v2_operation_header_from_row($row) : null;
-}
-
-$validTypes    = ['receipt', 'delivery', 'transfer', 'production_move', 'production_consume', 'production_output', 'adjustment', 'count'];
-$validStatuses = ['draft', 'submitted', 'approved', 'posted', 'cancelled'];
-
-// â”€â”€â”€ GET â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── GET ──────────────────────────────────────────────────────────────────────
 if ($method === 'GET') {
     $opType   = app_inventory_v2_normalize_text($_GET['type'] ?? '');
     $status   = app_inventory_v2_normalize_text($_GET['status'] ?? '');
@@ -73,18 +29,18 @@ if ($method === 'GET') {
     $sortDir  = strtoupper($_GET['sortDir'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
     $offset   = ($page - 1) * $pageSize;
 
-    $where = [];
+    $where  = [];
     $params = [];
-    if ($opType !== '' && in_array($opType, $validTypes, true)) {
-        $where[] = 'h.operation_type = :op_type';
+    if ($opType !== '' && in_array($opType, app_inventory_v2_valid_operation_types(), true)) {
+        $where[]           = 'h.operation_type = :op_type';
         $params['op_type'] = $opType;
     }
-    if ($status !== '' && in_array($status, $validStatuses, true)) {
-        $where[] = 'h.status = :status';
+    if ($status !== '' && in_array($status, inv_v2_op_valid_statuses(), true)) {
+        $where[]          = 'h.status = :status';
         $params['status'] = $status;
     }
     if ($q !== '') {
-        $where[] = '(h.operation_no LIKE :q OR h.reference_code LIKE :q)';
+        $where[]     = '(h.operation_no LIKE :q OR h.reference_code LIKE :q)';
         $params['q'] = '%' . $q . '%';
     }
     $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
@@ -93,17 +49,8 @@ if ($method === 'GET') {
     $countStmt->execute($params);
     $total = (int)$countStmt->fetchColumn();
 
-    $sql = "SELECT h.*, sw.name AS source_warehouse_name, tw.name AS target_warehouse_name,
-                   u.username AS created_by_username,
-                   (SELECT COUNT(*) FROM inventory_v2_operation_lines l WHERE l.operation_id = h.id) AS line_count
-            FROM inventory_v2_operation_headers h
-            LEFT JOIN inventory_v2_warehouses sw ON sw.id = h.source_warehouse_id
-            LEFT JOIN inventory_v2_warehouses tw ON tw.id = h.target_warehouse_id
-            LEFT JOIN users u ON u.id = h.created_by_user_id
-            {$whereSql}
-            ORDER BY h.{$sortBy} {$sortDir}
-            LIMIT {$pageSize} OFFSET {$offset}";
-
+    $sql  = inv_v2_op_base_select_sql()
+          . " {$whereSql} ORDER BY h.{$sortBy} {$sortDir} LIMIT {$pageSize} OFFSET {$offset}";
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
     $rows = $stmt->fetchAll() ?: [];
@@ -119,28 +66,23 @@ if ($method === 'GET') {
 
 $payload = app_read_json_body();
 
-// â”€â”€â”€ POST â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── POST ─────────────────────────────────────────────────────────────────────
 if ($method === 'POST') {
     $opType  = app_inventory_v2_normalize_text($payload['operationType'] ?? '');
-    if (!in_array($opType, $validTypes, true)) {
-        app_json(['success' => false, 'error' => 'Valid operationType is required.'], 400);
-    }
     $srcWid  = app_inventory_v2_parse_id($payload['sourceWarehouseId'] ?? null);
     $tgtWid  = app_inventory_v2_parse_id($payload['targetWarehouseId'] ?? null);
+    $lines   = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
+
+    $err = inv_v2_op_validate_create_payload($opType, $srcWid, $tgtWid, $lines);
+    if ($err !== null) {
+        app_json(['success' => false, 'error' => $err], 400);
+    }
+
     $notes   = app_inventory_v2_normalize_text($payload['notes'] ?? '');
     $refType = app_inventory_v2_normalize_text($payload['referenceType'] ?? '');
     $refId   = app_inventory_v2_normalize_text($payload['referenceId'] ?? '');
     $refCode = app_inventory_v2_normalize_text($payload['referenceCode'] ?? '');
-    if (in_array($opType, ['delivery', 'transfer'], true) && !$srcWid) {
-        app_json(['success' => false, 'error' => 'sourceWarehouseId required for delivery/transfer.'], 400);
-    }
-    if (in_array($opType, ['receipt', 'transfer', 'adjustment'], true) && !$tgtWid) {
-        app_json(['success' => false, 'error' => 'targetWarehouseId required for receipt/transfer/adjustment.'], 400);
-    }
-    $lines = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
-    if (empty($lines)) {
-        app_json(['success' => false, 'error' => 'At least one line is required.'], 400);
-    }
+
     $operationNo = app_inventory_v2_generate_operation_no($pdo, $opType);
     $pdo->beginTransaction();
     try {
@@ -173,7 +115,7 @@ if ($method === 'POST') {
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $operationId)], 201);
 }
 
-// â”€â”€â”€ PUT â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PUT ──────────────────────────────────────────────────────────────────────
 if ($method === 'PUT') {
     $id = app_inventory_v2_parse_id($payload['id'] ?? null);
     if ($id === null) {
@@ -212,7 +154,7 @@ if ($method === 'PUT') {
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
 }
 
-// â”€â”€â”€ PATCH â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ─── PATCH ────────────────────────────────────────────────────────────────────
 $id     = app_inventory_v2_parse_id($payload['id'] ?? null);
 $action = app_inventory_v2_normalize_text($payload['action'] ?? '');
 if ($id === null || $action === '') {
@@ -224,11 +166,6 @@ $op = $opStmt->fetch();
 if (!$op) {
     app_json(['success' => false, 'error' => 'Operation not found.'], 404);
 }
-$transitions = [
-    'submit'  => ['from' => 'draft',      'to' => 'submitted', 'roles' => ['admin', 'manager']],
-    'approve' => ['from' => 'submitted',  'to' => 'approved',  'roles' => ['admin', 'manager']],
-    'cancel'  => ['from' => null,         'to' => 'cancelled', 'roles' => ['admin', 'manager']],
-];
 if ($action === 'post') {
     $result = app_inventory_v2_post_operation($pdo, $id, $actor);
     if (!$result['success']) {
@@ -237,6 +174,7 @@ if ($action === 'post') {
     app_audit_log($pdo, 'inventory.vtwo_operations.posted', 'inventory_v2_operation', (string)$id, [], $actor);
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
 }
+$transitions = inv_v2_op_transitions();
 if (!isset($transitions[$action])) {
     app_json(['success' => false, 'error' => 'Invalid action.'], 400);
 }
@@ -251,5 +189,3 @@ $pdo->prepare('UPDATE inventory_v2_operation_headers SET status = :status WHERE 
     ->execute(['status' => $t['to'], 'id' => $id]);
 app_audit_log($pdo, "inventory.vtwo_operations.{$action}", 'inventory_v2_operation', (string)$id, ['newStatus' => $t['to']], $actor);
 app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
-
-
