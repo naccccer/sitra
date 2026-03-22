@@ -87,6 +87,10 @@ function app_customer_directory_fetch(PDO $pdo, array $filters): array
 
     $projectsSummarySql = '(SELECT customer_id, COUNT(*) AS active_projects_count FROM customer_projects WHERE is_active = 1 GROUP BY customer_id) cps';
     $contactsSummarySql = '(SELECT cp.customer_id, COUNT(*) AS active_contacts_count FROM customer_projects cp INNER JOIN customer_project_contacts cpc ON cpc.project_id = cp.id WHERE cp.is_active = 1 AND cpc.is_active = 1 GROUP BY cp.customer_id) ccs';
+    // SQL mirrors app_compute_payment_derived_fields():
+    //   paidTotal  = SUM(order_payments.amount) per order
+    //   dueAmount  = GREATEST(0, grand_total - paidTotal) per order, then summed across orders
+    // grand_total falls back to orders.total for orders not yet in order_financials.
     $ordersSummarySql = "(SELECT o.customer_id,"
         . " COUNT(*) AS active_orders_count,"
         . " COALESCE(SUM(COALESCE(ofi.grand_total, o.total)), 0) AS total_amount,"
