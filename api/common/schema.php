@@ -377,6 +377,13 @@ function app_orders_items_column(PDO $pdo): string
     return app_detect_orders_items_column($pdo);
 }
 
+/**
+ * @deprecated order_meta_json writes have been removed from the write flow.
+ * The column persists in the database for backward-read compatibility only
+ * (APP_ORDER_JSON_FALLBACK=0 disables the read path).
+ * Remove this function when the column is dropped via
+ * scripts/drop-order-meta-json-column.php.
+ */
 function app_detect_orders_meta_column(PDO $pdo): ?string
 {
     static $detected = false;
@@ -388,6 +395,7 @@ function app_detect_orders_meta_column(PDO $pdo): ?string
     return $found;
 }
 
+/** @deprecated See app_detect_orders_meta_column(). */
 function app_orders_meta_column(PDO $pdo): ?string
 {
     return app_detect_orders_meta_column($pdo);
@@ -413,6 +421,8 @@ function app_orders_select_fields(PDO $pdo): string
     $itemsColumn = app_detect_orders_items_column($pdo);
     $metaColumn = app_detect_orders_meta_column($pdo);
     $dateColumn = app_detect_orders_date_column($pdo);
+    // @deprecated — order_meta_json is no longer written; selected only for the
+    // APP_ORDER_JSON_FALLBACK read path. Remove once column is dropped.
     $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
     $createdAtColumn = app_find_orders_column($pdo, ['created_at']);
     $updatedAtColumn = app_find_orders_column($pdo, ['updated_at']);
