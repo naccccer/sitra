@@ -27,19 +27,7 @@ if ($method === 'GET') {
             app_json(['success' => true, 'period' => acc_payroll_period_from_row($period)]);
         }
         $status = acc_normalize_text($_GET['status'] ?? '');
-        $where  = [];
-        $params = [];
-        if ($status !== '' && in_array($status, acc_payroll_valid_period_statuses(), true)) {
-            $where[]          = 'status = :status';
-            $params['status'] = $status;
-        }
-        $stmt = $pdo->prepare(
-            'SELECT * FROM acc_payroll_periods'
-            . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
-            . ' ORDER BY period_key DESC, id DESC'
-        );
-        $stmt->execute($params);
-        $rows = $stmt->fetchAll() ?: [];
+        $rows   = acc_payroll_list_periods($pdo, $status);
         app_json([
             'success' => true,
             'periods' => array_map('acc_payroll_period_from_row', $rows),
@@ -149,30 +137,8 @@ if ($method === 'PUT') {
         if (!$existing) {
             app_json(['success' => false, 'error' => 'Payroll period not found.'], 404);
         }
-        $title     = ($v = acc_normalize_text($payload['title'] ?? (string)$existing['title'])) !== '' ? $v : (string)$existing['title'];
-        $startDate = acc_parse_date(acc_normalize_text($payload['startDate'] ?? '')) ?? (string)$existing['start_date'];
-        $endDate   = acc_parse_date(acc_normalize_text($payload['endDate'] ?? '')) ?? (string)$existing['end_date'];
-        $payDate   = acc_parse_date(acc_normalize_text($payload['payDate'] ?? '')) ?? ($existing['pay_date'] ?: null);
-        $status    = acc_normalize_text($payload['status'] ?? (string)$existing['status']);
-        if (!in_array($status, acc_payroll_valid_period_statuses(), true)) {
-            $status = (string)$existing['status'];
-        }
-        $pdo->prepare(
-            'UPDATE acc_payroll_periods
-             SET title = :title, start_date = :start_date, end_date = :end_date,
-                 pay_date = :pay_date, status = :status, updated_by_user_id = :user_id
-             WHERE id = :id'
-        )->execute([
-            'title'      => $title,
-            'start_date' => $startDate,
-            'end_date'   => $endDate,
-            'pay_date'   => $payDate,
-            'status'     => $status,
-            'user_id'    => (int)$actor['id'],
-            'id'         => $periodId,
-        ]);
-        $period = acc_payroll_fetch_period($pdo, $periodId);
-        app_json(['success' => true, 'period' => acc_payroll_period_from_row($period ?: $existing)]);
+        $period = acc_payroll_update_period($pdo, $periodId, $payload, $existing, $actor);
+        app_json(['success' => true, 'period' => acc_payroll_period_from_row($period)]);
     }
     acc_require_permission($actor, 'accounting.payroll.write', $pdo);
     if ($entity === 'employee') {
@@ -215,44 +181,14 @@ if ($method === 'DELETE') {
         app_json(['success' => false, 'error' => 'Payroll period not found.'], 404);
     }
 
-    $statsStmt = $pdo->prepare(
-        'SELECT
-            COUNT(*) AS total,
-            SUM(CASE WHEN status <> \'draft\' THEN 1 ELSE 0 END) AS non_draft_total,
-            SUM(CASE WHEN payments_total > 0 THEN 1 ELSE 0 END) AS paid_total,
-            SUM(CASE WHEN accrual_voucher_id IS NOT NULL THEN 1 ELSE 0 END) AS journaled_total
-         FROM acc_payslips
-         WHERE period_id = :period_id'
-    );
-    $statsStmt->execute(['period_id' => $periodId]);
-    $stats         = $statsStmt->fetch() ?: [];
-    $payslipCount  = (int)($stats['total'] ?? 0);
-    $nonDraftTotal = (int)($stats['non_draft_total'] ?? 0);
-    $paidTotal     = (int)($stats['paid_total'] ?? 0);
-    $journaledTotal = (int)($stats['journaled_total'] ?? 0);
-
-    if ($nonDraftTotal > 0 || $paidTotal > 0 || $journaledTotal > 0) {
-        app_json([
-            'success' => false,
-            'error'   => 'This period contains approved/issued or paid payslips and cannot be deleted.',
-        ], 422);
-    }
-
     try {
-        acc_payroll_transact($pdo, function() use ($pdo, $payslipCount, $periodId) {
-            if ($payslipCount > 0) {
-                $pdo->prepare('DELETE FROM acc_payslips WHERE period_id = :period_id')
-                    ->execute(['period_id' => $periodId]);
-            }
-            $pdo->prepare('DELETE FROM acc_payroll_periods WHERE id = :id')
-                ->execute(['id' => $periodId]);
-        });
-    } catch (Throwable $e) {
+        $payslipCount = acc_payroll_delete_period($pdo, $periodId);
+    } catch (RuntimeException $e) {
         app_json(['success' => false, 'error' => $e->getMessage()], 422);
     }
 
     app_audit_log($pdo, 'accounting_payroll.period.deleted', 'acc_payroll_periods', (string)$periodId, [
-        'periodKey'      => (string)($period['period_key'] ?? ''),
+        'periodKey'       => (string)($period['period_key'] ?? ''),
         'deletedPayslips' => $payslipCount,
     ], $actor);
 

@@ -27,90 +27,32 @@ if ($method === 'GET') {
     $pageSize = min(100, max(10, (int)($_GET['pageSize'] ?? 20)));
     $sortBy   = in_array($_GET['sortBy'] ?? '', ['operation_no', 'created_at', 'status'], true) ? $_GET['sortBy'] : 'created_at';
     $sortDir  = strtoupper($_GET['sortDir'] ?? 'DESC') === 'ASC' ? 'ASC' : 'DESC';
-    $offset   = ($page - 1) * $pageSize;
 
-    $where  = [];
-    $params = [];
-    if ($opType !== '' && in_array($opType, app_inventory_v2_valid_operation_types(), true)) {
-        $where[]           = 'h.operation_type = :op_type';
-        $params['op_type'] = $opType;
-    }
-    if ($status !== '' && in_array($status, inv_v2_op_valid_statuses(), true)) {
-        $where[]          = 'h.status = :status';
-        $params['status'] = $status;
-    }
-    if ($q !== '') {
-        $where[]     = '(h.operation_no LIKE :q OR h.reference_code LIKE :q)';
-        $params['q'] = '%' . $q . '%';
-    }
-    $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
-
-    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM inventory_v2_operation_headers h {$whereSql}");
-    $countStmt->execute($params);
-    $total = (int)$countStmt->fetchColumn();
-
-    $sql  = inv_v2_op_base_select_sql()
-          . " {$whereSql} ORDER BY h.{$sortBy} {$sortDir} LIMIT {$pageSize} OFFSET {$offset}";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll() ?: [];
-
-    app_json([
-        'success'    => true,
-        'operations' => array_map('app_inventory_v2_operation_header_from_row', $rows),
-        'total'      => $total,
-        'page'       => $page,
-        'pageSize'   => $pageSize,
-    ]);
+    $result = inv_v2_op_list($pdo, $opType, $status, $q, $page, $pageSize, $sortBy, $sortDir);
+    app_json(['success' => true] + $result);
 }
 
 $payload = app_read_json_body();
 
 // ─── POST ─────────────────────────────────────────────────────────────────────
 if ($method === 'POST') {
-    $opType  = app_inventory_v2_normalize_text($payload['operationType'] ?? '');
-    $srcWid  = app_inventory_v2_parse_id($payload['sourceWarehouseId'] ?? null);
-    $tgtWid  = app_inventory_v2_parse_id($payload['targetWarehouseId'] ?? null);
-    $lines   = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
+    $opType = app_inventory_v2_normalize_text($payload['operationType'] ?? '');
+    $srcWid = app_inventory_v2_parse_id($payload['sourceWarehouseId'] ?? null);
+    $tgtWid = app_inventory_v2_parse_id($payload['targetWarehouseId'] ?? null);
+    $lines  = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
 
     $err = inv_v2_op_validate_create_payload($opType, $srcWid, $tgtWid, $lines);
     if ($err !== null) {
         app_json(['success' => false, 'error' => $err], 400);
     }
 
-    $notes   = app_inventory_v2_normalize_text($payload['notes'] ?? '');
-    $refType = app_inventory_v2_normalize_text($payload['referenceType'] ?? '');
-    $refId   = app_inventory_v2_normalize_text($payload['referenceId'] ?? '');
-    $refCode = app_inventory_v2_normalize_text($payload['referenceCode'] ?? '');
-
-    $operationNo = app_inventory_v2_generate_operation_no($pdo, $opType);
-    $pdo->beginTransaction();
     try {
-        $ins = $pdo->prepare(
-            'INSERT INTO inventory_v2_operation_headers
-             (operation_no, operation_type, status, source_warehouse_id, target_warehouse_id,
-              reference_type, reference_id, reference_code, notes, created_by_user_id)
-             VALUES (:op_no,:op_type,:status,:src_wid,:tgt_wid,:ref_type,:ref_id,:ref_code,:notes,:created_by)'
-        );
-        $ins->execute([
-            'op_no'      => $operationNo,
-            'op_type'    => $opType,
-            'status'     => 'draft',
-            'src_wid'    => $srcWid,
-            'tgt_wid'    => $tgtWid,
-            'ref_type'   => $refType !== '' ? $refType : null,
-            'ref_id'     => $refId !== '' ? $refId : null,
-            'ref_code'   => $refCode !== '' ? $refCode : null,
-            'notes'      => $notes !== '' ? $notes : null,
-            'created_by' => (int)$actor['id'],
-        ]);
-        $operationId = (int)$pdo->lastInsertId();
-        inv_v2_op_insert_lines($pdo, $operationId, $lines);
-        $pdo->commit();
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        app_json(['success' => false, 'error' => 'Failed to create operation.'], 500);
+        $created = inv_v2_op_create($pdo, $payload, $actor);
+    } catch (RuntimeException $e) {
+        app_json(['success' => false, 'error' => $e->getMessage()], 500);
     }
+    $operationId  = $created['id'];
+    $operationNo  = $created['operationNo'];
     app_audit_log($pdo, 'inventory.vtwo_operations.created', 'inventory_v2_operation', (string)$operationId, ['operationType' => $opType, 'operationNo' => $operationNo], $actor);
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $operationId)], 201);
 }
@@ -121,34 +63,18 @@ if ($method === 'PUT') {
     if ($id === null) {
         app_json(['success' => false, 'error' => 'Valid id is required.'], 400);
     }
-    $current = $pdo->prepare('SELECT * FROM inventory_v2_operation_headers WHERE id = :id LIMIT 1');
-    $current->execute(['id' => $id]);
-    $op = $current->fetch();
+    $op = inv_v2_op_load_raw($pdo, $id);
     if (!$op) {
         app_json(['success' => false, 'error' => 'Operation not found.'], 404);
     }
     if ($op['status'] !== 'draft') {
         app_json(['success' => false, 'error' => 'Only draft operations can be edited.'], 422);
     }
-    $notes   = app_inventory_v2_normalize_text($payload['notes'] ?? $op['notes'] ?? '');
-    $refCode = app_inventory_v2_normalize_text($payload['referenceCode'] ?? $op['reference_code'] ?? '');
-    $lines   = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
-    $pdo->beginTransaction();
+
     try {
-        $upd = $pdo->prepare(
-            'UPDATE inventory_v2_operation_headers
-             SET notes = :notes, reference_code = :ref_code, updated_at = CURRENT_TIMESTAMP
-             WHERE id = :id'
-        );
-        $upd->execute(['notes' => $notes ?: null, 'ref_code' => $refCode ?: null, 'id' => $id]);
-        if (!empty($lines)) {
-            $pdo->prepare('DELETE FROM inventory_v2_operation_lines WHERE operation_id = :id')->execute(['id' => $id]);
-            inv_v2_op_insert_lines($pdo, $id, $lines);
-        }
-        $pdo->commit();
-    } catch (Exception $e) {
-        $pdo->rollBack();
-        app_json(['success' => false, 'error' => 'Failed to update operation.'], 500);
+        inv_v2_op_update($pdo, $id, $op, $payload);
+    } catch (RuntimeException $e) {
+        app_json(['success' => false, 'error' => $e->getMessage()], 500);
     }
     app_audit_log($pdo, 'inventory.vtwo_operations.updated', 'inventory_v2_operation', (string)$id, [], $actor);
     app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
@@ -160,9 +86,7 @@ $action = app_inventory_v2_normalize_text($payload['action'] ?? '');
 if ($id === null || $action === '') {
     app_json(['success' => false, 'error' => 'id and action are required.'], 400);
 }
-$opStmt = $pdo->prepare('SELECT * FROM inventory_v2_operation_headers WHERE id = :id LIMIT 1');
-$opStmt->execute(['id' => $id]);
-$op = $opStmt->fetch();
+$op = inv_v2_op_load_raw($pdo, $id);
 if (!$op) {
     app_json(['success' => false, 'error' => 'Operation not found.'], 404);
 }
@@ -185,7 +109,6 @@ if ($t['from'] !== null && $op['status'] !== $t['from']) {
 if ($action === 'cancel' && in_array($op['status'], ['posted', 'cancelled'], true)) {
     app_json(['success' => false, 'error' => 'Posted or already cancelled operations cannot be cancelled.'], 422);
 }
-$pdo->prepare('UPDATE inventory_v2_operation_headers SET status = :status WHERE id = :id')
-    ->execute(['status' => $t['to'], 'id' => $id]);
+inv_v2_op_set_status($pdo, $id, $t['to']);
 app_audit_log($pdo, "inventory.vtwo_operations.{$action}", 'inventory_v2_operation', (string)$id, ['newStatus' => $t['to']], $actor);
 app_json(['success' => true, 'operation' => inv_v2_op_fetch($pdo, $id)]);
