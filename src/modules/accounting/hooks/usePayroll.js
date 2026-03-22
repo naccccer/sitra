@@ -7,7 +7,7 @@ import {
   normalizePayrollPeriod,
   safeNumber,
 } from '../components/payroll/payrollMath'
-import { DEFAULT_PAYROLL_SETTINGS, fetchAllPayrollPayslips, normalizePayrollSettings, PAYROLL_INPUT_FIELDS } from './payrollDataUtils'
+import { DEFAULT_PAYROLL_SETTINGS, fetchAllPayrollPayslips, normalizePayrollSettings, PAYROLL_INPUT_FIELDS } from './usePayrollDataUtils'
 import { usePayrollWorkflow } from './usePayrollWorkflow'
 import { trackPayrollEvent } from '../utils/payrollTelemetry'
 import { shamsiMonthKeyToGregorianRange } from '../utils/dateUtils'

@@ -1,6 +1,7 @@
-﻿import { useEffect, useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { Button, Card, Input, Select } from '@/components/shared/ui'
-import { ShamsiDateInput, todayGregorian } from '../../utils/dateUtils'
+import { todayGregorian } from '../../utils/dateUtils.js'
+import { ShamsiDateInput } from '../DatePickerWrapper'
 import { formatMaybeDate, formatMoney, getPaymentMeta, sumPayments } from './payrollMath'
 
 function createEmptyPayment() {
@@ -15,30 +16,12 @@ function createEmptyPayment() {
 }
 
 export function PayrollPaymentsPanel({ busy, canManage, onRecordPayment, payslip }) {
-  const [draft, setDraft] = useState(() => createEmptyPayment())
   const paid = useMemo(() => sumPayments(payslip?.payments), [payslip])
   const balance = Math.max((payslip?.net || 0) - paid, 0)
   const paymentMeta = getPaymentMeta(payslip?.paymentStatus || 'unpaid')
 
-  useEffect(() => {
-    setDraft(createEmptyPayment())
-  }, [payslip?.id])
-
   if (!payslip) {
     return <Card padding="md" className="text-sm font-bold text-slate-400">برای ثبت پرداخت، ابتدا یک فیش را از لیست دوره ها انتخاب و ویرایش کنید.</Card>
-  }
-
-  const submit = async (event) => {
-    event.preventDefault()
-    await onRecordPayment(payslip.id, {
-      amount: Number(draft.amount || 0),
-      paymentDate: draft.paymentDate,
-      paymentMethod: draft.paymentMethod,
-      referenceNo: draft.referenceNo,
-      notes: draft.notes,
-      accountId: draft.accountId || null,
-    })
-    setDraft(createEmptyPayment())
   }
 
   return (
@@ -83,22 +66,13 @@ export function PayrollPaymentsPanel({ busy, canManage, onRecordPayment, payslip
         </table>
       </div>
 
-      <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.4fr_auto]">
-        <Input type="number" value={draft.amount} onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))} placeholder="مبلغ پرداخت" />
-        <ShamsiDateInput
-          value={draft.paymentDate}
-          onChange={(paymentDate) => setDraft((current) => ({ ...current, paymentDate }))}
-          className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 cursor-pointer"
-          placeholder="تاریخ پرداخت"
-        />
-        <Select value={draft.paymentMethod} onChange={(event) => setDraft((current) => ({ ...current, paymentMethod: event.target.value }))}>
-          <option value="bank">بانکی</option>
-          <option value="cash">نقدی</option>
-        </Select>
-        <Input value={draft.referenceNo} onChange={(event) => setDraft((current) => ({ ...current, referenceNo: event.target.value }))} placeholder="کد رهگیری" />
-        <Input value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="توضیحات" />
-        <Button type="submit" size="sm" variant="primary" disabled={!canManage || busy}>{busy ? 'در حال ثبت...' : 'ثبت پرداخت'}</Button>
-      </form>
+      <PayrollPaymentForm
+        key={payslip.id}
+        busy={busy}
+        canManage={canManage}
+        payslipId={payslip.id}
+        onRecordPayment={onRecordPayment}
+      />
     </Card>
   )
 }
@@ -106,3 +80,41 @@ export function PayrollPaymentsPanel({ busy, canManage, onRecordPayment, payslip
 function Metric({ emphasize = false, label, value }) {
   return <div className={`rounded-2xl border px-3 py-3 ${emphasize ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-slate-50'}`}><div className={`text-[11px] font-bold ${emphasize ? 'text-white/70' : 'text-slate-500'}`}>{label}</div><div className="mt-1 text-sm font-black">{value}</div></div>
 }
+
+function PayrollPaymentForm({ busy, canManage, onRecordPayment, payslipId }) {
+  const [draft, setDraft] = useState(() => createEmptyPayment())
+
+  const submit = async (event) => {
+    event.preventDefault()
+    await onRecordPayment(payslipId, {
+      amount: Number(draft.amount || 0),
+      paymentDate: draft.paymentDate,
+      paymentMethod: draft.paymentMethod,
+      referenceNo: draft.referenceNo,
+      notes: draft.notes,
+      accountId: draft.accountId || null,
+    })
+    setDraft(createEmptyPayment())
+  }
+
+  return (
+    <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.4fr_auto]">
+      <Input type="number" value={draft.amount} onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))} placeholder="مبلغ پرداخت" />
+      <ShamsiDateInput
+        value={draft.paymentDate}
+        onChange={(paymentDate) => setDraft((current) => ({ ...current, paymentDate }))}
+        className="h-9 w-full rounded-lg border border-slate-200 bg-white px-3 text-xs font-bold text-slate-700 cursor-pointer"
+        placeholder="تاریخ پرداخت"
+      />
+      <Select value={draft.paymentMethod} onChange={(event) => setDraft((current) => ({ ...current, paymentMethod: event.target.value }))}>
+        <option value="bank">بانکی</option>
+        <option value="cash">نقدی</option>
+      </Select>
+      <Input value={draft.referenceNo} onChange={(event) => setDraft((current) => ({ ...current, referenceNo: event.target.value }))} placeholder="کد رهگیری" />
+      <Input value={draft.notes} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} placeholder="توضیحات" />
+      <Button type="submit" size="sm" variant="primary" disabled={!canManage || busy}>{busy ? 'در حال ثبت...' : 'ثبت پرداخت'}</Button>
+    </form>
+  )
+}
+
+

@@ -4,13 +4,14 @@ import { toPN } from '@/utils/helpers'
 import { usePostableAccounts } from '../../hooks/useAccounts'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { accountingApi } from '../../services/accountingApi'
-import { ShamsiDateInput, todayGregorian } from '../../utils/dateUtils'
+import { todayGregorian } from '../../utils/dateUtils'
+import { ShamsiDateInput } from '../DatePickerWrapper'
 
 function newLine() {
   return { accountId: '', description: '', debitAmount: '', creditAmount: '' }
 }
 
-export function VoucherFormModal({ voucher, session, onClose, onSaved }) {
+export function VoucherFormModal({ voucher, onClose, onSaved }) {
   const isEdit = Boolean(voucher)
   const { accounts: postableAccounts } = usePostableAccounts()
   const { fiscalYears, currentDefault } = useFiscalYears()

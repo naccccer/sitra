@@ -1,0 +1,94 @@
+# ============================================
+# Core dependency/cache output (always ignore)
+# Reduces token waste on install/build artifacts.
+# ============================================
+node_modules/
+.pnpm-store/
+.npm/
+.yarn/
+.vite/
+
+# ============================================
+# Build outputs and test coverage
+# Not useful for code reasoning/editing.
+# ============================================
+dist/
+build/
+coverage/
+*.lcov
+
+# ============================================
+# Logs and temp runtime files
+# Prevents noisy, ever-changing context.
+# ============================================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ============================================
+# Uploads, examples, fixtures with heavy assets
+# Keeps binary/media payloads out of model context.
+# ============================================
+api/uploads/
+examples/
+docs/assets/
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.webp
+*.avif
+*.svg
+*.pdf
+*.mp4
+*.mov
+*.zip
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# ============================================
+# Generated contracts/schemas/types
+# Rebuild when needed; avoid spending tokens reading generated files.
+# ============================================
+contracts/schemas/
+src/types/api-contracts.generated.js
+
+# ============================================
+# IDE/system noise
+# Local machine metadata only.
+# ============================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ============================================
+# Optional module-focused work patterns (commented)
+# Uncomment ONE target module and keep others ignored.
+# ============================================
+
+# Frontend module focus template:
+# src/modules/**
+# !src/modules/sales/**
+# !src/modules/sales
+
+# Alternative frontend target example:
+# src/modules/**
+# !src/modules/master-data/**
+# !src/modules/master-data
+
+# Backend module focus template:
+# api/modules/**
+# !api/modules/sales/**
+# !api/modules/sales
+
+# Alternative backend target example:
+# api/modules/**
+# !api/modules/accounting/**
+# !api/modules/accounting
+

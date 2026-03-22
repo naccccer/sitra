@@ -169,21 +169,19 @@ if ($report === 'ar_summary') {
     $params = [];
     $voucherWhere = acc_reports_voucher_where($params, $fiscalYearId, $dateFrom, $dateTo);
 
-    // Find all customer-party voucher lines
+    // Find all customer-party voucher lines (customer names are resolved via customers-owned helper).
     $sql = "
         SELECT
             vl.party_id,
-            c.full_name               AS customer_name,
             SUM(vl.debit_amount)      AS total_debit,
             SUM(vl.credit_amount)     AS total_credit,
             SUM(vl.debit_amount) - SUM(vl.credit_amount) AS balance
         FROM acc_voucher_lines vl
         JOIN acc_vouchers v ON v.id = vl.voucher_id
-        LEFT JOIN customers c ON c.id = vl.party_id
         WHERE vl.party_type = 'customer'
           AND vl.party_id IS NOT NULL
           AND {$voucherWhere}
-        GROUP BY vl.party_id, c.full_name
+        GROUP BY vl.party_id
         ORDER BY balance DESC
     ";
 
@@ -191,15 +189,26 @@ if ($report === 'ar_summary') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll() ?: [];
 
-    $result = array_map(static function (array $row): array {
-        return [
+    $result = [];
+    foreach ($rows as $row) {
+        $customerId = acc_parse_id($row['party_id'] ?? null);
+        $customerName = 'نامشخص';
+        if ($customerId !== null) {
+            $customer = app_customer_find($pdo, $customerId);
+            $name = is_array($customer) ? acc_normalize_text($customer['full_name'] ?? '') : '';
+            if ($name !== '') {
+                $customerName = $name;
+            }
+        }
+
+        $result[] = [
             'customerId'   => (string)($row['party_id'] ?? ''),
-            'customerName' => (string)($row['customer_name'] ?? 'نامشخص'),
+            'customerName' => $customerName,
             'debit'        => (int)$row['total_debit'],
             'credit'       => (int)$row['total_credit'],
             'balance'      => (int)$row['balance'],
         ];
-    }, $rows);
+    }
 
     $totalBalance = array_sum(array_column($result, 'balance'));
     app_json(['success' => true, 'report' => 'ar_summary', 'rows' => $result, 'totalBalance' => $totalBalance]);

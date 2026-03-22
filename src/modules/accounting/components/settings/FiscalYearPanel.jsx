@@ -3,7 +3,8 @@ import { Button, Card } from '@/components/shared/ui'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { useAccounts } from '../../hooks/useAccounts'
 import { accountingApi } from '../../services/accountingApi'
-import { ShamsiDateInput, toShamsiDisplay } from '../../utils/dateUtils'
+import { toShamsiDisplay } from '../../utils/dateUtils'
+import { ShamsiDateInput } from '../DatePickerWrapper'
 import { useTabSettings, CONFIGURABLE_TABS } from '../../hooks/useTabSettings'
 
 export function FiscalYearPanel({ session }) {
@@ -11,7 +12,7 @@ export function FiscalYearPanel({ session }) {
   const canWrite = permissions.includes('accounting.settings.write')
   const { visibility, save: saveTabSettings, saving: savingTabs } = useTabSettings()
 
-  const { fiscalYears, currentDefault, loading, error, reload } = useFiscalYears()
+  const { fiscalYears, loading, error, reload } = useFiscalYears()
   const { accounts: postableAccounts } = useAccounts({ postableOnly: true })
 
   // New fiscal year form
