@@ -44,6 +44,11 @@ function app_inventory_v2_operation_line_from_row(array $row): array
     ];
 }
 
+function app_inventory_v2_valid_operation_types(): array
+{
+    return ['receipt', 'delivery', 'transfer', 'production_move', 'production_consume', 'production_output', 'adjustment', 'count'];
+}
+
 function app_inventory_v2_generate_operation_no(PDO $pdo, string $type): string
 {
     $prefixes = [
