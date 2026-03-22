@@ -483,3 +483,6 @@
 - `/api/role_permissions.php` -> users-access permission matrix
 - `/api/module_registry.php` -> kernel module registry
 - `/api/audit_logs.php` -> kernel audit read model
+
+## Contract Maintenance Notes
+- 2026-03-21: Extracted the accounting payroll workspace aggregation into `api/modules/accounting/payroll_workspace.php`; no endpoint, schema, or response-shape contract changes.

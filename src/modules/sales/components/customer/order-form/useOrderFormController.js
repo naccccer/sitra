@@ -17,36 +17,45 @@ import {
 import { createOrderFormHandlers } from '@/modules/sales/components/customer/order-form/orderFormHandlers';
 import { useOrderCustomerLinks } from '@/modules/sales/components/customer/order-form/useOrderCustomerLinks';
 
+const resolveCatalogDefaults = (catalog) => ({
+  glasses: Array.isArray(catalog?.glasses) ? catalog.glasses : [],
+  pvbLogic: Array.isArray(catalog?.pvbLogic) ? catalog.pvbLogic : [],
+  spacers: Array.isArray(catalog?.connectors?.spacers) ? catalog.connectors.spacers : [],
+  interlayers: Array.isArray(catalog?.connectors?.interlayers) ? catalog.connectors.interlayers : [],
+});
+
 const buildInitialConfig = (catalog) => {
+  const defaults = resolveCatalogDefaults(catalog);
+
   const suggestInterlayer = (totalThick) => {
-    const rule = catalog.pvbLogic.find((item) => (
+    const rule = defaults.pvbLogic.find((item) => (
       totalThick >= item.minTotalThickness && totalThick <= item.maxTotalThickness
     ));
-    return rule ? rule.defaultInterlayerId : catalog.connectors.interlayers[0]?.id;
+    return rule ? rule.defaultInterlayerId : defaults.interlayers[0]?.id;
   };
 
   return {
     operations: {},
     pattern: { type: 'none', fileName: '' },
-    single: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+    single: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
     laminate: {
-      glass1: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+      glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
       interlayerId: suggestInterlayer(8),
-      glass2: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+      glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
     },
     double: {
-      spacerId: catalog.connectors.spacers[0]?.id,
+      spacerId: defaults.spacers[0]?.id,
       pane1: {
         isLaminated: false,
-        glass1: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+        glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
         interlayerId: suggestInterlayer(8),
-        glass2: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+        glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
       },
       pane2: {
         isLaminated: false,
-        glass1: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+        glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
         interlayerId: suggestInterlayer(8),
-        glass2: { glassId: catalog.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
+        glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
       },
     },
   };
@@ -60,6 +69,7 @@ export const useOrderFormController = ({
   staffMode,
 }) => {
   const isStaffContext = staffMode || Boolean(editingOrder);
+  const catalogDefaults = resolveCatalogDefaults(catalog);
   const billing = ensureBillingSettings(catalog);
 
   const [activeTab, setActiveTab] = useState('double');
@@ -98,10 +108,10 @@ export const useOrderFormController = ({
   });
 
   const suggestInterlayer = (totalThick) => {
-    const rule = catalog.pvbLogic.find((item) => (
+    const rule = catalogDefaults.pvbLogic.find((item) => (
       totalThick >= item.minTotalThickness && totalThick <= item.maxTotalThickness
     ));
-    return rule ? rule.defaultInterlayerId : catalog.connectors.interlayers[0]?.id;
+    return rule ? rule.defaultInterlayerId : catalogDefaults.interlayers[0]?.id;
   };
 
   const handleDimensionChange = (event) => {

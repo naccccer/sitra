@@ -2,7 +2,11 @@
 // Run `npm run contracts:types` after modifying contracts/schemas/*.json.
 
 /**
- * @typedef { id: string | number, action: "approve" | "issue" | "record_payment" | "cancel", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
+ * @typedef { success: boolean, action: string, total: number, succeeded: number, failed: number, results: Array<{ id: string | number, success: boolean, payslip?: Record<string, any>, error?: string, errorObj?: Record<string, any> }> } AccountingPayrollActionBulkResponse
+ */
+export const __type_AccountingPayrollActionBulkResponse = null
+/**
+ * @typedef { id?: string | number, ids?: Array<string | number>, action: "approve" | "issue" | "record_payment" | "cancel", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
  */
 export const __type_AccountingPayrollActionRequest = null
 /**
@@ -10,13 +14,21 @@ export const __type_AccountingPayrollActionRequest = null
  */
 export const __type_AccountingPayrollCreateRequest = null
 /**
- * @typedef { periodId?: string | number, periodKey?: string, year?: number, month?: number, title?: string, startDate?: string, endDate?: string, payDate?: string, notes?: string, rows: Array<{ employeeId?: string | number, employeeCode?: string, inputs?: Array<any> | Record<string, any>, notes?: string, clientRequestId?: string }> } AccountingPayrollImportRequest
+ * @typedef { success: boolean, dryRun: boolean, period: Record<string, any>, created: number, updated: number, results: Array<Record<string, any>>, warnings: Array<Record<string, any>>, errors: Array<Record<string, any>> } AccountingPayrollImportPreviewResponse
+ */
+export const __type_AccountingPayrollImportPreviewResponse = null
+/**
+ * @typedef { dryRun?: boolean, periodId?: string | number, periodKey?: string, year?: number, month?: number, title?: string, startDate?: string, endDate?: string, payDate?: string, notes?: string, rows: Array<{ employeeId?: string | number, employeeCode?: string, inputs?: Array<any> | Record<string, any>, notes?: string, clientRequestId?: string }> } AccountingPayrollImportRequest
  */
 export const __type_AccountingPayrollImportRequest = null
 /**
  * @typedef { entity?: "period" | "employee" | "payslip", id: string | number, periodId?: string | number, periodKey?: string, year?: number, month?: number, title?: string, startDate?: string, endDate?: string, payDate?: string, status?: "open" | "issued" | "closed", employeeId?: string | number, employeeCode?: string, firstName?: string, lastName?: string, personnelNo?: string, nationalId?: string, mobile?: string, bankName?: string, bankAccountNo?: string, bankSheba?: string, baseSalary?: number, defaultInputs?: Array<any> | Record<string, any>, inputs?: Array<any> | Record<string, any>, notes?: string, isActive?: boolean } AccountingPayrollUpdateRequest
  */
 export const __type_AccountingPayrollUpdateRequest = null
+/**
+ * @typedef { success: boolean, workspace: { period: Record<string, any>, summary: { employees?: number, draft?: number, approved?: number, issued?: number, cancelled?: number, net?: number, paid?: number, due?: number }, actionable: { approve?: Array<string>, issue?: Array<string>, payments?: Array<string> }, stepStatus: Record<string, any>, blockers: Array<Record<string, any>> } } AccountingPayrollWorkspaceResponse
+ */
+export const __type_AccountingPayrollWorkspaceResponse = null
 /**
  * @typedef { session: { authenticated: boolean, role: string | null, username: string | null, fullName: string | null, jobTitle: string | null }, permissions?: Array<string>, capabilities?: Record<string, any>, modules?: Array<{ id: string, enabled: boolean, isProtected?: boolean, dependsOn?: Array<string> }>, catalog: Record<string, any>, profile?: Record<string, any>, orders?: { items?: Array<Record<string, any>>, hasMore?: boolean, nextCursor?: string | null }, csrfToken: string } BootstrapResponse
  */

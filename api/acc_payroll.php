@@ -1,1 +1,1 @@
-<?php require_once __DIR__ . '/modules/accounting/payroll.php';
+<?php require_once __DIR__ . '/modules/accounting/acc_payroll.php';

@@ -3,10 +3,17 @@ import { CheckCircle2, Flame, Layers, Plus, Ruler, Settings, ShieldAlert } from 
 import { toPN } from '@/utils/helpers';
 import { glassProcess } from '@/modules/sales/components/customer/order-form/orderFormUtils';
 
+const getCatalogDefaults = (catalog) => ({
+  glasses: Array.isArray(catalog?.glasses) ? catalog.glasses : [],
+  thicknesses: Array.isArray(catalog?.thicknesses) ? catalog.thicknesses : [],
+  spacers: Array.isArray(catalog?.connectors?.spacers) ? catalog.connectors.spacers : [],
+});
+
 const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) => {
+  const defaults = getCatalogDefaults(catalog);
   const targetProcess = data.isSekurit ? 'sekurit' : 'raw';
-  const glassOptions = catalog.glasses.filter((glass) => glassProcess(glass) === targetProcess);
-  const selectedGlass = catalog.glasses.find((glass) => glass.id === data.glassId);
+  const glassOptions = defaults.glasses.filter((glass) => glassProcess(glass) === targetProcess);
+  const selectedGlass = defaults.glasses.find((glass) => glass.id === data.glassId);
   const selectedExists = glassOptions.some((glass) => glass.id === data.glassId);
   const layerLabel = isUnavailable ? 'ناموجود' : 'شیشه';
 
@@ -21,7 +28,7 @@ const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) 
           {glassOptions.map((glass) => <option key={glass.id} value={glass.id}>{glass.title}</option>)}
         </select>
         <select value={data.thick} onChange={(event) => onChange('thick', parseInt(event.target.value, 10))} className="h-8 w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center text-[11px] font-black outline-none">
-          {catalog.thicknesses.map((thickness) => <option key={thickness} value={thickness}>{toPN(thickness)} میل</option>)}
+          {defaults.thicknesses.map((thickness) => <option key={thickness} value={thickness}>{toPN(thickness)} میل</option>)}
         </select>
         <label className={`flex h-8 grow basis-[95px] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.isSekurit ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-slate-200 bg-white text-slate-400'}`}>
           <input type="checkbox" checked={data.isSekurit} onChange={(event) => onChange('isSekurit', event.target.checked)} className="hidden" />
@@ -39,6 +46,7 @@ const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) 
 };
 
 const ConnectorRow = ({ value, onChange, type, catalog }) => {
+  const defaults = getCatalogDefaults(catalog);
   if (type === 'interlayer') {
     return (
       <div className="flex justify-center py-1">
@@ -51,7 +59,7 @@ const ConnectorRow = ({ value, onChange, type, catalog }) => {
       <div className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 shadow-sm">
         <Layers size={14} className="text-blue-500" />
         <select value={value} onChange={(event) => onChange(event.target.value)} className="bg-transparent text-xs font-black text-blue-700 outline-none">
-          {catalog.connectors.spacers.map((spacer) => <option key={spacer.id} value={spacer.id}>{spacer.title}</option>)}
+          {defaults.spacers.map((spacer) => <option key={spacer.id} value={spacer.id}>{spacer.title}</option>)}
         </select>
       </div>
     </div>

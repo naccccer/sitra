@@ -24,14 +24,13 @@ export function VouchersPanel({ session }) {
   const canPost = permissions.includes('accounting.vouchers.post')
 
   const { currentDefault } = useFiscalYears()
-  const [fiscalYearId, setFiscalYearId] = useState('')
   const [status, setStatus] = useState('')
   const [page, setPage] = useState(1)
   const [createModal, setCreateModal] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
 
   const filters = {
-    ...(fiscalYearId ? { fiscalYearId } : currentDefault ? { fiscalYearId: currentDefault.id } : {}),
+    ...(currentDefault ? { fiscalYearId: currentDefault.id } : {}),
     ...(status ? { status } : {}),
     page,
     pageSize: 20,

@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import { Button, Card } from '@/components/shared/ui'
 import { calculatePayslipTotals, formatMaybeDate, formatMoney, getPaymentMeta, monthLabel, sumPayments } from './payrollMath'
 
@@ -23,16 +23,15 @@ const DEDUCTION_ROWS = [
 ]
 
 export function PayslipPrintView({ onClose, payslip, run, settings }) {
-  const [isPreviewReady, setIsPreviewReady] = useState(false)
+  const [readyPreviewKey, setReadyPreviewKey] = useState('')
   const [printRequestId, setPrintRequestId] = useState(0)
   const handledPrintRequestIdRef = useRef(0)
   const printableRef = useRef(null)
+  const previewKey = useMemo(() => `${run?.id || ''}:${payslip?.id || ''}`, [payslip?.id, run?.id])
+  const isPreviewReady = typeof window === 'undefined' ? true : readyPreviewKey === previewKey
 
   useEffect(() => {
-    setIsPreviewReady(false)
-
     if (typeof window === 'undefined') {
-      setIsPreviewReady(true)
       return undefined
     }
 
@@ -43,7 +42,7 @@ export function PayslipPrintView({ onClose, payslip, run, settings }) {
 
     const markReady = () => {
       if (!cancelled && printableRef.current) {
-        setIsPreviewReady(true)
+        setReadyPreviewKey(previewKey)
       }
     }
 
@@ -72,7 +71,7 @@ export function PayslipPrintView({ onClose, payslip, run, settings }) {
       }
       window.clearTimeout(timeoutId)
     }
-  }, [payslip?.id, run?.id])
+  }, [previewKey])
 
   useEffect(() => {
     if (

@@ -3,7 +3,7 @@ import { Button, Card } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { accountingApi } from '../../services/accountingApi'
-import { ShamsiDateInput } from '../../utils/dateUtils'
+import { ShamsiDateInput } from '../DatePickerWrapper'
 
 export function SalesBridgePanel({ session }) {
   const permissions = session?.permissions ?? []
