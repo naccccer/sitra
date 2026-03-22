@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/orders_idempotency.php';
 require_once __DIR__ . '/orders_normalization.php';
+require_once __DIR__ . '/order_financials_repository.php';
 
 function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $currentUser): array
 {
@@ -103,10 +104,17 @@ function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $curren
     }
 
     $id = (int)$pdo->lastInsertId();
+
+    // Dual-write: persist financials/payments to structured tables
+    $orderMeta = json_decode($data['orderMetaJson'], true);
+    if (is_array($orderMeta)) {
+        app_save_order_financials($pdo, $id, $orderMeta);
+    }
+
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);
     $row = $select->fetch();
-    $order = $row ? app_order_from_row($row) : null;
+    $order = $row ? app_order_from_row($row, $pdo) : null;
 
     if ($isStaff && $currentUser !== null && $order !== null) {
         app_audit_log(
@@ -167,7 +175,7 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
         ], 404);
     }
     if (app_sales_is_order_conflict($currentOrderRow, $expectedUpdatedAt)) {
-        app_sales_respond_order_conflict($currentOrderRow);
+        app_sales_respond_order_conflict($currentOrderRow, $pdo);
     }
 
     $data = app_sales_orders_prepare_update_payload($pdo, $payload);
@@ -228,6 +236,12 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
         throw new RuntimeException('Unable to update order row.');
     }
 
+    // Dual-write: persist financials/payments to structured tables
+    $orderMeta = json_decode($data['orderMetaJson'], true);
+    if (is_array($orderMeta)) {
+        app_save_order_financials($pdo, $id, $orderMeta);
+    }
+
     $select = $pdo->prepare('SELECT ' . app_orders_select_fields($pdo) . ' FROM orders WHERE id = :id LIMIT 1');
     $select->execute(['id' => $id]);
     $row = $select->fetch();
@@ -239,7 +253,7 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
         ], 404);
     }
 
-    $order = app_order_from_row($row);
+    $order = app_order_from_row($row, $pdo);
     app_audit_log(
         $pdo,
         'sales.order.updated',

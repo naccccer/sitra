@@ -20,7 +20,7 @@ function app_sales_project_financial_summary(PDO $pdo, int $projectId): array
     $paidAmount = 0;
     $dueAmount = 0;
     foreach ($rows as $row) {
-        $order = app_order_from_row($row);
+        $order = app_order_from_row($row, $pdo);
         $ordersCount += 1;
         $totalAmount += (int)($order['financials']['grandTotal'] ?? $order['total'] ?? 0);
         $paidAmount += (int)($order['financials']['paidTotal'] ?? 0);

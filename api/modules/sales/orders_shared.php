@@ -256,9 +256,9 @@ function app_sales_is_order_conflict(array $currentOrderRow, ?string $expectedUp
     return $expectedEpoch !== $serverEpoch;
 }
 
-function app_sales_respond_order_conflict(array $currentOrderRow): void
+function app_sales_respond_order_conflict(array $currentOrderRow, ?PDO $pdo = null): void
 {
-    $serverOrder = app_order_from_row($currentOrderRow);
+    $serverOrder = app_order_from_row($currentOrderRow, $pdo);
     app_json([
         'success' => false,
         'error' => 'Order has changed on the server.',

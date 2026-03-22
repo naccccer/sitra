@@ -2,6 +2,26 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/orders_code.php';
+require_once __DIR__ . '/../modules/sales/order_financials_repository.php';
+
+/**
+ * Controls whether app_order_from_row() falls back to order_meta_json
+ * when structured tables have no data for an order.
+ *
+ * Set to false once all orders have been backfilled and you are ready
+ * to drop JSON dependency. After setting false, any order without
+ * table rows will return default/empty financials instead of parsing JSON.
+ */
+function app_order_json_fallback_enabled(): bool
+{
+    // Environment override: set APP_ORDER_JSON_FALLBACK=0 to disable.
+    $env = getenv('APP_ORDER_JSON_FALLBACK');
+    if ($env !== false) {
+        return $env !== '0' && strtolower($env) !== 'false';
+    }
+
+    return true;
+}
 
 function app_valid_order_status(string $status): bool
 {
@@ -142,7 +162,17 @@ function app_normalize_item_for_response($item): array
     return $item;
 }
 
-function app_order_from_row(array $row): array
+/**
+ * Builds an order response array from a database row.
+ *
+ * Read priority:
+ *   1. Structured tables (order_financials + order_payments) — source of truth
+ *   2. order_meta_json — compatibility fallback for pre-migration rows
+ *
+ * Derived fields (paidTotal, dueAmount, paymentStatus) are ALWAYS computed
+ * from the payments array + grandTotal, never read from storage.
+ */
+function app_order_from_row(array $row, ?PDO $pdo = null): array
 {
     $itemsPayload = (string)($row['items_json'] ?? $row['items'] ?? '[]');
     $items = json_decode($itemsPayload, true);
@@ -151,72 +181,86 @@ function app_order_from_row(array $row): array
     }
     $items = array_values(array_map('app_normalize_item_for_response', $items));
 
-    $metaPayload = (string)($row['order_meta_json'] ?? '');
-    $metaDecoded = $metaPayload !== '' ? json_decode($metaPayload, true) : null;
-    if (!is_array($metaDecoded)) {
-        $metaDecoded = [];
-    }
-
     $baseTotal = max(0, (int)$row['total']);
-    $metaDefaults = app_order_meta_defaults($baseTotal);
-    $financials = is_array($metaDecoded['financials'] ?? null) ? $metaDecoded['financials'] : [];
-    $financials = array_merge($metaDefaults['financials'], $financials);
+    $orderId = (int)$row['id'];
 
-    $payments = is_array($metaDecoded['payments'] ?? null) ? $metaDecoded['payments'] : [];
-    $payments = array_values(array_filter(array_map(static function ($payment) {
-        if (!is_array($payment)) {
-            return null;
-        }
-
-        $receipt = app_normalize_payment_receipt($payment['receipt'] ?? null);
-        return [
-            'id' => (string)($payment['id'] ?? uniqid('pay_', true)),
-            'date' => (string)($payment['date'] ?? date('Y/m/d')),
-            'amount' => max(0, (int)($payment['amount'] ?? 0)),
-            'method' => app_normalize_payment_method($payment['method'] ?? 'cash'),
-            'reference' => (string)($payment['reference'] ?? ''),
-            'note' => (string)($payment['note'] ?? ''),
-            'receipt' => $receipt,
-        ];
-    }, $payments)));
-
-    $paidTotalFromPayments = 0;
-    foreach ($payments as $payment) {
-        $paidTotalFromPayments += (int)($payment['amount'] ?? 0);
-    }
-
-    $grandTotal = max(0, (int)($financials['grandTotal'] ?? $baseTotal));
-    if ($grandTotal === 0 && $baseTotal > 0) {
-        $grandTotal = $baseTotal;
-    }
-
-    $paidTotal = max((int)($financials['paidTotal'] ?? 0), $paidTotalFromPayments);
-    $dueAmount = max(0, $grandTotal - $paidTotal);
-    $paymentStatus = (string)($financials['paymentStatus'] ?? '');
-    if ($paymentStatus === '') {
-        if ($dueAmount <= 0) {
-            $paymentStatus = 'paid';
-        } elseif ($paidTotal > 0) {
-            $paymentStatus = 'partial';
-        } else {
-            $paymentStatus = 'unpaid';
+    // ── Try structured tables first (source of truth) ────────────────────
+    $fromTables = null;
+    if ($pdo !== null) {
+        try {
+            if (app_table_is_queryable($pdo, 'order_financials')) {
+                $fromTables = app_read_order_financials_complete($pdo, $orderId, $baseTotal);
+            }
+        } catch (Throwable $e) {
+            $fromTables = null;
         }
     }
 
-    $financials['grandTotal'] = $grandTotal;
-    $financials['paidTotal'] = $paidTotal;
-    $financials['dueAmount'] = $dueAmount;
-    $financials['paymentStatus'] = $paymentStatus;
-    $financials['subTotal'] = max(0, (int)($financials['subTotal'] ?? $grandTotal));
-    $financials['itemDiscountTotal'] = max(0, (int)($financials['itemDiscountTotal'] ?? 0));
-    $financials['invoiceDiscountValue'] = max(0, (int)($financials['invoiceDiscountValue'] ?? 0));
-    $financials['invoiceDiscountAmount'] = max(0, (int)($financials['invoiceDiscountAmount'] ?? 0));
-    $financials['taxRate'] = max(0, (int)($financials['taxRate'] ?? 10));
-    $financials['taxAmount'] = max(0, (int)($financials['taxAmount'] ?? 0));
-    $financials['taxEnabled'] = (bool)($financials['taxEnabled'] ?? false);
-    $financials['invoiceDiscountType'] = (string)($financials['invoiceDiscountType'] ?? 'none');
+    if ($fromTables !== null) {
+        $financials = $fromTables['financials'];
+        $payments = $fromTables['payments'];
+        $invoiceNotes = $fromTables['invoiceNotes'];
+    } elseif (app_order_json_fallback_enabled()) {
+        // ── Fallback: parse order_meta_json ──────────────────────────────
+        // Controlled by APP_ORDER_JSON_FALLBACK env var.
+        // Set APP_ORDER_JSON_FALLBACK=0 after backfill to remove this path.
+        $metaPayload = (string)($row['order_meta_json'] ?? '');
+        $metaDecoded = $metaPayload !== '' ? json_decode($metaPayload, true) : null;
+        if (!is_array($metaDecoded)) {
+            $metaDecoded = [];
+        }
 
-    $invoiceNotes = (string)($metaDecoded['invoiceNotes'] ?? '');
+        $metaDefaults = app_order_meta_defaults($baseTotal);
+        $financials = is_array($metaDecoded['financials'] ?? null) ? $metaDecoded['financials'] : [];
+        $financials = array_merge($metaDefaults['financials'], $financials);
+
+        $payments = is_array($metaDecoded['payments'] ?? null) ? $metaDecoded['payments'] : [];
+        $payments = array_values(array_filter(array_map(static function ($payment) {
+            if (!is_array($payment)) {
+                return null;
+            }
+
+            $receipt = app_normalize_payment_receipt($payment['receipt'] ?? null);
+            return [
+                'id' => (string)($payment['id'] ?? uniqid('pay_', true)),
+                'date' => (string)($payment['date'] ?? date('Y/m/d')),
+                'amount' => max(0, (int)($payment['amount'] ?? 0)),
+                'method' => app_normalize_payment_method($payment['method'] ?? 'cash'),
+                'reference' => (string)($payment['reference'] ?? ''),
+                'note' => (string)($payment['note'] ?? ''),
+                'receipt' => $receipt,
+            ];
+        }, $payments)));
+
+        $invoiceNotes = (string)($metaDecoded['invoiceNotes'] ?? '');
+
+        // Normalize stored fields
+        $grandTotal = max(0, (int)($financials['grandTotal'] ?? $baseTotal));
+        if ($grandTotal === 0 && $baseTotal > 0) {
+            $grandTotal = $baseTotal;
+        }
+        $financials['grandTotal'] = $grandTotal;
+        $financials['subTotal'] = max(0, (int)($financials['subTotal'] ?? $grandTotal));
+        $financials['itemDiscountTotal'] = max(0, (int)($financials['itemDiscountTotal'] ?? 0));
+        $financials['invoiceDiscountValue'] = max(0, (int)($financials['invoiceDiscountValue'] ?? 0));
+        $financials['invoiceDiscountAmount'] = max(0, (int)($financials['invoiceDiscountAmount'] ?? 0));
+        $financials['taxRate'] = max(0, (int)($financials['taxRate'] ?? 10));
+        $financials['taxAmount'] = max(0, (int)($financials['taxAmount'] ?? 0));
+        $financials['taxEnabled'] = (bool)($financials['taxEnabled'] ?? false);
+        $financials['invoiceDiscountType'] = (string)($financials['invoiceDiscountType'] ?? 'none');
+
+        // Compute derived fields from payments
+        $derived = app_compute_payment_derived_fields($financials['grandTotal'], $payments);
+        $financials['paidTotal'] = $derived['paidTotal'];
+        $financials['dueAmount'] = $derived['dueAmount'];
+        $financials['paymentStatus'] = $derived['paymentStatus'];
+    } else {
+        // ── JSON fallback disabled, tables returned null → use defaults ──
+        $defaults = app_order_meta_defaults($baseTotal);
+        $financials = $defaults['financials'];
+        $payments = [];
+        $invoiceNotes = '';
+    }
 
     return [
         'id' => (string)$row['id'],
@@ -227,7 +271,7 @@ function app_order_from_row(array $row): array
         'projectId' => isset($row['project_id']) && $row['project_id'] !== null ? (string)$row['project_id'] : null,
         'projectContactId' => isset($row['project_contact_id']) && $row['project_contact_id'] !== null ? (string)$row['project_contact_id'] : null,
         'date' => (string)$row['order_date'],
-        'total' => $grandTotal,
+        'total' => (int)($financials['grandTotal'] ?? $baseTotal),
         'status' => (string)$row['status'],
         'items' => $items,
         'financials' => $financials,
