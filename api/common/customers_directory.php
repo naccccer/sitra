@@ -87,7 +87,16 @@ function app_customer_directory_fetch(PDO $pdo, array $filters): array
 
     $projectsSummarySql = '(SELECT customer_id, COUNT(*) AS active_projects_count FROM customer_projects WHERE is_active = 1 GROUP BY customer_id) cps';
     $contactsSummarySql = '(SELECT cp.customer_id, COUNT(*) AS active_contacts_count FROM customer_projects cp INNER JOIN customer_project_contacts cpc ON cpc.project_id = cp.id WHERE cp.is_active = 1 AND cpc.is_active = 1 GROUP BY cp.customer_id) ccs';
-    $ordersSummarySql = "(SELECT o.customer_id, COUNT(*) AS active_orders_count, COALESCE(SUM(o.total), 0) AS total_amount, COALESCE(SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(o.order_meta_json, '{}'), '$.financials.paidTotal')) AS SIGNED), 0)), 0) AS paid_amount, COALESCE(SUM(COALESCE(CAST(JSON_UNQUOTE(JSON_EXTRACT(COALESCE(o.order_meta_json, '{}'), '$.financials.dueAmount')) AS SIGNED), 0)), 0) AS due_amount FROM orders o WHERE o.customer_id IS NOT NULL AND o.status <> 'archived' GROUP BY o.customer_id) os";
+    $ordersSummarySql = "(SELECT o.customer_id,"
+        . " COUNT(*) AS active_orders_count,"
+        . " COALESCE(SUM(COALESCE(ofi.grand_total, o.total)), 0) AS total_amount,"
+        . " COALESCE(SUM(COALESCE(ops.paid, 0)), 0) AS paid_amount,"
+        . " COALESCE(SUM(GREATEST(0, COALESCE(ofi.grand_total, o.total) - COALESCE(ops.paid, 0))), 0) AS due_amount"
+        . " FROM orders o"
+        . " LEFT JOIN order_financials ofi ON ofi.order_id = o.id"
+        . " LEFT JOIN (SELECT order_id, SUM(amount) AS paid FROM order_payments GROUP BY order_id) ops ON ops.order_id = o.id"
+        . " WHERE o.customer_id IS NOT NULL AND o.status <> 'archived'"
+        . " GROUP BY o.customer_id) os";
     $fromSql = ' FROM customers c'
         . ' LEFT JOIN ' . $projectsSummarySql . ' ON cps.customer_id = c.id'
         . ' LEFT JOIN ' . $contactsSummarySql . ' ON ccs.customer_id = c.id'
