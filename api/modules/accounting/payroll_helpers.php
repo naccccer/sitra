@@ -183,6 +183,99 @@ function acc_payroll_find_or_create_period(PDO $pdo, array $payload, array $acto
     return acc_payroll_fetch_period($pdo, (int)$pdo->lastInsertId()) ?: [];
 }
 
+/**
+ * Returns all period rows matching an optional status filter.
+ * Result is an array of raw DB rows; caller maps with acc_payroll_period_from_row.
+ */
+function acc_payroll_list_periods(PDO $pdo, string $status): array
+{
+    $where  = [];
+    $params = [];
+    if ($status !== '' && in_array($status, acc_payroll_valid_period_statuses(), true)) {
+        $where[]          = 'status = :status';
+        $params['status'] = $status;
+    }
+    $stmt = $pdo->prepare(
+        'SELECT * FROM acc_payroll_periods'
+        . ($where ? ' WHERE ' . implode(' AND ', $where) : '')
+        . ' ORDER BY period_key DESC, id DESC'
+    );
+    $stmt->execute($params);
+    return $stmt->fetchAll() ?: [];
+}
+
+/**
+ * Normalizes payload fields, runs the UPDATE, and returns the refreshed raw row.
+ * The returned row is a raw DB row; caller maps with acc_payroll_period_from_row.
+ */
+function acc_payroll_update_period(PDO $pdo, int $periodId, array $payload, array $existing, array $actor): array
+{
+    $title     = ($v = acc_normalize_text($payload['title'] ?? (string)$existing['title'])) !== '' ? $v : (string)$existing['title'];
+    $startDate = acc_parse_date(acc_normalize_text($payload['startDate'] ?? '')) ?? (string)$existing['start_date'];
+    $endDate   = acc_parse_date(acc_normalize_text($payload['endDate'] ?? '')) ?? (string)$existing['end_date'];
+    $payDate   = acc_parse_date(acc_normalize_text($payload['payDate'] ?? '')) ?? ($existing['pay_date'] ?: null);
+    $status    = acc_normalize_text($payload['status'] ?? (string)$existing['status']);
+    if (!in_array($status, acc_payroll_valid_period_statuses(), true)) {
+        $status = (string)$existing['status'];
+    }
+    $pdo->prepare(
+        'UPDATE acc_payroll_periods
+         SET title = :title, start_date = :start_date, end_date = :end_date,
+             pay_date = :pay_date, status = :status, updated_by_user_id = :user_id
+         WHERE id = :id'
+    )->execute([
+        'title'      => $title,
+        'start_date' => $startDate,
+        'end_date'   => $endDate,
+        'pay_date'   => $payDate,
+        'status'     => $status,
+        'user_id'    => (int)$actor['id'],
+        'id'         => $periodId,
+    ]);
+    return acc_payroll_fetch_period($pdo, $periodId) ?: $existing;
+}
+
+/**
+ * Validates the period can be deleted (no approved/issued/paid/journaled payslips),
+ * then deletes cascade-style in a transaction.
+ *
+ * Returns the count of draft payslips deleted.
+ * Throws RuntimeException with a human-readable message if deletion is not allowed.
+ */
+function acc_payroll_delete_period(PDO $pdo, int $periodId): int
+{
+    $statsStmt = $pdo->prepare(
+        'SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status <> \'draft\' THEN 1 ELSE 0 END) AS non_draft_total,
+            SUM(CASE WHEN payments_total > 0 THEN 1 ELSE 0 END) AS paid_total,
+            SUM(CASE WHEN accrual_voucher_id IS NOT NULL THEN 1 ELSE 0 END) AS journaled_total
+         FROM acc_payslips
+         WHERE period_id = :period_id'
+    );
+    $statsStmt->execute(['period_id' => $periodId]);
+    $stats          = $statsStmt->fetch() ?: [];
+    $payslipCount   = (int)($stats['total'] ?? 0);
+    $nonDraftTotal  = (int)($stats['non_draft_total'] ?? 0);
+    $paidTotal      = (int)($stats['paid_total'] ?? 0);
+    $journaledTotal = (int)($stats['journaled_total'] ?? 0);
+
+    if ($nonDraftTotal > 0 || $paidTotal > 0 || $journaledTotal > 0) {
+        throw new RuntimeException('This period contains approved/issued or paid payslips and cannot be deleted.');
+    }
+
+    acc_payroll_transact($pdo, function() use ($pdo, $payslipCount, $periodId) {
+        if ($payslipCount > 0) {
+            $pdo->prepare('DELETE FROM acc_payslips WHERE period_id = :period_id')
+                ->execute(['period_id' => $periodId]);
+        }
+        $pdo->prepare('DELETE FROM acc_payroll_periods WHERE id = :id')
+            ->execute(['id' => $periodId]);
+    });
+
+    return $payslipCount;
+}
+
 // ─── Payslip queries ──────────────────────────────────────────────────────────
 
 function acc_payroll_fetch_payslip_detail(PDO $pdo, int $payslipId): ?array

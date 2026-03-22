@@ -97,6 +97,163 @@ function inv_v2_op_transitions(): array
     ];
 }
 
+// ─── Raw record load ──────────────────────────────────────────────────────────
+
+/**
+ * Loads a raw operation header row (SELECT *) for guard use.
+ * Returns null if not found.
+ */
+function inv_v2_op_load_raw(PDO $pdo, int $id): ?array
+{
+    $stmt = $pdo->prepare('SELECT * FROM inventory_v2_operation_headers WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $id]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+// ─── List ─────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a paginated list of operations with total count.
+ * Result: ['operations' => array, 'total' => int, 'page' => int, 'pageSize' => int]
+ */
+function inv_v2_op_list(
+    PDO    $pdo,
+    string $opType,
+    string $status,
+    string $q,
+    int    $page,
+    int    $pageSize,
+    string $sortBy,
+    string $sortDir
+): array {
+    $where  = [];
+    $params = [];
+    if ($opType !== '' && in_array($opType, app_inventory_v2_valid_operation_types(), true)) {
+        $where[]           = 'h.operation_type = :op_type';
+        $params['op_type'] = $opType;
+    }
+    if ($status !== '' && in_array($status, inv_v2_op_valid_statuses(), true)) {
+        $where[]          = 'h.status = :status';
+        $params['status'] = $status;
+    }
+    if ($q !== '') {
+        $where[]     = '(h.operation_no LIKE :q OR h.reference_code LIKE :q)';
+        $params['q'] = '%' . $q . '%';
+    }
+    $whereSql = $where ? 'WHERE ' . implode(' AND ', $where) : '';
+    $offset   = ($page - 1) * $pageSize;
+
+    $countStmt = $pdo->prepare("SELECT COUNT(*) FROM inventory_v2_operation_headers h {$whereSql}");
+    $countStmt->execute($params);
+    $total = (int)$countStmt->fetchColumn();
+
+    $sql  = inv_v2_op_base_select_sql()
+          . " {$whereSql} ORDER BY h.{$sortBy} {$sortDir} LIMIT {$pageSize} OFFSET {$offset}";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    $rows = $stmt->fetchAll() ?: [];
+
+    return [
+        'operations' => array_map('app_inventory_v2_operation_header_from_row', $rows),
+        'total'      => $total,
+        'page'       => $page,
+        'pageSize'   => $pageSize,
+    ];
+}
+
+// ─── Create ───────────────────────────────────────────────────────────────────
+
+/**
+ * Generates operation number, inserts header + lines in a transaction.
+ * Returns ['id' => int, 'operationNo' => string] on success.
+ * Throws RuntimeException on failure (caller should catch and map to HTTP error).
+ */
+function inv_v2_op_create(PDO $pdo, array $payload, array $actor): array
+{
+    $opType  = app_inventory_v2_normalize_text($payload['operationType'] ?? '');
+    $srcWid  = app_inventory_v2_parse_id($payload['sourceWarehouseId'] ?? null);
+    $tgtWid  = app_inventory_v2_parse_id($payload['targetWarehouseId'] ?? null);
+    $lines   = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
+    $notes   = app_inventory_v2_normalize_text($payload['notes'] ?? '');
+    $refType = app_inventory_v2_normalize_text($payload['referenceType'] ?? '');
+    $refId   = app_inventory_v2_normalize_text($payload['referenceId'] ?? '');
+    $refCode = app_inventory_v2_normalize_text($payload['referenceCode'] ?? '');
+
+    $operationNo = app_inventory_v2_generate_operation_no($pdo, $opType);
+    $pdo->beginTransaction();
+    try {
+        $ins = $pdo->prepare(
+            'INSERT INTO inventory_v2_operation_headers
+             (operation_no, operation_type, status, source_warehouse_id, target_warehouse_id,
+              reference_type, reference_id, reference_code, notes, created_by_user_id)
+             VALUES (:op_no,:op_type,:status,:src_wid,:tgt_wid,:ref_type,:ref_id,:ref_code,:notes,:created_by)'
+        );
+        $ins->execute([
+            'op_no'      => $operationNo,
+            'op_type'    => $opType,
+            'status'     => 'draft',
+            'src_wid'    => $srcWid,
+            'tgt_wid'    => $tgtWid,
+            'ref_type'   => $refType !== '' ? $refType : null,
+            'ref_id'     => $refId !== '' ? $refId : null,
+            'ref_code'   => $refCode !== '' ? $refCode : null,
+            'notes'      => $notes !== '' ? $notes : null,
+            'created_by' => (int)$actor['id'],
+        ]);
+        $operationId = (int)$pdo->lastInsertId();
+        inv_v2_op_insert_lines($pdo, $operationId, $lines);
+        $pdo->commit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw new RuntimeException('Failed to create operation.');
+    }
+
+    return ['id' => $operationId, 'operationNo' => $operationNo];
+}
+
+// ─── Update ───────────────────────────────────────────────────────────────────
+
+/**
+ * Updates notes/referenceCode and optionally replaces lines in a transaction.
+ * Throws RuntimeException on failure.
+ */
+function inv_v2_op_update(PDO $pdo, int $id, array $existingOp, array $payload): void
+{
+    $notes   = app_inventory_v2_normalize_text($payload['notes'] ?? $existingOp['notes'] ?? '');
+    $refCode = app_inventory_v2_normalize_text($payload['referenceCode'] ?? $existingOp['reference_code'] ?? '');
+    $lines   = array_values(array_filter((array)($payload['lines'] ?? []), 'is_array'));
+
+    $pdo->beginTransaction();
+    try {
+        $upd = $pdo->prepare(
+            'UPDATE inventory_v2_operation_headers
+             SET notes = :notes, reference_code = :ref_code, updated_at = CURRENT_TIMESTAMP
+             WHERE id = :id'
+        );
+        $upd->execute(['notes' => $notes ?: null, 'ref_code' => $refCode ?: null, 'id' => $id]);
+        if (!empty($lines)) {
+            $pdo->prepare('DELETE FROM inventory_v2_operation_lines WHERE operation_id = :id')->execute(['id' => $id]);
+            inv_v2_op_insert_lines($pdo, $id, $lines);
+        }
+        $pdo->commit();
+    } catch (Exception $e) {
+        $pdo->rollBack();
+        throw new RuntimeException('Failed to update operation.');
+    }
+}
+
+// ─── Status update ────────────────────────────────────────────────────────────
+
+/**
+ * Persists a status change on an operation header (no lifecycle guard — caller is responsible).
+ */
+function inv_v2_op_set_status(PDO $pdo, int $id, string $status): void
+{
+    $pdo->prepare('UPDATE inventory_v2_operation_headers SET status = :status WHERE id = :id')
+        ->execute(['status' => $status, 'id' => $id]);
+}
+
 // ─── Validation ───────────────────────────────────────────────────────────────
 
 /**
