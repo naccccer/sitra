@@ -7,8 +7,8 @@ require_once __DIR__ . '/order_financials_repository.php';
  * Sales-owned read model for accounting bridge jobs.
  * Public facade: consumers call this instead of querying orders directly.
  *
- * Tables are the source of truth. Falls back to order_meta_json only
- * for pre-migration rows that haven't been backfilled yet.
+ * All financial data is read exclusively from structured tables
+ * (order_financials, order_payments). No JSON parsing.
  */
 function app_sales_bridge_fetch_orders_for_accounting(
     PDO $pdo,
@@ -18,6 +18,8 @@ function app_sales_bridge_fetch_orders_for_accounting(
     ?string $dateTo,
     int $limit = 2000
 ): array {
+    app_ensure_order_financials_tables($pdo);
+
     $orderWhere = [];
     $orderParams = [];
 
@@ -25,25 +27,26 @@ function app_sales_bridge_fetch_orders_for_accounting(
         if ($orderId === null) {
             return [];
         }
-        $orderWhere[] = 'id = :order_id';
+        $orderWhere[] = 'o.id = :order_id';
         $orderParams['order_id'] = $orderId;
     } else {
         if ($dateFrom !== null) {
-            $orderWhere[] = 'created_at >= :date_from';
+            $orderWhere[] = 'o.created_at >= :date_from';
             $orderParams['date_from'] = $dateFrom . ' 00:00:00';
         }
         if ($dateTo !== null) {
-            $orderWhere[] = 'created_at <= :date_to';
+            $orderWhere[] = 'o.created_at <= :date_to';
             $orderParams['date_to'] = $dateTo . ' 23:59:59';
         }
-        $orderWhere[] = "order_meta_json IS NOT NULL AND order_meta_json != 'null'";
+        // Only include orders that have at least one payment row.
+        $orderWhere[] = 'EXISTS (SELECT 1 FROM order_payments WHERE order_id = o.id)';
     }
 
-    $sql = 'SELECT id, order_code, customer_id, order_meta_json FROM orders';
+    $sql = 'SELECT o.id, o.order_code, o.customer_id FROM orders o';
     if ($orderWhere) {
         $sql .= ' WHERE ' . implode(' AND ', $orderWhere);
     }
-    $sql .= ' ORDER BY id ASC LIMIT :limit';
+    $sql .= ' ORDER BY o.id ASC LIMIT :limit';
 
     $stmt = $pdo->prepare($sql);
     foreach ($orderParams as $key => $value) {
@@ -53,49 +56,21 @@ function app_sales_bridge_fetch_orders_for_accounting(
     $stmt->execute();
 
     $rows = $stmt->fetchAll();
-    if (!is_array($rows)) {
+    if (!is_array($rows) || count($rows) === 0) {
         return [];
     }
 
-    // Prefer structured table data over JSON blob.
-    $useStructuredPayments = app_table_is_queryable($pdo, 'order_payments');
-    $jsonFallback = app_order_json_fallback_enabled();
-
-    foreach ($rows as &$row) {
+    // Attach structured payments from order_payments table.
+    $result = [];
+    foreach ($rows as $row) {
         $oid = (int)$row['id'];
-
-        if (!$useStructuredPayments) {
-            continue;
-        }
-
-        $structuredPayments = null;
-        try {
-            $structuredPayments = app_read_order_payments($pdo, $oid);
-        } catch (Throwable $e) {
-            // Fall through
-        }
-
-        if (is_array($structuredPayments) && count($structuredPayments) > 0) {
-            // Inject structured payments into the meta so the bridge
-            // consumer (acc_sales_bridge.php) needs zero changes.
-            $meta = json_decode((string)($row['order_meta_json'] ?? ''), true);
-            if (!is_array($meta)) {
-                $meta = [];
-            }
-            $meta['payments'] = $structuredPayments;
-            $row['order_meta_json'] = json_encode($meta, JSON_UNESCAPED_UNICODE);
-        } elseif (!$jsonFallback) {
-            // No structured payments and JSON fallback disabled — empty payments.
-            $meta = json_decode((string)($row['order_meta_json'] ?? ''), true);
-            if (!is_array($meta)) {
-                $meta = [];
-            }
-            $meta['payments'] = [];
-            $row['order_meta_json'] = json_encode($meta, JSON_UNESCAPED_UNICODE);
-        }
-        // else: JSON fallback enabled — keep original order_meta_json as-is
+        $result[] = [
+            'id' => $oid,
+            'order_code' => (string)$row['order_code'],
+            'customer_id' => $row['customer_id'] !== null ? (int)$row['customer_id'] : null,
+            'payments' => app_read_order_payments($pdo, $oid),
+        ];
     }
-    unset($row);
 
-    return $rows;
+    return $result;
 }
