@@ -12,7 +12,6 @@ function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $curren
     $data = app_sales_orders_prepare_create_payload($pdo, $payload, $isStaff);
 
     $itemsColumn = app_orders_items_column($pdo);
-    $metaColumn = app_orders_meta_column($pdo);
     $customerIdColumn = app_orders_customer_id_column($pdo);
     $projectIdColumn = app_orders_project_id_column($pdo);
     $projectContactIdColumn = app_orders_project_contact_id_column($pdo);
@@ -60,11 +59,6 @@ function app_sales_orders_post_response(PDO $pdo, array $payload, ?array $curren
                     $insertCols .= ", {$projectContactIdColumn}";
                     $insertVals .= ', :project_contact_id';
                     $insertParams['project_contact_id'] = $data['projectContactId'];
-                }
-                if ($metaColumn !== null) {
-                    $insertCols .= ", {$metaColumn}";
-                    $insertVals .= ', :order_meta_json';
-                    $insertParams['order_meta_json'] = $data['orderMetaJson'];
                 }
                 $stmt = $pdo->prepare("INSERT INTO orders ({$insertCols}) VALUES ({$insertVals})");
                 $stmt->execute($insertParams);
@@ -179,7 +173,6 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
     $data = app_sales_orders_prepare_update_payload($pdo, $payload);
 
     $itemsColumn = app_orders_items_column($pdo);
-    $metaColumn = app_orders_meta_column($pdo);
     $customerIdColumn = app_orders_customer_id_column($pdo);
     $projectIdColumn = app_orders_project_id_column($pdo);
     $projectContactIdColumn = app_orders_project_contact_id_column($pdo);
@@ -209,10 +202,6 @@ function app_sales_orders_put_response(PDO $pdo, array $payload, array $actor): 
             if ($projectContactIdColumn !== null) {
                 $setClause .= ", {$projectContactIdColumn} = :project_contact_id";
                 $updateParams['project_contact_id'] = $data['projectContactId'];
-            }
-            if ($metaColumn !== null) {
-                $setClause .= ", {$metaColumn} = :order_meta_json";
-                $updateParams['order_meta_json'] = $data['orderMetaJson'];
             }
             $stmt = $pdo->prepare("UPDATE orders SET {$setClause} WHERE id = :id");
             $stmt->execute($updateParams);
