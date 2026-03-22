@@ -32,7 +32,7 @@ function app_sales_orders_get_response(PDO $pdo): array
 
     $orders = [];
     foreach ($rows as $row) {
-        $orders[] = app_order_from_row($row);
+        $orders[] = app_order_from_row($row, $pdo);
     }
 
     $nextCursor = null;

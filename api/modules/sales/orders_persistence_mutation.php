@@ -72,7 +72,7 @@ function app_sales_orders_patch_response(PDO $pdo, array $payload, array $actor)
         ], 404);
     }
     if (app_sales_is_order_conflict($before, $expectedUpdatedAt)) {
-        app_sales_respond_order_conflict($before);
+        app_sales_respond_order_conflict($before, $pdo);
     }
     $beforeStatus = (string)($before['status'] ?? '');
 
@@ -93,7 +93,7 @@ function app_sales_orders_patch_response(PDO $pdo, array $payload, array $actor)
         ], 404);
     }
 
-    $order = app_order_from_row($row);
+    $order = app_order_from_row($row, $pdo);
     app_audit_log(
         $pdo,
         'sales.order.status.changed',

@@ -292,13 +292,9 @@ function app_ensure_order_financials_tables(PDO $pdo): void
                 tax_rate             INT NOT NULL DEFAULT 10,
                 tax_amount           BIGINT NOT NULL DEFAULT 0,
                 grand_total          BIGINT NOT NULL DEFAULT 0,
-                paid_total           BIGINT NOT NULL DEFAULT 0,
-                due_amount           BIGINT NOT NULL DEFAULT 0,
-                payment_status       ENUM('unpaid','partial','paid') NOT NULL DEFAULT 'unpaid',
                 invoice_notes        TEXT NULL,
                 updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (order_id),
-                KEY idx_order_financials_payment_status (payment_status),
                 KEY idx_order_financials_grand_total (grand_total),
                 CONSTRAINT fk_order_financials_order
                     FOREIGN KEY (order_id) REFERENCES orders (id)
