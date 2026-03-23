@@ -75,6 +75,7 @@ function app_ensure_accounting_payroll_schema(PDO $pdo): void
             KEY idx_acc_payslips_employee (employee_id),
             KEY idx_acc_payslips_period (period_id),
             KEY idx_acc_payslips_accrual_voucher (accrual_voucher_id),
+            KEY idx_payslips_period_status_employee (period_id, status, employee_id),
             CONSTRAINT fk_acc_payslips_period FOREIGN KEY (period_id) REFERENCES acc_payroll_periods (id) ON UPDATE CASCADE ON DELETE RESTRICT,
             CONSTRAINT fk_acc_payslips_employee FOREIGN KEY (employee_id) REFERENCES hr_employees (id) ON UPDATE CASCADE ON DELETE RESTRICT,
             CONSTRAINT fk_acc_payslips_accrual_voucher FOREIGN KEY (accrual_voucher_id) REFERENCES acc_vouchers (id) ON UPDATE CASCADE ON DELETE SET NULL,
@@ -85,6 +86,12 @@ function app_ensure_accounting_payroll_schema(PDO $pdo): void
             CONSTRAINT fk_acc_payslips_updated_by FOREIGN KEY (updated_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+
+    // Add composite index for pagination/count queries that filter by period + status + employee.
+    // CREATE TABLE IF NOT EXISTS won't add it to tables that already exist.
+    if (!app_schema_index_exists($pdo, 'acc_payslips', 'idx_payslips_period_status_employee')) {
+        $pdo->exec('CREATE INDEX idx_payslips_period_status_employee ON acc_payslips (period_id, status, employee_id)');
+    }
 
     $pdo->exec(
         "CREATE TABLE IF NOT EXISTS acc_payslip_items (
