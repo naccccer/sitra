@@ -49,7 +49,6 @@ $ordersNextCursor = null;
 if ($user !== null) {
     try {
         app_ensure_orders_table($pdo);
-        app_ensure_order_financials_tables($pdo);
 
         $countStmt = $pdo->query('SELECT COUNT(*) FROM orders');
         $ordersTotal = (int)($countStmt ? $countStmt->fetchColumn() : 0);
@@ -66,8 +65,12 @@ if ($user !== null) {
             array_pop($rows);
         }
 
+        // Pass null for $pdo to skip per-order financials/payments queries.
+        // Bootstrap returns lightweight orders with defaults derived from
+        // the orders.total column.  Full hydration (financials + payments)
+        // is provided by GET /api/orders.php.
         foreach ($rows as $row) {
-            $ordersItems[] = app_order_from_row($row, $pdo);
+            $ordersItems[] = app_order_from_row($row);
         }
 
         if ($ordersHasMore && count($ordersItems) > 0) {
