@@ -49,25 +49,28 @@ $ordersNextCursor = null;
 if ($user !== null) {
     try {
         app_ensure_orders_table($pdo);
-        app_ensure_order_financials_tables($pdo);
-
-        $countStmt = $pdo->query('SELECT COUNT(*) FROM orders');
-        $ordersTotal = (int)($countStmt ? $countStmt->fetchColumn() : 0);
 
         $fetchLimit = $BOOTSTRAP_LIMIT + 1;
         $stmt = $pdo->query(
             'SELECT ' . app_orders_select_fields($pdo) .
+            ', COUNT(*) OVER() AS _total_count' .
             ' FROM orders ORDER BY id DESC LIMIT ' . $fetchLimit
         );
         $rows = $stmt ? $stmt->fetchAll() : [];
+
+        $ordersTotal = count($rows) > 0 ? (int)$rows[0]['_total_count'] : 0;
 
         $ordersHasMore = count($rows) > $BOOTSTRAP_LIMIT;
         if ($ordersHasMore) {
             array_pop($rows);
         }
 
+        // Pass null for $pdo to skip per-order financials/payments queries.
+        // Bootstrap returns lightweight orders with defaults derived from
+        // the orders.total column.  Full hydration (financials + payments)
+        // is provided by GET /api/orders.php.
         foreach ($rows as $row) {
-            $ordersItems[] = app_order_from_row($row, $pdo);
+            $ordersItems[] = app_order_from_row($row);
         }
 
         if ($ordersHasMore && count($ordersItems) > 0) {
