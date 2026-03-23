@@ -155,9 +155,7 @@ function app_sync_order_payments(PDO $pdo, int $orderId, array $payments): void
 // ─── COMBINED WRITE (entry point for order create/update) ────────────────────
 
 /**
- * Writes stored financials + payments to structured tables.
- * JSON blob (order_meta_json) is written separately as a compatibility layer;
- * tables are the source of truth.
+ * Writes stored financials + payments to structured tables (source of truth).
  */
 function app_save_order_financials(PDO $pdo, int $orderId, array $orderMeta): void
 {
@@ -250,7 +248,7 @@ function app_read_order_payments(PDO $pdo, int $orderId): array
 /**
  * Reads stored financials + payments from tables and computes derived fields.
  * Returns the complete financials array matching the API response shape.
- * Returns null if no order_financials row exists (caller should fall back to JSON).
+ * Returns null if no order_financials row exists (caller uses defaults).
  */
 function app_read_order_financials_complete(PDO $pdo, int $orderId, int $baseTotal): ?array
 {
@@ -280,74 +278,3 @@ function app_read_order_financials_complete(PDO $pdo, int $orderId, int $baseTot
     ];
 }
 
-// ─── BACKFILL: migrate from order_meta_json ──────────────────────────────────
-
-/**
- * Backfills order_financials and order_payments from existing order_meta_json.
- * Safe to run multiple times (upsert/replace semantics).
- * Returns count of orders processed.
- */
-function app_backfill_order_financials_from_json(PDO $pdo, int $batchSize = 500): int
-{
-    app_ensure_order_financials_tables($pdo);
-
-    $offset = 0;
-    $processed = 0;
-
-    while (true) {
-        $stmt = $pdo->prepare(
-            "SELECT id, total, order_meta_json FROM orders
-             WHERE order_meta_json IS NOT NULL AND order_meta_json != 'null' AND order_meta_json != ''
-             ORDER BY id ASC
-             LIMIT :limit OFFSET :offset"
-        );
-        $stmt->bindValue(':limit', $batchSize, PDO::PARAM_INT);
-        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-        $stmt->execute();
-        $rows = $stmt->fetchAll();
-
-        if (!is_array($rows) || count($rows) === 0) {
-            break;
-        }
-
-        foreach ($rows as $row) {
-            $orderId = (int)$row['id'];
-            $metaRaw = (string)$row['order_meta_json'];
-            $meta = json_decode($metaRaw, true);
-
-            if (!is_array($meta)) {
-                continue;
-            }
-
-            $financials = is_array($meta['financials'] ?? null) ? $meta['financials'] : [];
-            $payments = is_array($meta['payments'] ?? null) ? $meta['payments'] : [];
-            $invoiceNotes = (string)($meta['invoiceNotes'] ?? '');
-
-            // Ensure financials have defaults for stored fields
-            $baseTotal = max(0, (int)$row['total']);
-            $financials = array_merge([
-                'subTotal' => $baseTotal,
-                'itemDiscountTotal' => 0,
-                'invoiceDiscountType' => 'none',
-                'invoiceDiscountValue' => 0,
-                'invoiceDiscountAmount' => 0,
-                'taxEnabled' => false,
-                'taxRate' => 10,
-                'taxAmount' => 0,
-                'grandTotal' => $baseTotal,
-            ], $financials);
-
-            try {
-                app_upsert_order_financials($pdo, $orderId, $financials, $invoiceNotes);
-                app_sync_order_payments($pdo, $orderId, $payments);
-                $processed++;
-            } catch (Throwable $e) {
-                error_log("Backfill failed for order {$orderId}: " . $e->getMessage());
-            }
-        }
-
-        $offset += $batchSize;
-    }
-
-    return $processed;
-}

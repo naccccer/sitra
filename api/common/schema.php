@@ -231,7 +231,6 @@ function app_ensure_orders_table(PDO $pdo): void
                 total BIGINT NOT NULL DEFAULT 0,
                 status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
                 items_json LONGTEXT NOT NULL,
-                order_meta_json LONGTEXT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
@@ -240,15 +239,6 @@ function app_ensure_orders_table(PDO $pdo): void
                 KEY idx_orders_created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
-    }
-
-    try {
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
-        if (!$stmt || !$stmt->fetch()) {
-            $pdo->exec("ALTER TABLE orders ADD COLUMN order_meta_json LONGTEXT NULL AFTER items_json");
-        }
-    } catch (Throwable $e) {
-        // Keep runtime compatibility if alter is not possible.
     }
 
     try {
@@ -269,7 +259,7 @@ function app_ensure_orders_table(PDO $pdo): void
 /**
  * Creates the order_financials and order_payments tables if they do not exist.
  * These tables are owned by the sales module and provide structured storage
- * for data previously held in order_meta_json.
+ * for order financial data.
  */
 function app_ensure_order_financials_tables(PDO $pdo): void
 {
@@ -377,30 +367,6 @@ function app_orders_items_column(PDO $pdo): string
     return app_detect_orders_items_column($pdo);
 }
 
-/**
- * @deprecated order_meta_json writes have been removed from the write flow.
- * The column persists in the database for backward-read compatibility only
- * (APP_ORDER_JSON_FALLBACK=0 disables the read path).
- * Remove this function when the column is dropped via
- * scripts/drop-order-meta-json-column.php.
- */
-function app_detect_orders_meta_column(PDO $pdo): ?string
-{
-    static $detected = false;
-    if ($detected !== false) {
-        return $detected === '' ? null : $detected;
-    }
-    $found = app_find_orders_column($pdo, ['order_meta_json']);
-    $detected = $found ?? '';
-    return $found;
-}
-
-/** @deprecated See app_detect_orders_meta_column(). */
-function app_orders_meta_column(PDO $pdo): ?string
-{
-    return app_detect_orders_meta_column($pdo);
-}
-
 function app_detect_orders_date_column(PDO $pdo): string
 {
     static $detected = null;
@@ -419,11 +385,7 @@ function app_orders_date_column(PDO $pdo): string
 function app_orders_select_fields(PDO $pdo): string
 {
     $itemsColumn = app_detect_orders_items_column($pdo);
-    $metaColumn = app_detect_orders_meta_column($pdo);
     $dateColumn = app_detect_orders_date_column($pdo);
-    // @deprecated — order_meta_json is no longer written; selected only for the
-    // APP_ORDER_JSON_FALLBACK read path. Remove once column is dropped.
-    $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
     $createdAtColumn = app_find_orders_column($pdo, ['created_at']);
     $updatedAtColumn = app_find_orders_column($pdo, ['updated_at']);
     $customerIdColumn = app_find_orders_column($pdo, ['customer_id']);
@@ -436,10 +398,10 @@ function app_orders_select_fields(PDO $pdo): string
     $projectContactIdSelect = $projectContactIdColumn !== null ? $projectContactIdColumn : 'NULL AS project_contact_id';
 
     if ($itemsColumn === 'items') {
-        return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+        return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $createdAtSelect . ', ' . $updatedAtSelect;
     }
 
-    return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+    return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $createdAtSelect . ', ' . $updatedAtSelect;
 }
 
 function app_orders_sort_clause(PDO $pdo): string
