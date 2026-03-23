@@ -32,11 +32,6 @@ function app_customer_projects_parse_bool($value, bool $fallback = false): bool
     return $fallback;
 }
 
-function app_customer_projects_financial_summary(PDO $pdo, int $projectId): array
-{
-    return app_sales_project_financial_summary($pdo, $projectId);
-}
-
 if ($method === 'GET') {
     $customerId = app_customers_parse_id($_GET['customerId'] ?? null);
     $params = [];
@@ -50,18 +45,32 @@ if ($method === 'GET') {
     $stmt->execute($params);
     $rows = $stmt->fetchAll();
 
+    $projectIds = array_map(fn($r) => (int)$r['id'], $rows);
+
+    // Batch-fetch contacts for all projects (1 query)
+    $contactsByProject = [];
+    if (count($projectIds) > 0) {
+        $placeholders = implode(',', array_fill(0, count($projectIds), '?'));
+        $contactsStmt = $pdo->prepare(
+            "SELECT * FROM customer_project_contacts WHERE project_id IN ({$placeholders}) ORDER BY is_primary DESC, sort_order ASC, id ASC"
+        );
+        $contactsStmt->execute($projectIds);
+        foreach ($contactsStmt->fetchAll() as $cRow) {
+            $pid = (int)$cRow['project_id'];
+            $contactsByProject[$pid][] = app_customer_project_contact_from_row($cRow);
+        }
+    }
+
+    // Batch-fetch financial summaries for all projects (3 queries via sales contract)
+    $financialsByProject = app_sales_project_financial_summary_batch($pdo, $projectIds);
+
     $projects = [];
     foreach ($rows as $row) {
-        $projectId = (int)($row['id'] ?? 0);
-        $contactsStmt = $pdo->prepare(
-            'SELECT * FROM customer_project_contacts WHERE project_id = :project_id ORDER BY is_primary DESC, sort_order ASC, id ASC'
-        );
-        $contactsStmt->execute(['project_id' => $projectId]);
-        $contacts = array_map('app_customer_project_contact_from_row', $contactsStmt->fetchAll());
-
+        $projectId = (int)$row['id'];
         $project = app_customer_project_from_row($row);
-        $project['contacts'] = $contacts;
-        $project['financialSummary'] = app_customer_projects_financial_summary($pdo, $projectId);
+        $project['contacts'] = $contactsByProject[$projectId] ?? [];
+        $project['financialSummary'] = $financialsByProject[$projectId]
+            ?? ['ordersCount' => 0, 'totalAmount' => 0, 'paidAmount' => 0, 'dueAmount' => 0];
         $projects[] = $project;
     }
 
