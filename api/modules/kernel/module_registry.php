@@ -10,6 +10,7 @@ $method = app_require_method(['GET', 'PATCH']);
 $actor = app_kernel_require_owner();
 
 if ($method === 'GET') {
+    app_release_session_lock();
     app_json([
         'success' => true,
         'modules' => app_module_registry($pdo),
@@ -18,6 +19,7 @@ if ($method === 'GET') {
 }
 
 app_require_csrf();
+app_release_session_lock();
 $payload = app_read_json_body();
 $moduleId = trim((string)($payload['moduleId'] ?? $payload['id'] ?? ''));
 $enabledRaw = $payload['enabled'] ?? null;

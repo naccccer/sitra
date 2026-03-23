@@ -26,6 +26,7 @@
     "env:status": "node scripts/switch-env.js status",
     "auth:reset-admin": "php scripts/reset-admin-password.php",
     "db:reset-minimal": "php scripts/reset-minimal-fixture.php",
+    "db:seed-inventory-v2-mock": "php scripts/seed-inventory-v2-mock.php",
     "contracts:types": "node scripts/generate-contract-types.js",
     "preview": "vite preview",
     "test:preflight": "node scripts/check-test-env.js",
@@ -41,7 +42,8 @@
     "react-date-object": "^2.1.9",
     "react-dom": "^19.2.0",
     "react-multi-date-picker": "^4.5.2",
-    "react-router-dom": "^7.13.1"
+    "react-router-dom": "^7.13.1",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",

@@ -4,7 +4,7 @@ declare(strict_types=1);
 /**
  * Unit tests for api/common/permissions.php
  *
- * Tests pure functions only — no database required.
+ * Tests pure functions only â€” no database required.
  */
 
 require_once __DIR__ . '/helpers.php';
@@ -25,7 +25,16 @@ $keys = array_column($defs, 'key');
 test_assert_contains('sales.orders.read', $keys, 'contains sales.orders.read');
 test_assert_contains('customers.read', $keys, 'contains customers.read');
 test_assert_contains('customers.write', $keys, 'contains customers.write');
+test_assert_contains('inventory.v2_products.read', $keys, 'contains inventory.v2_products.read');
+test_assert_contains('inventory.v2_operations.write', $keys, 'contains inventory.v2_operations.write');
+test_assert_contains('inventory.v2_reports.read', $keys, 'contains inventory.v2_reports.read');
 test_assert_contains('master_data.catalog.write', $keys, 'contains master_data.catalog.write');
+test_assert_contains('accounting.payroll.read', $keys, 'contains accounting.payroll.read');
+test_assert_contains('accounting.payroll.write', $keys, 'contains accounting.payroll.write');
+test_assert_contains('accounting.payroll.approve', $keys, 'contains accounting.payroll.approve');
+test_assert_contains('accounting.payroll.issue', $keys, 'contains accounting.payroll.issue');
+test_assert_contains('accounting.payroll.record_payment', $keys, 'contains accounting.payroll.record_payment');
+test_assert_contains('accounting.payroll.import', $keys, 'contains accounting.payroll.import');
 test_assert_contains('users_access.users.write', $keys, 'contains users_access.users.write');
 test_assert_contains('kernel.audit.read', $keys, 'contains kernel.audit.read');
 test_assert_contains('profile.read', $keys, 'contains profile.read');
@@ -78,7 +87,26 @@ test_assert_contains('sales.orders.read', $matrix['sales'], 'sales has sales.ord
 // Manager should have users_access.users.write
 test_assert_contains('users_access.users.write', $matrix['manager'], 'manager has users_access.users.write');
 test_assert_contains('customers.write', $matrix['manager'], 'manager has customers.write');
+test_assert_contains('accounting.payroll.read', $matrix['manager'], 'manager has accounting.payroll.read');
+test_assert_contains('accounting.payroll.write', $matrix['manager'], 'manager has accounting.payroll.write');
+test_assert_contains('accounting.payroll.approve', $matrix['manager'], 'manager has accounting.payroll.approve');
+test_assert_contains('accounting.payroll.issue', $matrix['manager'], 'manager has accounting.payroll.issue');
+test_assert_contains('accounting.payroll.record_payment', $matrix['manager'], 'manager has accounting.payroll.record_payment');
+test_assert_contains('accounting.payroll.import', $matrix['manager'], 'manager has accounting.payroll.import');
 test_assert_contains('customers.read', $matrix['sales'], 'sales has customers.read');
+test_assert_contains('inventory.v2_operations.read', $matrix['sales'], 'sales has inventory.v2_operations.read');
+test_assert(
+    !in_array('accounting.payroll.write', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.write'
+);
+test_assert(
+    !in_array('accounting.payroll.issue', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.issue'
+);
+test_assert(
+    !in_array('accounting.payroll.record_payment', $matrix['sales'], true),
+    'sales role does not have accounting.payroll.record_payment'
+);
 
 // ------------------------------------------------------------------
 // app_normalize_role_permissions_matrix
@@ -86,7 +114,7 @@ test_assert_contains('customers.read', $matrix['sales'], 'sales has customers.re
 
 test_suite('app_normalize_role_permissions_matrix');
 
-// Non-array input → defaults
+// Non-array input â†’ defaults
 $normalized = app_normalize_role_permissions_matrix(null);
 test_assert(isset($normalized['admin'], $normalized['manager'], $normalized['sales']), 'non-array falls back to defaults');
 
@@ -119,7 +147,7 @@ $deduped = app_normalize_role_permissions_matrix($withDupes);
 test_assert_count(2, $deduped['admin'], 'duplicate permissions are deduplicated');
 
 // ------------------------------------------------------------------
-// app_role_permissions (without DB — uses defaults)
+// app_role_permissions (without DB â€” uses defaults)
 // ------------------------------------------------------------------
 
 test_suite('app_role_permissions');
@@ -202,18 +230,24 @@ test_assert(isset(
     $caps['canManageUsers'],
     $caps['canViewAuditLogs'],
     $caps['canManageProfile'],
+    $caps['canAccessInventory'],
+    $caps['canManageInventory'],
 ), 'capabilities object has all expected keys');
 test_assert_true($caps['canAccessDashboard'], 'admin canAccessDashboard');
 test_assert_true($caps['canManageCatalog'], 'admin canManageCatalog');
 test_assert_true($caps['canManageUsers'], 'admin canManageUsers');
 test_assert_true($caps['canManageCustomers'], 'admin canManageCustomers');
+test_assert_true($caps['canAccessInventory'], 'admin canAccessInventory');
+test_assert_true($caps['canManageInventory'], 'admin canManageInventory');
 test_assert_false($caps['canManageSystemSettings'], 'canManageSystemSettings always false');
 
 $salesCaps = app_module_capabilities('sales');
 test_assert_true($salesCaps['canManageOrders'], 'sales canManageOrders');
 test_assert_true($salesCaps['canManageCustomers'], 'sales canManageCustomers');
+test_assert_true($salesCaps['canAccessInventory'], 'sales canAccessInventory');
 test_assert_false($salesCaps['canManageCatalog'], 'sales cannot manage catalog (no write)');
 test_assert_false($salesCaps['canManageUsers'], 'sales cannot manage users');
+test_assert_false($salesCaps['canManageInventory'], 'sales cannot manage inventory');
 
 $unknownCaps = app_module_capabilities('nonexistent');
 test_assert_false($unknownCaps['canAccessDashboard'], 'unknown role has no capabilities');
@@ -222,6 +256,7 @@ $salesDisabledModules = [
     ['id' => 'auth', 'enabled' => true],
     ['id' => 'users-access', 'enabled' => true],
     ['id' => 'sales', 'enabled' => false],
+    ['id' => 'inventory', 'enabled' => true],
     ['id' => 'master-data', 'enabled' => true],
 ];
 $salesCapsWhenDisabled = app_module_capabilities('sales', $salesDisabledModules);
@@ -233,12 +268,14 @@ $masterDataDisabledModules = [
     ['id' => 'users-access', 'enabled' => true],
     ['id' => 'sales', 'enabled' => true],
     ['id' => 'customers', 'enabled' => false],
+    ['id' => 'inventory', 'enabled' => false],
     ['id' => 'master-data', 'enabled' => false],
 ];
 $adminCapsWhenMasterDataDisabled = app_module_capabilities('admin', $masterDataDisabledModules);
 test_assert_false($adminCapsWhenMasterDataDisabled['canManageCatalog'], 'master-data disabled removes canManageCatalog');
 test_assert_false($adminCapsWhenMasterDataDisabled['canManageProfile'], 'master-data disabled removes canManageProfile');
 test_assert_false($adminCapsWhenMasterDataDisabled['canManageCustomers'], 'customers disabled removes canManageCustomers');
+test_assert_false($adminCapsWhenMasterDataDisabled['canAccessInventory'], 'inventory disabled removes canAccessInventory');
 
 // Print machine-readable summary for the runner
 $r = test_summary();

@@ -231,7 +231,6 @@ function app_ensure_orders_table(PDO $pdo): void
                 total BIGINT NOT NULL DEFAULT 0,
                 status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
                 items_json LONGTEXT NOT NULL,
-                order_meta_json LONGTEXT NULL,
                 created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
                 PRIMARY KEY (id),
@@ -240,15 +239,6 @@ function app_ensure_orders_table(PDO $pdo): void
                 KEY idx_orders_created_at (created_at)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
-    }
-
-    try {
-        $stmt = $pdo->query("SHOW COLUMNS FROM orders LIKE 'order_meta_json'");
-        if (!$stmt || !$stmt->fetch()) {
-            $pdo->exec("ALTER TABLE orders ADD COLUMN order_meta_json LONGTEXT NULL AFTER items_json");
-        }
-    } catch (Throwable $e) {
-        // Keep runtime compatibility if alter is not possible.
     }
 
     try {
@@ -261,6 +251,74 @@ function app_ensure_orders_table(PDO $pdo): void
 
     if (function_exists('app_ensure_orders_customer_columns')) {
         app_ensure_orders_customer_columns($pdo);
+    }
+
+    app_ensure_order_financials_tables($pdo);
+}
+
+/**
+ * Creates the order_financials and order_payments tables if they do not exist.
+ * These tables are owned by the sales module and provide structured storage
+ * for order financial data.
+ */
+function app_ensure_order_financials_tables(PDO $pdo): void
+{
+    static $ensured = false;
+    if ($ensured) {
+        return;
+    }
+    $ensured = true;
+
+    if (!app_table_is_queryable($pdo, 'order_financials')) {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS order_financials (
+                order_id             BIGINT UNSIGNED NOT NULL,
+                sub_total            BIGINT NOT NULL DEFAULT 0,
+                item_discount_total  BIGINT NOT NULL DEFAULT 0,
+                invoice_discount_type ENUM('none','percent','fixed') NOT NULL DEFAULT 'none',
+                invoice_discount_value  BIGINT NOT NULL DEFAULT 0,
+                invoice_discount_amount BIGINT NOT NULL DEFAULT 0,
+                tax_enabled          TINYINT(1) NOT NULL DEFAULT 0,
+                tax_rate             INT NOT NULL DEFAULT 10,
+                tax_amount           BIGINT NOT NULL DEFAULT 0,
+                grand_total          BIGINT NOT NULL DEFAULT 0,
+                invoice_notes        TEXT NULL,
+                updated_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+                PRIMARY KEY (order_id),
+                KEY idx_order_financials_grand_total (grand_total),
+                CONSTRAINT fk_order_financials_order
+                    FOREIGN KEY (order_id) REFERENCES orders (id)
+                    ON UPDATE CASCADE ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
+    }
+
+    if (!app_table_is_queryable($pdo, 'order_payments')) {
+        $pdo->exec(
+            "CREATE TABLE IF NOT EXISTS order_payments (
+                id                   BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+                order_id             BIGINT UNSIGNED NOT NULL,
+                local_id             VARCHAR(64) NOT NULL,
+                payment_date         VARCHAR(40) NOT NULL,
+                amount               BIGINT NOT NULL DEFAULT 0,
+                method               ENUM('cash','card','check','other') NOT NULL DEFAULT 'cash',
+                reference            VARCHAR(200) NULL,
+                note                 TEXT NULL,
+                receipt_file_path    VARCHAR(500) NULL,
+                receipt_original_name VARCHAR(255) NULL,
+                receipt_mime_type    VARCHAR(100) NULL,
+                receipt_size         INT UNSIGNED NULL,
+                created_at           TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (id),
+                UNIQUE KEY uq_order_payments_local_id (order_id, local_id),
+                KEY idx_order_payments_order_amount (order_id, amount),
+                KEY idx_order_payments_method (method),
+                KEY idx_order_payments_date (payment_date),
+                CONSTRAINT fk_order_payments_order
+                    FOREIGN KEY (order_id) REFERENCES orders (id)
+                    ON UPDATE CASCADE ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+        );
     }
 }
 
@@ -309,22 +367,6 @@ function app_orders_items_column(PDO $pdo): string
     return app_detect_orders_items_column($pdo);
 }
 
-function app_detect_orders_meta_column(PDO $pdo): ?string
-{
-    static $detected = false;
-    if ($detected !== false) {
-        return $detected === '' ? null : $detected;
-    }
-    $found = app_find_orders_column($pdo, ['order_meta_json']);
-    $detected = $found ?? '';
-    return $found;
-}
-
-function app_orders_meta_column(PDO $pdo): ?string
-{
-    return app_detect_orders_meta_column($pdo);
-}
-
 function app_detect_orders_date_column(PDO $pdo): string
 {
     static $detected = null;
@@ -343,9 +385,7 @@ function app_orders_date_column(PDO $pdo): string
 function app_orders_select_fields(PDO $pdo): string
 {
     $itemsColumn = app_detect_orders_items_column($pdo);
-    $metaColumn = app_detect_orders_meta_column($pdo);
     $dateColumn = app_detect_orders_date_column($pdo);
-    $metaSelect = $metaColumn !== null ? $metaColumn : 'NULL AS order_meta_json';
     $createdAtColumn = app_find_orders_column($pdo, ['created_at']);
     $updatedAtColumn = app_find_orders_column($pdo, ['updated_at']);
     $customerIdColumn = app_find_orders_column($pdo, ['customer_id']);
@@ -358,10 +398,10 @@ function app_orders_select_fields(PDO $pdo): string
     $projectContactIdSelect = $projectContactIdColumn !== null ? $projectContactIdColumn : 'NULL AS project_contact_id';
 
     if ($itemsColumn === 'items') {
-        return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+        return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items AS items_json, ' . $createdAtSelect . ', ' . $updatedAtSelect;
     }
 
-    return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $metaSelect . ', ' . $createdAtSelect . ', ' . $updatedAtSelect;
+    return 'id, order_code, customer_name, phone, ' . $customerIdSelect . ', ' . $projectIdSelect . ', ' . $projectContactIdSelect . ', ' . $dateColumn . ' AS order_date, total, status, items_json, ' . $createdAtSelect . ', ' . $updatedAtSelect;
 }
 
 function app_orders_sort_clause(PDO $pdo): string

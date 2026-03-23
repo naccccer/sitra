@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccountingPayrollActionBulkResponse",
+  "type": "object",
+  "required": ["success", "action", "total", "succeeded", "failed", "results"],
+  "properties": {
+    "success": { "type": "boolean" },
+    "action": { "type": "string" },
+    "total": { "type": "integer" },
+    "succeeded": { "type": "integer" },
+    "failed": { "type": "integer" },
+    "results": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "success"],
+        "properties": {
+          "id": { "type": ["string", "number"] },
+          "success": { "type": "boolean" },
+          "payslip": { "type": "object" },
+          "error": { "type": "string" },
+          "errorObj": { "type": "object" }
+        }
+      }
+    }
+  },
+  "additionalProperties": true
+}

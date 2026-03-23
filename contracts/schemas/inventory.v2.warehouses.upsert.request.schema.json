@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryV2WarehousesUpsertRequest",
+  "type": "object",
+  "required": ["warehouseKey", "name"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "warehouseKey": { "type": "string" },
+    "name": { "type": "string" },
+    "notes": { "type": "string" },
+    "isActive": { "type": "boolean" }
+  }
+}

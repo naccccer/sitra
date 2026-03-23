@@ -1,33 +1,34 @@
-import React, { useMemo } from 'react';
-import { ArrowRight, Menu, User } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { Button } from '@/components/shared/ui';
-import { identityDisplayJobTitle, identityDisplayName } from '@/utils/userIdentity';
+import React, { useMemo } from 'react'
+import { ArrowRight, Menu, User } from 'lucide-react'
+import { useLocation, useNavigate } from 'react-router-dom'
+import { Button } from '@/components/shared/ui'
+import { identityDisplayJobTitle, identityDisplayName } from '@/utils/userIdentity'
 
 const getPageTitle = (pathname) => {
   // تنظیمات
-  if (pathname === '/owner' || pathname.startsWith('/owner/')) return 'اتاق فرمان ERP';
-  if (pathname === '/management' || pathname.startsWith('/management/')) return 'مدیریت';
-  if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'مدیریت';
-  if (pathname === '/') return 'داشبورد';
-  if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return 'ویرایش سفارش';
-  if (pathname === '/orders') return 'مدیریت سفارشات';
-  if (pathname === '/orders/new') return 'ثبت سفارش جدید';
-  if (pathname === '/admin') return 'مدیریت قیمت‌ها';
-  if (pathname === '/profile') return 'پروفایل کسب‌وکار';
-  if (pathname === '/users') return 'مدیریت کاربران';
-  if (pathname === '/system-settings') return 'مدیریت سیستم';
-  return 'پنل مدیریت';
-};
+  if (pathname === '/owner' || pathname.startsWith('/owner/')) return 'اتاق فرمان ERP'
+  if (pathname === '/management' || pathname.startsWith('/management/')) return 'مدیریت'
+  if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'مدیریت'
+  if (pathname === '/') return 'داشبورد'
+  if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return 'ویرایش سفارش'
+  if (pathname === '/orders') return 'مدیریت سفارشات'
+  if (pathname === '/orders/new') return 'ثبت سفارش جدید'
+  if (pathname === '/inventory') return 'مدیریت انبار'
+  if (pathname === '/admin') return 'مدیریت قیمت ها'
+  if (pathname === '/profile') return 'پروفایل کسب وکار'
+  if (pathname === '/users') return 'مدیریت کاربران'
+  if (pathname === '/system-settings') return 'مدیریت سیستم'
+  return 'پنل مدیریت'
+}
 
 export const Header = ({ session, onToggleSidebar = () => {} }) => {
-  const location = useLocation();
-  const navigate = useNavigate();
+  const location = useLocation()
+  const navigate = useNavigate()
 
-  const title = useMemo(() => getPageTitle(location.pathname), [location.pathname]);
-  const isCreateOrderPage = location.pathname === '/orders/new';
-  const displayName = identityDisplayName(session);
-  const displayJobTitle = identityDisplayJobTitle(session);
+  const title = useMemo(() => getPageTitle(location.pathname), [location.pathname])
+  const isCreateOrderPage = location.pathname === '/orders/new'
+  const displayName = identityDisplayName(session)
+  const displayJobTitle = identityDisplayJobTitle(session)
 
   return (
     <header className="print-hide sticky top-0 z-30 border-b border-slate-200/90 bg-white/90 px-4 py-4 backdrop-blur-lg lg:px-6">
@@ -63,5 +64,5 @@ export const Header = ({ session, onToggleSidebar = () => {} }) => {
         </div>
       </div>
     </header>
-  );
-};
+  )
+}

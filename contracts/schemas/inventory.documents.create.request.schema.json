@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryDocumentsCreateRequest",
+  "type": "object",
+  "required": ["docType", "lines"],
+  "properties": {
+    "docType": { "type": "string", "enum": ["receipt", "issue", "transfer", "adjustment"] },
+    "sourceWarehouseId": { "type": ["string", "number", "null"] },
+    "targetWarehouseId": { "type": ["string", "number", "null"] },
+    "referenceType": { "type": "string" },
+    "referenceId": { "type": "string" },
+    "referenceCode": { "type": "string" },
+    "postImmediately": { "type": "boolean" },
+    "notes": { "type": "string" },
+    "lines": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["itemId", "quantityBase"],
+        "properties": {
+          "itemId": { "type": ["string", "number"] },
+          "quantityBase": { "type": "number" },
+          "quantitySecondary": { "type": "number" },
+          "unitPrice": { "type": "number" },
+          "notes": { "type": "string" }
+        }
+      }
+    }
+  }
+}

@@ -1,4 +1,4 @@
-﻿# API Contracts Index
+# API Contracts Index
 
 This index links endpoint behavior, request/response examples, permissions, and machine-readable schemas.
 
@@ -19,6 +19,16 @@ This index links endpoint behavior, request/response examples, permissions, and 
 | `GET|POST|PUT|PATCH /api/customers.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
 | `GET|POST|PUT|PATCH /api/customer_projects.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
 | `GET|POST|PUT|PATCH /api/customer_project_contacts.php` | protected | yes on write | `customers.read` / `customers.write` | customers contracts in `MODULE_CONTRACTS.md` |
+| `GET|POST|PUT|PATCH /api/hr_employees.php` | protected (`admin`/`manager`) | yes on write | `human_resources.employees.read` / `human_resources.employees.write` | human resources contracts in `MODULE_CONTRACTS.md` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_products.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_products.read/write` | `contracts/schemas/inventory.v2.products.upsert.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_warehouses.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_warehouses.read/write` | `contracts/schemas/inventory.v2.warehouses.upsert.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_locations.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_locations.read/write` | `contracts/schemas/inventory.v2.locations.upsert.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_lots.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_lots.read/write` | `contracts/schemas/inventory.v2.lots.upsert.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/inventory_v2_operations.php` | protected (`admin`/`manager`) | yes on write | `inventory.v2_operations.read/write` | `contracts/schemas/inventory.v2.operations.create.request.schema.json`, `contracts/schemas/inventory.v2.operations.action.request.schema.json` |
+| `GET|POST|PATCH /api/inventory_v2_reservations.php` | protected (`admin`/`manager`/`sales`) | yes on write | `inventory.v2_operations.read/write` | `contracts/schemas/inventory.v2.reservations.create.request.schema.json` |
+| `GET|POST|PUT|PATCH /api/acc_payroll.php` | protected (`admin`/`manager`) | yes on write | `accounting.payroll.read` / `accounting.payroll.write` / `accounting.payroll.approve` / `accounting.payroll.issue` / `accounting.payroll.payments` / `accounting.payroll.record_payment` | `contracts/schemas/accounting.payroll.create.request.schema.json`, `contracts/schemas/accounting.payroll.update.request.schema.json`, `contracts/schemas/accounting.payroll.action.request.schema.json`, `contracts/schemas/accounting.payroll.workspace.response.schema.json`, `contracts/schemas/accounting.payroll.action.bulk.response.schema.json` |
+| `GET|POST /api/acc_settings.php?key=accounting.payroll.settings` | protected (`admin`/`manager`) | yes on POST | `accounting.payroll.settings` | accounting settings contract in `MODULE_CONTRACTS.md` |
+| `POST /api/acc_payroll_import.php` | protected (`admin`/`manager`) | yes | `accounting.payroll.write` / `accounting.payroll.import` | `contracts/schemas/accounting.payroll.import.request.schema.json`, `contracts/schemas/accounting.payroll.import.preview.response.schema.json` |
 | `GET|POST /api/catalog.php` | GET public, POST protected | POST yes | `master_data.catalog.write` | `contracts/schemas/catalog.save.request.schema.json`, `examples/catalog.save.request.json` |
 | `GET|POST /api/profile.php` | read/write protected in runtime | POST yes | `profile.read` / `profile.write` | profile shape in bootstrap + API docs |
 | `GET|POST|PUT|PATCH /api/users.php` | protected | yes on write | `users_access.users.read/write` | users-access contract in `MODULE_CONTRACTS.md` |

@@ -46,7 +46,7 @@ function app_ensure_module_registry_table(PDO $pdo): void
 
     $pdo->exec(
         "DELETE FROM module_registry
-         WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'customers', 'master-data')"
+         WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'customers', 'human-resources', 'inventory', 'master-data', 'accounting')"
     );
 }
 

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/db.php';
@@ -20,22 +20,29 @@ if ($sql === false) {
     exit(1);
 }
 
-$statements = array_filter(array_map('trim', explode(';', $sql)), static function (string $statement): bool {
-    return $statement !== '' && !str_starts_with($statement, '--');
-});
+// Strip BOM if present
+$sql = ltrim($sql, "\xEF\xBB\xBF");
+
+// Split on ; and strip -- comment lines from each chunk before executing
+$statements = [];
+foreach (explode(';', $sql) as $chunk) {
+    $lines = array_filter(
+        explode("\n", $chunk),
+        static fn(string $l) => !str_starts_with(trim($l), '--')
+    );
+    $statement = trim(implode("\n", $lines));
+    if ($statement !== '') {
+        $statements[] = $statement;
+    }
+}
 
 try {
-    $pdo->beginTransaction();
     foreach ($statements as $statement) {
         $pdo->exec($statement);
     }
-    $pdo->commit();
     fwrite(STDOUT, "Minimal fixture applied successfully.\n");
     exit(0);
 } catch (Throwable $e) {
-    if ($pdo->inTransaction()) {
-        $pdo->rollBack();
-    }
     fwrite(STDERR, "Failed to apply fixture: {$e->getMessage()}\n");
     exit(1);
 }

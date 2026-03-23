@@ -1,4 +1,4 @@
-﻿# Sitra ERP Module Contracts
+# Sitra ERP Module Contracts
 
 ## Purpose
 - Defines stable contracts between modules in the modular monolith.
@@ -101,8 +101,26 @@
 
 ### `customers.customer_list.v1`
 - Owner: `customers`
+- Compatibility read model for existing consumers.
 - Output:
   - `customers: array`
+
+### `customers.customer_directory.v1`
+- Owner: `customers`
+- Input:
+  - `q?: string`
+  - `isActive?: boolean`
+  - `customerType?: 'individual' | 'company'`
+  - `hasDue?: boolean`
+  - `page?: number`
+  - `pageSize?: number`
+- Output:
+  - `customers: array`
+  - `pagination: { page, pageSize, total }`
+- Directory rows include:
+  - customer identity fields (`id`, `customerCode`, `fullName`, `customerType`)
+  - CRM profile fields (`companyName`, `nationalId`, `economicCode`, `email`, `province`, `city`, `creditLimit`, `paymentTermDays`)
+  - operational summary (`defaultPhone`, `isActive`, `activeProjectsCount`, `activeContactsCount`, `activeOrdersCount`, `totalAmount`, `paidAmount`, `dueAmount`, `createdAt`, `updatedAt`)
 
 ### `customers.customer_create.v1`
 - Owner: `customers`
@@ -111,6 +129,7 @@
   - `defaultPhone?: string`
   - `address?: string`
   - `notes?: string`
+  - CRM fields (`customerCode?`, `customerType?`, `companyName?`, `nationalId?`, `economicCode?`, `email?`, `province?`, `city?`, `creditLimit?`, `paymentTermDays?`)
 - Output:
   - `customer: object`
 
@@ -119,6 +138,7 @@
 - Input:
   - `id: number`
   - mutable fields subset (`fullName`, `defaultPhone`, `address`, `notes`)
+  - CRM fields (`customerCode?`, `customerType?`, `companyName?`, `nationalId?`, `economicCode?`, `email?`, `province?`, `city?`, `creditLimit?`, `paymentTermDays?`)
   - `applyToOrderHistory?: boolean`
 - Output:
   - `customer: object`
@@ -145,6 +165,107 @@
   - `projectId: number`
 - Output:
   - `contacts: array`
+
+## Inventory Contracts
+
+### `inventory.v2_products_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`q`, `includeInactive`)
+  - write payload (`productCode?`, `name`, `productType`, `uom`, `notes?`, `isActive?`)
+- Output:
+  - `products: array`
+  - `product: object`
+
+### `inventory.v2_warehouses_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`q`, `includeInactive`)
+  - write payload (`warehouseKey`, `name`, `notes?`, `isActive?`)
+- Output:
+  - `warehouses: array`
+  - `warehouse: object`
+
+### `inventory.v2_locations_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`warehouseId?`, `includeInactive`)
+  - write payload (`warehouseId`, `parentLocationId?`, `locationKey`, `name`, `usageType`, `notes?`, `isActive?`)
+- Output:
+  - `locations: array`
+  - `location: object`
+
+### `inventory.v2_lots_master.v1`
+- Owner: `inventory`
+- Input:
+  - list filters (`productId?`, `includeInactive`)
+  - write payload (`lotCode`, `productId`, `variantId?`, `expiryDate?`, `notes?`, `isActive?`)
+- Output:
+  - `lots: array`
+  - `lot: object`
+
+### `inventory.v2_operations.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_operations.php`
+- GET filters: `type`, `status`, `q`, `page`, `pageSize`, `sortBy`, `sortDir`
+- POST input (create draft):
+  - `operationType: 'receipt'|'delivery'|'transfer'|'production_move'|'production_consume'|'production_output'|'adjustment'|'count'`
+  - `sourceWarehouseId?: string|null` (required for delivery/transfer)
+  - `targetWarehouseId?: string|null` (required for receipt/transfer/adjustment)
+  - `referenceType?`, `referenceId?`, `referenceCode?`, `notes?`
+  - `lines: array` — each item: `productId`, `quantityRequested`, `quantityDone?`, `uom?`, `sourceLocationId?`, `targetLocationId?`, `lotId?`, `variantId?`, `notes?`
+- PUT input (update draft): `id`, plus same optional fields as POST plus `lines?`
+- PATCH input (action): `id`, `action: 'submit'|'approve'|'post'|'cancel'`
+- Output:
+  - GET: `{ operations: array, total, page, pageSize }`
+  - POST/PUT/PATCH: `{ operation: object }`
+- Lifecycle: `draft` → `submitted` → `approved` → `posted` | `cancelled`
+- Stock rule: posting delivery/transfer/negative-adjustment validates no-negative available quantity
+- Ledger: posting writes immutable entries to `inventory_v2_stock_ledger`
+- Schemas: `inventory.v2.operations.create.request.schema.json`, `inventory.v2.operations.action.request.schema.json`
+- Phase 3: `production_consume` deducts from source warehouse; `production_output` adds to target warehouse
+- Phase 3: delivery posting fulfills matching active reservations automatically
+
+### `inventory.v2_reservations.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_reservations.php`
+- GET filters: `status`, `referenceType`, `referenceId`, `productId`, `page`, `pageSize`
+- POST input (create reservation):
+  - `productId: string|number`
+  - `warehouseId: string|number`
+  - `locationId: string|number`
+  - `quantityReserved: number` (> 0)
+  - `variantId?`, `lotId?`, `referenceType?`, `referenceId?`, `referenceCode?`, `notes?`
+- PATCH input (action): `id`, `action: 'release'`
+- Output:
+  - GET: `{ reservations: array, total, page, pageSize }`
+  - POST/PATCH: `{ reservation: object }`
+- Stock rule: creation checks available quantity; increments `quantity_reserved` in quants
+- Lifecycle: `active` → `fulfilled` (auto on delivery post) | `released` (manual)
+- Ledger: `reserve` entry on creation; `release` entry on release or fulfillment
+- Schema: `inventory.v2.reservations.create.request.schema.json`
+
+### `inventory.v2_replenishment.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_replenishment.php`
+- GET (list rules): returns `{ rules: array }` — active min/max rules
+- GET (suggestions): `?action=suggest` — returns `{ suggestions: array }` filtered to products below min_qty
+- POST input (create rule): `productId, warehouseId, minQty, maxQty, notes?`
+- PUT input (update rule): `id, minQty?, maxQty?, notes?`
+- PATCH input (soft-delete): `{ id }` — deactivates the rule
+- Auth: GET requires `inventory.v2_reports.read`; POST/PUT/PATCH require `inventory.v2_settings.write` + CSRF
+- Schema: `inventory.v2.replenishment.rules.upsert.request.schema.json`
+
+### `inventory.v2_reports.v1`
+- Owner: `inventory`
+- Endpoint: `/api/inventory_v2_reports.php`
+- Method: GET only
+- Query params: `report` (required: `on_hand|cardex|operations`), optional `productId`, `warehouseId`, `dateFrom`, `dateTo`
+- `on_hand`: joins quants + products + warehouses + locations; returns per-location stock summary
+- `cardex`: queries stock_ledger with optional product/warehouse/date filters; limit 300 rows
+- `operations`: aggregates operation_headers by type+status with count and date range
+- Auth: requires `inventory.v2_reports.read`
+- Schema: `inventory.v2.reports.query.request.schema.json`
 
 ## Users & Access Contracts
 
@@ -194,15 +315,174 @@
 - Output:
   - normalized permission matrix
 
+## Human Resources Contracts
+
+### `human_resources.employee_directory.v1`
+- Owner: `human-resources`
+- Endpoint: `/api/hr_employees.php`
+- Permission gates:
+  - `human_resources.employees.read` for list/detail reads
+  - `human_resources.employees.write` for create/update/activate/deactivate
+- Input (`GET`):
+  - `id?: string | number`
+  - `q?: string`
+  - `isActive?: boolean`
+- Input (`POST` / `PUT`):
+  - `id?: string | number` on `PUT`
+  - `employeeCode: string`
+  - `firstName: string`
+  - `lastName: string`
+  - `personnelNo?: string`
+  - `nationalId?: string`
+  - `mobile?: string`
+  - `department?: string`
+  - `jobTitle?: string`
+  - `bankName?: string`
+  - `bankAccountNo?: string`
+  - `bankSheba?: string`
+  - `baseSalary?: number`
+  - `defaultInputs?: array | object`
+  - `notes?: string`
+  - `isActive?: boolean`
+- Input (`PATCH`):
+  - `id: string | number`
+  - `isActive?: boolean`
+  - `active?: boolean`
+- Output:
+  - GET: `{ employee }` or `{ employees }`
+  - POST/PUT/PATCH: `{ employee }`
+- Employee records are the source of truth for payroll consumers.
+- Schema: `human_resources.employee_directory.request.schema.json`
+
+## Accounting Payroll Contracts
+
+### `accounting.payroll.v1`
+- Owner: `accounting`
+- Endpoint: `/api/acc_payroll.php`
+- Entities: `period`, `employee`, `payslip`, `workspace`
+- Permission gates:
+  - `accounting.payroll.read` for list/detail reads
+  - `accounting.payroll.write` for period, employee, and payslip create/update plus payslip cancel
+  - `accounting.payroll.approve` for approving draft payslips
+  - `accounting.payroll.issue` for issuing approved payslips
+  - `accounting.payroll.payments` or `accounting.payroll.record_payment` for recording payments
+- Input (`GET`):
+  - `entity?: 'period' | 'employee' | 'workspace'`
+  - `id?: string | number`
+  - `periodId?: string | number` (for workspace)
+  - `status?`, `q?`, `page?`, `pageSize?`, `employeeId?`, `periodId?`, `periodKey?`, `isActive?`
+- Input (`POST` / `PUT`):
+  - `entity?: 'period' | 'employee' | 'payslip'`
+  - period:
+    - `periodId?: string | number`
+    - `periodKey?: string`
+    - `year?: number`
+    - `month?: number`
+    - `title?: string`
+    - `startDate?: string`
+    - `endDate?: string`
+    - `payDate?: string`
+    - `status?: 'open' | 'issued' | 'closed'`
+  - employee:
+    - `id?: string | number` on `PUT`
+    - `employeeCode: string`
+    - `firstName: string`
+    - `lastName: string`
+    - `personnelNo?: string`
+    - `nationalId?: string`
+    - `mobile?: string`
+    - `bankName?: string`
+    - `bankAccountNo?: string`
+    - `bankSheba?: string`
+    - `baseSalary?: number`
+    - `defaultInputs?: array | object`
+    - `notes?: string`
+    - `isActive?: boolean`
+  - payslip:
+    - `id?: string | number` on `PUT`
+    - `employeeId: string | number`
+    - `periodId?: string | number`
+    - `periodKey?: string`
+    - `year?: number`
+    - `month?: number`
+    - `inputs?: array | object`
+    - `notes?: string`
+- Input (`PATCH` action):
+  - `id?: string | number`
+  - `ids?: array<string | number>` for bulk action
+  - `action: 'approve' | 'issue' | 'record_payment' | 'cancel'`
+  - `amount?: number`
+  - `paymentMethod?: string`
+  - `paymentDate?: string`
+  - `accountId?: string | number`
+  - `referenceNo?: string`
+  - `notes?: string`
+- Output:
+  - GET period: `{ period }` or `{ periods }`
+  - GET employee: `{ employee }` or `{ employees }`
+  - GET workspace: `{ workspace }`
+  - GET payslip detail: `{ payslip }`
+  - GET payslip list: `{ payslips, total, page, pageSize, totalPages }`
+  - POST/PUT: `{ period }`, `{ employee }`, or `{ payslip }`
+  - PATCH single: `{ payslip }`
+  - PATCH bulk: `{ action, total, succeeded, failed, results }`
+- Response roots commonly: `period`, `employee`, `payslip`, `periods`, `employees`, `payslips`
+- Employee ownership is backed by `human_resources.employee_directory.v1`; `/api/acc_payroll.php?entity=employee` remains a compatibility adapter over HR data.
+- Workflow: `draft` -> `approved` -> `issued` -> `cancelled`
+- Settings: `GET|POST /api/acc_settings.php?key=accounting.payroll.settings`
+- Schemas: `accounting.payroll.create.request.schema.json`, `accounting.payroll.update.request.schema.json`, `accounting.payroll.action.request.schema.json`, `accounting.payroll.workspace.response.schema.json`, `accounting.payroll.action.bulk.response.schema.json`, `accounting.payroll.import.request.schema.json`, `accounting.payroll.import.preview.response.schema.json`
+
+### `accounting.payroll.import.v1`
+- Owner: `accounting`
+- Endpoint: `/api/acc_payroll_import.php`
+- Permission gates:
+  - `accounting.payroll.write` or `accounting.payroll.import` for batch imports
+- Input (`POST`):
+  - `dryRun?: boolean` (preview without DB write)
+  - `periodId?: string | number`
+  - `periodKey?: string`
+  - `year?: number`
+  - `month?: number`
+  - `title?: string`
+  - `startDate?: string`
+  - `endDate?: string`
+  - `payDate?: string`
+  - `rows: array`
+- `rows` entry:
+  - `employeeId: string | number`
+  - `employeeCode?: string`
+  - `nationalId?: string`
+  - `inputs?: array | object`
+  - `notes?: string`
+- Output:
+  - commit mode: `{ success, dryRun:false, period, created, updated, results, warnings, errors }`
+  - preview mode: `{ success, dryRun:true, period, created, updated, results, warnings, errors }`
+- Import workflow: resolves the payroll period first, then matches each row by employee id, employee code, or national ID, creates or updates draft payslips, and records row-level warnings/errors
+- Schema: `accounting.payroll.import.request.schema.json`
+
 ## API Adapter Mapping
 - `/api/bootstrap.php` -> kernel + read models
 - `/api/orders.php` -> sales contracts
 - `/api/customers.php` -> customers contracts
 - `/api/customer_projects.php` -> customers contracts
 - `/api/customer_project_contacts.php` -> customers contracts
+- `/api/hr_employees.php` -> human resources employee directory
+- `/api/inventory_v2_products.php` -> inventory v2 contracts
+- `/api/inventory_v2_warehouses.php` -> inventory v2 contracts
+- `/api/inventory_v2_locations.php` -> inventory v2 contracts
+- `/api/inventory_v2_lots.php` -> inventory v2 contracts
+- `/api/inventory_v2_operations.php` -> inventory v2 contracts
+- `/api/inventory_v2_reservations.php` -> inventory v2 contracts
+- `/api/inventory_v2_replenishment.php` -> inventory v2 replenishment contracts
+- `/api/inventory_v2_reports.php` -> inventory v2 reports contracts
+- `/api/acc_payroll.php` -> accounting payroll contracts
+- `/api/acc_payroll_import.php` -> accounting payroll import contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
 - `/api/users.php` -> users-access user contracts
 - `/api/role_permissions.php` -> users-access permission matrix
 - `/api/module_registry.php` -> kernel module registry
 - `/api/audit_logs.php` -> kernel audit read model
+
+## Contract Maintenance Notes
+- 2026-03-21: Extracted the accounting payroll workspace aggregation into `api/modules/accounting/payroll_workspace.php`; no endpoint, schema, or response-shape contract changes.

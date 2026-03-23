@@ -1,4 +1,4 @@
-﻿import React from 'react'
+import React from 'react'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { MainLayout } from '../components/layout/MainLayout'
 import { SettingsPage } from '../kernel/pages/SettingsPage'
@@ -7,6 +7,9 @@ import { OwnerConsolePage } from '../kernel/pages/OwnerConsolePage'
 import { AuditLogsPage } from '../kernel/pages/AuditLogsPage'
 import { OrderCreatePage, OrderDetailPage, OrdersPage } from '../modules/sales'
 import { CustomersPage } from '../modules/customers'
+import { HumanResourcesPage } from '../modules/human-resources'
+import { InventoryV2Page } from '../modules/inventory'
+import { AccountingPage } from '../modules/accounting'
 import { AdminPage } from '../modules/master-data'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
@@ -82,6 +85,9 @@ export const AppRoutes = ({
           <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="customers" element={<CapabilityRouteGuard session={session} capability="canManageCustomers"><ModuleRouteGuard session={session} moduleId="customers"><CustomersPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
+          <Route path="human-resources" element={<CapabilityRouteGuard session={session} capability="canAccessHumanResources"><ModuleRouteGuard session={session} moduleId="human-resources"><HumanResourcesPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
+          <Route path="inventory" element={<CapabilityRouteGuard session={session} capability="canAccessInventory"><ModuleRouteGuard session={session} moduleId="inventory"><InventoryV2Page session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
+          <Route path="accounting" element={<CapabilityRouteGuard session={session} capability="canAccessAccounting"><ModuleRouteGuard session={session} moduleId="accounting"><AccountingPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
           <Route
             path="profile"

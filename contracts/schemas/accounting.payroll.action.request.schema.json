@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AccountingPayrollActionRequest",
+  "type": "object",
+  "required": ["action"],
+  "anyOf": [
+    { "required": ["id"] },
+    { "required": ["ids"] }
+  ],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "ids": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": ["string", "number"] }
+    },
+    "action": {
+      "type": "string",
+      "enum": ["approve", "issue", "record_payment", "cancel"]
+    },
+    "amount": { "type": "number", "minimum": 0 },
+    "paymentMethod": {
+      "type": "string",
+      "enum": ["cash", "bank"]
+    },
+    "paymentDate": { "type": "string" },
+    "accountId": { "type": ["string", "number"] },
+    "referenceNo": { "type": "string" },
+    "notes": { "type": "string" },
+    "clientRequestId": { "type": "string" }
+  },
+  "additionalProperties": true
+}

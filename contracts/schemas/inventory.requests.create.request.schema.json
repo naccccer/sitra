@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryRequestsCreateRequest",
+  "type": "object",
+  "required": ["warehouseId", "itemId", "quantityBase"],
+  "properties": {
+    "warehouseId": { "type": ["string", "number"] },
+    "itemId": { "type": ["string", "number"] },
+    "quantityBase": { "type": "number" },
+    "quantitySecondary": { "type": "number" },
+    "requestNotes": { "type": "string" }
+  }
+}

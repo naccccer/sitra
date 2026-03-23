@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "InventoryItemsUpsertRequest",
+  "type": "object",
+  "required": ["title", "category", "baseUnit"],
+  "properties": {
+    "id": { "type": ["string", "number"] },
+    "sku": { "type": "string" },
+    "title": { "type": "string" },
+    "category": { "type": "string", "enum": ["raw_glass", "processed_glass", "hardware", "consumable"] },
+    "glassWidthMm": { "type": "number" },
+    "glassHeightMm": { "type": "number" },
+    "glassThicknessMm": { "type": "number" },
+    "glassColor": { "type": "string" },
+    "baseUnit": { "type": "string" },
+    "secondaryUnit": { "type": "string" },
+    "secondaryPerBase": { "type": "number" },
+    "notes": { "type": "string" }
+  }
+}

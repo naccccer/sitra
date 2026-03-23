@@ -1,4 +1,4 @@
-﻿# Sitra ERP Architecture Rulebook
+# Sitra ERP Architecture Rulebook
 
 ## 1) Purpose and Authority
 - This file is the source of truth for architecture decisions.
@@ -17,6 +17,7 @@
 ### 3.1 Kernel (Shared Core)
 - Owns auth/session, CSRF, response conventions, audit logging, permission primitives, module registry.
 - Must not contain business logic from domain modules.
+- JSON API responses are emitted with `no-store` cache headers so list views do not keep stale rows after mutations or direct database changes.
 
 ### 3.2 Business Modules
 - `master-data`
@@ -26,6 +27,12 @@
   - Orders, order items payload, invoice/payment context.
 - `customers`
   - Customer registry, customer projects, and project contacts.
+- `human-resources`
+  - Employee directory and other HR-owned reference data.
+- `inventory`
+  - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
+  - Operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
+  - Reservation subsystem (reserve/release/fulfill), production operation types (production_consume, production_output), delivery-fulfills-reservation integration.
 - `users-access`
   - Users, role assignment, activation/deactivation.
 
@@ -50,6 +57,15 @@
   - `processing`
   - `delivered`
   - `archived`
+- Inventory V2 operation status lifecycle:
+  - `draft` → `submitted` → `approved` → `posted`
+  - Any non-posted status → `cancelled`
+  - Only `approved` operations may be posted; posting is irreversible.
+  - Stock mutations and ledger writes occur exclusively at post time.
+- Inventory V2 reservation lifecycle:
+  - `active` → `fulfilled` (auto on delivery post) | `released` (manual)
+  - Creating a reservation increments `quantity_reserved` in quants.
+  - Delivery posting fulfills matching active reservations and releases reserved quantity.
 
 ## 7) API Contract Rules
 - Core endpoints remain operational:
@@ -58,6 +74,13 @@
   - `/api/customers.php`
   - `/api/customer_projects.php`
   - `/api/customer_project_contacts.php`
+  - `/api/hr_employees.php`
+  - `/api/inventory_v2_products.php`
+  - `/api/inventory_v2_warehouses.php`
+  - `/api/inventory_v2_locations.php`
+  - `/api/inventory_v2_lots.php`
+  - `/api/inventory_v2_operations.php`
+  - `/api/inventory_v2_reservations.php`
   - `/api/catalog.php`
   - `/api/profile.php`
   - `/api/users.php`
