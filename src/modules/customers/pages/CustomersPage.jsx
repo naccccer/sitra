@@ -16,8 +16,6 @@ export const CustomersPage = ({ session }) => {
 
   const [searchInput, setSearchInput] = useState('')
   const [viewMode, setViewMode] = useState('active') // active | archived
-  const [customerTypeFilter, setCustomerTypeFilter] = useState('all')
-  const [hasDueFilter, setHasDueFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [formMode, setFormMode] = useState('create')
@@ -30,11 +28,9 @@ export const CustomersPage = ({ session }) => {
   const directoryFilters = useMemo(() => ({
     q: String(debouncedSearch || '').trim(),
     isActive: isArchiveView ? false : true,
-    customerType: customerTypeFilter === 'all' ? undefined : customerTypeFilter,
-    hasDue: hasDueFilter === 'all' ? undefined : hasDueFilter === 'true',
     page,
     pageSize,
-  }), [debouncedSearch, isArchiveView, customerTypeFilter, hasDueFilter, page, pageSize])
+  }), [debouncedSearch, isArchiveView, page, pageSize])
 
   const {
     customers,
@@ -56,16 +52,6 @@ export const CustomersPage = ({ session }) => {
 
   const handleViewChange = (mode) => {
     setViewMode(mode)
-    setPage(1)
-  }
-
-  const handleCustomerTypeChange = (value) => {
-    setCustomerTypeFilter(value)
-    setPage(1)
-  }
-
-  const handleHasDueChange = (value) => {
-    setHasDueFilter(value)
     setPage(1)
   }
 
@@ -160,10 +146,6 @@ export const CustomersPage = ({ session }) => {
       <CustomersToolbar
         q={searchInput}
         onQueryChange={handleSearchChange}
-        customerType={customerTypeFilter}
-        onCustomerTypeChange={handleCustomerTypeChange}
-        hasDue={hasDueFilter}
-        onHasDueChange={handleHasDueChange}
         pageSize={pageSize}
         onPageSizeChange={handlePageSizeChange}
         total={pagination.total || 0}
