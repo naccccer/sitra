@@ -22,7 +22,7 @@ export const CustomersTable = ({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-[1040px] w-full table-fixed border-collapse text-xs">
+      <table className="min-w-[1020px] w-full table-fixed border-collapse text-xs">
         <colgroup>
           <col className="w-[112px]" />
           <col className="w-[240px]" />
@@ -31,7 +31,7 @@ export const CustomersTable = ({
           <col className="w-[88px]" />
           <col className="w-[130px]" />
           <col className="w-[130px]" />
-          <col className="w-[220px]" />
+          <col className="w-[200px]" />
         </colgroup>
         <thead className="bg-slate-50 text-slate-500">
           <tr>
