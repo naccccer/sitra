@@ -22,3 +22,5 @@
 - Shared frontend runtime/shell: `src/kernel/*`, `src/services/*`, `src/hooks/*`
 - Backend business handlers: `api/modules/<module>/*`
 - Endpoint wrappers: `api/*.php` (thin adapters only)
+
+- Backend shared helpers for module internals: `api/modules/<module>/*_helpers.php`, `api/common/*`
