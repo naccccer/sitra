@@ -1,5 +1,7 @@
-﻿import { Button, EmptyState } from '@/components/shared/ui'
-import { formatAmount, toPN } from '../utils/customersView'
+﻿import { Badge, Button, EmptyState } from '@/components/shared/ui'
+import { customerTypeLabel, formatAmount, toPN } from '../utils/customersView'
+
+const rowBadgeTone = (isActive) => (isActive ? 'success' : 'danger')
 
 export const CustomersTable = ({
   customers = [],
@@ -22,16 +24,18 @@ export const CustomersTable = ({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-[1020px] w-full table-fixed border-collapse text-xs">
+      <table className="min-w-[1220px] w-full table-fixed border-collapse text-xs">
         <colgroup>
           <col className="w-[112px]" />
-          <col className="w-[240px]" />
+          <col className="w-[220px]" />
+          <col className="w-[92px]" />
           <col className="w-[132px]" />
           <col className="w-[88px]" />
           <col className="w-[88px]" />
           <col className="w-[130px]" />
           <col className="w-[130px]" />
-          <col className="w-[200px]" />
+          <col className="w-[90px]" />
+          <col className="w-[220px]" />
         </colgroup>
         <thead className="bg-slate-50 text-slate-500">
           <tr>
@@ -48,7 +52,7 @@ export const CustomersTable = ({
         <tbody className="divide-y divide-slate-100">
           {isLoading ? (
             <tr>
-              <td colSpan={8} className="px-3 py-8 text-center text-xs font-bold text-slate-500">
+              <td colSpan={10} className="px-3 py-8 text-center text-xs font-bold text-slate-500">
                 در حال بارگذاری...
               </td>
             </tr>
