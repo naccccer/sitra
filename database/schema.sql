@@ -147,7 +147,7 @@ CREATE TABLE IF NOT EXISTS orders (
     total BIGINT NOT NULL DEFAULT 0,
     status ENUM('pending','processing','delivered','archived') NOT NULL DEFAULT 'pending',
     items_json LONGTEXT NOT NULL,
-    order_meta_json LONGTEXT NULL,
+    order_meta_json LONGTEXT NULL, -- DEPRECATED: no longer written by API; retained for backward-read compat. Run scripts/drop-order-meta-json-column.php to remove.
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),

@@ -52,14 +52,6 @@ function app_sales_orders_prepare_create_payload(PDO $pdo, array $payload, bool 
         ], 400);
     }
 
-    $orderMetaJson = json_encode($orderMeta, JSON_UNESCAPED_UNICODE);
-    if ($orderMetaJson === false) {
-        app_json([
-            'success' => false,
-            'error' => 'Unable to serialize order metadata payload.',
-        ], 400);
-    }
-
     return [
         'customerName' => $customerName,
         'phone' => $phone,
@@ -71,7 +63,6 @@ function app_sales_orders_prepare_create_payload(PDO $pdo, array $payload, bool 
         'orderDate' => $orderDate,
         'itemsJson' => $itemsJson,
         'orderMeta' => $orderMeta,
-        'orderMetaJson' => $orderMetaJson,
         'orderCodeDatePrefix' => app_order_code_date_prefix_jalali(),
     ];
 }
@@ -113,14 +104,6 @@ function app_sales_orders_prepare_update_payload(PDO $pdo, array $payload): arra
         ], 400);
     }
 
-    $orderMetaJson = json_encode($orderMeta, JSON_UNESCAPED_UNICODE);
-    if ($orderMetaJson === false) {
-        app_json([
-            'success' => false,
-            'error' => 'Unable to serialize order metadata payload.',
-        ], 400);
-    }
-
     return [
         'customerName' => $customerName,
         'phone' => $phone,
@@ -132,6 +115,5 @@ function app_sales_orders_prepare_update_payload(PDO $pdo, array $payload): arra
         'orderDate' => $orderDate,
         'itemsJson' => $itemsJson,
         'orderMeta' => $orderMeta,
-        'orderMetaJson' => $orderMetaJson,
     ];
 }

@@ -49,6 +49,7 @@ $ordersNextCursor = null;
 if ($user !== null) {
     try {
         app_ensure_orders_table($pdo);
+        app_ensure_order_financials_tables($pdo);
 
         $countStmt = $pdo->query('SELECT COUNT(*) FROM orders');
         $ordersTotal = (int)($countStmt ? $countStmt->fetchColumn() : 0);
