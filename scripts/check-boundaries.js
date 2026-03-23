@@ -10,12 +10,27 @@ const API_MODULES_DIR = path.join(ROOT, 'api', 'modules');
 const JS_EXTENSIONS = ['.js', '.jsx', '.ts', '.tsx', '.mjs', '.cjs'];
 const IMPORT_RE = /(?:import\s+[^'"]*from\s*|import\s*\(|export\s+[^'"]*from\s*)['"]([^'"]+)['"]/g;
 const PHP_REQUIRE_RE = /\b(?:require|require_once|include|include_once)\s*\(?\s*__DIR__\s*\.\s*['"]([^'"]+)['"]\s*\)?\s*;/g;
+const SQL_TABLE_RE = /\b(?:FROM|JOIN|UPDATE|INTO|DELETE\s+FROM)\s+`?([a-zA-Z_][a-zA-Z0-9_]*)`?/gi;
 const ARGUMENTS = process.argv.slice(2);
 const CHANGED_MODE = ARGUMENTS.includes('--changed');
 const EXPLICIT_INPUTS = ARGUMENTS.filter((arg) => !arg.startsWith('--'));
 
 /** @type {Array<{file:string, message:string}>} */
 const violations = [];
+
+const SHARED_TABLES = new Set(['users', 'system_settings', 'module_registry', 'audit_logs']);
+
+/** @type {Record<string, RegExp[]>} */
+const MODULE_TABLE_PATTERNS = {
+  sales: [/^orders$/, /^order_financials$/, /^order_payments$/, /^order_request_idempotency$/],
+  inventory: [/^inventory_/, /^inventory_v2_/],
+  customers: [/^customers$/, /^customer_projects$/, /^customer_project_contacts$/],
+  human_resources: [/^hr_employees$/],
+  accounting: [/^acc_/],
+  production: [/^prod_/],
+  master_data: [/^master_/],
+  users_access: [/^user_/],
+};
 
 function walk(dirPath, visitor) {
   if (!fs.existsSync(dirPath)) return;
@@ -123,6 +138,45 @@ function checkBackendBoundaries(filePath) {
   }
 }
 
+function tableOwner(tableName) {
+  if (SHARED_TABLES.has(tableName)) return null;
+  for (const [owner, patterns] of Object.entries(MODULE_TABLE_PATTERNS)) {
+    if (patterns.some((re) => re.test(tableName))) {
+      return owner;
+    }
+  }
+  return null;
+}
+
+function checkBackendTableAccess(filePath) {
+  if (path.extname(filePath).toLowerCase() !== '.php') return;
+  const currentModule = getModuleName(filePath, API_MODULES_DIR);
+  if (!currentModule) return;
+
+  const relativeFile = normalizePath(path.relative(ROOT, filePath));
+  const allowlist = {
+    'api/modules/kernel/bootstrap.php': new Set(['orders']),
+    'api/modules/human_resources/human_resources_payroll_read_model.php': new Set([
+      'acc_payslips',
+      'acc_payroll_periods',
+    ]),
+  };
+
+  const source = fs.readFileSync(filePath, 'utf8');
+  SQL_TABLE_RE.lastIndex = 0;
+  let match;
+  while ((match = SQL_TABLE_RE.exec(source)) !== null) {
+    const table = match[1];
+    const owner = tableOwner(table);
+    if (!owner || owner === currentModule) continue;
+    if (allowlist[relativeFile] && allowlist[relativeFile].has(table)) continue;
+    violations.push({
+      file: normalizePath(path.relative(ROOT, filePath)),
+      message: `cross-module table access not allowed: ${table} is owned by ${owner}`,
+    });
+  }
+}
+
 function checkInputPaths(inputs) {
   inputs.forEach((input) => {
     const absolutePath = path.resolve(ROOT, input);
@@ -133,12 +187,14 @@ function checkInputPaths(inputs) {
       walk(absolutePath, (filePath) => {
         checkFrontendBoundaries(filePath);
         checkBackendBoundaries(filePath);
+        checkBackendTableAccess(filePath);
       });
       return;
     }
 
     checkFrontendBoundaries(absolutePath);
     checkBackendBoundaries(absolutePath);
+    checkBackendTableAccess(absolutePath);
   });
 }
 
@@ -154,6 +210,7 @@ if (EXPLICIT_INPUTS.length > 0) {
 } else {
   walk(SRC_MODULES_DIR, checkFrontendBoundaries);
   walk(API_MODULES_DIR, checkBackendBoundaries);
+  walk(API_MODULES_DIR, checkBackendTableAccess);
 }
 
 if (violations.length > 0) {

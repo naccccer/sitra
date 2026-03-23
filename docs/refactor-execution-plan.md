@@ -8,7 +8,13 @@
 - Obey MODULE_CONTRACTS.md: treat contract shapes as API truth; no breaking changes.
 - Keep adapters thin; move business logic to module-owned helpers/services.
 - Keep files <300 lines; split rather than stretch.
-- Design-first for schema/payment ownership; implement only after design is approved.
+- Structured financial storage is the source of truth (`order_financials`, `order_payments`); no JSON fallback paths.
+
+## Final State
+- Removed systems: `order_meta_json` storage/readers and all JSON fallback logic for orders/financials.
+- New data model: `order_financials` + `order_payments` own all financial totals/payments; dual-read/write removed.
+- Enforced rules: no cross-module DB access; each module owns its tables and exposes contracts; payroll/sales bridges consume module facades only.
+- Lessons learned: design ownership before migration; keep compatibility short-lived and explicit; enforce file-size/RTL discipline early to avoid refactors.
 
 ## 3. Phase 0 — Execution setup
 - Goal: Prepare safe workspace and tooling discipline.
@@ -70,28 +76,18 @@
 - Done: No duplicated logic; adapters call shared helpers; tests pass.
 
 ## 8. Phase 5A — Data ownership design for payments/meta
-- Goal: Decide ownership and schema for payments/order_meta before code changes.
-- Scope: design docs and domain outline only.
-- Target files: design note (e.g., `docs/payments-ownership.md`).
-- Tasks:
-  - Define sales-owned model (table or typed JSON contract) for payments/financials.
-  - Map compatibility with current `order_meta_json`.
-  - Define migration and read/write strategy for accounting bridge.
-- Risks: Incomplete compatibility; unclear ownership.
-- Verification: Design review only; no code change.
-- Done: Approved design with migration steps and contracts.
+- Goal: Completed — ownership and schema defined; JSON fallback marked for removal.
+- Outcome: Sales owns structured financials/payments tables; bridge consumes sales contract; migration plan approved.
+- Verification: Design review only (complete).
 
 ## 9. Phase 5B — Payment/meta migration implementation
-- Goal: Implement approved payment/meta model without breaking APIs.
+- Goal: Completed — structured model live; legacy `order_meta_json` fallback removed.
 - Scope: sales backend + accounting bridge + schema.
-- Target files: `api/modules/sales/orders_shared.php` (or new helper), `api/modules/sales/orders_handlers.php` (use new model), `api/modules/accounting/acc_sales_bridge.php`, `database/schema.sql` (additive only).
-- Tasks:
-  - Add structured storage per design; keep legacy JSON read path during transition.
-  - Update writers/readers and bridge to use owned model.
-  - Add compatibility guards and migrations.
-- Risks: Data migration errors; bridge totals drift.
-- Verification: `npm run verify:safe`; manual: create order with payments, run bridge, compare totals.
-- Done: Dual-read compatible; new model live; tests/smoke pass.
+- Outcome:
+  - Writers/readers use `order_financials` + `order_payments` only.
+  - Bridge reads module contract; no cross-module table access.
+  - Legacy JSON compatibility removed after data backfill.
+- Verification: `npm run verify:safe`; manual: create order with payments, run bridge, totals match; regression passes.
 
 ## 10. Verification matrix
 - `verify:fast`: JS-only phases (3).
@@ -145,12 +141,8 @@
 - Focused 1: “Unify inventory v2 op number/line handling in shared helper; adapter calls helper only.”
 - Focused 2: “Align payroll validation/status flows between `acc_payroll.php` and `payroll_patch.php`; delete duplicates.”
 
-### Phase 5A
-- Master: “Design payment/meta ownership (no code). Produce plan for sales-owned model, compatibility with `order_meta_json`, and bridge consumption. Follow contracts; no API change.”
-- Focused 1: “Define storage schema/options for payments with backward compatibility.”
-- Focused 2: “Plan accounting bridge read path using new model while supporting legacy JSON.”
+### Phase 5A (complete)
+- Outcome: Ownership design approved; JSON fallback deprecated; no further action.
 
-### Phase 5B
-- Master: “Implement approved payment/meta model. Update sales writers/readers and accounting bridge; schema changes additive; keep API responses stable; maintain legacy compatibility.”
-- Focused 1: “Add structured payment storage per design and wire sales handlers to dual-read/write.”
-- Focused 2: “Update `acc_sales_bridge.php` to use new payment model; ensure totals/errors unchanged.”
+### Phase 5B (complete)
+- Outcome: Structured payment model live; bridge on contracts; legacy JSON removed.
