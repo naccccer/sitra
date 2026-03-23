@@ -1,6 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Button } from '@/components/shared/ui'
+import { Button, Select } from '@/components/shared/ui'
 import { CustomerDetailsModal } from '../components/CustomerDetailsModal'
 import { CustomerFormModal } from '../components/CustomerFormModal'
 import { CustomersTable } from '../components/CustomersTable'
@@ -8,7 +8,7 @@ import { CustomersToolbar } from '../components/CustomersToolbar'
 import { useCustomersDirectory } from '../hooks/useCustomersDirectory'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { customersApi } from '../services/customersApi'
-import { createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
+import { PAGE_SIZE_OPTIONS, createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
 
 export const CustomersPage = ({ session }) => {
   const canManageCustomers = Boolean(session?.capabilities?.canManageCustomers)
@@ -176,7 +176,17 @@ export const CustomersPage = ({ session }) => {
           <div className="text-xs font-bold text-slate-500">
             صفحه {pagination.page} از {totalPages} - {pagination.total || 0} نتیجه
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-slate-500">تعداد ردیف:</span>
+              <Select
+                className="h-8 min-w-[110px] text-[11px]"
+                value={String(pageSize)}
+                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option} ردیف</option>)}
+              </Select>
+            </div>
             <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>قبلی</Button>
             <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">{page}</span>
             <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>بعدی</Button>

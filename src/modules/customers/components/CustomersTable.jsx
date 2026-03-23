@@ -74,7 +74,7 @@ export const CustomersTable = ({
               <td className="px-3 py-3 text-end font-black text-slate-900">{formatAmount(customer.totalAmount || 0)}</td>
               <td className="px-3 py-3 text-end font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
               <td className="px-3 py-3">
-                <div className="flex flex-wrap justify-center gap-1.5">
+                <div className="flex flex-nowrap items-center justify-center gap-1.5 whitespace-nowrap">
                   <Button size="sm" variant="secondary" onClick={() => onOpenDetails(customer)}>جزئیات</Button>
                   {canWriteCustomers ? (
                     <>
