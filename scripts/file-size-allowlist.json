@@ -1,12 +1,10 @@
 {
-  "src/modules/sales/components/admin/AdminOrdersView.jsx": 1300,
-  "src/modules/sales/components/customer/OrderForm.jsx": 950,
-  "src/modules/sales/components/customer/SettingsModal.jsx": 850,
-  "src/modules/users-access/components/AdminUsersSettingsTab.jsx": 750,
   "src/components/shared/PrintInvoice.jsx": 650,
-  "src/modules/master-data/components/AdminSettingsView.jsx": 550,
-  "src/services/salesOfflineQueue.js": 550,
-  "src/kernel/pages/AuditLogsPage.jsx": 500,
-  "api/modules/sales/orders_handlers.php": 650,
-  "api/common/schema.php": 500
+  "src/services/salesOfflineQueue.js": 475,
+  "src/kernel/pages/AuditLogsPage.jsx": 475,
+  "src/modules/sales/hooks/useSettingsModalLogic.js": 450,
+  "src/modules/users-access/hooks/useAdminUsersSettings.js": 450,
+  "api/common/schema.php": 500,
+  "api/modules/accounting/payroll_helpers.php": 500,
+  "api/common/inventory_v2_operations.php": 325
 }
