@@ -1,4 +1,4 @@
-import { Badge, Button, EmptyState } from '@/components/shared/ui'
+﻿import { Badge, Button, EmptyState } from '@/components/shared/ui'
 import { customerTypeLabel, formatAmount, formatLocation, toPN } from '../utils/customersView'
 
 const rowBadgeTone = (isActive) => (isActive ? 'success' : 'danger')
@@ -10,7 +10,8 @@ export const CustomersTable = ({
   canWriteCustomers = false,
   onOpenDetails = () => {},
   onEditCustomer = () => {},
-  onToggleActive = () => {},
+  onDeleteCustomer = () => {},
+  onRestoreCustomer = () => {},
 }) => {
   if (!isLoading && customers.length === 0) {
     return (
@@ -70,7 +71,7 @@ export const CustomersTable = ({
               <td className="px-3 py-3 text-end font-black text-emerald-700">{formatAmount(customer.paidAmount || 0)}</td>
               <td className="px-3 py-3 text-end font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
               <td className="px-3 py-3 text-center">
-                <Badge tone={rowBadgeTone(customer.isActive)}>{customer.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                <Badge tone={rowBadgeTone(customer.isActive)}>{customer.isActive ? 'فعال' : 'بایگانی‌شده'}</Badge>
               </td>
               <td className="px-3 py-3">
                 <div className="flex flex-wrap justify-center gap-1.5">
@@ -78,13 +79,11 @@ export const CustomersTable = ({
                   {canWriteCustomers ? (
                     <>
                       <Button size="sm" variant="secondary" onClick={() => onEditCustomer(customer)}>ویرایش</Button>
-                      <Button
-                        size="sm"
-                        variant={customer.isActive ? 'danger' : 'success'}
-                        onClick={() => onToggleActive(customer)}
-                      >
-                        {customer.isActive ? 'غیرفعال' : 'فعال'}
-                      </Button>
+                      {customer.isActive ? (
+                        <Button size="sm" variant="danger" onClick={() => onDeleteCustomer(customer)}>حذف</Button>
+                      ) : (
+                        <Button size="sm" variant="success" onClick={() => onRestoreCustomer(customer)}>بازیابی</Button>
+                      )}
                     </>
                   ) : null}
                 </div>

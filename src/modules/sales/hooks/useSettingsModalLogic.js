@@ -265,3 +265,13 @@ export const useSettingsModalLogic = ({ config, setConfig, setModalMode, dimensi
     handleSave,
   };
 };
+
+// Re-export helper utilities so consumers can import everything from this hook file.
+export {
+  formatCm,
+  formatCmFa,
+  edgeYLabel,
+  edgeZLabel,
+  HOLE_STEP_CM,
+  MAX_HOLE_COUNT,
+} from './useSettingsModalHoleMapUtils';

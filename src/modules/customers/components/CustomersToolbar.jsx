@@ -1,6 +1,5 @@
 import { Button, Input, Select } from '@/components/shared/ui'
 import {
-  ACTIVE_FILTER_OPTIONS,
   CUSTOMER_TYPE_FILTER_OPTIONS,
   DUE_FILTER_OPTIONS,
   PAGE_SIZE_OPTIONS,
@@ -9,8 +8,6 @@ import {
 export const CustomersToolbar = ({
   q,
   onQueryChange,
-  isActive,
-  onIsActiveChange,
   customerType,
   onCustomerTypeChange,
   hasDue,
@@ -35,11 +32,8 @@ export const CustomersToolbar = ({
         </Button>
       ) : null}
     </div>
-    <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-5">
+    <div className="mt-4 grid grid-cols-1 gap-2 lg:grid-cols-4">
       <Input value={q} onChange={(event) => onQueryChange(event.target.value)} placeholder="جستجو در مشتری، پروژه، شماره..." />
-      <Select value={isActive} onChange={(event) => onIsActiveChange(event.target.value)}>
-        {ACTIVE_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-      </Select>
       <Select value={customerType} onChange={(event) => onCustomerTypeChange(event.target.value)}>
         {CUSTOMER_TYPE_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
       </Select>
@@ -56,4 +50,3 @@ export const CustomersToolbar = ({
     </div>
   </div>
 )
-

@@ -27,6 +27,14 @@ export const customersApi = {
     return api.setCustomerActive(id, isActive)
   },
 
+  async archiveCustomer(id) {
+    return this.setCustomerActive(id, false)
+  },
+
+  async restoreCustomer(id) {
+    return this.setCustomerActive(id, true)
+  },
+
   async fetchProjects(customerId) {
     return api.fetchCustomerProjects(customerId)
   },

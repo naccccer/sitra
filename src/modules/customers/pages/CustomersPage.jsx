@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+﻿import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 import { Button } from '@/components/shared/ui'
 import { CustomerDetailsModal } from '../components/CustomerDetailsModal'
@@ -15,7 +15,7 @@ export const CustomersPage = ({ session }) => {
   const canWriteCustomers = Array.isArray(session?.permissions) && session.permissions.includes('customers.write')
 
   const [searchInput, setSearchInput] = useState('')
-  const [isActiveFilter, setIsActiveFilter] = useState('all')
+  const [viewMode, setViewMode] = useState('active') // active | archived
   const [customerTypeFilter, setCustomerTypeFilter] = useState('all')
   const [hasDueFilter, setHasDueFilter] = useState('all')
   const [page, setPage] = useState(1)
@@ -25,14 +25,16 @@ export const CustomersPage = ({ session }) => {
   const [detailsCustomer, setDetailsCustomer] = useState(null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
 
+  const isArchiveView = viewMode === 'archived'
+
   const directoryFilters = useMemo(() => ({
     q: String(debouncedSearch || '').trim(),
-    isActive: isActiveFilter === 'all' ? undefined : isActiveFilter === 'true',
+    isActive: isArchiveView ? false : true,
     customerType: customerTypeFilter === 'all' ? undefined : customerTypeFilter,
     hasDue: hasDueFilter === 'all' ? undefined : hasDueFilter === 'true',
     page,
     pageSize,
-  }), [debouncedSearch, isActiveFilter, customerTypeFilter, hasDueFilter, page, pageSize])
+  }), [debouncedSearch, isArchiveView, customerTypeFilter, hasDueFilter, page, pageSize])
 
   const {
     customers,
@@ -52,8 +54,8 @@ export const CustomersPage = ({ session }) => {
     setPage(1)
   }
 
-  const handleIsActiveChange = (value) => {
-    setIsActiveFilter(value)
+  const handleViewChange = (mode) => {
+    setViewMode(mode)
     setPage(1)
   }
 
@@ -88,17 +90,31 @@ export const CustomersPage = ({ session }) => {
     setDetailsCustomer(normalizeCustomerRecord(customer))
   }
 
-  const handleToggleCustomer = async (customer) => {
+  const handleDeleteCustomer = async (customer) => {
     try {
       const nextCustomer = normalizeCustomerRecord(customer)
-      await customersApi.setCustomerActive(Number(nextCustomer.id), !nextCustomer.isActive)
+      await customersApi.archiveCustomer(Number(nextCustomer.id))
       await reload()
       setDetailsCustomer((prev) => {
         if (!prev || String(prev.id) !== String(nextCustomer.id)) return prev
-        return { ...prev, isActive: !nextCustomer.isActive }
+        return { ...prev, isActive: false }
       })
     } catch (err) {
-      setError(err?.message || 'تغییر وضعیت مشتری ناموفق بود.')
+      setError(err?.message || 'حذف مشتری ناموفق بود.')
+    }
+  }
+
+  const handleRestoreCustomer = async (customer) => {
+    try {
+      const nextCustomer = normalizeCustomerRecord(customer)
+      await customersApi.restoreCustomer(Number(nextCustomer.id))
+      await reload()
+      setDetailsCustomer((prev) => {
+        if (!prev || String(prev.id) !== String(nextCustomer.id)) return prev
+        return { ...prev, isActive: true }
+      })
+    } catch (err) {
+      setError(err?.message || 'بازگردانی مشتری ناموفق بود.')
     }
   }
 
@@ -116,11 +132,34 @@ export const CustomersPage = ({ session }) => {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4">
+
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="inline-flex rounded-full bg-slate-100 p-1">
+          <button
+            type="button"
+            className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${!isArchiveView ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-white'}`}
+            onClick={() => handleViewChange('active')}
+          >
+            فهرست مشتریان
+          </button>
+          <button
+            type="button"
+            className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${isArchiveView ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-white'}`}
+            onClick={() => handleViewChange('archived')}
+          >
+            آرشیو مشتریان
+          </button>
+        </div>
+        {isArchiveView ? (
+          <div className="rounded-full bg-amber-50 px-4 py-2 text-[11px] font-bold text-amber-700">
+            مشتریان حذف‌شده در این بخش بایگانی شده‌اند؛ با «بازیابی» می‌توانید آن‌ها را برگردانید.
+          </div>
+        ) : null}
+      </div>
+
       <CustomersToolbar
         q={searchInput}
         onQueryChange={handleSearchChange}
-        isActive={isActiveFilter}
-        onIsActiveChange={handleIsActiveChange}
         customerType={customerTypeFilter}
         onCustomerTypeChange={handleCustomerTypeChange}
         hasDue={hasDueFilter}
@@ -146,7 +185,8 @@ export const CustomersPage = ({ session }) => {
         canWriteCustomers={canWriteCustomers}
         onOpenDetails={handleOpenDetails}
         onEditCustomer={handleEditCustomer}
-        onToggleActive={handleToggleCustomer}
+        onDeleteCustomer={handleDeleteCustomer}
+        onRestoreCustomer={handleRestoreCustomer}
       />
 
       {!isLoading && customers.length > 0 ? (
