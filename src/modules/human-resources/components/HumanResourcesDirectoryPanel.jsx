@@ -38,6 +38,8 @@ export function HumanResourcesDirectoryPanel({
             </Button>
           ) : null}
           {!canWriteEmployees ? <Badge tone="neutral" className="px-3 py-1.5 text-[11px]">فقط مشاهده</Badge> : null}
+        </div>
+        <div className="flex items-center gap-1.5">
           <Button
             size="icon"
             variant={archiveMode ? 'secondary' : 'ghost'}
@@ -56,13 +58,13 @@ export function HumanResourcesDirectoryPanel({
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جست‌وجو..."
+            className="!w-48"
+          />
         </div>
-        <Input
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="جست‌وجو..."
-          className="!w-48"
-        />
       </div>
 
       {loading ? (
