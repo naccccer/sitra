@@ -1,57 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { humanResourcesApi } from '../services/humanResourcesApi'
-import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { HumanResourcesWorkspace } from '../components/HumanResourcesWorkspace'
-
-const EMPTY_FORM = {
-  id: '',
-  employeeCode: '',
-  personnelNo: '',
-  firstName: '',
-  lastName: '',
-  nationalId: '',
-  mobile: '',
-  department: '',
-  jobTitle: '',
-  bankName: '',
-  bankAccountNo: '',
-  bankSheba: '',
-  baseSalary: '',
-  notes: '',
-  isActive: true,
-}
-
-const trimValue = (value) => String(value || '').trim()
-
-function splitFullName(fullName = '') {
-  const parts = trimValue(fullName).split(/\s+/).filter(Boolean)
-  const firstName = parts.shift() || ''
-  const lastName = parts.join(' ') || firstName
-  return { firstName, lastName }
-}
-
-function toFormState(employee = {}) {
-  const name = splitFullName(employee.fullName || '')
-  return {
-    ...EMPTY_FORM,
-    id: String(employee.id || ''),
-    employeeCode: trimValue(employee.employeeCode),
-    personnelNo: trimValue(employee.personnelNo),
-    firstName: trimValue(employee.firstName) || name.firstName,
-    lastName: trimValue(employee.lastName) || name.lastName,
-    nationalId: trimValue(employee.nationalId),
-    mobile: trimValue(employee.mobile),
-    department: trimValue(employee.department),
-    jobTitle: trimValue(employee.jobTitle),
-    bankName: trimValue(employee.bankName),
-    bankAccountNo: trimValue(employee.bankAccountNo),
-    bankSheba: trimValue(employee.bankSheba),
-    baseSalary: String(employee.baseSalary ?? ''),
-    notes: trimValue(employee.notes),
-    isActive: employee.isActive !== false,
-  }
-}
+import { useDebouncedValue } from '../hooks/useDebouncedValue'
+import { humanResourcesApi } from '../services/humanResourcesApi'
+import { EMPTY_FORM, toFormState, trimValue } from '../utils/humanResourcesView'
 
 export const HumanResourcesPage = ({ session }) => {
   const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session])
@@ -59,13 +11,15 @@ export const HumanResourcesPage = ({ session }) => {
   const canWriteEmployees = permissions.includes('human_resources.employees.write')
 
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [archiveMode, setArchiveMode] = useState(false)
   const [employees, setEmployees] = useState([])
   const [loading, setLoading] = useState(false)
   const [busyKey, setBusyKey] = useState('')
   const [error, setError] = useState('')
   const [formError, setFormError] = useState('')
   const [form, setForm] = useState(EMPTY_FORM)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [importModalOpen, setImportModalOpen] = useState(false)
   const debouncedQuery = useDebouncedValue(query, 300)
 
   const loadEmployees = useCallback(async () => {
@@ -74,7 +28,7 @@ export const HumanResourcesPage = ({ session }) => {
     try {
       const response = await humanResourcesApi.fetchEmployees({
         q: trimValue(debouncedQuery) || undefined,
-        isActive: statusFilter === 'all' ? undefined : statusFilter === 'true',
+        isActive: archiveMode ? false : true,
       })
       setEmployees(Array.isArray(response?.employees) ? response.employees : [])
     } catch (loadError) {
@@ -82,7 +36,7 @@ export const HumanResourcesPage = ({ session }) => {
     } finally {
       setLoading(false)
     }
-  }, [debouncedQuery, statusFilter])
+  }, [archiveMode, debouncedQuery])
 
   useEffect(() => {
     loadEmployees()
@@ -92,32 +46,46 @@ export const HumanResourcesPage = ({ session }) => {
     setForm((current) => ({ ...current, [field]: value }))
   }, [])
 
-  const onNewEmployee = () => {
+  const onNewEmployee = useCallback(() => {
     setForm(EMPTY_FORM)
     setFormError('')
-  }
+    setModalOpen(true)
+  }, [])
 
-  const onEditEmployee = (employee) => {
+  const onEditEmployee = useCallback((employee) => {
     setForm(toFormState(employee))
     setFormError('')
-  }
+    setModalOpen(true)
+  }, [])
+
+  const onCloseModal = useCallback(() => {
+    setModalOpen(false)
+    setFormError('')
+    setForm(EMPTY_FORM)
+  }, [])
+
+  const onOpenImportModal = useCallback(() => {
+    setImportModalOpen(true)
+  }, [])
+
+  const onCloseImportModal = useCallback(() => {
+    setImportModalOpen(false)
+  }, [])
 
   const onSubmitForm = async (event) => {
     event.preventDefault()
     if (!canWriteEmployees) return
 
-    const employeeCode = trimValue(form.employeeCode)
     const firstName = trimValue(form.firstName)
     const lastName = trimValue(form.lastName)
-    if (!employeeCode || !firstName || !lastName) {
-      setFormError('کد پرسنلی، نام و نام خانوادگی الزامی هستند.')
+    if (!firstName || !lastName) {
+      setFormError('نام و نام خانوادگی الزامی هستند.')
       return
     }
 
     const payload = {
       id: form.id || undefined,
-      employeeCode,
-      personnelNo: trimValue(form.personnelNo) || undefined,
+      employeeCode: form.id ? trimValue(form.employeeCode) || undefined : undefined,
       firstName,
       lastName,
       nationalId: trimValue(form.nationalId) || undefined,
@@ -129,19 +97,24 @@ export const HumanResourcesPage = ({ session }) => {
       bankSheba: trimValue(form.bankSheba) || undefined,
       baseSalary: Number(form.baseSalary || 0),
       notes: trimValue(form.notes) || undefined,
-      isActive: form.isActive !== false,
+      isActive: true,
     }
 
     setBusyKey('save')
     setFormError('')
     try {
-      if (form.id) {
-        await humanResourcesApi.updateEmployee(payload)
-      } else {
-        await humanResourcesApi.createEmployee(payload)
-      }
-      setForm(EMPTY_FORM)
+      const response = form.id
+        ? await humanResourcesApi.updateEmployee(payload)
+        : await humanResourcesApi.createEmployee(payload)
+      const savedEmployee = response?.employee || null
       await loadEmployees()
+      if (form.id && savedEmployee?.id) {
+        onEditEmployee(savedEmployee)
+      } else {
+        // New-employee mode keeps modal open but resets form for the next insert.
+        setForm(EMPTY_FORM)
+        setFormError('')
+      }
     } catch (saveError) {
       setFormError(saveError.message || 'ذخیره پرسنل ناموفق بود.')
     } finally {
@@ -149,16 +122,14 @@ export const HumanResourcesPage = ({ session }) => {
     }
   }
 
-  const onToggleEmployeeActive = async (employee) => {
+  const onToggleEmployeeActive = async (employee, nextIsActive, busyPrefix) => {
     if (!canWriteEmployees) return
-    setBusyKey(`toggle:${employee.id}`)
+    setBusyKey(`${busyPrefix}:${employee.id}`)
     setError('')
     try {
-      await humanResourcesApi.setEmployeeActive(employee.id, !employee.isActive)
+      await humanResourcesApi.setEmployeeActive(employee.id, nextIsActive)
       await loadEmployees()
-      if (String(form.id) === String(employee.id)) {
-        setForm((current) => ({ ...current, isActive: !employee.isActive }))
-      }
+      if (String(form.id) === String(employee.id) && modalOpen) onCloseModal()
     } catch (toggleError) {
       setError(toggleError.message || 'تغییر وضعیت پرسنل ناموفق بود.')
     } finally {
@@ -166,53 +137,97 @@ export const HumanResourcesPage = ({ session }) => {
     }
   }
 
-  const onDeleteEmployee = async (employee) => {
+  const onArchiveEmployee = async (employee) => {
     if (!canWriteEmployees) return
     const employeeName = employee?.fullName || `${employee?.firstName || ''} ${employee?.lastName || ''}`.trim() || 'این پرسنل'
-    const confirmed = window.confirm(`حذف ${employeeName} انجام شود؟`)
+    const employeeCode = trimValue(employee?.employeeCode)
+    const confirmed = window.confirm(`پرسنل ${employeeName}${employeeCode ? ` با کد ${employeeCode}` : ''} به آرشیو منتقل شود؟`)
     if (!confirmed) return
+    await onToggleEmployeeActive(employee, false, 'archive')
+  }
 
-    setBusyKey(`delete:${employee.id}`)
+  const onRestoreEmployee = async (employee) => {
+    if (!canWriteEmployees) return
+    await onToggleEmployeeActive(employee, true, 'restore')
+  }
+
+  const onArchiveModeToggle = useCallback(() => {
+    setArchiveMode((current) => !current)
+    setQuery('')
+  }, [])
+
+  const onApplyImport = useCallback(async (rows) => {
+    if (!Array.isArray(rows) || rows.length === 0) return
+    setBusyKey('import')
     setError('')
     try {
-      await humanResourcesApi.deleteEmployee(employee.id)
-      if (String(form.id) === String(employee.id)) {
-        setForm(EMPTY_FORM)
+      for (const row of rows) {
+        const values = row?.values || {}
+        const payload = {
+          id: row?.employee?.id ? String(row.employee.id) : undefined,
+          firstName: trimValue(values.firstName),
+          lastName: trimValue(values.lastName),
+          nationalId: trimValue(values.nationalId) || undefined,
+          mobile: trimValue(values.mobile) || undefined,
+          department: trimValue(values.department) || undefined,
+          jobTitle: trimValue(values.jobTitle) || undefined,
+          bankName: trimValue(values.bankName) || undefined,
+          bankAccountNo: trimValue(values.bankAccountNo) || undefined,
+          bankSheba: trimValue(values.bankSheba) || undefined,
+          baseSalary: Number(values.baseSalary || 0),
+          notes: trimValue(values.notes) || undefined,
+        }
+        if (payload.id) {
+          await humanResourcesApi.updateEmployee(payload)
+        } else {
+          await humanResourcesApi.createEmployee(payload)
+        }
       }
       await loadEmployees()
-    } catch (deleteError) {
-      setError(deleteError.message || 'حذف پرسنل ناموفق بود.')
+    } catch (importError) {
+      setError(importError.message || 'درون‌ریزی اکسل ناموفق بود.')
+      throw importError
     } finally {
       setBusyKey('')
     }
-  }
+  }, [loadEmployees])
 
   if (!canAccessHumanResources) {
     return <AccessDenied message="دسترسی کافی برای ماژول منابع انسانی وجود ندارد." />
   }
 
+  const selectedEmployee = form.id
+    ? employees.find((employee) => String(employee.id) === String(form.id)) || null
+    : null
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
       <HumanResourcesWorkspace
+        archiveMode={archiveMode}
         busyKey={busyKey}
         canWriteEmployees={canWriteEmployees}
         employees={employees}
         error={error}
         form={form}
         formError={formError}
+        importModalOpen={importModalOpen}
         loading={loading}
-        onClearForm={onNewEmployee}
+        modalOpen={modalOpen}
+        onApplyImport={onApplyImport}
+        onArchiveEmployee={onArchiveEmployee}
+        onArchiveModeToggle={onArchiveModeToggle}
+        onCloseImportModal={onCloseImportModal}
+        onCloseModal={onCloseModal}
         onEditEmployee={onEditEmployee}
         onFormChange={onFormChange}
-        onLoadEmployees={loadEmployees}
         onNewEmployee={onNewEmployee}
+        onOpenImportModal={onOpenImportModal}
         onQueryChange={setQuery}
-        onStatusFilterChange={setStatusFilter}
+        onReload={loadEmployees}
+        onRestoreEmployee={onRestoreEmployee}
         onSubmitForm={onSubmitForm}
-        onDeleteEmployee={onDeleteEmployee}
-        onToggleEmployeeActive={onToggleEmployeeActive}
         query={query}
-        statusFilter={statusFilter}
+        selectedEmployee={selectedEmployee}
       />
     </div>
   )

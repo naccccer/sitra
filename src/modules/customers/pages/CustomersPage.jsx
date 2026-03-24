@@ -169,7 +169,7 @@ export const CustomersPage = ({ session }) => {
               <Select
                 className="h-8 min-w-[110px] text-[11px]"
                 value={String(pageSize)}
-                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+                onChange={(event) => handlePageSizeChange(Number(event.target.value))}
               >
                 {PAGE_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option} ردیف</option>)}
               </Select>

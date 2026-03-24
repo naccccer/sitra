@@ -329,7 +329,7 @@
   - `isActive?: boolean`
 - Input (`POST` / `PUT`):
   - `id?: string | number` on `PUT`
-  - `employeeCode: string`
+  - `employeeCode?: string` (optional on `POST`; auto-generated when omitted)
   - `firstName: string`
   - `lastName: string`
   - `personnelNo?: string`

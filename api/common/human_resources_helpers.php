@@ -136,7 +136,15 @@ function app_hr_list_employees(PDO $pdo, string $q, ?bool $isActive): array
 
 function app_hr_save_employee(PDO $pdo, array $payload, array $actor, ?int $employeeId = null): array
 {
+    $current = $employeeId !== null ? app_hr_fetch_employee($pdo, $employeeId) : null;
     $employeeCode = trim((string)($payload['employeeCode'] ?? ''));
+    if ($employeeCode === '') {
+        if (is_array($current)) {
+            $employeeCode = (string)($current['employee_code'] ?? '');
+        } else {
+            $employeeCode = app_hr_generate_employee_code($pdo);
+        }
+    }
     $firstName = trim((string)($payload['firstName'] ?? ''));
     $lastName = trim((string)($payload['lastName'] ?? ''));
     if ($firstName === '' || $lastName === '') {
@@ -149,14 +157,21 @@ function app_hr_save_employee(PDO $pdo, array $payload, array $actor, ?int $empl
     }
 
     if ($employeeCode === '' || $firstName === '' || $lastName === '') {
-        app_json(['success' => false, 'error' => 'employeeCode, firstName and lastName are required.'], 400);
+        app_json(['success' => false, 'error' => 'firstName and lastName are required.'], 400);
     }
 
     $isActiveValue = $payload['isActive'] ?? true;
     $isActiveParsed = filter_var($isActiveValue, FILTER_VALIDATE_BOOL, FILTER_NULL_ON_FAILURE);
+    $personnelNo = null;
+    if (array_key_exists('personnelNo', $payload)) {
+        $personnelNo = trim((string)($payload['personnelNo'] ?? ''));
+        $personnelNo = $personnelNo !== '' ? $personnelNo : null;
+    } elseif (is_array($current)) {
+        $personnelNo = $current['personnel_no'] !== null && $current['personnel_no'] !== '' ? (string)$current['personnel_no'] : null;
+    }
     $values = [
         'employee_code' => $employeeCode,
-        'personnel_no' => ($v = trim((string)($payload['personnelNo'] ?? ''))) !== '' ? $v : null,
+        'personnel_no' => $personnelNo,
         'first_name' => $firstName,
         'last_name' => $lastName,
         'national_id' => ($v = trim((string)($payload['nationalId'] ?? ''))) !== '' ? $v : null,
@@ -257,43 +272,4 @@ function app_hr_toggle_employee_active(PDO $pdo, int $employeeId, ?bool $isActiv
     return app_hr_employee_from_row($updated ?: $current);
 }
 
-function app_hr_count_employee_payslips(PDO $pdo, int $employeeId): int
-{
-    $stmt = $pdo->prepare('SELECT COUNT(*) AS total FROM acc_payslips WHERE employee_id = :employee_id');
-    $stmt->execute(['employee_id' => $employeeId]);
-    return (int)($stmt->fetch()['total'] ?? 0);
-}
 
-function app_hr_delete_employee(PDO $pdo, int $employeeId, array $actor): array
-{
-    $current = app_hr_fetch_employee($pdo, $employeeId);
-    if (!$current) {
-        app_json(['success' => false, 'error' => 'Employee not found.'], 404);
-    }
-
-    $payslipRefs = app_hr_count_employee_payslips($pdo, $employeeId);
-    if ($payslipRefs > 0) {
-        app_json([
-            'success' => false,
-            'error' => 'امکان حذف این پرسنل وجود ندارد چون فیش حقوق وابسته دارد.',
-            'code' => 'hr_employee_has_payslips',
-            'payslipRefs' => $payslipRefs,
-        ], 409);
-    }
-
-    $pdo->prepare('DELETE FROM hr_employees WHERE id = :id')->execute(['id' => $employeeId]);
-
-    app_audit_log(
-        $pdo,
-        'human_resources.employee.deleted',
-        'hr_employees',
-        (string)$employeeId,
-        ['employeeCode' => (string)($current['employee_code'] ?? '')],
-        $actor
-    );
-
-    return [
-        'id' => (string)$employeeId,
-        'employeeCode' => (string)($current['employee_code'] ?? ''),
-    ];
-}
