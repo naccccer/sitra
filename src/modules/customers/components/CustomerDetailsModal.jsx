@@ -227,7 +227,6 @@ export const CustomerDetailsModal = ({
           <div className="text-[11px] font-bold text-slate-500">{error || ' '}</div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={onClose}>بستن</Button>
-            {canWriteCustomers ? <Button variant="primary" onClick={handleSaveCustomerEdit} disabled={isSavingEdit}>{isSavingEdit ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button> : null}
           </div>
         </div>
       }

@@ -27,6 +27,8 @@ export const CustomerDetailsProfileTab = ({
 }) => {
   const [editingField, setEditingField] = useState('')
   const [visibleOptional, setVisibleOptional] = useState([])
+  const [editingLabelField, setEditingLabelField] = useState('')
+  const [customLabels, setCustomLabels] = useState({})
 
   const fields = useMemo(
     () => [...BASE_FIELDS, ...OPTIONAL_FIELDS.filter((field) => visibleOptional.includes(field.key))],
@@ -41,6 +43,7 @@ export const CustomerDetailsProfileTab = ({
   }
 
   const setField = (key, value) => setEditDraft((prev) => ({ ...prev, [key]: value }))
+  const setCustomLabel = (key, value) => setCustomLabels((prev) => ({ ...prev, [key]: value }))
 
   return (
     <div className="mt-4">
@@ -62,7 +65,13 @@ export const CustomerDetailsProfileTab = ({
         <div className="grid grid-cols-1 gap-2">
           {fields.map((field) => (
             <div key={field.key} className="flex items-center gap-2 rounded-xl bg-white px-3 py-2">
-              <span className="min-w-24 text-[11px] font-bold text-slate-500">{field.label}</span>
+              <div className="min-w-24">
+                {editingLabelField === field.key && canWriteCustomers ? (
+                  <Input value={customLabels[field.key] ?? field.label} onChange={(event) => setCustomLabel(field.key, event.target.value)} />
+                ) : (
+                  <span className="text-[11px] font-bold text-slate-500">{customLabels[field.key] || field.label}</span>
+                )}
+              </div>
               <div className="flex-1">
                 {editingField === field.key && canWriteCustomers ? (
                   field.type === 'select' ? (
@@ -77,9 +86,16 @@ export const CustomerDetailsProfileTab = ({
                 )}
               </div>
               {canWriteCustomers ? (
-                <button type="button" className="text-xs font-black text-slate-500 hover:text-slate-800" onClick={() => setEditingField((prev) => (prev === field.key ? '' : field.key))}>
-                  ✎
-                </button>
+                <div className="flex items-center gap-2">
+                  {OPTIONAL_FIELDS.some((item) => item.key === field.key) ? (
+                    <button type="button" className="text-xs font-black text-slate-400 hover:text-slate-700" onClick={() => setEditingLabelField((prev) => (prev === field.key ? '' : field.key))}>
+                      🏷️
+                    </button>
+                  ) : null}
+                  <button type="button" className="text-xs font-black text-slate-500 hover:text-slate-800" onClick={() => setEditingField((prev) => (prev === field.key ? '' : field.key))}>
+                    ✎
+                  </button>
+                </div>
               ) : null}
             </div>
           ))}
