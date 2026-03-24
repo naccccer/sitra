@@ -57,17 +57,12 @@ export function HumanResourcesDirectoryPanel({
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
           </Button>
         </div>
-        <div className="flex items-center gap-2">
-          <span className="whitespace-nowrap text-xs font-bold text-slate-400">
-            {toPN(employees.length)} نتیجه
-          </span>
-          <Input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="جست‌وجو..."
-            className="!w-48"
-          />
-        </div>
+        <Input
+          value={query}
+          onChange={(event) => onQueryChange(event.target.value)}
+          placeholder="جست‌وجو..."
+          className="!w-48"
+        />
       </div>
 
       {loading ? (
