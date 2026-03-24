@@ -1,5 +1,3 @@
-import { customerTypeLabel, formatAmount, formatLocation, toPN } from '../../utils/customersView'
-
 export const DETAILS_TABS = [
   { id: 'profile', label: 'پروفایل' },
   { id: 'projects', label: 'پروژه‌ها' },
@@ -17,18 +15,3 @@ export const toNullableNumber = (value) => {
   const parsed = Number(raw)
   return Number.isFinite(parsed) ? parsed : null
 }
-
-export const buildProfileRows = (customer) => ([
-  ['کد مشتری', customer.customerCode ? toPersianDigits(customer.customerCode) : '-'],
-  ['نوع', customerTypeLabel(customer.customerType)],
-  ['نام', customer.fullName || '-'],
-  ['نام شرکت', customer.companyName || '-'],
-  ['تلفن پیش‌فرض', customer.defaultPhone ? toPersianDigits(customer.defaultPhone) : '-'],
-  ['ایمیل', customer.email || '-'],
-  ['شناسه ملی', customer.nationalId ? toPersianDigits(customer.nationalId) : '-'],
-  ['کد اقتصادی', customer.economicCode ? toPersianDigits(customer.economicCode) : '-'],
-  ['موقعیت', formatLocation(customer.province, customer.city)],
-  ['آدرس', customer.address || '-'],
-  ['سقف اعتبار', customer.creditLimit ? formatAmount(customer.creditLimit) : '-'],
-  ['مهلت پرداخت', customer.paymentTermDays ? `${toPN(customer.paymentTermDays)} روز` : '-'],
-])

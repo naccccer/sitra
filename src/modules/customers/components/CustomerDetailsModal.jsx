@@ -3,8 +3,7 @@ import { Button, ModalShell } from '@/components/shared/ui'
 import { customersApi } from '../services/customersApi'
 import { createContactDraft, createCustomerDraft, createProjectDraft, formatDateTime, normalizeCustomerRecord } from '../utils/customersView'
 import { CustomerDetailsContactsTab } from './customer-details/CustomerDetailsContactsTab'
-import { CustomerDetailsEditTab } from './customer-details/CustomerDetailsEditTab'
-import { buildProfileRows, DETAILS_TABS, toId, toNullableNumber } from './customer-details/customerDetailsHelpers'
+import { DETAILS_TABS, toId, toNullableNumber } from './customer-details/customerDetailsHelpers'
 import { CustomerDetailsFinancialTab } from './customer-details/CustomerDetailsFinancialTab'
 import { CustomerDetailsProfileTab } from './customer-details/CustomerDetailsProfileTab'
 import { CustomerDetailsProjectsTab } from './customer-details/CustomerDetailsProjectsTab'
@@ -209,7 +208,6 @@ export const CustomerDetailsModal = ({
       setIsSavingEdit(false)
     }
   }
-  const profileRows = buildProfileRows(editableCustomer)
   const profileCustomer = useMemo(
     () => ({
       ...editableCustomer,
@@ -229,13 +227,13 @@ export const CustomerDetailsModal = ({
           <div className="text-[11px] font-bold text-slate-500">{error || ' '}</div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" onClick={onClose}>بستن</Button>
-            {canWriteCustomers && activeTab !== 'edit' ? <Button variant="primary" onClick={() => setActiveTab('edit')}>ویرایش مشتری</Button> : null}
+            {canWriteCustomers ? <Button variant="primary" onClick={handleSaveCustomerEdit} disabled={isSavingEdit}>{isSavingEdit ? 'در حال ذخیره...' : 'ذخیره تغییرات'}</Button> : null}
           </div>
         </div>
       }
     >
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-        {[...DETAILS_TABS, ...(canWriteCustomers ? [{ id: 'edit', label: 'ویرایش' }] : [])].map((tab) => (
+        {DETAILS_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -246,7 +244,16 @@ export const CustomerDetailsModal = ({
           </button>
         ))}
       </div>
-      {activeTab === 'profile' ? <CustomerDetailsProfileTab customer={profileCustomer} profileRows={profileRows} /> : null}
+      {activeTab === 'profile' ? (
+        <CustomerDetailsProfileTab
+          customer={profileCustomer}
+          editDraft={editDraft}
+          setEditDraft={setEditDraft}
+          canWriteCustomers={canWriteCustomers}
+          onSaveProfile={handleSaveCustomerEdit}
+          isSavingProfile={isSavingEdit}
+        />
+      ) : null}
       {activeTab === 'projects' ? (
         <CustomerDetailsProjectsTab
           projects={projects}
