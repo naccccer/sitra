@@ -1,4 +1,4 @@
-import { Pencil, RotateCcw, Trash2 } from 'lucide-react'
+import { Archive, FileSpreadsheet, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, EmptyState, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { displayName, formatMoney, hasMissingPayrollData } from '../utils/humanResourcesView'
@@ -31,35 +31,55 @@ export function HumanResourcesDirectoryPanel({
 }) {
   return (
     <Card padding="md" className="space-y-4">
-      <div className="space-y-3">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-sm font-black text-slate-900">مرور پرسنل</div>
-            <div className="text-xs font-bold text-slate-500">
-              {archiveMode ? 'آرشیو پرسنل' : 'فهرست پرسنل'}
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button size="sm" variant="ghost" onClick={onReload} disabled={loading || busyKey !== ''}>
-              {loading ? 'در حال بازخوانی...' : 'بازخوانی'}
-            </Button>
-            {canWriteEmployees && !archiveMode ? (
-              <Button size="sm" variant="secondary" onClick={onOpenImport} disabled={busyKey !== ''}>
-                ورود از اکسل
-              </Button>
-            ) : null}
-            <Button size="sm" variant="ghost" onClick={onArchiveModeToggle} disabled={busyKey !== ''}>
-              {archiveMode ? 'بازگشت به لیست اصلی' : 'آرشیو'}
-            </Button>
-            {canWriteEmployees && !archiveMode ? (
-              <Button variant="success" onClick={onNewEmployee} disabled={busyKey !== ''}>ثبت پرسنل جدید</Button>
-            ) : null}
-            {!canWriteEmployees ? <Badge tone="neutral" className="px-3 py-1.5 text-[11px]">فقط مشاهده</Badge> : null}
-          </div>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جست‌وجو..."
+            className="!w-48"
+          />
+          <span className="whitespace-nowrap text-xs font-bold text-slate-400">
+            {toPN(employees.length)} نتیجه
+          </span>
         </div>
-
-        <Input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="جست‌وجو بر اساس کد، نام، واحد یا سمت" />
-        <div className="text-xs font-bold text-slate-500">{toPN(employees.length)} نتیجه</div>
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onReload}
+            disabled={loading || busyKey !== ''}
+            title="بازخوانی"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+          <Button
+            size="icon"
+            variant={archiveMode ? 'secondary' : 'ghost'}
+            onClick={onArchiveModeToggle}
+            disabled={busyKey !== ''}
+            title={archiveMode ? 'بازگشت به لیست اصلی' : 'آرشیو'}
+          >
+            <Archive className="h-4 w-4" />
+          </Button>
+          {canWriteEmployees && !archiveMode ? (
+            <Button
+              size="icon"
+              variant="ghost"
+              onClick={onOpenImport}
+              disabled={busyKey !== ''}
+              title="ورود از اکسل"
+            >
+              <FileSpreadsheet className="h-4 w-4" />
+            </Button>
+          ) : null}
+          {canWriteEmployees && !archiveMode ? (
+            <Button size="sm" variant="success" onClick={onNewEmployee} disabled={busyKey !== ''}>
+              + ثبت پرسنل جدید
+            </Button>
+          ) : null}
+          {!canWriteEmployees ? <Badge tone="neutral" className="px-3 py-1.5 text-[11px]">فقط مشاهده</Badge> : null}
+        </div>
       </div>
 
       {loading ? (
@@ -77,31 +97,31 @@ export function HumanResourcesDirectoryPanel({
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-right text-xs">
+          <table className="w-full text-center text-xs">
             <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
               <tr>
-                <th className="px-3 py-2">کد</th>
-                <th className="px-3 py-2">نام</th>
-                <th className="px-3 py-2">واحد</th>
-                <th className="px-3 py-2">سمت</th>
-                <th className="px-3 py-2">حقوق پایه</th>
-                <th className="px-3 py-2">وضعیت داده</th>
-                {canWriteEmployees ? <th className="px-3 py-2">عملیات</th> : null}
+                <th className="px-3 py-2.5">کد</th>
+                <th className="px-3 py-2.5 text-right">نام</th>
+                <th className="px-3 py-2.5">واحد</th>
+                <th className="px-3 py-2.5">سمت</th>
+                <th className="px-3 py-2.5">حقوق پایه</th>
+                <th className="px-3 py-2.5">وضعیت</th>
+                {canWriteEmployees ? <th className="px-3 py-2.5">عملیات</th> : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
               {employees.map((employee) => (
-                <tr key={employee.id || employee.employeeCode} className="hover:bg-slate-50">
-                  <td className="px-3 py-2 font-black text-slate-900">{toPN(employee.employeeCode || '-')}</td>
-                  <td className="px-3 py-2 font-black text-slate-900">{displayName(employee)}</td>
-                  <td className="px-3 py-2 font-bold text-slate-600">{employee.department || '-'}</td>
-                  <td className="px-3 py-2 font-bold text-slate-600">{employee.jobTitle || '-'}</td>
-                  <td className="px-3 py-2 font-black text-slate-900">{formatMoney(employee.baseSalary)}</td>
-                  <td className="px-3 py-2"><EmployeeStatusBadge employee={employee} /></td>
+                <tr key={employee.id || employee.employeeCode} className="hover:bg-slate-50/70 transition-colors">
+                  <td className="px-3 py-2.5 font-black text-slate-900">{toPN(employee.employeeCode || '-')}</td>
+                  <td className="px-3 py-2.5 text-right font-black text-slate-900">{displayName(employee)}</td>
+                  <td className="px-3 py-2.5 font-bold text-slate-600">{employee.department || '-'}</td>
+                  <td className="px-3 py-2.5 font-bold text-slate-600">{employee.jobTitle || '-'}</td>
+                  <td className="px-3 py-2.5 font-black text-slate-900">{formatMoney(employee.baseSalary)}</td>
+                  <td className="px-3 py-2.5"><EmployeeStatusBadge employee={employee} /></td>
                   {canWriteEmployees ? (
                     <td className="px-3 py-2">
                       {!archiveMode ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center justify-center gap-1">
                           <Button
                             size="icon"
                             variant="ghost"
