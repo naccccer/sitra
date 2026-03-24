@@ -18,6 +18,8 @@ export const CustomerDetailsProjectsTab = ({
   selectedProjectId = '',
   projectDraft,
   setProjectDraft,
+  projectPhoneDraft = '',
+  setProjectPhoneDraft = () => {},
   canWriteCustomers = false,
   resetProjectDraft,
   handleSaveProject,
@@ -75,6 +77,7 @@ export const CustomerDetailsProjectsTab = ({
       ) : null}
       <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="نام پروژه" disabled={!canWriteCustomers} />
       <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="توضیحات پروژه" disabled={!canWriteCustomers} />
+      <Input value={toPersianDigits(projectPhoneDraft)} onChange={(event) => setProjectPhoneDraft(toEnglishDigits(event.target.value))} placeholder="شماره تماس پروژه" inputMode="tel" disabled={!canWriteCustomers} />
       <Select value={String(projectDraft.targetCustomerId || '')} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} disabled={!canWriteCustomers}>
         <option value="">انتخاب مشتری مقصد</option>
         {customerOptions.map((customer) => (

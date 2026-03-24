@@ -21,15 +21,7 @@ export const useOrderCustomerLinks = ({
     const response = await customerLinksApi.fetchCustomers({ page: 1, pageSize: 200, isActive: true })
     const list = Array.isArray(response?.customers) ? response.customers : []
     setCustomers(list)
-    if (!selectedCustomerId && list.length > 0) {
-      setSelectedCustomerId(toId(list[0].id))
-      setCustomerInfo((prev) => ({
-        ...prev,
-        name: String(prev?.name || '').trim() || String(list[0]?.fullName || ''),
-        phone: String(prev?.phone || '').trim() || String(list[0]?.defaultPhone || ''),
-      }))
-    }
-  }, [isStaffContext, selectedCustomerId, setCustomerInfo])
+  }, [isStaffContext])
 
   const refreshProjects = useCallback(async (customerId) => {
     if (!isStaffContext || !customerId) {
@@ -39,10 +31,7 @@ export const useOrderCustomerLinks = ({
     const response = await customerLinksApi.fetchProjects(customerId)
     const list = Array.isArray(response?.projects) ? response.projects : []
     setProjects(list)
-    if (!selectedProjectId && list.length > 0) {
-      setSelectedProjectId(toId(list[0].id))
-    }
-  }, [isStaffContext, selectedProjectId])
+  }, [isStaffContext])
 
   const refreshProjectContacts = useCallback(async (projectId) => {
     if (!isStaffContext || !projectId) {
@@ -52,10 +41,7 @@ export const useOrderCustomerLinks = ({
     const response = await customerLinksApi.fetchProjectContacts(projectId)
     const list = Array.isArray(response?.contacts) ? response.contacts : []
     setProjectContacts(list)
-    if (!selectedProjectContactId && list.length > 0) {
-      setSelectedProjectContactId(toId(list[0].id))
-    }
-  }, [isStaffContext, selectedProjectContactId])
+  }, [isStaffContext])
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
