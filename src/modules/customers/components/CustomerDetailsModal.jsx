@@ -52,8 +52,9 @@ export const CustomerDetailsModal = ({
   }, [editableCustomer.id])
   const loadCustomerOptions = useCallback(async () => {
     try {
-      const response = await customersApi.fetchCustomerDirectory({ page: 1, pageSize: 300 })
-      setCustomerOptions(Array.isArray(response?.customers) ? response.customers : [])
+      const response = await customersApi.fetchCustomerDirectory({ page: 1, pageSize: 300, isActive: true })
+      const list = Array.isArray(response?.customers) ? response.customers.filter((item) => item?.isActive !== false) : []
+      setCustomerOptions(list)
     } catch {
       setCustomerOptions([])
     }
@@ -72,7 +73,7 @@ export const CustomerDetailsModal = ({
       setProjectPhoneDraft(mainContact?.phone ? String(mainContact.phone) : '')
       setProjectContactId(mainContact?.id ? String(mainContact.id) : '')
     } catch (err) {
-      setError(err?.message || 'دریافت شماره‌ها ناموفق بود.')
+      setError(err?.message || 'دریافت شماره پروژه ناموفق بود.')
     }
   }, [])
   useEffect(() => {
@@ -186,9 +187,6 @@ export const CustomerDetailsModal = ({
       setEditDraft(createCustomerDraft(nextCustomer))
       setActiveTab('profile')
       await onReloadCustomerList?.()
-      if (toId(contactDraft.id) === toId(contact.id)) {
-        setContactDraft(createContactDraft(null, selectedProjectId))
-      }
     } catch (err) {
       setError(err?.message || 'ویرایش مشتری ناموفق بود.')
     } finally {
@@ -197,10 +195,10 @@ export const CustomerDetailsModal = ({
   }
   const profileCustomer = useMemo(() => ({ ...editableCustomer, updatedAt: formatDateTime(editableCustomer.updatedAt) }), [editableCustomer])
   return (
-    <ModalShell
+      <ModalShell
       isOpen={isOpen}
       title={`جزئیات مشتری: ${normalizedCustomer.fullName || '-'}`}
-      description="پروفایل، پروژه‌ها، شماره‌ها و جمع‌بندی مالی در یک پنجره."
+      description=""
       onClose={onClose}
       maxWidthClass="max-w-6xl"
       footer={<div className="flex items-center justify-between gap-2"><div className="text-[11px] font-bold text-slate-500">{error || ' '}</div><div className="flex items-center gap-2"><Button variant="secondary" onClick={onClose}>بستن</Button></div></div>}

@@ -18,9 +18,13 @@ export const useOrderCustomerLinks = ({
 
   const refreshCustomers = useCallback(async () => {
     if (!isStaffContext) return
-    const response = await customerLinksApi.fetchCustomers({ page: 1, pageSize: 200, isActive: true })
-    const list = Array.isArray(response?.customers) ? response.customers : []
-    setCustomers(list)
+    try {
+      const response = await customerLinksApi.fetchCustomers({ page: 1, pageSize: 200, isActive: true })
+      const list = Array.isArray(response?.customers) ? response.customers : []
+      setCustomers(list)
+    } catch {
+      setCustomers([])
+    }
   }, [isStaffContext])
 
   const refreshProjects = useCallback(async (customerId) => {
@@ -28,9 +32,13 @@ export const useOrderCustomerLinks = ({
       setProjects([])
       return
     }
-    const response = await customerLinksApi.fetchProjects(customerId)
-    const list = Array.isArray(response?.projects) ? response.projects : []
-    setProjects(list)
+    try {
+      const response = await customerLinksApi.fetchProjects(customerId)
+      const list = Array.isArray(response?.projects) ? response.projects : []
+      setProjects(list)
+    } catch {
+      setProjects([])
+    }
   }, [isStaffContext])
 
   const refreshProjectContacts = useCallback(async (projectId) => {
@@ -38,9 +46,13 @@ export const useOrderCustomerLinks = ({
       setProjectContacts([])
       return
     }
-    const response = await customerLinksApi.fetchProjectContacts(projectId)
-    const list = Array.isArray(response?.contacts) ? response.contacts : []
-    setProjectContacts(list)
+    try {
+      const response = await customerLinksApi.fetchProjectContacts(projectId)
+      const list = Array.isArray(response?.contacts) ? response.contacts : []
+      setProjectContacts(list)
+    } catch {
+      setProjectContacts([])
+    }
   }, [isStaffContext])
 
   useEffect(() => {

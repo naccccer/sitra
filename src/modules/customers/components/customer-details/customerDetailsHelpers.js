@@ -1,6 +1,6 @@
 export const DETAILS_TABS = [
   { id: 'profile', label: 'پروفایل' },
-  { id: 'projects', label: 'پروژه‌ها و شماره‌ها' },
+  { id: 'projects', label: 'پروژه‌ها' },
   { id: 'financial', label: 'مالی' },
 ]
 

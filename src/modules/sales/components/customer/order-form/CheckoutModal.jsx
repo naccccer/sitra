@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { ChevronDown, Link2, Phone, PlusCircle, Save, Search, User } from 'lucide-react'
 
 export const CheckoutModal = ({
@@ -11,30 +11,45 @@ export const CheckoutModal = ({
   onClose,
   onSubmit,
 }) => {
+  if (!isOpen) return null
+
+  return (
+    <CheckoutModalContent
+      isStaffContext={isStaffContext}
+      editingOrder={editingOrder}
+      customerInfo={customerInfo}
+      customerLinks={customerLinks}
+      onCustomerInfoChange={onCustomerInfoChange}
+      onClose={onClose}
+      onSubmit={onSubmit}
+    />
+  )
+}
+
+const CheckoutModalContent = ({
+  isStaffContext,
+  editingOrder,
+  customerInfo,
+  customerLinks,
+  onCustomerInfoChange,
+  onClose,
+  onSubmit,
+}) => {
   const [showLinkingTools, setShowLinkingTools] = useState(false)
   const [customerQuery, setCustomerQuery] = useState('')
-
-
-  useEffect(() => {
-    if (!isOpen) return
-    setShowLinkingTools(false)
-    setCustomerQuery('')
-  }, [isOpen])
-  if (!isOpen) return null
 
   const customers = Array.isArray(customerLinks?.customers) ? customerLinks.customers : []
   const projects = Array.isArray(customerLinks?.projects) ? customerLinks.projects : []
   const projectContacts = Array.isArray(customerLinks?.projectContacts) ? customerLinks.projectContacts : []
 
-  const filteredCustomers = useMemo(() => {
-    const query = String(customerQuery || '').trim().toLowerCase()
-    if (!query) return customers
-    return customers.filter((customer) => (
-      String(customer?.fullName || '').toLowerCase().includes(query)
-      || String(customer?.defaultPhone || '').toLowerCase().includes(query)
-      || String(customer?.customerCode || '').toLowerCase().includes(query)
-    ))
-  }, [customerQuery, customers])
+  const query = String(customerQuery || '').trim().toLowerCase()
+  const filteredCustomers = !query
+    ? customers
+    : customers.filter((customer) => (
+        String(customer?.fullName || '').toLowerCase().includes(query)
+        || String(customer?.defaultPhone || '').toLowerCase().includes(query)
+        || String(customer?.customerCode || '').toLowerCase().includes(query)
+      ))
 
   return (
     <div className="print-hide fixed inset-0 z-[70] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm animate-in fade-in duration-200">
@@ -65,7 +80,7 @@ export const CheckoutModal = ({
               >
                 <span className="inline-flex items-center gap-1.5 text-xs font-black text-slate-700">
                   <Link2 size={14} />
-                  اتصال اختیاری به مشتری/پروژه
+                  ارتباط اختیاری به مشتری/پروژه
                 </span>
                 <ChevronDown size={16} className={`transition-transform ${showLinkingTools ? 'rotate-180' : ''}`} />
               </button>
