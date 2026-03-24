@@ -15,6 +15,7 @@ const TABS = [
 ]
 
 const toId = (value) => String(value ?? '')
+const toPersianDigits = (value) => String(value ?? '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)] || digit)
 
 export const CustomerDetailsModal = ({
   isOpen,
@@ -189,14 +190,14 @@ export const CustomerDetailsModal = ({
   }
 
   const profileRows = [
-    ['کد مشتری', normalizedCustomer.customerCode || '-'],
+    ['کد مشتری', normalizedCustomer.customerCode ? toPersianDigits(normalizedCustomer.customerCode) : '-'],
     ['نوع', customerTypeLabel(normalizedCustomer.customerType)],
     ['نام', normalizedCustomer.fullName || '-'],
     ['نام شرکت', normalizedCustomer.companyName || '-'],
-    ['تلفن پیش‌فرض', normalizedCustomer.defaultPhone || '-'],
+    ['تلفن پیش‌فرض', normalizedCustomer.defaultPhone ? toPersianDigits(normalizedCustomer.defaultPhone) : '-'],
     ['ایمیل', normalizedCustomer.email || '-'],
-    ['شناسه ملی', normalizedCustomer.nationalId || '-'],
-    ['کد اقتصادی', normalizedCustomer.economicCode || '-'],
+    ['شناسه ملی', normalizedCustomer.nationalId ? toPersianDigits(normalizedCustomer.nationalId) : '-'],
+    ['کد اقتصادی', normalizedCustomer.economicCode ? toPersianDigits(normalizedCustomer.economicCode) : '-'],
     ['موقعیت', formatLocation(normalizedCustomer.province, normalizedCustomer.city)],
     ['آدرس', normalizedCustomer.address || '-'],
     ['سقف اعتبار', normalizedCustomer.creditLimit ? formatAmount(normalizedCustomer.creditLimit) : '-'],

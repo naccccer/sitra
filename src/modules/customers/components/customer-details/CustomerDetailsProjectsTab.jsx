@@ -1,11 +1,14 @@
 import { Badge, Button, Card, EmptyState, Input } from '@/components/shared/ui'
 import { formatAmount, toPN } from '../../utils/customersView'
 
+const toEnglishDigits = (value) => String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+const toPersianDigits = (value) => String(value ?? '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)] || digit)
+
 const projectSummaryCards = (project) => [
-  { label: 'Orders', value: toPN(project?.financialSummary?.ordersCount || 0) },
-  { label: 'Total', value: formatAmount(project?.financialSummary?.totalAmount || 0) },
-  { label: 'Paid', value: formatAmount(project?.financialSummary?.paidAmount || 0) },
-  { label: 'Due', value: formatAmount(project?.financialSummary?.dueAmount || 0) },
+  { label: 'سفارش', value: toPN(project?.financialSummary?.ordersCount || 0) },
+  { label: 'جمع', value: formatAmount(project?.financialSummary?.totalAmount || 0) },
+  { label: 'پرداخت‌شده', value: formatAmount(project?.financialSummary?.paidAmount || 0) },
+  { label: 'مانده', value: formatAmount(project?.financialSummary?.dueAmount || 0) },
 ]
 
 export const CustomerDetailsProjectsTab = ({
@@ -23,15 +26,15 @@ export const CustomerDetailsProjectsTab = ({
     <Card tone="muted" padding="md" className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <div className="text-sm font-black text-slate-900">Projects</div>
-          <div className="text-xs font-bold text-slate-500">Select a project to edit.</div>
+          <div className="text-sm font-black text-slate-900">پروژه‌ها</div>
+          <div className="text-xs font-bold text-slate-500">برای ویرایش، یک پروژه را انتخاب کنید.</div>
         </div>
-        {canWriteCustomers ? <Button variant="secondary" onClick={() => resetProjectDraft(null)}>New Project</Button> : null}
+        {canWriteCustomers ? <Button variant="secondary" onClick={() => resetProjectDraft(null)}>پروژه جدید</Button> : null}
       </div>
       {isLoadingProjects ? (
-        <div className="text-xs font-bold text-slate-500">Loading...</div>
+        <div className="text-xs font-bold text-slate-500">در حال بارگذاری...</div>
       ) : projects.length === 0 ? (
-        <EmptyState title="No project found" description="Create a new project from the form." />
+        <EmptyState title="پروژه‌ای یافت نشد" description="از فرم کنار، پروژه جدید بسازید." />
       ) : (
         <div className="space-y-2">
           {projects.map((project) => (
@@ -44,9 +47,9 @@ export const CustomerDetailsProjectsTab = ({
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-black text-slate-900">
                   {project.name}
-                  {project.isDefault ? <Badge className="ms-2" tone="info">Default</Badge> : null}
+                  {project.isDefault ? <Badge className="ms-2" tone="info">پیش‌فرض</Badge> : null}
                 </div>
-                <Badge tone={project.isActive ? 'success' : 'danger'}>{project.isActive ? 'Active' : 'Inactive'}</Badge>
+                <Badge tone={project.isActive ? 'success' : 'danger'}>{project.isActive ? 'فعال' : 'غیرفعال'}</Badge>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-500 sm:grid-cols-4">
                 {projectSummaryCards(project).map((item) => (
@@ -63,28 +66,28 @@ export const CustomerDetailsProjectsTab = ({
     </Card>
 
     <Card tone="muted" padding="md" className="space-y-3">
-      <div className="text-sm font-black text-slate-900">{projectDraft.id ? 'Edit Project' : 'Create Project'}</div>
-      <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="Project Name" disabled={!canWriteCustomers} />
-      <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Project Notes" disabled={!canWriteCustomers} />
-      <Input value={projectDraft.targetCustomerId} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: event.target.value }))} placeholder="Target Customer ID" dir="ltr" inputMode="numeric" disabled={!canWriteCustomers} />
+      <div className="text-sm font-black text-slate-900">{projectDraft.id ? 'ویرایش پروژه' : 'ایجاد پروژه'}</div>
+      <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="نام پروژه" disabled={!canWriteCustomers} />
+      <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="توضیحات پروژه" disabled={!canWriteCustomers} />
+      <Input value={toPersianDigits(projectDraft.targetCustomerId)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} placeholder="شناسه مشتری مقصد" inputMode="numeric" disabled={!canWriteCustomers} />
       <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
         <input type="checkbox" checked={Boolean(projectDraft.isDefault)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isDefault: event.target.checked }))} disabled={!canWriteCustomers} />
-        Default project
+        پروژه پیش‌فرض
       </label>
       <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
         <input type="checkbox" checked={Boolean(projectDraft.isActive)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isActive: event.target.checked }))} disabled={!canWriteCustomers} />
-        Active project
+        پروژه فعال
       </label>
       <div className="flex flex-wrap gap-2">
-        <Button variant="primary" onClick={handleSaveProject} disabled={!canWriteCustomers}>{projectDraft.id ? 'Save Changes' : 'Create Project'}</Button>
-        {projectDraft.id && canWriteCustomers ? <Button variant="secondary" onClick={() => resetProjectDraft(null)}>New Project</Button> : null}
+        <Button variant="primary" onClick={handleSaveProject} disabled={!canWriteCustomers}>{projectDraft.id ? 'ذخیره تغییرات' : 'ثبت پروژه'}</Button>
+        {projectDraft.id && canWriteCustomers ? <Button variant="secondary" onClick={() => resetProjectDraft(null)}>پروژه جدید</Button> : null}
         {projectDraft.id && canWriteCustomers ? (
           <Button variant={projectDraft.isActive ? 'danger' : 'success'} onClick={() => handleToggleProject(projectDraft)}>
-            {projectDraft.isActive ? 'Deactivate' : 'Activate'}
+            {projectDraft.isActive ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
           </Button>
         ) : null}
       </div>
-      {!canWriteCustomers ? <div className="text-[11px] font-bold text-slate-500">Read-only access.</div> : null}
+      {!canWriteCustomers ? <div className="text-[11px] font-bold text-slate-500">فقط دسترسی مشاهده دارید.</div> : null}
     </Card>
   </div>
 )
