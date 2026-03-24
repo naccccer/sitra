@@ -20,7 +20,7 @@ export const CustomerDetailsProjectsTab = ({
   canWriteCustomers = false,
   resetProjectDraft,
   handleSaveProject,
-  handleToggleProject,
+  handleDeleteProject,
 }) => (
   <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1.1fr_0.9fr]">
     <Card tone="muted" padding="md" className="space-y-3">
@@ -49,7 +49,7 @@ export const CustomerDetailsProjectsTab = ({
                   {project.name}
                   {project.isDefault ? <Badge className="ms-2" tone="info">پیش‌فرض</Badge> : null}
                 </div>
-                <Badge tone={project.isActive ? 'success' : 'danger'}>{project.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                <span className="text-[11px] font-bold text-slate-400">برای ویرایش انتخاب کنید</span>
               </div>
               <div className="mt-2 grid grid-cols-2 gap-2 text-[11px] font-bold text-slate-500 sm:grid-cols-4">
                 {projectSummaryCards(project).map((item) => (
@@ -67,6 +67,11 @@ export const CustomerDetailsProjectsTab = ({
 
     <Card tone="muted" padding="md" className="space-y-3">
       <div className="text-sm font-black text-slate-900">{projectDraft.id ? 'ویرایش پروژه' : 'ایجاد پروژه'}</div>
+      {projectDraft.id ? (
+        <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
+          درحال ویرایش: {projectDraft.name || 'پروژه'}
+        </div>
+      ) : null}
       <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="نام پروژه" disabled={!canWriteCustomers} />
       <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="توضیحات پروژه" disabled={!canWriteCustomers} />
       <Input value={toPersianDigits(projectDraft.targetCustomerId)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} placeholder="شناسه مشتری مقصد" inputMode="numeric" disabled={!canWriteCustomers} />
@@ -74,16 +79,12 @@ export const CustomerDetailsProjectsTab = ({
         <input type="checkbox" checked={Boolean(projectDraft.isDefault)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isDefault: event.target.checked }))} disabled={!canWriteCustomers} />
         پروژه پیش‌فرض
       </label>
-      <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
-        <input type="checkbox" checked={Boolean(projectDraft.isActive)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isActive: event.target.checked }))} disabled={!canWriteCustomers} />
-        پروژه فعال
-      </label>
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={handleSaveProject} disabled={!canWriteCustomers}>{projectDraft.id ? 'ذخیره تغییرات' : 'ثبت پروژه'}</Button>
         {projectDraft.id && canWriteCustomers ? <Button variant="secondary" onClick={() => resetProjectDraft(null)}>پروژه جدید</Button> : null}
         {projectDraft.id && canWriteCustomers ? (
-          <Button variant={projectDraft.isActive ? 'danger' : 'success'} onClick={() => handleToggleProject(projectDraft)}>
-            {projectDraft.isActive ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+          <Button variant="danger" onClick={() => handleDeleteProject(projectDraft)}>
+            حذف پروژه
           </Button>
         ) : null}
       </div>

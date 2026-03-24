@@ -115,14 +115,18 @@ export const CustomerDetailsModal = ({
       setError(err?.message || 'ذخیره پروژه ناموفق بود.')
     }
   }
-  const handleToggleProject = async (project) => {
+  const handleDeleteProject = async (project) => {
     if (!canWriteCustomers) return
     try {
-      await customersApi.setProjectActive(Number(project.id), !project.isActive)
+      await customersApi.setProjectActive(Number(project.id), false)
       await loadProjects()
       await onReloadCustomerList?.()
+      if (toId(projectDraft.id) === toId(project.id)) {
+        setProjectDraft(createProjectDraft(null, editableCustomer.id))
+        setSelectedProjectId('')
+      }
     } catch (err) {
-      setError(err?.message || 'تغییر وضعیت پروژه ناموفق بود.')
+      setError(err?.message || 'حذف پروژه ناموفق بود.')
     }
   }
   const handleSaveContact = async () => {
@@ -266,7 +270,7 @@ export const CustomerDetailsModal = ({
             setSelectedProjectId(project ? toId(project.id) : '')
           }}
           handleSaveProject={handleSaveProject}
-          handleToggleProject={handleToggleProject}
+          handleDeleteProject={handleDeleteProject}
         />
       ) : null}
       {activeTab === 'contacts' ? (
