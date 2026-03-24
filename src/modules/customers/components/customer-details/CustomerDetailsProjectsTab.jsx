@@ -1,6 +1,9 @@
 import { Badge, Button, Card, EmptyState, Input } from '@/components/shared/ui'
 import { formatAmount, toPN } from '../../utils/customersView'
 
+const toEnglishDigits = (value) => String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+const toPersianDigits = (value) => String(value ?? '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)] || digit)
+
 const projectSummaryCards = (project) => [
   { label: 'Orders', value: toPN(project?.financialSummary?.ordersCount || 0) },
   { label: 'Total', value: formatAmount(project?.financialSummary?.totalAmount || 0) },
@@ -66,7 +69,7 @@ export const CustomerDetailsProjectsTab = ({
       <div className="text-sm font-black text-slate-900">{projectDraft.id ? 'Edit Project' : 'Create Project'}</div>
       <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="Project Name" disabled={!canWriteCustomers} />
       <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="Project Notes" disabled={!canWriteCustomers} />
-      <Input value={projectDraft.targetCustomerId} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: event.target.value }))} placeholder="Target Customer ID" dir="ltr" inputMode="numeric" disabled={!canWriteCustomers} />
+      <Input value={toPersianDigits(projectDraft.targetCustomerId)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} placeholder="شناسه مشتری مقصد" inputMode="numeric" disabled={!canWriteCustomers} />
       <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
         <input type="checkbox" checked={Boolean(projectDraft.isDefault)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isDefault: event.target.checked }))} disabled={!canWriteCustomers} />
         Default project
