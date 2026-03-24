@@ -186,6 +186,9 @@ export const CustomerDetailsModal = ({
       setEditDraft(createCustomerDraft(nextCustomer))
       setActiveTab('profile')
       await onReloadCustomerList?.()
+      if (toId(contactDraft.id) === toId(contact.id)) {
+        setContactDraft(createContactDraft(null, selectedProjectId))
+      }
     } catch (err) {
       setError(err?.message || 'ویرایش مشتری ناموفق بود.')
     } finally {
@@ -251,6 +254,15 @@ export const CustomerDetailsModal = ({
       ) : null}
       {activeTab === 'financial' ? (
         <CustomerDetailsFinancialTab customer={normalizedCustomer} projects={projects} />
+      ) : null}
+      {activeTab === 'edit' ? (
+        <CustomerDetailsEditTab
+          draft={editDraft}
+          setDraft={setEditDraft}
+          canWriteCustomers={canWriteCustomers}
+          isSaving={isSavingEdit}
+          onSave={handleSaveCustomerEdit}
+        />
       ) : null}
     </ModalShell>
   )
