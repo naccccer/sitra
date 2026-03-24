@@ -1,6 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Button } from '@/components/shared/ui'
+import { Button, Select } from '@/components/shared/ui'
 import { CustomerDetailsModal } from '../components/CustomerDetailsModal'
 import { CustomerFormModal } from '../components/CustomerFormModal'
 import { CustomersTable } from '../components/CustomersTable'
@@ -8,7 +8,7 @@ import { CustomersToolbar } from '../components/CustomersToolbar'
 import { useCustomersDirectory } from '../hooks/useCustomersDirectory'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { customersApi } from '../services/customersApi'
-import { createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
+import { PAGE_SIZE_OPTIONS, createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
 
 export const CustomersPage = ({ session }) => {
   const canManageCustomers = Boolean(session?.capabilities?.canManageCustomers)
@@ -16,11 +16,8 @@ export const CustomersPage = ({ session }) => {
 
   const [searchInput, setSearchInput] = useState('')
   const [viewMode, setViewMode] = useState('active') // active | archived
-  const [customerTypeFilter, setCustomerTypeFilter] = useState('all')
-  const [hasDueFilter, setHasDueFilter] = useState('all')
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
-  const [formMode, setFormMode] = useState('create')
   const [formCustomer, setFormCustomer] = useState(null)
   const [detailsCustomer, setDetailsCustomer] = useState(null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
@@ -30,11 +27,9 @@ export const CustomersPage = ({ session }) => {
   const directoryFilters = useMemo(() => ({
     q: String(debouncedSearch || '').trim(),
     isActive: isArchiveView ? false : true,
-    customerType: customerTypeFilter === 'all' ? undefined : customerTypeFilter,
-    hasDue: hasDueFilter === 'all' ? undefined : hasDueFilter === 'true',
     page,
     pageSize,
-  }), [debouncedSearch, isArchiveView, customerTypeFilter, hasDueFilter, page, pageSize])
+  }), [debouncedSearch, isArchiveView, page, pageSize])
 
   const {
     customers,
@@ -59,30 +54,13 @@ export const CustomersPage = ({ session }) => {
     setPage(1)
   }
 
-  const handleCustomerTypeChange = (value) => {
-    setCustomerTypeFilter(value)
-    setPage(1)
-  }
-
-  const handleHasDueChange = (value) => {
-    setHasDueFilter(value)
-    setPage(1)
-  }
-
   const handlePageSizeChange = (value) => {
     setPageSize(value)
     setPage(1)
   }
 
   const handleCreateCustomer = () => {
-    setFormMode('create')
     setFormCustomer(createCustomerDraft())
-    setDetailsCustomer(null)
-  }
-
-  const handleEditCustomer = (customer) => {
-    setFormMode('edit')
-    setFormCustomer(normalizeCustomerRecord(customer))
     setDetailsCustomer(null)
   }
 
@@ -120,7 +98,6 @@ export const CustomersPage = ({ session }) => {
 
   const handleFormSaved = async (savedCustomer) => {
     setFormCustomer(null)
-    setFormMode('create')
     await reload()
     if (savedCustomer) {
       setDetailsCustomer(normalizeCustomerRecord(savedCustomer))
@@ -160,13 +137,6 @@ export const CustomersPage = ({ session }) => {
       <CustomersToolbar
         q={searchInput}
         onQueryChange={handleSearchChange}
-        customerType={customerTypeFilter}
-        onCustomerTypeChange={handleCustomerTypeChange}
-        hasDue={hasDueFilter}
-        onHasDueChange={handleHasDueChange}
-        pageSize={pageSize}
-        onPageSizeChange={handlePageSizeChange}
-        total={pagination.total || 0}
         onCreateCustomer={handleCreateCustomer}
         canWriteCustomers={canWriteCustomers}
       />
@@ -184,7 +154,6 @@ export const CustomersPage = ({ session }) => {
         selectedCustomerId={activeRowId}
         canWriteCustomers={canWriteCustomers}
         onOpenDetails={handleOpenDetails}
-        onEditCustomer={handleEditCustomer}
         onDeleteCustomer={handleDeleteCustomer}
         onRestoreCustomer={handleRestoreCustomer}
       />
@@ -194,7 +163,17 @@ export const CustomersPage = ({ session }) => {
           <div className="text-xs font-bold text-slate-500">
             صفحه {pagination.page} از {totalPages} - {pagination.total || 0} نتیجه
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1">
+              <span className="text-[11px] font-bold text-slate-500">تعداد ردیف:</span>
+              <Select
+                className="h-8 min-w-[110px] text-[11px]"
+                value={String(pageSize)}
+                onChange={(event) => onPageSizeChange(Number(event.target.value))}
+              >
+                {PAGE_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option} ردیف</option>)}
+              </Select>
+            </div>
             <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>قبلی</Button>
             <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">{page}</span>
             <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>بعدی</Button>
@@ -204,7 +183,7 @@ export const CustomersPage = ({ session }) => {
 
       <CustomerFormModal
         isOpen={Boolean(formCustomer)}
-        mode={formMode}
+        mode="create"
         customer={formCustomer}
         canWriteCustomers={canWriteCustomers}
         onClose={() => setFormCustomer(null)}
@@ -216,7 +195,6 @@ export const CustomersPage = ({ session }) => {
         customer={detailsCustomer}
         canWriteCustomers={canWriteCustomers}
         onClose={() => setDetailsCustomer(null)}
-        onEditCustomer={handleEditCustomer}
         onReloadCustomerList={reload}
       />
     </div>
