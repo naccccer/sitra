@@ -15,7 +15,7 @@ export const CustomerDetailsContactsTab = ({
   canWriteCustomers = false,
   resetContactDraft,
   handleSaveContact,
-  handleToggleContact,
+  handleDeleteContact,
 }) => (
   <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1.05fr]">
     <Card tone="muted" padding="md" className="space-y-3">
@@ -44,7 +44,7 @@ export const CustomerDetailsContactsTab = ({
             >
               <div className="flex items-center justify-between gap-2">
                 <div className="text-sm font-black text-slate-900">{contact.label || 'اصلی'}</div>
-                <Badge tone={contact.isActive ? 'success' : 'danger'}>{contact.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                <span className="text-[11px] font-bold text-slate-400">برای ویرایش انتخاب کنید</span>
               </div>
               <div className="mt-1 flex items-center justify-between gap-2 text-[11px] font-bold text-slate-500">
                 <span>{toPersianDigits(contact.phone)}</span>
@@ -58,6 +58,11 @@ export const CustomerDetailsContactsTab = ({
 
     <Card tone="muted" padding="md" className="space-y-3">
       <div className="text-sm font-black text-slate-900">{contactDraft.id ? 'ویرایش شماره' : 'افزودن شماره'}</div>
+      {contactDraft.id ? (
+        <div className="rounded-lg bg-blue-50 px-3 py-2 text-xs font-bold text-blue-700">
+          درحال ویرایش: {contactDraft.phone || 'شماره تماس'}
+        </div>
+      ) : null}
       <Input value={contactDraft.label} onChange={(event) => setContactDraft((prev) => ({ ...prev, label: event.target.value }))} placeholder="برچسب" disabled={!canWriteCustomers} />
       <Input value={toPersianDigits(contactDraft.phone)} onChange={(event) => setContactDraft((prev) => ({ ...prev, phone: toEnglishDigits(event.target.value) }))} placeholder="شماره تماس" inputMode="tel" disabled={!canWriteCustomers} />
       <Input value={toPersianDigits(contactDraft.sortOrder)} onChange={(event) => setContactDraft((prev) => ({ ...prev, sortOrder: toEnglishDigits(event.target.value) }))} placeholder="ترتیب نمایش" inputMode="numeric" disabled={!canWriteCustomers} />
@@ -65,16 +70,12 @@ export const CustomerDetailsContactsTab = ({
         <input type="checkbox" checked={Boolean(contactDraft.isPrimary)} onChange={(event) => setContactDraft((prev) => ({ ...prev, isPrimary: event.target.checked }))} disabled={!canWriteCustomers} />
         شماره اصلی
       </label>
-      <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
-        <input type="checkbox" checked={Boolean(contactDraft.isActive)} onChange={(event) => setContactDraft((prev) => ({ ...prev, isActive: event.target.checked }))} disabled={!canWriteCustomers} />
-        شماره فعال
-      </label>
       <div className="flex flex-wrap gap-2">
         <Button variant="primary" onClick={handleSaveContact} disabled={!canWriteCustomers}>{contactDraft.id ? 'ذخیره تغییرات' : 'ثبت شماره'}</Button>
         {contactDraft.id && canWriteCustomers ? <Button variant="secondary" onClick={() => resetContactDraft(null, selectedProjectId)}>شماره جدید</Button> : null}
         {contactDraft.id && canWriteCustomers ? (
-          <Button variant={contactDraft.isActive ? 'danger' : 'success'} onClick={() => handleToggleContact(contactDraft)}>
-            {contactDraft.isActive ? 'غیرفعال‌سازی' : 'فعال‌سازی'}
+          <Button variant="danger" onClick={() => handleDeleteContact(contactDraft)}>
+            حذف شماره
           </Button>
         ) : null}
       </div>

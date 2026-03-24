@@ -1,4 +1,4 @@
-import { Badge, Button, Card, EmptyState, Input } from '@/components/shared/ui'
+import { Badge, Button, Card, EmptyState, Input, Select } from '@/components/shared/ui'
 import { formatAmount, toPN } from '../../utils/customersView'
 
 const toEnglishDigits = (value) => String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
@@ -12,6 +12,7 @@ const projectSummaryCards = (project) => [
 ]
 
 export const CustomerDetailsProjectsTab = ({
+  customerOptions = [],
   projects = [],
   isLoadingProjects = false,
   selectedProjectId = '',
@@ -74,7 +75,14 @@ export const CustomerDetailsProjectsTab = ({
       ) : null}
       <Input value={projectDraft.name} onChange={(event) => setProjectDraft((prev) => ({ ...prev, name: event.target.value }))} placeholder="نام پروژه" disabled={!canWriteCustomers} />
       <Input value={projectDraft.notes} onChange={(event) => setProjectDraft((prev) => ({ ...prev, notes: event.target.value }))} placeholder="توضیحات پروژه" disabled={!canWriteCustomers} />
-      <Input value={toPersianDigits(projectDraft.targetCustomerId)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} placeholder="شناسه مشتری مقصد" inputMode="numeric" disabled={!canWriteCustomers} />
+      <Select value={String(projectDraft.targetCustomerId || '')} onChange={(event) => setProjectDraft((prev) => ({ ...prev, targetCustomerId: toEnglishDigits(event.target.value) }))} disabled={!canWriteCustomers}>
+        <option value="">انتخاب مشتری مقصد</option>
+        {customerOptions.map((customer) => (
+          <option key={customer.id} value={String(customer.id)}>
+            {customer.fullName || `مشتری ${toPersianDigits(customer.id)}`}
+          </option>
+        ))}
+      </Select>
       <label className="inline-flex items-center gap-2 text-xs font-bold text-slate-600">
         <input type="checkbox" checked={Boolean(projectDraft.isDefault)} onChange={(event) => setProjectDraft((prev) => ({ ...prev, isDefault: event.target.checked }))} disabled={!canWriteCustomers} />
         پروژه پیش‌فرض

@@ -32,49 +32,52 @@ export const CheckoutModal = ({
             <div className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
               <div className="flex items-center justify-between">
                 <div className="text-xs font-black text-slate-700">اتصال سفارش به مشتری/پروژه</div>
-                <div className="flex gap-1">
-                  <button type="button" onClick={() => void customerLinks.createQuickCustomer?.()} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700">
-                    <PlusCircle size={11} />
-                    مشتری
-                  </button>
-                  <button type="button" onClick={() => void customerLinks.createQuickProject?.()} disabled={!customerLinks.selectedCustomerId} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700 disabled:opacity-50">
-                    <PlusCircle size={11} />
-                    پروژه
-                  </button>
-                  <button type="button" onClick={() => void customerLinks.createQuickProjectContact?.()} disabled={!customerLinks.selectedProjectId} className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-black text-slate-700 disabled:opacity-50">
-                    <PlusCircle size={11} />
-                    شماره
-                  </button>
-                </div>
+                <div className="text-[10px] font-bold text-slate-500">مسیر ساده انتخاب مشتری → پروژه → شماره</div>
               </div>
 
-              <select value={customerLinks.selectedCustomerId || ''} onChange={(event) => customerLinks.setSelectedCustomerId?.(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700">
-                <option value="">انتخاب مشتری</option>
-                {customers.map((customer) => (
-                  <option key={customer.id} value={String(customer.id)}>
-                    {customer.fullName}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select value={customerLinks.selectedCustomerId || ''} onChange={(event) => customerLinks.setSelectedCustomerId?.(event.target.value)} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700">
+                  <option value="">انتخاب مشتری</option>
+                  {customers.map((customer) => (
+                    <option key={customer.id} value={String(customer.id)}>
+                      {customer.fullName}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => void customerLinks.createQuickCustomer?.()} className="inline-flex h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700">
+                  <PlusCircle size={12} />
+                  جدید
+                </button>
+              </div>
 
-              <select value={customerLinks.selectedProjectId || ''} onChange={(event) => customerLinks.setSelectedProjectId?.(event.target.value)} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" disabled={!customerLinks.selectedCustomerId}>
-                <option value="">انتخاب پروژه</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={String(project.id)}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
+              <div className="flex items-center gap-2">
+                <select value={customerLinks.selectedProjectId || ''} onChange={(event) => customerLinks.setSelectedProjectId?.(event.target.value)} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" disabled={!customerLinks.selectedCustomerId}>
+                  <option value="">انتخاب پروژه</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={String(project.id)}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+                <button type="button" onClick={() => void customerLinks.createQuickProject?.()} disabled={!customerLinks.selectedCustomerId} className="inline-flex h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700 disabled:opacity-50">
+                  <PlusCircle size={12} />
+                  جدید
+                </button>
+              </div>
 
               <div className="flex items-center gap-2">
                 <select value={customerLinks.selectedProjectContactId || ''} onChange={(event) => customerLinks.setSelectedProjectContactId?.(event.target.value)} className="h-10 flex-1 rounded-xl border border-slate-200 bg-white px-3 text-sm font-black text-slate-700" disabled={!customerLinks.selectedProjectId}>
                   <option value="">شماره پروژه</option>
                   {projectContacts.map((contact) => (
                     <option key={contact.id} value={String(contact.id)}>
-                      {(contact.label ? `${contact.label} - ` : '') + contact.phone}
-                    </option>
-                  ))}
+                    {(contact.label ? `${contact.label} - ` : '') + contact.phone}
+                  </option>
+                ))}
                 </select>
+                <button type="button" onClick={() => void customerLinks.createQuickProjectContact?.()} disabled={!customerLinks.selectedProjectId} className="inline-flex h-10 items-center gap-1 rounded-xl border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700 disabled:opacity-50">
+                  <PlusCircle size={12} />
+                  جدید
+                </button>
                 <button type="button" onClick={() => void customerLinks.editQuickCustomer?.()} disabled={!customerLinks.selectedCustomerId} className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 disabled:opacity-50">
                   ویرایش مشتری
                 </button>
