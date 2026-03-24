@@ -292,6 +292,15 @@ export const CustomerDetailsModal = ({
       {activeTab === 'financial' ? (
         <CustomerDetailsFinancialTab customer={normalizedCustomer} projects={projects} />
       ) : null}
+      {activeTab === 'edit' ? (
+        <CustomerDetailsEditTab
+          draft={editDraft}
+          setDraft={setEditDraft}
+          canWriteCustomers={canWriteCustomers}
+          isSaving={isSavingEdit}
+          onSave={handleSaveCustomerEdit}
+        />
+      ) : null}
     </ModalShell>
   )
 }
