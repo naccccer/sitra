@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { FileSpreadsheet } from 'lucide-react'
 import { Badge, Button, Card, Input } from '@/components/shared/ui'
 import { PriceInput } from '@/components/shared/PriceInput'
 import { toPN } from '@/utils/helpers'
@@ -43,6 +44,7 @@ export function HumanResourcesEmployeeForm({
   formError,
   selectedEmployee,
   onFormChange,
+  onOpenImport,
   onSubmitForm,
 }) {
   const isEditing = Boolean(form.id)
@@ -132,10 +134,16 @@ export function HumanResourcesEmployeeForm({
             </Field>
           </Section>
 
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Button type="submit" variant="primary" disabled={busyKey !== ''}>
               {busyKey === 'save' ? 'در حال ذخیره...' : isEditing ? 'ذخیره تغییرات' : 'ایجاد پرسنل'}
             </Button>
+            {onOpenImport ? (
+              <Button type="button" size="sm" variant="secondary" onClick={onOpenImport} disabled={busyKey !== ''}>
+                <FileSpreadsheet className="h-3.5 w-3.5 me-1.5" />
+                ورود از اکسل
+              </Button>
+            ) : null}
           </div>
         </form>
       ) : (
