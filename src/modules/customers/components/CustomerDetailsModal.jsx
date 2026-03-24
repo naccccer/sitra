@@ -1,32 +1,26 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Button, ModalShell } from '@/components/shared/ui'
 import { customersApi } from '../services/customersApi'
-import { createContactDraft, createProjectDraft, formatAmount, formatDateTime, formatLocation, normalizeCustomerRecord, customerTypeLabel, toPN } from '../utils/customersView'
+import { createContactDraft, createCustomerDraft, createProjectDraft, formatDateTime, normalizeCustomerRecord } from '../utils/customersView'
 import { CustomerDetailsContactsTab } from './customer-details/CustomerDetailsContactsTab'
+import { DETAILS_TABS, toId, toNullableNumber } from './customer-details/customerDetailsHelpers'
 import { CustomerDetailsFinancialTab } from './customer-details/CustomerDetailsFinancialTab'
 import { CustomerDetailsProfileTab } from './customer-details/CustomerDetailsProfileTab'
 import { CustomerDetailsProjectsTab } from './customer-details/CustomerDetailsProjectsTab'
-
-const TABS = [
-  { id: 'profile', label: 'پروفایل' },
-  { id: 'projects', label: 'پروژه‌ها' },
-  { id: 'contacts', label: 'شماره‌ها' },
-  { id: 'financial', label: 'مالی' },
-]
-
-const toId = (value) => String(value ?? '')
-
 export const CustomerDetailsModal = ({
   isOpen,
   customer,
   canWriteCustomers = false,
   onClose,
-  onEditCustomer,
   onReloadCustomerList,
 }) => {
   const normalizedCustomer = useMemo(() => normalizeCustomerRecord(customer || {}), [customer])
+  const [editableCustomer, setEditableCustomer] = useState(normalizedCustomer)
+  const [editDraft, setEditDraft] = useState(createCustomerDraft(normalizedCustomer))
+  const [isSavingEdit, setIsSavingEdit] = useState(false)
   const [activeTab, setActiveTab] = useState('profile')
   const [projects, setProjects] = useState([])
+  const [customerOptions, setCustomerOptions] = useState([])
   const [contacts, setContacts] = useState([])
   const [selectedProjectId, setSelectedProjectId] = useState('')
   const [projectDraft, setProjectDraft] = useState(createProjectDraft(null, normalizedCustomer.id))
@@ -34,23 +28,22 @@ export const CustomerDetailsModal = ({
   const [isLoadingProjects, setIsLoadingProjects] = useState(false)
   const [isLoadingContacts, setIsLoadingContacts] = useState(false)
   const [error, setError] = useState('')
-
   const loadProjects = useCallback(async () => {
-    if (!normalizedCustomer.id) return
+    if (!editableCustomer.id) return
     setIsLoadingProjects(true)
     setError('')
     try {
-      const response = await customersApi.fetchProjects(Number(normalizedCustomer.id))
+      const response = await customersApi.fetchProjects(Number(editableCustomer.id))
       const list = Array.isArray(response?.projects) ? response.projects : []
       setProjects(list)
       const defaultProject = list.find((item) => Boolean(item.isDefault)) || list[0] || null
       if (defaultProject) {
         setSelectedProjectId(toId(defaultProject.id))
-        setProjectDraft(createProjectDraft(defaultProject, normalizedCustomer.id))
+        setProjectDraft(createProjectDraft(defaultProject, editableCustomer.id))
         setContactDraft(createContactDraft(null, toId(defaultProject.id)))
       } else {
         setSelectedProjectId('')
-        setProjectDraft(createProjectDraft(null, normalizedCustomer.id))
+        setProjectDraft(createProjectDraft(null, editableCustomer.id))
         setContacts([])
       }
     } catch (err) {
@@ -58,8 +51,15 @@ export const CustomerDetailsModal = ({
     } finally {
       setIsLoadingProjects(false)
     }
-  }, [normalizedCustomer.id])
-
+  }, [editableCustomer.id])
+  const loadCustomerOptions = useCallback(async () => {
+    try {
+      const response = await customersApi.fetchCustomerDirectory({ page: 1, pageSize: 300 })
+      setCustomerOptions(Array.isArray(response?.customers) ? response.customers : [])
+    } catch {
+      setCustomerOptions([])
+    }
+  }, [])
   const loadContacts = useCallback(async (projectId) => {
     if (!projectId) {
       setContacts([])
@@ -76,27 +76,28 @@ export const CustomerDetailsModal = ({
       setIsLoadingContacts(false)
     }
   }, [])
-
   useEffect(() => {
     if (!isOpen) return
     setActiveTab('profile')
     setError('')
+    setEditableCustomer(normalizedCustomer)
+    setEditDraft(createCustomerDraft(normalizedCustomer))
+    setIsSavingEdit(false)
     setProjects([])
     setContacts([])
     setSelectedProjectId('')
     setProjectDraft(createProjectDraft(null, normalizedCustomer.id))
     setContactDraft(createContactDraft(null, ''))
+    void loadCustomerOptions()
     void loadProjects()
-  }, [isOpen, loadProjects, normalizedCustomer.id])
-
+  }, [isOpen, loadCustomerOptions, loadProjects, normalizedCustomer])
   useEffect(() => {
     if (!isOpen || !selectedProjectId) return
     const project = projects.find((item) => toId(item.id) === selectedProjectId) || null
-    if (project) setProjectDraft(createProjectDraft(project, normalizedCustomer.id))
+    if (project) setProjectDraft(createProjectDraft(project, editableCustomer.id))
     setContactDraft(createContactDraft(null, selectedProjectId))
     void loadContacts(selectedProjectId)
-  }, [isOpen, loadContacts, normalizedCustomer.id, projects, selectedProjectId])
-
+  }, [editableCustomer.id, isOpen, loadContacts, projects, selectedProjectId])
   const handleSaveProject = async () => {
     if (!canWriteCustomers) return
     const name = String(projectDraft.name || '').trim()
@@ -104,7 +105,6 @@ export const CustomerDetailsModal = ({
       setError('نام پروژه الزامی است.')
       return
     }
-
     try {
       const payload = {
         id: projectDraft.id ? Number(projectDraft.id) : undefined,
@@ -114,31 +114,31 @@ export const CustomerDetailsModal = ({
         notes: String(projectDraft.notes || '').trim(),
         isDefault: Boolean(projectDraft.isDefault),
       }
-
       if (projectDraft.id) {
         await customersApi.updateProject(payload)
       } else {
         await customersApi.createProject(payload)
       }
-
       await loadProjects()
       await onReloadCustomerList?.()
     } catch (err) {
       setError(err?.message || 'ذخیره پروژه ناموفق بود.')
     }
   }
-
-  const handleToggleProject = async (project) => {
+  const handleDeleteProject = async (project) => {
     if (!canWriteCustomers) return
     try {
-      await customersApi.setProjectActive(Number(project.id), !project.isActive)
+      await customersApi.setProjectActive(Number(project.id), false)
       await loadProjects()
       await onReloadCustomerList?.()
+      if (toId(projectDraft.id) === toId(project.id)) {
+        setProjectDraft(createProjectDraft(null, editableCustomer.id))
+        setSelectedProjectId('')
+      }
     } catch (err) {
-      setError(err?.message || 'تغییر وضعیت پروژه ناموفق بود.')
+      setError(err?.message || 'حذف پروژه ناموفق بود.')
     }
   }
-
   const handleSaveContact = async () => {
     if (!canWriteCustomers) return
     const phone = String(contactDraft.phone || '').trim()
@@ -150,7 +150,6 @@ export const CustomerDetailsModal = ({
       setError('شماره تماس الزامی است.')
       return
     }
-
     try {
       const payload = {
         id: contactDraft.id ? Number(contactDraft.id) : undefined,
@@ -160,13 +159,11 @@ export const CustomerDetailsModal = ({
         sortOrder: Number(contactDraft.sortOrder || 100),
         isPrimary: Boolean(contactDraft.isPrimary),
       }
-
       if (contactDraft.id) {
         await customersApi.updateProjectContact(payload)
       } else {
         await customersApi.createProjectContact(payload)
       }
-
       await loadContacts(selectedProjectId)
       await loadProjects()
       await onReloadCustomerList?.()
@@ -175,42 +172,60 @@ export const CustomerDetailsModal = ({
       setError(err?.message || 'ذخیره شماره ناموفق بود.')
     }
   }
-
-  const handleToggleContact = async (contact) => {
+  const handleDeleteContact = async (contact) => {
     if (!canWriteCustomers) return
     try {
-      await customersApi.setProjectContactActive(Number(contact.id), !contact.isActive)
+      await customersApi.setProjectContactActive(Number(contact.id), false)
       await loadContacts(selectedProjectId)
       await loadProjects()
       await onReloadCustomerList?.()
+      if (toId(contactDraft.id) === toId(contact.id)) {
+        setContactDraft(createContactDraft(null, selectedProjectId))
+      }
     } catch (err) {
-      setError(err?.message || 'تغییر وضعیت شماره ناموفق بود.')
+      setError(err?.message || 'حذف شماره ناموفق بود.')
     }
   }
-
-  const profileRows = [
-    ['کد مشتری', normalizedCustomer.customerCode || '-'],
-    ['نوع', customerTypeLabel(normalizedCustomer.customerType)],
-    ['نام', normalizedCustomer.fullName || '-'],
-    ['نام شرکت', normalizedCustomer.companyName || '-'],
-    ['تلفن پیش‌فرض', normalizedCustomer.defaultPhone || '-'],
-    ['ایمیل', normalizedCustomer.email || '-'],
-    ['شناسه ملی', normalizedCustomer.nationalId || '-'],
-    ['کد اقتصادی', normalizedCustomer.economicCode || '-'],
-    ['موقعیت', formatLocation(normalizedCustomer.province, normalizedCustomer.city)],
-    ['آدرس', normalizedCustomer.address || '-'],
-    ['سقف اعتبار', normalizedCustomer.creditLimit ? formatAmount(normalizedCustomer.creditLimit) : '-'],
-    ['مهلت پرداخت', normalizedCustomer.paymentTermDays ? `${toPN(normalizedCustomer.paymentTermDays)} روز` : '-'],
-  ]
-
-  const profileCustomer = useMemo(
-    () => ({
-      ...normalizedCustomer,
-      updatedAt: formatDateTime(normalizedCustomer.updatedAt),
-    }),
-    [normalizedCustomer],
-  )
-
+  const handleSaveCustomerEdit = async () => {
+    if (!canWriteCustomers) return
+    const fullName = String(editDraft.fullName || '').trim()
+    if (!fullName) {
+      setError('نام مشتری الزامی است.')
+      return
+    }
+    setIsSavingEdit(true)
+    setError('')
+    try {
+      const payload = {
+        id: Number(editableCustomer.id),
+        customerType: String(editDraft.customerType || 'individual'),
+        fullName,
+        companyName: String(editDraft.companyName || '').trim(),
+        nationalId: String(editDraft.nationalId || '').trim(),
+        economicCode: String(editDraft.economicCode || '').trim(),
+        defaultPhone: String(editDraft.defaultPhone || '').trim(),
+        email: String(editDraft.email || '').trim(),
+        province: String(editDraft.province || '').trim(),
+        city: String(editDraft.city || '').trim(),
+        address: String(editDraft.address || '').trim(),
+        notes: String(editDraft.notes || '').trim(),
+        creditLimit: toNullableNumber(editDraft.creditLimit),
+        paymentTermDays: toNullableNumber(editDraft.paymentTermDays),
+        applyToOrderHistory: false,
+      }
+      const response = await customersApi.updateCustomer(payload)
+      const nextCustomer = normalizeCustomerRecord(response?.customer || payload)
+      setEditableCustomer(nextCustomer)
+      setEditDraft(createCustomerDraft(nextCustomer))
+      setActiveTab('profile')
+      await onReloadCustomerList?.()
+    } catch (err) {
+      setError(err?.message || 'ویرایش مشتری ناموفق بود.')
+    } finally {
+      setIsSavingEdit(false)
+    }
+  }
+  const profileCustomer = useMemo(() => ({ ...editableCustomer, updatedAt: formatDateTime(editableCustomer.updatedAt) }), [editableCustomer])
   return (
     <ModalShell
       isOpen={isOpen}
@@ -218,18 +233,10 @@ export const CustomerDetailsModal = ({
       description="پروفایل، پروژه‌ها، شماره‌ها و جمع‌بندی مالی در یک پنجره."
       onClose={onClose}
       maxWidthClass="max-w-6xl"
-      footer={
-        <div className="flex items-center justify-between gap-2">
-          <div className="text-[11px] font-bold text-slate-500">{error || ' '}</div>
-          <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={onClose}>بستن</Button>
-            {canWriteCustomers ? <Button variant="primary" onClick={() => onEditCustomer?.(normalizedCustomer)}>ویرایش مشتری</Button> : null}
-          </div>
-        </div>
-      }
+      footer={<div className="flex items-center justify-between gap-2"><div className="text-[11px] font-bold text-slate-500">{error || ' '}</div><div className="flex items-center gap-2"><Button variant="secondary" onClick={onClose}>بستن</Button></div></div>}
     >
       <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-        {TABS.map((tab) => (
+        {DETAILS_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
@@ -240,38 +247,47 @@ export const CustomerDetailsModal = ({
           </button>
         ))}
       </div>
-
-      {activeTab === 'profile' ? <CustomerDetailsProfileTab customer={profileCustomer} profileRows={profileRows} /> : null}
-      {activeTab === 'projects' ? (
-        <CustomerDetailsProjectsTab
-          projects={projects}
-          isLoadingProjects={isLoadingProjects}
-          selectedProjectId={selectedProjectId}
-          projectDraft={projectDraft}
-          setProjectDraft={setProjectDraft}
+      {activeTab === 'profile' ? (
+        <CustomerDetailsProfileTab
+          customer={profileCustomer}
+          editDraft={editDraft}
+          setEditDraft={setEditDraft}
           canWriteCustomers={canWriteCustomers}
-          resetProjectDraft={(project = null) => {
-            setProjectDraft(createProjectDraft(project, normalizedCustomer.id))
-            setSelectedProjectId(project ? toId(project.id) : '')
-          }}
-          handleSaveProject={handleSaveProject}
-          handleToggleProject={handleToggleProject}
+          onSaveProfile={handleSaveCustomerEdit}
+          isSavingProfile={isSavingEdit}
         />
       ) : null}
-      {activeTab === 'contacts' ? (
-        <CustomerDetailsContactsTab
-          projects={projects}
-          contacts={contacts}
-          isLoadingContacts={isLoadingContacts}
-          selectedProjectId={selectedProjectId}
-          setSelectedProjectId={setSelectedProjectId}
-          contactDraft={contactDraft}
-          setContactDraft={setContactDraft}
-          canWriteCustomers={canWriteCustomers}
-          resetContactDraft={(contact = null, projectId = selectedProjectId) => setContactDraft(createContactDraft(contact, projectId))}
-          handleSaveContact={handleSaveContact}
-          handleToggleContact={handleToggleContact}
-        />
+      {activeTab === 'projects' ? (
+        <div className="space-y-4">
+          <CustomerDetailsProjectsTab
+            customerOptions={customerOptions}
+            projects={projects}
+            isLoadingProjects={isLoadingProjects}
+            selectedProjectId={selectedProjectId}
+            projectDraft={projectDraft}
+            setProjectDraft={setProjectDraft}
+            canWriteCustomers={canWriteCustomers}
+            resetProjectDraft={(project = null) => {
+              setProjectDraft(createProjectDraft(project, normalizedCustomer.id))
+              setSelectedProjectId(project ? toId(project.id) : '')
+            }}
+            handleSaveProject={handleSaveProject}
+            handleDeleteProject={handleDeleteProject}
+          />
+          <CustomerDetailsContactsTab
+            projects={projects}
+            contacts={contacts}
+            isLoadingContacts={isLoadingContacts}
+            selectedProjectId={selectedProjectId}
+            setSelectedProjectId={setSelectedProjectId}
+            contactDraft={contactDraft}
+            setContactDraft={setContactDraft}
+            canWriteCustomers={canWriteCustomers}
+            resetContactDraft={(contact = null, projectId = selectedProjectId) => setContactDraft(createContactDraft(contact, projectId))}
+            handleSaveContact={handleSaveContact}
+            handleDeleteContact={handleDeleteContact}
+          />
+        </div>
       ) : null}
       {activeTab === 'financial' ? (
         <CustomerDetailsFinancialTab customer={normalizedCustomer} projects={projects} />
