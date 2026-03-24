@@ -5,6 +5,8 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { humanResourcesApi } from '../services/humanResourcesApi'
 import { EMPTY_FORM, toFormState, trimValue } from '../utils/humanResourcesView'
 
+const HR_TABS = [{ id: 'personnel', label: 'پرسنل' }]
+
 export const HumanResourcesPage = ({ session }) => {
   const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session])
   const canAccessHumanResources = Boolean(session?.capabilities?.canAccessHumanResources)
@@ -20,6 +22,9 @@ export const HumanResourcesPage = ({ session }) => {
   const [form, setForm] = useState(EMPTY_FORM)
   const [modalOpen, setModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [page, setPage] = useState(1)
+  const [pageSize, setPageSize] = useState(25)
+  const [pagination, setPagination] = useState({ page: 1, pageSize: 25, total: 0 })
   const debouncedQuery = useDebouncedValue(query, 300)
 
   const loadEmployees = useCallback(async () => {
@@ -29,14 +34,19 @@ export const HumanResourcesPage = ({ session }) => {
       const response = await humanResourcesApi.fetchEmployees({
         q: trimValue(debouncedQuery) || undefined,
         isActive: archiveMode ? false : true,
+        page,
+        pageSize,
       })
       setEmployees(Array.isArray(response?.employees) ? response.employees : [])
+      if (response?.pagination) {
+        setPagination(response.pagination)
+      }
     } catch (loadError) {
       setError(loadError.message || 'بارگذاری پرسنل ناموفق بود.')
     } finally {
       setLoading(false)
     }
-  }, [archiveMode, debouncedQuery])
+  }, [archiveMode, debouncedQuery, page, pageSize])
 
   useEffect(() => {
     loadEmployees()
@@ -154,6 +164,17 @@ export const HumanResourcesPage = ({ session }) => {
   const onArchiveModeToggle = useCallback(() => {
     setArchiveMode((current) => !current)
     setQuery('')
+    setPage(1)
+  }, [])
+
+  const onQueryChange = useCallback((value) => {
+    setQuery(value)
+    setPage(1)
+  }, [])
+
+  const onPageSizeChange = useCallback((newSize) => {
+    setPageSize(newSize)
+    setPage(1)
   }, [])
 
   const onApplyImport = useCallback(async (rows) => {
@@ -200,8 +221,22 @@ export const HumanResourcesPage = ({ session }) => {
     ? employees.find((employee) => String(employee.id) === String(form.id)) || null
     : null
 
+  const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / Math.max(1, pageSize)))
+
   return (
     <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
+      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+        {HR_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black text-white transition-colors"
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <HumanResourcesWorkspace
         archiveMode={archiveMode}
         busyKey={busyKey}
@@ -222,12 +257,18 @@ export const HumanResourcesPage = ({ session }) => {
         onFormChange={onFormChange}
         onNewEmployee={onNewEmployee}
         onOpenImportModal={onOpenImportModal}
-        onQueryChange={setQuery}
+        onPageChange={setPage}
+        onPageSizeChange={onPageSizeChange}
+        onQueryChange={onQueryChange}
         onReload={loadEmployees}
         onRestoreEmployee={onRestoreEmployee}
         onSubmitForm={onSubmitForm}
+        page={page}
+        pageSize={pageSize}
         query={query}
         selectedEmployee={selectedEmployee}
+        totalCount={pagination.total || 0}
+        totalPages={totalPages}
       />
     </div>
   )

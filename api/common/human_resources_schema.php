@@ -155,4 +155,22 @@ function app_ensure_human_resources_schema(PDO $pdo): void
     } catch (Throwable $e) {
         // Best-effort migration only.
     }
+
+    $pdo->exec(
+        "CREATE TABLE IF NOT EXISTS hr_documents (
+            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+            employee_id BIGINT UNSIGNED NOT NULL,
+            title VARCHAR(255) NOT NULL,
+            file_path VARCHAR(500) NOT NULL,
+            original_name VARCHAR(255) NOT NULL,
+            file_size BIGINT UNSIGNED NOT NULL DEFAULT 0,
+            mime_type VARCHAR(100) NULL,
+            created_by_user_id INT UNSIGNED NULL,
+            created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (id),
+            KEY idx_hr_documents_employee (employee_id),
+            CONSTRAINT fk_hr_documents_employee FOREIGN KEY (employee_id) REFERENCES hr_employees (id) ON UPDATE CASCADE ON DELETE CASCADE,
+            CONSTRAINT fk_hr_documents_created_by FOREIGN KEY (created_by_user_id) REFERENCES users (id) ON UPDATE CASCADE ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
+    );
 }

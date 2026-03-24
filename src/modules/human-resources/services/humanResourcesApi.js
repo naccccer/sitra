@@ -39,4 +39,23 @@ export const humanResourcesApi = {
   async deleteEmployee(id) {
     return employeeRequest('DELETE', { id })
   },
+
+  async fetchDocuments(employeeId) {
+    return request(`/api/hr_documents.php${buildQuery({ employeeId })}`, { method: 'GET' })
+  },
+
+  async uploadDocument(employeeId, title, file) {
+    const formData = new FormData()
+    formData.append('employeeId', String(employeeId))
+    formData.append('title', title)
+    formData.append('document', file)
+    return request('/api/hr_documents.php', { method: 'POST', body: formData })
+  },
+
+  async deleteDocument(documentId) {
+    return request(`/api/hr_documents.php${buildQuery({ id: documentId })}`, {
+      method: 'DELETE',
+      body: JSON.stringify({ id: documentId }),
+    })
+  },
 }

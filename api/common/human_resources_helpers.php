@@ -113,7 +113,7 @@ function app_hr_find_employee_by_national_id(PDO $pdo, string $nationalId): ?arr
     return is_array($row) ? $row : null;
 }
 
-function app_hr_list_employees(PDO $pdo, string $q, ?bool $isActive): array
+function app_hr_list_employees(PDO $pdo, string $q, ?bool $isActive, int $page = 1, int $pageSize = 25): array
 {
     $where = [];
     $params = [];
@@ -128,10 +128,29 @@ function app_hr_list_employees(PDO $pdo, string $q, ?bool $isActive): array
         $params['is_active'] = $isActive ? 1 : 0;
     }
 
-    $sql = 'SELECT * FROM hr_employees' . ($where ? ' WHERE ' . implode(' AND ', $where) : '') . ' ORDER BY last_name ASC, first_name ASC, employee_code ASC, id ASC';
+    $whereClause = $where ? ' WHERE ' . implode(' AND ', $where) : '';
+
+    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM hr_employees' . $whereClause);
+    $countStmt->execute($params);
+    $total = (int)$countStmt->fetchColumn();
+
+    $page = max(1, $page);
+    $pageSize = max(1, min(100, $pageSize));
+    $offset = ($page - 1) * $pageSize;
+
+    $sql = 'SELECT * FROM hr_employees' . $whereClause . ' ORDER BY last_name ASC, first_name ASC, employee_code ASC, id ASC LIMIT ' . $pageSize . ' OFFSET ' . $offset;
     $stmt = $pdo->prepare($sql);
     $stmt->execute($params);
-    return array_map('app_hr_employee_from_row', $stmt->fetchAll() ?: []);
+    $employees = array_map('app_hr_employee_from_row', $stmt->fetchAll() ?: []);
+
+    return [
+        'employees' => $employees,
+        'pagination' => [
+            'page' => $page,
+            'pageSize' => $pageSize,
+            'total' => $total,
+        ],
+    ];
 }
 
 function app_hr_save_employee(PDO $pdo, array $payload, array $actor, ?int $employeeId = null): array

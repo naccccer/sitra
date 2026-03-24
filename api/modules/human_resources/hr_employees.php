@@ -26,7 +26,10 @@ if ($method === 'GET') {
 
     $q = app_hr_normalize_text($_GET['q'] ?? '');
     $isActive = array_key_exists('isActive', $_GET) ? app_hr_parse_bool($_GET['isActive'], null) : null;
-    app_json(['success' => true, 'employees' => app_hr_list_employees($pdo, $q, $isActive)]);
+    $page = max(1, (int)($_GET['page'] ?? 1));
+    $pageSize = max(1, min(100, (int)($_GET['pageSize'] ?? 25)));
+    $result = app_hr_list_employees($pdo, $q, $isActive, $page, $pageSize);
+    app_json(['success' => true, 'employees' => $result['employees'], 'pagination' => $result['pagination']]);
 }
 
 $payload = app_read_json_body();
