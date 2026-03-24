@@ -1,7 +1,14 @@
+import { useState } from 'react'
 import { ModalShell } from '@/components/shared/ui'
 import { HumanResourcesDirectoryPanel } from './HumanResourcesDirectoryPanel'
+import { HumanResourcesDocumentsTab } from './HumanResourcesDocumentsTab'
 import { HumanResourcesEmployeeForm } from './HumanResourcesEmployeeForm'
 import { HumanResourcesImportModal } from './HumanResourcesImportModal'
+
+const MODAL_TABS = [
+  { id: 'info', label: 'اطلاعات' },
+  { id: 'documents', label: 'مدارک' },
+]
 
 export function HumanResourcesWorkspace({
   archiveMode,
@@ -36,6 +43,14 @@ export function HumanResourcesWorkspace({
   totalCount,
   totalPages,
 }) {
+  const [modalTab, setModalTab] = useState('info')
+  const isEditing = Boolean(form.id)
+
+  const handleCloseModal = () => {
+    onCloseModal()
+    setModalTab('info')
+  }
+
   return (
     <div className="space-y-4">
       {error ? (
@@ -68,21 +83,55 @@ export function HumanResourcesWorkspace({
 
       <ModalShell
         isOpen={modalOpen}
-        title={form.id ? 'ویرایش پرسنل' : 'ثبت پرسنل جدید'}
+        title={isEditing ? 'ویرایش پرسنل' : 'ثبت پرسنل جدید'}
         description="اطلاعات پرسنل را ثبت یا به‌روزرسانی کنید."
-        onClose={onCloseModal}
+        onClose={handleCloseModal}
         maxWidthClass="max-w-4xl"
       >
-        <HumanResourcesEmployeeForm
-          busyKey={busyKey}
-          canWriteEmployees={canWriteEmployees}
-          form={form}
-          formError={formError}
-          onFormChange={onFormChange}
-          onOpenImport={!form.id ? onOpenImportModal : undefined}
-          onSubmitForm={onSubmitForm}
-          selectedEmployee={selectedEmployee}
-        />
+        {isEditing ? (
+          <div className="space-y-4">
+            <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+              {MODAL_TABS.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setModalTab(tab.id)}
+                  className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${modalTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {modalTab === 'info' ? (
+              <HumanResourcesEmployeeForm
+                busyKey={busyKey}
+                canWriteEmployees={canWriteEmployees}
+                form={form}
+                formError={formError}
+                onFormChange={onFormChange}
+                onSubmitForm={onSubmitForm}
+                selectedEmployee={selectedEmployee}
+              />
+            ) : (
+              <HumanResourcesDocumentsTab
+                employeeId={form.id}
+                canWriteEmployees={canWriteEmployees}
+              />
+            )}
+          </div>
+        ) : (
+          <HumanResourcesEmployeeForm
+            busyKey={busyKey}
+            canWriteEmployees={canWriteEmployees}
+            form={form}
+            formError={formError}
+            onFormChange={onFormChange}
+            onOpenImport={onOpenImportModal}
+            onSubmitForm={onSubmitForm}
+            selectedEmployee={selectedEmployee}
+          />
+        )}
       </ModalShell>
 
       <HumanResourcesImportModal
