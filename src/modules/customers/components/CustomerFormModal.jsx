@@ -3,8 +3,11 @@ import { ModalShell, Button, Input, Select } from '@/components/shared/ui'
 import { customersApi } from '../services/customersApi'
 import { CUSTOMER_TYPE_OPTIONS, createCustomerDraft } from '../utils/customersView'
 
+const toEnglishDigits = (value) => String(value ?? '').replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)))
+const toPersianDigits = (value) => String(value ?? '').replace(/\d/g, (digit) => '۰۱۲۳۴۵۶۷۸۹'[Number(digit)] || digit)
+
 const toNullableNumber = (value) => {
-  const raw = String(value ?? '').trim().replace(/,/g, '')
+  const raw = toEnglishDigits(value).trim().replace(/[,\u066C]/g, '')
   if (!raw) return null
   const parsed = Number(raw)
   return Number.isFinite(parsed) ? parsed : null
@@ -95,20 +98,20 @@ export const CustomerFormModal = ({
     >
       {error ? <div className="mb-3 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700">{error}</div> : null}
       <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-        <Input value={draft.customerCode} onChange={(event) => setField('customerCode', event.target.value)} placeholder="کد مشتری" dir="ltr" />
+        <Input value={toPersianDigits(draft.customerCode)} onChange={(event) => setField('customerCode', toEnglishDigits(event.target.value))} placeholder="کد مشتری" inputMode="numeric" />
         <Select value={draft.customerType} onChange={(event) => setField('customerType', event.target.value)}>
           {CUSTOMER_TYPE_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
         </Select>
         <Input value={draft.fullName} onChange={(event) => setField('fullName', event.target.value)} placeholder="نام مشتری *" />
         <Input value={draft.companyName} onChange={(event) => setField('companyName', event.target.value)} placeholder="نام شرکت" />
-        <Input value={draft.defaultPhone} onChange={(event) => setField('defaultPhone', event.target.value)} placeholder="تلفن پیش‌فرض" dir="ltr" />
+        <Input value={toPersianDigits(draft.defaultPhone)} onChange={(event) => setField('defaultPhone', toEnglishDigits(event.target.value))} placeholder="تلفن پیش‌فرض" inputMode="tel" />
         <Input value={draft.email} onChange={(event) => setField('email', event.target.value)} placeholder="ایمیل" dir="ltr" />
-        <Input value={draft.nationalId} onChange={(event) => setField('nationalId', event.target.value)} placeholder="شناسه ملی" dir="ltr" />
-        <Input value={draft.economicCode} onChange={(event) => setField('economicCode', event.target.value)} placeholder="کد اقتصادی" dir="ltr" />
+        <Input value={toPersianDigits(draft.nationalId)} onChange={(event) => setField('nationalId', toEnglishDigits(event.target.value))} placeholder="شناسه ملی" inputMode="numeric" />
+        <Input value={toPersianDigits(draft.economicCode)} onChange={(event) => setField('economicCode', toEnglishDigits(event.target.value))} placeholder="کد اقتصادی" inputMode="numeric" />
         <Input value={draft.province} onChange={(event) => setField('province', event.target.value)} placeholder="استان" />
         <Input value={draft.city} onChange={(event) => setField('city', event.target.value)} placeholder="شهر" />
-        <Input value={draft.creditLimit} onChange={(event) => setField('creditLimit', event.target.value)} placeholder="سقف اعتبار" dir="ltr" inputMode="numeric" />
-        <Input value={draft.paymentTermDays} onChange={(event) => setField('paymentTermDays', event.target.value)} placeholder="مهلت پرداخت (روز)" dir="ltr" inputMode="numeric" />
+        <Input value={toPersianDigits(draft.creditLimit)} onChange={(event) => setField('creditLimit', toEnglishDigits(event.target.value))} placeholder="سقف اعتبار" inputMode="numeric" />
+        <Input value={toPersianDigits(draft.paymentTermDays)} onChange={(event) => setField('paymentTermDays', toEnglishDigits(event.target.value))} placeholder="مهلت پرداخت (روز)" inputMode="numeric" />
         <Input value={draft.address} onChange={(event) => setField('address', event.target.value)} placeholder="آدرس" className="md:col-span-2 lg:col-span-3" />
         <Input value={draft.notes} onChange={(event) => setField('notes', event.target.value)} placeholder="یادداشت" className="md:col-span-2 lg:col-span-3" />
         {isEdit ? (
@@ -126,4 +129,3 @@ export const CustomerFormModal = ({
     </ModalShell>
   )
 }
-
