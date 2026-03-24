@@ -1,7 +1,5 @@
-﻿import { Badge, Button, EmptyState } from '@/components/shared/ui'
-import { customerTypeLabel, formatAmount, toPN } from '../utils/customersView'
-
-const rowBadgeTone = (isActive) => (isActive ? 'success' : 'danger')
+﻿import { Button, EmptyState } from '@/components/shared/ui'
+import { formatAmount, toPN } from '../utils/customersView'
 
 export const CustomersTable = ({
   customers = [],
@@ -24,35 +22,23 @@ export const CustomersTable = ({
 
   return (
     <div className="overflow-x-auto rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <table className="min-w-[1220px] w-full table-fixed border-collapse text-xs">
-        <colgroup>
-          <col className="w-[112px]" />
-          <col className="w-[220px]" />
-          <col className="w-[92px]" />
-          <col className="w-[132px]" />
-          <col className="w-[88px]" />
-          <col className="w-[88px]" />
-          <col className="w-[130px]" />
-          <col className="w-[130px]" />
-          <col className="w-[90px]" />
-          <col className="w-[220px]" />
-        </colgroup>
+      <table className="min-w-[960px] w-full border-collapse text-xs">
         <thead className="bg-slate-50 text-slate-500">
           <tr>
-            <th className="px-2 py-3 text-center font-black">کد مشتری</th>
+            <th className="w-[110px] px-2 py-3 text-center font-black">کد مشتری</th>
             <th className="px-3 py-3 text-start font-black">نام</th>
-            <th className="px-3 py-3 text-start font-black">تلفن پیش‌فرض</th>
-            <th className="px-3 py-3 text-center font-black">پروژه فعال</th>
-            <th className="px-3 py-3 text-center font-black">سفارش فعال</th>
-            <th className="px-3 py-3 text-end font-black">جمع فروش</th>
-            <th className="px-3 py-3 text-end font-black">مانده</th>
-            <th className="px-3 py-3 text-center font-black">عملیات</th>
+            <th className="w-[130px] px-3 py-3 text-start font-black">تلفن پیش‌فرض</th>
+            <th className="w-[90px] px-3 py-3 text-center font-black">پروژه فعال</th>
+            <th className="w-[90px] px-3 py-3 text-center font-black">سفارش فعال</th>
+            <th className="w-[130px] px-3 py-3 text-end font-black">جمع فروش</th>
+            <th className="w-[130px] px-3 py-3 text-end font-black">مانده</th>
+            <th className="w-[210px] px-3 py-3 text-center font-black">عملیات</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
           {isLoading ? (
             <tr>
-              <td colSpan={10} className="px-3 py-8 text-center text-xs font-bold text-slate-500">
+              <td colSpan={8} className="px-3 py-8 text-center text-xs font-bold text-slate-500">
                 در حال بارگذاری...
               </td>
             </tr>

@@ -146,9 +146,6 @@ export const CustomersPage = ({ session }) => {
       <CustomersToolbar
         q={searchInput}
         onQueryChange={handleSearchChange}
-        pageSize={pageSize}
-        onPageSizeChange={handlePageSizeChange}
-        total={pagination.total || 0}
         onCreateCustomer={handleCreateCustomer}
         canWriteCustomers={canWriteCustomers}
       />
