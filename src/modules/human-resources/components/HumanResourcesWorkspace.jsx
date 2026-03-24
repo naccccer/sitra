@@ -23,12 +23,18 @@ export function HumanResourcesWorkspace({
   onFormChange,
   onNewEmployee,
   onOpenImportModal,
+  onPageChange,
+  onPageSizeChange,
   onQueryChange,
   onReload,
   onRestoreEmployee,
   onSubmitForm,
+  page,
+  pageSize,
   query,
   selectedEmployee,
+  totalCount,
+  totalPages,
 }) {
   return (
     <div className="space-y-4">
@@ -48,10 +54,16 @@ export function HumanResourcesWorkspace({
         onArchiveModeToggle={onArchiveModeToggle}
         onEditEmployee={onEditEmployee}
         onNewEmployee={onNewEmployee}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
         onQueryChange={onQueryChange}
         onReload={onReload}
         onRestoreEmployee={onRestoreEmployee}
+        page={page}
+        pageSize={pageSize}
         query={query}
+        totalCount={totalCount}
+        totalPages={totalPages}
       />
 
       <ModalShell
