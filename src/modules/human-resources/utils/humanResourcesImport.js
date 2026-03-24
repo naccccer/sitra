@@ -29,6 +29,10 @@ const PERSIAN_HEADERS = [
   { match: ['یادداشت', 'توضیحات'], field: 'notes' },
 ]
 
+const PERSIAN_HEADER_MATCHERS = PERSIAN_HEADERS
+  .flatMap(({ field, match }) => match.map((value) => ({ field, value })))
+  .sort((left, right) => right.value.length - left.value.length)
+
 const SAMPLE_HEADERS = [
   'نام',
   'نام خانوادگی',
@@ -43,20 +47,34 @@ const SAMPLE_HEADERS = [
   'یادداشت',
 ]
 
+const SAMPLE_HEADER_FIELDS = [
+  'firstName',
+  'lastName',
+  'nationalId',
+  'mobile',
+  'department',
+  'jobTitle',
+  'bankName',
+  'bankAccountNo',
+  'bankSheba',
+  'baseSalary',
+  'notes',
+]
+
 function normalizeHeader(value) {
   return normalizeDigitsToLatin(value).toLowerCase().replace(/[^a-z0-9\u0600-\u06FF]+/g, '')
 }
 
 function resolveField(header) {
   const normalized = String(header || '').trim()
-  const persianMatch = PERSIAN_HEADERS.find(({ match }) => match.some((item) => normalized.includes(item)))
+  const persianMatch = PERSIAN_HEADER_MATCHERS.find(({ value }) => normalized.includes(value))
   if (persianMatch) return persianMatch.field
   return HEADER_ALIASES[normalizeHeader(header)] || null
 }
 
-function toRowObject(row = {}) {
-  return Object.entries(row).reduce((acc, [header, rawValue]) => {
-    const field = resolveField(header)
+function toRowObjectFromColumns(row = [], columnFields = []) {
+  return row.reduce((acc, rawValue, index) => {
+    const field = columnFields[index]
     if (!field) return acc
     const value = String(rawValue ?? '').trim()
     if (field === 'baseSalary') {
@@ -83,21 +101,19 @@ export async function parseHumanResourcesImportFile(file, employees = []) {
   if (!sheetName) throw new Error('فایل اکسل خالی است.')
 
   const sheet = workbook.Sheets[sheetName]
-  const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
-  if (rows.length === 0) throw new Error('هیچ ردیفی برای واردسازی پیدا نشد.')
+  const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '', blankrows: false })
+  if (rows.length === 0) throw new Error('فایل اکسل خالی است.')
 
-  const headerMap = Object.keys(rows[0]).reduce((mapped, header) => {
-    const field = resolveField(header)
-    if (field) mapped[header] = field
-    return mapped
-  }, {})
-  const unknownHeaders = Object.keys(rows[0]).filter((header) => !headerMap[header])
+  const headerRow = Array.isArray(rows[0]) ? rows[0] : []
+  const dataRows = rows.slice(1).filter((row) => Array.isArray(row) && row.some((cell) => String(cell ?? '').trim() !== ''))
+  const columnFields = headerRow.map((header, index) => resolveField(header) || SAMPLE_HEADER_FIELDS[index] || null)
+  const unknownHeaders = headerRow.filter((header, index) => !columnFields[index] && String(header ?? '').trim())
   const { byNationalId } = makeEmployeeMaps(employees)
   const seenKeys = new Set()
   const duplicateKeys = new Set()
 
-  const parsedRows = rows.map((row, index) => {
-    const rowObject = toRowObject(row)
+  const parsedRows = dataRows.map((row, index) => {
+    const rowObject = toRowObjectFromColumns(row, columnFields)
     const errors = []
     const warnings = []
     const fullName = `${rowObject.firstName || ''} ${rowObject.lastName || ''}`.trim()
