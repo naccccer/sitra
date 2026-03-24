@@ -7,7 +7,6 @@ export const CustomersTable = ({
   selectedCustomerId = '',
   canWriteCustomers = false,
   onOpenDetails = () => {},
-  onEditCustomer = () => {},
   onDeleteCustomer = () => {},
   onRestoreCustomer = () => {},
 }) => {
@@ -61,10 +60,9 @@ export const CustomersTable = ({
               <td className="px-3 py-3 text-end font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
               <td className="px-3 py-3">
                 <div className="flex flex-nowrap items-center justify-center gap-1.5 whitespace-nowrap">
-                  <Button size="sm" variant="secondary" onClick={() => onOpenDetails(customer)}>جزئیات</Button>
+                  <Button size="sm" variant="secondary" onClick={() => onOpenDetails(customer)}>جزئیات / ویرایش</Button>
                   {canWriteCustomers ? (
                     <>
-                      <Button size="sm" variant="secondary" onClick={() => onEditCustomer(customer)}>ویرایش</Button>
                       {customer.isActive ? (
                         <Button size="sm" variant="danger" onClick={() => onDeleteCustomer(customer)}>حذف</Button>
                       ) : (

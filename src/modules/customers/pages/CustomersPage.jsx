@@ -18,7 +18,6 @@ export const CustomersPage = ({ session }) => {
   const [viewMode, setViewMode] = useState('active') // active | archived
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
-  const [formMode, setFormMode] = useState('create')
   const [formCustomer, setFormCustomer] = useState(null)
   const [detailsCustomer, setDetailsCustomer] = useState(null)
   const debouncedSearch = useDebouncedValue(searchInput, 350)
@@ -61,14 +60,7 @@ export const CustomersPage = ({ session }) => {
   }
 
   const handleCreateCustomer = () => {
-    setFormMode('create')
     setFormCustomer(createCustomerDraft())
-    setDetailsCustomer(null)
-  }
-
-  const handleEditCustomer = (customer) => {
-    setFormMode('edit')
-    setFormCustomer(normalizeCustomerRecord(customer))
     setDetailsCustomer(null)
   }
 
@@ -106,7 +98,6 @@ export const CustomersPage = ({ session }) => {
 
   const handleFormSaved = async (savedCustomer) => {
     setFormCustomer(null)
-    setFormMode('create')
     await reload()
     if (savedCustomer) {
       setDetailsCustomer(normalizeCustomerRecord(savedCustomer))
@@ -163,7 +154,6 @@ export const CustomersPage = ({ session }) => {
         selectedCustomerId={activeRowId}
         canWriteCustomers={canWriteCustomers}
         onOpenDetails={handleOpenDetails}
-        onEditCustomer={handleEditCustomer}
         onDeleteCustomer={handleDeleteCustomer}
         onRestoreCustomer={handleRestoreCustomer}
       />
@@ -193,7 +183,7 @@ export const CustomersPage = ({ session }) => {
 
       <CustomerFormModal
         isOpen={Boolean(formCustomer)}
-        mode={formMode}
+        mode="create"
         customer={formCustomer}
         canWriteCustomers={canWriteCustomers}
         onClose={() => setFormCustomer(null)}
@@ -205,7 +195,6 @@ export const CustomersPage = ({ session }) => {
         customer={detailsCustomer}
         canWriteCustomers={canWriteCustomers}
         onClose={() => setDetailsCustomer(null)}
-        onEditCustomer={handleEditCustomer}
         onReloadCustomerList={reload}
       />
     </div>
