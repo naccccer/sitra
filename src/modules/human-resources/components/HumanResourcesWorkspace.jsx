@@ -48,7 +48,6 @@ export function HumanResourcesWorkspace({
         onArchiveModeToggle={onArchiveModeToggle}
         onEditEmployee={onEditEmployee}
         onNewEmployee={onNewEmployee}
-        onOpenImport={onOpenImportModal}
         onQueryChange={onQueryChange}
         onReload={onReload}
         onRestoreEmployee={onRestoreEmployee}
@@ -68,6 +67,7 @@ export function HumanResourcesWorkspace({
           form={form}
           formError={formError}
           onFormChange={onFormChange}
+          onOpenImport={!form.id ? onOpenImportModal : undefined}
           onSubmitForm={onSubmitForm}
           selectedEmployee={selectedEmployee}
         />

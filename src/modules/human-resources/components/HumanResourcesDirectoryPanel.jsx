@@ -1,4 +1,4 @@
-import { Archive, FileSpreadsheet, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
+import { Archive, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, EmptyState, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { displayName, formatMoney, hasMissingPayrollData } from '../utils/humanResourcesView'
@@ -22,7 +22,6 @@ export function HumanResourcesDirectoryPanel({
   onArchiveEmployee,
   onArchiveModeToggle,
   onEditEmployee,
-  onOpenImport,
   onNewEmployee,
   onQueryChange,
   onReload,
@@ -32,27 +31,13 @@ export function HumanResourcesDirectoryPanel({
   return (
     <Card padding="md" className="space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="جست‌وجو..."
-            className="!w-48"
-          />
-          <span className="whitespace-nowrap text-xs font-bold text-slate-400">
-            {toPN(employees.length)} نتیجه
-          </span>
-        </div>
         <div className="flex items-center gap-1.5">
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onReload}
-            disabled={loading || busyKey !== ''}
-            title="بازخوانی"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-          </Button>
+          {canWriteEmployees && !archiveMode ? (
+            <Button size="sm" variant="success" onClick={onNewEmployee} disabled={busyKey !== ''}>
+              + ثبت پرسنل جدید
+            </Button>
+          ) : null}
+          {!canWriteEmployees ? <Badge tone="neutral" className="px-3 py-1.5 text-[11px]">فقط مشاهده</Badge> : null}
           <Button
             size="icon"
             variant={archiveMode ? 'secondary' : 'ghost'}
@@ -62,23 +47,26 @@ export function HumanResourcesDirectoryPanel({
           >
             <Archive className="h-4 w-4" />
           </Button>
-          {canWriteEmployees && !archiveMode ? (
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={onOpenImport}
-              disabled={busyKey !== ''}
-              title="ورود از اکسل"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-            </Button>
-          ) : null}
-          {canWriteEmployees && !archiveMode ? (
-            <Button size="sm" variant="success" onClick={onNewEmployee} disabled={busyKey !== ''}>
-              + ثبت پرسنل جدید
-            </Button>
-          ) : null}
-          {!canWriteEmployees ? <Badge tone="neutral" className="px-3 py-1.5 text-[11px]">فقط مشاهده</Badge> : null}
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onReload}
+            disabled={loading || busyKey !== ''}
+            title="بازخوانی"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="whitespace-nowrap text-xs font-bold text-slate-400">
+            {toPN(employees.length)} نتیجه
+          </span>
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جست‌وجو..."
+            className="!w-48"
+          />
         </div>
       </div>
 
