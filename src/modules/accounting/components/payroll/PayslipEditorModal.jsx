@@ -2,33 +2,33 @@ import { useMemo, useState } from 'react'
 import { Button, Input, ModalShell, Select } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
+import { calculateCatalogTotals, resolveInputValueFromPayslip, splitCatalogByType } from './payrollCatalog'
 
-const EDIT_FIELDS = [
-  ['baseSalary', 'حقوق پایه'],
-  ['housingAllowance', 'حق مسکن'],
-  ['foodAllowance', 'بن خواربار'],
-  ['childAllowance', 'حق اولاد'],
-  ['seniorityAllowance', 'سنوات'],
-  ['overtimeHours', 'ساعت اضافه کار'],
-  ['overtimePay', 'مبلغ اضافه کار'],
-  ['bonus', 'پاداش'],
-  ['otherAdditions', 'مزایای متفرقه'],
-  ['insurance', 'بیمه'],
-  ['tax', 'مالیات'],
-  ['loanDeduction', 'اقساط / وام'],
-  ['advanceDeduction', 'علی الحساب'],
-  ['absenceDeduction', 'کسری کار / غیبت'],
-  ['otherDeductions', 'سایر کسورات'],
-]
+function updateDraftInput(draft, source, value) {
+  return {
+    ...draft,
+    [source]: value,
+    inputs: {
+      ...(draft.inputs || {}),
+      [source]: value,
+    },
+  }
+}
 
-export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
+export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
   const [file, setFile] = useState(null)
   const [error, setError] = useState('')
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
   const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
-  const totals = useMemo(() => calculatePayslipTotals(draft ?? payslip), [draft, payslip])
+  const totals = useMemo(() => {
+    const fallback = calculatePayslipTotals(draft ?? payslip)
+    const catalogTotals = calculateCatalogTotals(draft ?? payslip, catalog)
+    if (catalogTotals.gross === 0 && catalogTotals.deductions === 0) return fallback
+    return catalogTotals
+  }, [catalog, draft, payslip])
+  const scopedCatalog = useMemo(() => splitCatalogByType(catalog), [catalog])
 
   if (!payslip) return null
 
@@ -74,12 +74,12 @@ export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUp
     <ModalShell
       isOpen={Boolean(payslip)}
       onClose={onClose}
-      title={`ویرایش فیش ${employeeName || 'بدون نام'}`}
+      title={`فیش حقوق ${employeeName || 'بدون نام'}`}
       description={`دوره ${run?.title || run?.periodKey || '-'}`}
-      maxWidthClass="max-w-4xl"
+      maxWidthClass="max-w-5xl"
       footer={(
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs font-bold text-slate-500">جمع خالص قابل پرداخت: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span></div>
+          <div className="text-xs font-bold text-slate-500">خالص پرداختی: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span></div>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onClose}>انصراف</Button>
             <Button size="sm" variant="primary" disabled={busy} onClick={handleSave}>{busy ? 'در حال ذخیره...' : 'ذخیره فیش'}</Button>
@@ -100,7 +100,6 @@ export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUp
             ))}
           </Select>
           {error && <span className="block text-xs font-bold text-rose-600">{error}</span>}
-          {employeeList.length === 0 && <span className="block text-[11px] font-bold text-amber-700">لیست پرسنل از HR دریافت نشده است.</span>}
         </label>
 
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
@@ -109,14 +108,24 @@ export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUp
           <Info label="وضعیت فیش" value={draft?.status || payslip.status || 'draft'} />
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {EDIT_FIELDS.map(([field, label]) => (
-            <label key={field} className="space-y-1">
-              <span className="block text-xs font-black text-slate-600">{label}</span>
-              <Input type="number" value={draft?.[field] ?? ''} onChange={(event) => setDraft((current) => ({ ...current, [field]: Number(event.target.value || 0) }))} />
-            </label>
-          ))}
-        </div>
+        <ItemGrid
+          title="کارکرد و اطلاعات ماه"
+          items={[...scopedCatalog.info, ...scopedCatalog.work]}
+          payslip={draft}
+          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+        />
+        <ItemGrid
+          title="دریافتی‌ها"
+          items={scopedCatalog.earning}
+          payslip={draft}
+          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+        />
+        <ItemGrid
+          title="کسورات"
+          items={scopedCatalog.deduction}
+          payslip={draft}
+          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+        />
 
         <label className="block space-y-1">
           <span className="block text-xs font-black text-slate-600">یادداشت</span>
@@ -124,7 +133,7 @@ export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUp
         </label>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          <InfoCard label="جمع ناخالص" value={formatMoney(totals.gross)} />
+          <InfoCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
           <InfoCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
           <InfoCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
         </div>
@@ -143,6 +152,30 @@ export function PayslipEditorModal({ busy, employees = [], onClose, onSave, onUp
         </div>
       </div>
     </ModalShell>
+  )
+}
+
+function ItemGrid({ title, items = [], onChange, payslip }) {
+  if (!items.length) return null
+  return (
+    <div className="space-y-2 rounded-2xl border border-slate-200 p-3">
+      <div className="text-sm font-black text-slate-900">{title}</div>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {items.map((item) => {
+          const source = String(item.source || item.key)
+          return (
+            <label key={item.key} className="space-y-1">
+              <span className="block text-xs font-black text-slate-600">{item.label}</span>
+              <Input
+                type="number"
+                value={resolveInputValueFromPayslip(payslip, item)}
+                onChange={(event) => onChange(source, Number(event.target.value || 0))}
+              />
+            </label>
+          )
+        })}
+      </div>
+    </div>
   )
 }
 

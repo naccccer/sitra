@@ -1,5 +1,18 @@
-﻿import { useEffect, useState } from 'react'
-import { Button, Card, Input } from '@/components/shared/ui'
+import { useEffect, useMemo, useState } from 'react'
+import { Button, Card, Input, Select } from '@/components/shared/ui'
+import { normalizeCatalogItem } from './payrollCatalog'
+
+function createNewCatalogItem() {
+  const nonce = Date.now()
+  return {
+    key: `custom_${nonce}`,
+    label: 'آیتم سفارشی',
+    type: 'earning',
+    source: `custom_${nonce}`,
+    sortOrder: 999,
+    active: true,
+  }
+}
 
 export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
   const [draft, setDraft] = useState(settings)
@@ -8,13 +21,30 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
     setDraft(settings)
   }, [settings])
 
+  const items = useMemo(
+    () => (Array.isArray(draft?.payrollItemCatalog) ? draft.payrollItemCatalog : []).map((item, index) => normalizeCatalogItem(item, index)),
+    [draft?.payrollItemCatalog],
+  )
+
   const patch = (field, value) => setDraft((current) => ({ ...current, [field]: value }))
+
+  const patchItem = (index, next) => {
+    patch('payrollItemCatalog', items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...next } : item)))
+  }
+
+  const removeItem = (index) => {
+    patch('payrollItemCatalog', items.filter((_, itemIndex) => itemIndex !== index))
+  }
+
+  const addItem = () => {
+    patch('payrollItemCatalog', [...items, createNewCatalogItem()])
+  }
 
   return (
     <Card padding="md" className="space-y-4">
       <div>
         <div className="text-sm font-black text-slate-900">تنظیمات فیش حقوقی</div>
-        <div className="text-xs font-bold text-slate-500">اطلاعات سربرگ سازمان و بلوک امضا برای چاپ A4</div>
+        <div className="text-xs font-bold text-slate-500">سربرگ چاپ + کاتالوگ آیتم‌های قابل مدیریت مدیر</div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -35,11 +65,42 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         />
       </label>
 
+      <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm font-black text-slate-900">کاتالوگ آیتم‌های فیش</div>
+            <div className="text-xs font-bold text-slate-500">نوع، ترتیب، فعال/غیرفعال و منبع هر آیتم را مدیریت کنید.</div>
+          </div>
+          <Button size="sm" variant="ghost" disabled={!canManage} onClick={addItem}>آیتم جدید</Button>
+        </div>
+        <div className="space-y-2">
+          {items.map((item, index) => (
+            <div key={`${item.key}:${index}`} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto]">
+              <Input value={item.label} onChange={(event) => patchItem(index, { label: event.target.value })} placeholder="عنوان آیتم" />
+              <Input value={item.key} onChange={(event) => patchItem(index, { key: event.target.value, source: item.source || event.target.value })} placeholder="کلید" />
+              <Select value={item.type} onChange={(event) => patchItem(index, { type: event.target.value })}>
+                <option value="earning">دریافتی</option>
+                <option value="deduction">کسورات</option>
+                <option value="work">کارکرد</option>
+                <option value="info">اطلاعات</option>
+              </Select>
+              <Input value={item.source || ''} onChange={(event) => patchItem(index, { source: event.target.value })} placeholder="source" />
+              <label className="flex items-center gap-2 px-2 text-xs font-black text-slate-600">
+                <input type="checkbox" checked={item.active !== false} onChange={(event) => patchItem(index, { active: event.target.checked })} />
+                فعال
+              </label>
+              <Button size="sm" variant="danger" disabled={!canManage} onClick={() => removeItem(index)}>حذف</Button>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="flex justify-end">
-        <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave(draft)}>
-          {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات چاپ'}
+        <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave({ ...draft, payrollItemCatalog: items })}>
+          {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
         </Button>
       </div>
     </Card>
   )
 }
+

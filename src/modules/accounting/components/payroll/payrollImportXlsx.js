@@ -1,134 +1,144 @@
-﻿import * as XLSX from 'xlsx'
+import * as XLSX from 'xlsx'
 import { normalizeDigitsToLatin } from '@/utils/helpers'
 import { safeNumber } from './payrollMath'
 
-const FIELD_ALIASES = {
+const FIXED_ALIASES = {
   employeecode: 'employeeCode',
-  code: 'employeeCode',
-  personnelcode: 'employeeCode',
+  personnelno: 'personnelNo',
   nationalid: 'nationalId',
-  overtimehours: 'overtimeHours',
-  overtimepay: 'overtimePay',
-  bonus: 'bonus',
-  housingallowance: 'housingAllowance',
-  foodallowance: 'foodAllowance',
-  childallowance: 'childAllowance',
-  seniorityallowance: 'seniorityAllowance',
-  otheradditions: 'otherAdditions',
-  insurance: 'insurance',
-  tax: 'tax',
-  loandeduction: 'loanDeduction',
-  advancededuction: 'advanceDeduction',
-  absencededuction: 'absenceDeduction',
-  otherdeductions: 'otherDeductions',
   notes: 'notes',
 }
 
-const PERSIAN_HEADER_MATCHERS = [
+const FIXED_PERSIAN = [
   { match: ['کد پرسنلی', 'شماره پرسنلی'], field: 'employeeCode' },
+  { match: ['شماره بیمه'], field: 'personnelNo' },
   { match: ['کد ملی'], field: 'nationalId' },
-  { match: ['ساعت اضافه کار'], field: 'overtimeHours' },
-  { match: ['مبلغ اضافه کار', 'اضافه کار'], field: 'overtimePay' },
-  { match: ['پاداش'], field: 'bonus' },
-  { match: ['حق مسکن'], field: 'housingAllowance' },
-  { match: ['بن خواربار', 'حق غذا'], field: 'foodAllowance' },
-  { match: ['حق اولاد'], field: 'childAllowance' },
-  { match: ['سنوات'], field: 'seniorityAllowance' },
-  { match: ['مزایای متفرقه', 'سایر مزایا'], field: 'otherAdditions' },
-  { match: ['بیمه'], field: 'insurance' },
-  { match: ['مالیات'], field: 'tax' },
-  { match: ['اقساط', 'وام'], field: 'loanDeduction' },
-  { match: ['علی الحساب'], field: 'advanceDeduction' },
-  { match: ['غیبت', 'کسری کار'], field: 'absenceDeduction' },
-  { match: ['سایر کسورات'], field: 'otherDeductions' },
   { match: ['یادداشت', 'توضیحات'], field: 'notes' },
 ]
 
-const VARIABLE_FIELDS = new Set([
-  'overtimeHours',
-  'overtimePay',
-  'bonus',
-  'housingAllowance',
-  'foodAllowance',
-  'childAllowance',
-  'seniorityAllowance',
-  'otherAdditions',
-  'insurance',
-  'tax',
-  'loanDeduction',
-  'advanceDeduction',
-  'absenceDeduction',
-  'otherDeductions',
-  'notes',
-])
-
 function normalizeHeader(value) {
-  return normalizeDigitsToLatin(value).toLowerCase().replace(/[^a-z0-9]+/g, '')
+  return normalizeDigitsToLatin(String(value || '').trim()).toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '')
 }
 
-function mapHeaders(headers = []) {
+function normalizeItemLabel(value) {
+  return String(value || '').trim().replace(/\s+/g, ' ')
+}
+
+function buildCatalogAliasMap(catalog = []) {
+  const map = new Map()
+  for (const item of (Array.isArray(catalog) ? catalog : [])) {
+    if (!item?.key || item?.active === false) continue
+    const key = String(item.key)
+    const source = String(item.source || item.key)
+    const normalizedLabel = normalizeHeader(item.label)
+    const normalizedKey = normalizeHeader(key)
+    const normalizedSource = normalizeHeader(source)
+    if (normalizedLabel) map.set(normalizedLabel, source)
+    if (normalizedKey) map.set(normalizedKey, source)
+    if (normalizedSource) map.set(normalizedSource, source)
+  }
+  return map
+}
+
+function mapHeaders(headers = [], catalog = []) {
+  const catalogAliasMap = buildCatalogAliasMap(catalog)
   return headers.reduce((mapped, header) => {
-    const normalizedHeader = String(header || '').trim()
-    const persianField = PERSIAN_HEADER_MATCHERS.find(({ match }) => match.some((item) => normalizedHeader.includes(item)))?.field
-    const field = persianField || FIELD_ALIASES[normalizeHeader(header)]
+    const cleanHeader = String(header || '').trim()
+    if (!cleanHeader) return mapped
+    const fromPersian = FIXED_PERSIAN.find(({ match }) => match.some((label) => cleanHeader.includes(label)))?.field
+    const fromFixed = FIXED_ALIASES[normalizeHeader(cleanHeader)]
+    const fromCatalog = catalogAliasMap.get(normalizeHeader(cleanHeader))
+    const field = fromPersian || fromFixed || fromCatalog || null
     if (field) mapped[header] = field
     return mapped
   }, {})
 }
 
-function toRowPayload(row, headerMap) {
-  return Object.entries(row).reduce((payload, [header, rawValue]) => {
+function identifyEmployee(row = {}, headerMap = {}) {
+  const result = {
+    employeeCode: '',
+    personnelNo: '',
+    nationalId: '',
+  }
+  for (const [header, rawValue] of Object.entries(row)) {
     const field = headerMap[header]
-    if (!field || !VARIABLE_FIELDS.has(field)) return payload
-    payload[field] = field === 'notes' ? String(rawValue || '').trim() : safeNumber(normalizeDigitsToLatin(rawValue))
-    return payload
-  }, {})
+    if (!['employeeCode', 'personnelNo', 'nationalId'].includes(field)) continue
+    result[field] = String(normalizeDigitsToLatin(rawValue || '')).trim()
+  }
+  return result
 }
 
-function identifyEmployee(row, headerMap) {
-  const identifierEntries = Object.entries(row).filter(([header]) => {
+function toInputs(row = {}, headerMap = {}) {
+  const values = {}
+  for (const [header, rawValue] of Object.entries(row)) {
     const field = headerMap[header]
-    return field === 'employeeCode' || field === 'nationalId'
-  })
-  return identifierEntries.reduce((result, [header, value]) => {
-    const field = headerMap[header]
-    result[field] = String(normalizeDigitsToLatin(value || '')).trim()
-    return result
-  }, {})
+    if (!field || ['employeeCode', 'personnelNo', 'nationalId'].includes(field)) continue
+    if (field === 'notes') {
+      values.notes = String(rawValue || '').trim()
+      continue
+    }
+    values[field] = safeNumber(normalizeDigitsToLatin(rawValue))
+  }
+  return values
 }
 
-function summarizeRow(index, row, headerMap, employeesByCode, employeesByNationalId) {
+function resolveEmployee(identifier = {}, indexes = {}) {
+  const byCode = indexes.byEmployeeCode?.get(identifier.employeeCode) || null
+  if (byCode) return byCode
+  const byPersonnel = indexes.byPersonnelNo?.get(identifier.personnelNo) || null
+  if (byPersonnel) return byPersonnel
+  return indexes.byNationalId?.get(identifier.nationalId) || null
+}
+
+function summarizeRow(index, row, headerMap, indexes) {
+  const identifier = identifyEmployee(row, headerMap)
+  const values = toInputs(row, headerMap)
+  const employee = resolveEmployee(identifier, indexes)
   const errors = []
   const warnings = []
-  const identifier = identifyEmployee(row, headerMap)
-  const variableData = toRowPayload(row, headerMap)
-  const employee = identifier.employeeCode
-    ? employeesByCode.get(identifier.employeeCode)
-    : identifier.nationalId
-      ? employeesByNationalId.get(identifier.nationalId)
-      : null
 
-  if (!identifier.employeeCode && !identifier.nationalId) {
+  if (!identifier.employeeCode && !identifier.personnelNo && !identifier.nationalId) {
     errors.push('شناسه پرسنلی یا کد ملی در فایل موجود نیست.')
   }
   if (!employee) {
-    errors.push('کارمند متناظر در سیستم پیدا نشد.')
+    errors.push('پرسنل متناظر در منابع انسانی پیدا نشد.')
+  } else if (employee.isActive === false) {
+    errors.push('پرسنل غیرفعال است و برای فیش قابل انتخاب نیست.')
   }
-  if (Object.keys(variableData).length === 0) {
-    warnings.push('هیچ فیلد ماهانه قابل اعمالی در این ردیف تشخیص داده نشد.')
+  const valueKeys = Object.keys(values).filter((key) => key !== 'notes')
+  if (valueKeys.length === 0) {
+    warnings.push('هیچ فیلد عددی برای این ردیف تشخیص داده نشد.')
   }
 
   return {
     rowNumber: index + 2,
     employee,
     identifier,
-    values: variableData,
+    values,
     errors,
     warnings,
   }
 }
 
-export async function parsePayrollImportFile(file, employees = []) {
+function buildEmployeeIndexes(employees = []) {
+  const list = Array.isArray(employees) ? employees : []
+  return {
+    byEmployeeCode: new Map(list.map((employee) => [String(employee.employeeCode || employee.code || '').trim(), employee])),
+    byPersonnelNo: new Map(list.map((employee) => [String(employee.personnelNo || '').trim(), employee])),
+    byNationalId: new Map(list.map((employee) => [String(employee.nationalId || '').trim(), employee])),
+  }
+}
+
+export function buildPayrollTemplateHeaders(catalog = []) {
+  const identityHeaders = ['کد پرسنلی', 'شماره بیمه', 'کد ملی']
+  const itemHeaders = (Array.isArray(catalog) ? catalog : [])
+    .filter((item) => item?.active !== false)
+    .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+    .map((item) => normalizeItemLabel(item.label || item.key))
+  return [...identityHeaders, ...itemHeaders, 'توضیحات']
+}
+
+export async function parsePayrollImportFile(file, employees = [], catalog = []) {
   const workbook = XLSX.read(await file.arrayBuffer(), { type: 'array' })
   const sheetName = workbook.SheetNames[0]
   if (!sheetName) throw new Error('فایل اکسل خالی است.')
@@ -137,26 +147,23 @@ export async function parsePayrollImportFile(file, employees = []) {
   const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
   if (rows.length === 0) throw new Error('هیچ سطری برای واردسازی پیدا نشد.')
 
-  const headerMap = mapHeaders(Object.keys(rows[0]))
+  const headerMap = mapHeaders(Object.keys(rows[0]), catalog)
   const unknownHeaders = Object.keys(rows[0]).filter((header) => !headerMap[header])
-  const employeesByCode = new Map(employees.map((employee) => [String(employee.employeeCode || employee.code || '').trim(), employee]))
-  const employeesByNationalId = new Map(employees.map((employee) => [String(employee.nationalId || '').trim(), employee]))
+  const indexes = buildEmployeeIndexes(employees)
+  const parsedRows = rows.map((row, index) => summarizeRow(index, row, headerMap, indexes))
 
-  const parsedRows = rows.map((row, index) => summarizeRow(index, row, headerMap, employeesByCode, employeesByNationalId))
   const duplicateKeys = new Set()
   const seenKeys = new Set()
-
   parsedRows.forEach((row) => {
-    const key = row.employee?.id || row.identifier.employeeCode || row.identifier.nationalId
+    const key = row.employee?.id || row.identifier.employeeCode || row.identifier.personnelNo || row.identifier.nationalId
     if (!key) return
     if (seenKeys.has(key)) duplicateKeys.add(key)
     seenKeys.add(key)
   })
-
   parsedRows.forEach((row) => {
-    const key = row.employee?.id || row.identifier.employeeCode || row.identifier.nationalId
+    const key = row.employee?.id || row.identifier.employeeCode || row.identifier.personnelNo || row.identifier.nationalId
     if (key && duplicateKeys.has(key)) {
-      row.errors.push('برای این کارمند بیش از یک ردیف در فایل وجود دارد.')
+      row.errors.push('برای این پرسنل بیش از یک ردیف در فایل وجود دارد.')
     }
   })
 

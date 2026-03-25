@@ -44,6 +44,7 @@ describe('usePayroll', () => {
     })
 
     expect(accountingApi.fetchPayrollEmployees).toHaveBeenCalledTimes(1)
+    expect(accountingApi.fetchPayrollEmployees).toHaveBeenCalledWith({ isActive: true })
     expect(accountingApi.fetchPayrollPeriods).toHaveBeenCalledTimes(1)
     expect(accountingApi.fetchPayrollPayslips).toHaveBeenCalledTimes(1)
     expect(accountingApi.fetchPayrollSettings).toHaveBeenCalledTimes(1)

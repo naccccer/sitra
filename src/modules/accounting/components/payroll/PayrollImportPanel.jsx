@@ -1,16 +1,47 @@
 import { useMemo, useState } from 'react'
+import * as XLSX from 'xlsx'
 import { Button, Card, Input, Select } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
-import { trackPayrollEvent } from '../../utils/payrollTelemetry'
-import { parsePayrollImportFile } from './payrollImportXlsx'
+import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
 
-export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, onPreviewImport, run }) {
+function createTemplateRows(headers = []) {
+  return [Object.fromEntries(headers.map((header) => [header, '']))]
+}
+
+function createSampleRows(headers = []) {
+  const base = Object.fromEntries(headers.map((header) => [header, '']))
+  if (Object.hasOwn(base, 'کد پرسنلی')) base['کد پرسنلی'] = '1001'
+  if (Object.hasOwn(base, 'شماره بیمه')) base['شماره بیمه'] = '1001'
+  if (Object.hasOwn(base, 'کد ملی')) base['کد ملی'] = '0012345678'
+  if (Object.hasOwn(base, 'کارکرد (روز)')) base['کارکرد (روز)'] = 30
+  if (Object.hasOwn(base, 'مرخصی استفاده شده')) base['مرخصی استفاده شده'] = 0
+  if (Object.hasOwn(base, 'مانده مرخصی')) base['مانده مرخصی'] = 5.5
+  if (Object.hasOwn(base, 'ساعت اضافه کاری')) base['ساعت اضافه کاری'] = 12
+  if (Object.hasOwn(base, 'مبلغ اضافه کاری')) base['مبلغ اضافه کاری'] = 3250000
+  if (Object.hasOwn(base, 'حقوق پایه')) base['حقوق پایه'] = 125000000
+  if (Object.hasOwn(base, 'حق مسکن')) base['حق مسکن'] = 9000000
+  if (Object.hasOwn(base, 'بن خواربار')) base['بن خواربار'] = 22000000
+  if (Object.hasOwn(base, 'بیمه')) base['بیمه'] = 9250000
+  if (Object.hasOwn(base, 'مالیات')) base['مالیات'] = 5100000
+  if (Object.hasOwn(base, 'توضیحات')) base['توضیحات'] = 'نمونه راهنما برای تست واردسازی'
+  return [base]
+}
+
+function downloadWorkbook(fileName, rows) {
+  const sheet = XLSX.utils.json_to_sheet(rows, { skipHeader: false })
+  const book = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(book, sheet, 'Payroll')
+  XLSX.writeFile(book, fileName)
+}
+
+export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [manualEmployeeId, setManualEmployeeId] = useState('')
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
+  const templateHeaders = useMemo(() => buildPayrollTemplateHeaders(catalog), [catalog])
   const runPayslipByEmployeeId = useMemo(() => {
     const map = new Map()
     for (const payslip of (run?.payslips || [])) {
@@ -29,7 +60,7 @@ export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, on
     setLoading(true)
     setError('')
     try {
-      setPreview(await parsePayrollImportFile(file, employeeList))
+      setPreview(await parsePayrollImportFile(file, employeeList, catalog))
     } catch (parseError) {
       setPreview(null)
       setError(parseError.message)
@@ -50,6 +81,8 @@ export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, on
       periodKey: run.periodKey,
       rows: preview.rows.filter((row) => row.errors.length === 0).map((row) => ({
         employeeId: row.employee.id,
+        employeeCode: row.identifier.employeeCode || undefined,
+        nationalId: row.identifier.nationalId || undefined,
         inputs: Object.fromEntries(Object.entries(row.values).filter(([key]) => key !== 'notes')),
         notes: row.values.notes || '',
       })),
@@ -57,61 +90,60 @@ export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, on
     if (onPreviewImport) {
       const dryRun = await onPreviewImport(payload)
       const previewErrors = Array.isArray(dryRun?.errors) ? dryRun.errors : []
-      trackPayrollEvent('payroll_import_applied', {
-        rowsTotal: preview?.summary?.total || payload.rows.length,
-        rowsValid: payload.rows.length,
-        warnings: Array.isArray(dryRun?.warnings) ? dryRun.warnings.length : (preview?.summary?.warnings || 0),
-        errors: previewErrors.length,
-      })
       if (previewErrors.length > 0) {
         setError('پیش نمایش سرور خطا دارد. ابتدا خطاهای فایل را اصلاح کنید.')
         return
       }
     }
     await onApply(payload)
-    trackPayrollEvent('payroll_import_applied', {
-      rowsTotal: preview?.summary?.total || payload.rows.length,
-      rowsValid: payload.rows.length,
-      warnings: preview?.summary?.warnings || 0,
-      errors: preview?.summary?.errors || 0,
-    })
     setPreview(null)
+  }
+
+  const downloadTemplate = () => {
+    downloadWorkbook('payroll-import-template.xlsx', createTemplateRows(templateHeaders))
+  }
+
+  const downloadSamplePayslip = () => {
+    downloadWorkbook('payroll-sample-slip.xlsx', createSampleRows(templateHeaders))
   }
 
   return (
     <Card padding="md" className="space-y-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
+          <div className="text-xs font-bold text-slate-500">ثبت دستی یا ورود اکسل کامل ماهانه با خروجی سازگار با HR</div>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" variant="ghost" onClick={downloadTemplate}>دانلود template</Button>
+          <Button size="sm" variant="ghost" onClick={downloadSamplePayslip}>دانلود فایل نمونه فیش</Button>
+        </div>
+      </div>
+
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-black text-slate-900">ورود دستی فیش</div>
-            <div className="text-xs font-bold text-slate-500">یک پرسنل را انتخاب کنید تا فیش همان دوره را به صورت دستی ثبت یا ویرایش کنید.</div>
+            <div className="text-sm font-black text-slate-900">ثبت دستی فیش</div>
+            <div className="text-xs font-bold text-slate-500">فقط پرسنل فعال HR قابل انتخاب هستند.</div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <Select value={manualEmployeeId} onChange={(event) => setManualEmployeeId(String(event.target.value || ''))} className="min-w-52">
               <option value="">انتخاب پرسنل</option>
               {employeeList.map((employee) => (
-                <option key={String(employee.id)} value={String(employee.id)}>
-                  {formatEmployeeOption(employee)}
-                </option>
+                <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
               ))}
             </Select>
             <Button size="sm" variant="primary" disabled={!run?.id || !manualEmployeeId} onClick={handleManualEntry}>
-              {selectedEmployeePayslip ? 'ویرایش فیش' : 'ثبت دستی فیش'}
+              {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
             </Button>
           </div>
         </div>
-        {!run?.id && <div className="mt-2 text-[11px] font-bold text-amber-700">برای ورود دستی، ابتدا یک دوره حقوق را انتخاب کنید.</div>}
-        {run?.id && manualEmployeeId && selectedEmployeePayslip && (
-          <div className="mt-2 text-[11px] font-bold text-slate-600">
-            برای این پرسنل قبلا فیش ثبت شده است؛ با زدن دکمه، همان فیش باز می شود.
-          </div>
-        )}
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <div className="text-sm font-black text-slate-900">ورود اکسل ماهانه</div>
-          <div className="text-xs font-bold text-slate-500">فقط فیلدهای متغیر ماهانه مانند اضافه کار، پاداش و کسورات اعمال می شوند.</div>
+          <div className="text-xs font-bold text-slate-500">فایل بر اساس کد پرسنلی/شماره بیمه و fallback کد ملی پردازش می‌شود.</div>
         </div>
         <Input type="file" accept=".xlsx,.xls" className="h-10 max-w-72 cursor-pointer file:me-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
       </div>
@@ -128,7 +160,7 @@ export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, on
             <Summary label="هشدار" value={preview.summary.warnings} />
             <Summary label="خطا" value={preview.summary.errors} />
           </div>
-          {preview.unknownHeaders.length > 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ستون های نادیده گرفته شده: {preview.unknownHeaders.join('، ')}</div>}
+          {preview.unknownHeaders.length > 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ستون‌های نادیده گرفته شده: {preview.unknownHeaders.join('، ')}</div>}
           <div className="overflow-hidden rounded-2xl border border-slate-200">
             <table className="w-full text-right text-xs">
               <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
@@ -145,7 +177,7 @@ export function PayrollImportPanel({ busy, employees, onApply, onManualEntry, on
                     <td className="px-3 py-2 font-black text-slate-900">{row.rowNumber}</td>
                     <td className="px-3 py-2">
                       <div className="font-black text-slate-900">{row.employee?.fullName || row.employee?.name || '-'}</div>
-                      <div className="text-[11px] font-bold text-slate-500">{row.identifier.employeeCode || row.identifier.nationalId || '-'}</div>
+                      <div className="text-[11px] font-bold text-slate-500">{row.identifier.employeeCode || row.identifier.personnelNo || row.identifier.nationalId || '-'}</div>
                     </td>
                     <td className="px-3 py-2 text-slate-600">{Object.keys(row.values).join('، ') || '-'}</td>
                     <td className="px-3 py-2">
@@ -179,3 +211,4 @@ function formatEmployeeOption(employee = {}) {
 function Summary({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-lg font-black text-slate-900">{value}</div></div>
 }
+

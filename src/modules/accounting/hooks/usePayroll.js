@@ -27,7 +27,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
   const [busyKey, setBusyKey] = useState('')
 
   const loadEmployees = useCallback(async () => {
-    const data = await accountingApi.fetchPayrollEmployees()
+    const data = await accountingApi.fetchPayrollEmployees({ isActive: true })
     setEmployees((Array.isArray(data?.employees) ? data.employees : []).map(normalizePayrollEmployee))
   }, [])
 
@@ -149,10 +149,15 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     if (!periodId) {
       throw new Error('Payroll period is required.')
     }
-    const inputs = PAYROLL_INPUT_FIELDS.reduce((result, field) => {
+    const fixedInputs = PAYROLL_INPUT_FIELDS.reduce((result, field) => {
       result[field] = safeNumber(payslip?.[field])
       return result
     }, {})
+    const dynamicInputs = Object.entries(payslip?.inputs || {}).reduce((result, [field, value]) => {
+      result[field] = safeNumber(value)
+      return result
+    }, {})
+    const inputs = { ...fixedInputs, ...dynamicInputs }
     await accountingApi.savePayrollPayslip({
       id: payslip.id,
       employeeId: payslip.employeeId,

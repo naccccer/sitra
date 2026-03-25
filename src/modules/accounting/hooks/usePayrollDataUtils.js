@@ -1,5 +1,6 @@
 import { accountingApi } from '../services/accountingApi'
 import { normalizePayrollListPayslip } from '../components/payroll/payrollMath'
+import { DEFAULT_PAYROLL_ITEM_CATALOG, normalizePayrollItemCatalog } from '../components/payroll/payrollCatalog'
 
 export const DEFAULT_PAYROLL_SETTINGS = {
   companyName: 'سامانه حقوق و دستمزد',
@@ -9,6 +10,7 @@ export const DEFAULT_PAYROLL_SETTINGS = {
   signatoryTitle: '',
   signatureNote: '',
   footerNote: 'این فیش به صورت سیستمی تولید شده است.',
+  payrollItemCatalog: DEFAULT_PAYROLL_ITEM_CATALOG,
 }
 
 export const PAYROLL_INPUT_FIELDS = [
@@ -33,7 +35,11 @@ export function normalizePayrollSettings(value) {
   if (!value) return { ...DEFAULT_PAYROLL_SETTINGS }
   try {
     const parsed = typeof value === 'string' ? JSON.parse(value) : value
-    return { ...DEFAULT_PAYROLL_SETTINGS, ...(parsed && typeof parsed === 'object' ? parsed : {}) }
+    const merged = { ...DEFAULT_PAYROLL_SETTINGS, ...(parsed && typeof parsed === 'object' ? parsed : {}) }
+    return {
+      ...merged,
+      payrollItemCatalog: normalizePayrollItemCatalog(merged.payrollItemCatalog),
+    }
   } catch {
     return { ...DEFAULT_PAYROLL_SETTINGS }
   }
@@ -56,3 +62,4 @@ export async function fetchAllPayrollPayslips(filters = {}) {
   return [...firstItems, ...rest.flatMap((page) => Array.isArray(page?.payslips) ? page.payslips : [])]
     .map(normalizePayrollListPayslip)
 }
+
