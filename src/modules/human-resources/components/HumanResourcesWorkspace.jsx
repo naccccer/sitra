@@ -88,50 +88,38 @@ export function HumanResourcesWorkspace({
         onClose={handleCloseModal}
         maxWidthClass="max-w-4xl"
       >
-        {isEditing ? (
-          <div className="space-y-4">
-            <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-              {MODAL_TABS.map((tab) => (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => setModalTab(tab.id)}
-                  className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${modalTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-
-            {modalTab === 'info' ? (
-              <HumanResourcesEmployeeForm
-                busyKey={busyKey}
-                canWriteEmployees={canWriteEmployees}
-                form={form}
-                formError={formError}
-                onFormChange={onFormChange}
-                onSubmitForm={onSubmitForm}
-                selectedEmployee={selectedEmployee}
-              />
-            ) : (
-              <HumanResourcesDocumentsTab
-                employeeId={form.id}
-                canWriteEmployees={canWriteEmployees}
-              />
-            )}
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+            {MODAL_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setModalTab(tab.id)}
+                className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${modalTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+              >
+                {tab.label}
+              </button>
+            ))}
           </div>
-        ) : (
-          <HumanResourcesEmployeeForm
-            busyKey={busyKey}
-            canWriteEmployees={canWriteEmployees}
-            form={form}
-            formError={formError}
-            onFormChange={onFormChange}
-            onOpenImport={onOpenImportModal}
-            onSubmitForm={onSubmitForm}
-            selectedEmployee={selectedEmployee}
-          />
-        )}
+
+          {modalTab === 'info' ? (
+            <HumanResourcesEmployeeForm
+              busyKey={busyKey}
+              canWriteEmployees={canWriteEmployees}
+              form={form}
+              formError={formError}
+              onFormChange={onFormChange}
+              onOpenImport={isEditing ? undefined : onOpenImportModal}
+              onSubmitForm={onSubmitForm}
+              selectedEmployee={selectedEmployee}
+            />
+          ) : (
+            <HumanResourcesDocumentsTab
+              employeeId={form.id}
+              canWriteEmployees={canWriteEmployees}
+            />
+          )}
+        </div>
       </ModalShell>
 
       <HumanResourcesImportModal

@@ -11,7 +11,6 @@ const HEADER_ALIASES = {
   bankname: 'bankName',
   bankaccountno: 'bankAccountNo',
   banksheba: 'bankSheba',
-  basesalary: 'baseSalary',
   notes: 'notes',
 }
 
@@ -25,7 +24,6 @@ const PERSIAN_HEADERS = [
   { match: ['نام بانک'], field: 'bankName' },
   { match: ['شماره حساب'], field: 'bankAccountNo' },
   { match: ['شماره شبا'], field: 'bankSheba' },
-  { match: ['حقوق پایه'], field: 'baseSalary' },
   { match: ['یادداشت', 'توضیحات'], field: 'notes' },
 ]
 
@@ -43,7 +41,6 @@ const SAMPLE_HEADERS = [
   'نام بانک',
   'شماره حساب',
   'شماره شبا',
-  'حقوق پایه',
   'یادداشت',
 ]
 
@@ -57,7 +54,6 @@ const SAMPLE_HEADER_FIELDS = [
   'bankName',
   'bankAccountNo',
   'bankSheba',
-  'baseSalary',
   'notes',
 ]
 
@@ -77,10 +73,6 @@ function toRowObjectFromColumns(row = [], columnFields = []) {
     const field = columnFields[index]
     if (!field) return acc
     const value = String(rawValue ?? '').trim()
-    if (field === 'baseSalary') {
-      acc[field] = Number(normalizeDigitsToLatin(value).replace(/[^\d]/g, '') || 0)
-      return acc
-    }
     acc[field] = normalizeDigitsToLatin(value).trim()
     return acc
   }, {})
@@ -165,7 +157,7 @@ export function buildHumanResourcesSampleWorkbook() {
   const workbook = XLSX.utils.book_new()
   const sheet = XLSX.utils.aoa_to_sheet([
     SAMPLE_HEADERS,
-    ['علی', 'رضایی', '1234567890', '09120000000', 'اداری', 'کارشناس', 'ملی', '123456789', 'IR123456789012345678901234', 30000000, 'نمونه'],
+    ['علی', 'رضایی', '1234567890', '09120000000', 'اداری', 'کارشناس', 'ملی', '123456789', 'IR123456789012345678901234', 'نمونه'],
   ])
   XLSX.utils.book_append_sheet(workbook, sheet, 'پرسنل')
   return workbook

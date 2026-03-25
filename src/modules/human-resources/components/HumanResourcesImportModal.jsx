@@ -93,7 +93,7 @@ export function HumanResourcesImportModal({
               <Button size="sm" variant="secondary" onClick={handleTemplateDownload}>دانلود فایل نمونه</Button>
             </div>
           </div>
-          <div className="text-[11px] font-bold text-slate-500">می‌توانید فقط ستون‌های پایه را پر کنید: نام، نام خانوادگی، کد ملی، موبایل، واحد، سمت، بانک، شماره حساب، شبا، حقوق پایه و یادداشت.</div>
+          <div className="text-[11px] font-bold text-slate-500">می‌توانید فقط ستون‌های پایه را پر کنید: نام، نام خانوادگی، کد ملی، موبایل، واحد، سمت، بانک، شماره حساب، شبا و یادداشت.</div>
         </Card>
 
         <Card padding="md" className="space-y-3">

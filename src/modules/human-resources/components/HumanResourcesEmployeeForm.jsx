@@ -1,7 +1,6 @@
 import { useState } from 'react'
 import { FileSpreadsheet } from 'lucide-react'
 import { Badge, Button, Card, Input } from '@/components/shared/ui'
-import { PriceInput } from '@/components/shared/PriceInput'
 import { toPN } from '@/utils/helpers'
 import { displayName, normalizeNumericInput } from '../utils/humanResourcesView'
 
@@ -104,7 +103,7 @@ export function HumanResourcesEmployeeForm({
             </div>
           </Section>
 
-          <Section title="اطلاعات بانکی و حقوق" description="اطلاعات مورد نیاز برای مصرف در حقوق و دستمزد">
+          <Section title="اطلاعات بانکی" description="اطلاعات مورد نیاز برای مصرف در حقوق و دستمزد">
             <div className="grid gap-3 md:grid-cols-2">
               <Field label="نام بانک">
                 <Input value={form.bankName} onChange={(event) => onFormChange('bankName', event.target.value)} placeholder="نام بانک" />
@@ -114,11 +113,6 @@ export function HumanResourcesEmployeeForm({
               </Field>
               <Field label="شماره شبا">
                 <Input value={form.bankSheba} onChange={(event) => onFormChange('bankSheba', event.target.value)} placeholder="شماره شبا" />
-              </Field>
-              <Field label="حقوق پایه">
-                <div className="h-10 rounded-lg border border-slate-200 bg-white px-1">
-                  <PriceInput value={form.baseSalary} onChange={(value) => onFormChange('baseSalary', value)} placeholder="حقوق پایه" className="h-8 text-start text-slate-800" />
-                </div>
               </Field>
             </div>
           </Section>

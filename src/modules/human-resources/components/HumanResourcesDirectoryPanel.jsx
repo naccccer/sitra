@@ -1,7 +1,7 @@
 import { Archive, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
 import { Badge, Button, Card, EmptyState, Input, Select } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
-import { displayName, formatMoney, hasMissingPayrollData } from '../utils/humanResourcesView'
+import { displayName, hasMissingPayrollData } from '../utils/humanResourcesView'
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100]
 
@@ -98,7 +98,6 @@ export function HumanResourcesDirectoryPanel({
                   <th className="px-3 py-2.5 text-right">نام</th>
                   <th className="px-3 py-2.5">واحد</th>
                   <th className="px-3 py-2.5">سمت</th>
-                  <th className="px-3 py-2.5">حقوق پایه</th>
                   <th className="px-3 py-2.5">وضعیت</th>
                   {canWriteEmployees ? <th className="px-3 py-2.5">عملیات</th> : null}
                 </tr>
@@ -110,7 +109,6 @@ export function HumanResourcesDirectoryPanel({
                     <td className="px-3 py-2.5 text-right font-black text-slate-900">{displayName(employee)}</td>
                     <td className="px-3 py-2.5 font-bold text-slate-600">{employee.department || '-'}</td>
                     <td className="px-3 py-2.5 font-bold text-slate-600">{employee.jobTitle || '-'}</td>
-                    <td className="px-3 py-2.5 font-black text-slate-900">{formatMoney(employee.baseSalary)}</td>
                     <td className="px-3 py-2.5"><EmployeeStatusBadge employee={employee} /></td>
                     {canWriteEmployees ? (
                       <td className="px-3 py-2">
