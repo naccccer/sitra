@@ -105,7 +105,6 @@ export const HumanResourcesPage = ({ session }) => {
       bankName: trimValue(form.bankName) || undefined,
       bankAccountNo: trimValue(form.bankAccountNo) || undefined,
       bankSheba: trimValue(form.bankSheba) || undefined,
-      baseSalary: Number(form.baseSalary || 0),
       notes: trimValue(form.notes) || undefined,
       isActive: true,
     }
@@ -195,7 +194,6 @@ export const HumanResourcesPage = ({ session }) => {
           bankName: trimValue(values.bankName) || undefined,
           bankAccountNo: trimValue(values.bankAccountNo) || undefined,
           bankSheba: trimValue(values.bankSheba) || undefined,
-          baseSalary: Number(values.baseSalary || 0),
           notes: trimValue(values.notes) || undefined,
         }
         if (payload.id) {

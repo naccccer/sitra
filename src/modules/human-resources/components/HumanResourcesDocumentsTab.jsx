@@ -12,7 +12,7 @@ function formatFileSize(bytes) {
 
 export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
   const [documents, setDocuments] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [title, setTitle] = useState('')
   const [file, setFile] = useState(null)
@@ -21,6 +21,7 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
   const fileInputRef = useRef(null)
 
   const loadDocuments = useCallback(async () => {
+    if (!employeeId) return
     setLoading(true)
     setError('')
     try {
@@ -36,6 +37,18 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
   useEffect(() => {
     loadDocuments()
   }, [loadDocuments])
+
+  if (!employeeId) {
+    return (
+      <Card padding="md">
+        <EmptyState
+          title="ابتدا پرسنل را ذخیره کنید"
+          description="برای آپلود مدارک ابتدا اطلاعات پرسنل را ثبت کنید."
+          className="border border-dashed border-slate-200"
+        />
+      </Card>
+    )
+  }
 
   const handleUpload = async () => {
     if (!file || !title.trim()) return

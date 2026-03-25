@@ -1,4 +1,4 @@
-import { normalizeDigitsToLatin, toPN } from '@/utils/helpers'
+import { normalizeDigitsToLatin } from '@/utils/helpers'
 
 export const EMPTY_FORM = {
   id: '',
@@ -12,7 +12,6 @@ export const EMPTY_FORM = {
   bankName: '',
   bankAccountNo: '',
   bankSheba: '',
-  baseSalary: '',
   notes: '',
   isActive: true,
 }
@@ -52,7 +51,6 @@ export function toFormState(employee = {}) {
     bankName: trimValue(employee.bankName),
     bankAccountNo: trimValue(employee.bankAccountNo),
     bankSheba: trimValue(employee.bankSheba),
-    baseSalary: String(employee.baseSalary ?? ''),
     notes: trimValue(employee.notes),
     isActive: employee.isActive !== false,
   }
@@ -66,16 +64,8 @@ export function normalizeNumericInput(value) {
   return normalizeDigitsToLatin(value).replace(/[^\d]/g, '')
 }
 
-export function formatMoney(value) {
-  return toPN(Math.round(Number(value || 0)).toLocaleString('en-US'))
-}
-
 export function getMissingPayrollFields(employee = {}) {
-  const missing = PAYROLL_REQUIRED_FIELDS.filter(([key]) => !trimValue(employee[key])).map(([, label]) => label)
-  if (Number(employee.baseSalary || 0) <= 0) {
-    missing.push('حقوق پایه')
-  }
-  return missing
+  return PAYROLL_REQUIRED_FIELDS.filter(([key]) => !trimValue(employee[key])).map(([, label]) => label)
 }
 
 export function hasMissingPayrollData(employee = {}) {
