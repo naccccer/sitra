@@ -30,12 +30,14 @@ export function HumanResourcesWorkspace({
   onFormChange,
   onNewEmployee,
   onOpenImportModal,
+  onPendingDocumentsChange,
   onPageChange,
   onPageSizeChange,
   onQueryChange,
   onReload,
   onRestoreEmployee,
   onSubmitForm,
+  pendingDocuments,
   page,
   pageSize,
   query,
@@ -117,6 +119,8 @@ export function HumanResourcesWorkspace({
             <HumanResourcesDocumentsTab
               employeeId={form.id}
               canWriteEmployees={canWriteEmployees}
+              pendingDocuments={pendingDocuments}
+              onPendingChange={onPendingDocumentsChange}
             />
           )}
         </div>

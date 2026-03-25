@@ -22,6 +22,7 @@ export const HumanResourcesPage = ({ session }) => {
   const [form, setForm] = useState(EMPTY_FORM)
   const [modalOpen, setModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
+  const [pendingDocuments, setPendingDocuments] = useState([])
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [pagination, setPagination] = useState({ page: 1, pageSize: 25, total: 0 })
@@ -59,6 +60,7 @@ export const HumanResourcesPage = ({ session }) => {
   const onNewEmployee = useCallback(() => {
     setForm(EMPTY_FORM)
     setFormError('')
+    setPendingDocuments([])
     setModalOpen(true)
   }, [])
 
@@ -72,6 +74,7 @@ export const HumanResourcesPage = ({ session }) => {
     setModalOpen(false)
     setFormError('')
     setForm(EMPTY_FORM)
+    setPendingDocuments([])
   }, [])
 
   const onOpenImportModal = useCallback(() => {
@@ -116,11 +119,16 @@ export const HumanResourcesPage = ({ session }) => {
         ? await humanResourcesApi.updateEmployee(payload)
         : await humanResourcesApi.createEmployee(payload)
       const savedEmployee = response?.employee || null
+      if (!form.id && savedEmployee?.id && pendingDocuments.length > 0) {
+        for (const doc of pendingDocuments) {
+          await humanResourcesApi.uploadDocument(savedEmployee.id, doc.title, doc.file)
+        }
+        setPendingDocuments([])
+      }
       await loadEmployees()
-      if (form.id && savedEmployee?.id) {
+      if (savedEmployee?.id) {
         onEditEmployee(savedEmployee)
       } else {
-        // New-employee mode keeps modal open but resets form for the next insert.
         setForm(EMPTY_FORM)
         setFormError('')
       }
@@ -255,12 +263,14 @@ export const HumanResourcesPage = ({ session }) => {
         onFormChange={onFormChange}
         onNewEmployee={onNewEmployee}
         onOpenImportModal={onOpenImportModal}
+        onPendingDocumentsChange={setPendingDocuments}
         onPageChange={setPage}
         onPageSizeChange={onPageSizeChange}
         onQueryChange={onQueryChange}
         onReload={loadEmployees}
         onRestoreEmployee={onRestoreEmployee}
         onSubmitForm={onSubmitForm}
+        pendingDocuments={pendingDocuments}
         page={page}
         pageSize={pageSize}
         query={query}

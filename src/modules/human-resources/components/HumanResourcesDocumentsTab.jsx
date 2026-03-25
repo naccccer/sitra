@@ -10,7 +10,12 @@ function formatFileSize(bytes) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
 }
 
-export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
+export function HumanResourcesDocumentsTab({
+  employeeId,
+  canWriteEmployees,
+  pendingDocuments,
+  onPendingChange,
+}) {
   const [documents, setDocuments] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -38,16 +43,20 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
     loadDocuments()
   }, [loadDocuments])
 
-  if (!employeeId) {
-    return (
-      <Card padding="md">
-        <EmptyState
-          title="ابتدا پرسنل را ذخیره کنید"
-          description="برای آپلود مدارک ابتدا اطلاعات پرسنل را ثبت کنید."
-          className="border border-dashed border-slate-200"
-        />
-      </Card>
-    )
+  const resetFileInput = () => {
+    setTitle('')
+    setFile(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
+  const handleAdd = () => {
+    if (!file || !title.trim()) return
+    if (!employeeId) {
+      onPendingChange([...pendingDocuments, { title: title.trim(), file }])
+      resetFileInput()
+      return
+    }
+    handleUpload()
   }
 
   const handleUpload = async () => {
@@ -56,9 +65,7 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
     setError('')
     try {
       await humanResourcesApi.uploadDocument(employeeId, title.trim(), file)
-      setTitle('')
-      setFile(null)
-      if (fileInputRef.current) fileInputRef.current.value = ''
+      resetFileInput()
       await loadDocuments()
     } catch (uploadError) {
       setError(uploadError.message || 'آپلود مدرک ناموفق بود.')
@@ -81,6 +88,14 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
       setDeletingId(null)
     }
   }
+
+  const handleRemovePending = (index) => {
+    onPendingChange(pendingDocuments.filter((_, i) => i !== index))
+  }
+
+  const allItems = employeeId ? documents : []
+  const hasPending = !employeeId && pendingDocuments.length > 0
+  const isEmpty = !loading && allItems.length === 0 && !hasPending
 
   return (
     <Card padding="md" className="space-y-4">
@@ -110,12 +125,51 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
           <Button
             size="sm"
             variant="primary"
-            onClick={handleUpload}
+            onClick={handleAdd}
             disabled={uploading || !file || !title.trim()}
           >
             <Upload className="h-3.5 w-3.5 me-1.5" />
-            {uploading ? 'در حال آپلود...' : 'آپلود مدرک'}
+            {uploading ? 'در حال آپلود...' : !employeeId ? 'افزودن مدرک' : 'آپلود مدرک'}
           </Button>
+          {!employeeId && pendingDocuments.length > 0 ? (
+            <div className="text-[11px] font-bold text-amber-600">
+              مدارک پس از ذخیره پرسنل آپلود خواهند شد.
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasPending ? (
+        <div className="overflow-hidden rounded-2xl border border-amber-200">
+          <table className="w-full text-center text-xs">
+            <thead className="bg-amber-50 text-[11px] font-black text-amber-600">
+              <tr>
+                <th className="px-3 py-2.5 text-right">عنوان</th>
+                <th className="px-3 py-2.5">نام فایل</th>
+                <th className="px-3 py-2.5">حجم</th>
+                <th className="px-3 py-2.5">عملیات</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-amber-100 bg-white">
+              {pendingDocuments.map((doc, index) => (
+                <tr key={`pending-${index}`} className="hover:bg-amber-50/50 transition-colors">
+                  <td className="px-3 py-2.5 text-right font-black text-slate-900">
+                    <div className="flex items-center gap-1.5">
+                      <FileText className="h-4 w-4 shrink-0 text-amber-400" />
+                      {doc.title}
+                    </div>
+                  </td>
+                  <td className="px-3 py-2.5 font-bold text-slate-600">{doc.file.name}</td>
+                  <td className="px-3 py-2.5 font-bold text-slate-500">{formatFileSize(doc.file.size)}</td>
+                  <td className="px-3 py-2.5">
+                    <Button size="icon" variant="danger" onClick={() => handleRemovePending(index)} title="حذف">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : null}
 
@@ -125,13 +179,7 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
           description="لطفاً صبر کنید."
           className="border border-dashed border-slate-200"
         />
-      ) : documents.length === 0 ? (
-        <EmptyState
-          title="مدرکی ثبت نشده است"
-          description="برای این پرسنل هنوز مدرکی آپلود نشده است."
-          className="border border-dashed border-slate-200"
-        />
-      ) : (
+      ) : allItems.length > 0 ? (
         <div className="overflow-hidden rounded-2xl border border-slate-200">
           <table className="w-full text-center text-xs">
             <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
@@ -143,7 +191,7 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
-              {documents.map((doc) => (
+              {allItems.map((doc) => (
                 <tr key={doc.id} className="hover:bg-slate-50/70 transition-colors">
                   <td className="px-3 py-2.5 text-right font-black text-slate-900">
                     <div className="flex items-center gap-1.5">
@@ -152,12 +200,7 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
                     </div>
                   </td>
                   <td className="px-3 py-2.5 font-bold text-slate-600">
-                    <a
-                      href={doc.filePath}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline"
-                    >
+                    <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
                       {doc.originalName}
                     </a>
                   </td>
@@ -180,7 +223,13 @@ export function HumanResourcesDocumentsTab({ employeeId, canWriteEmployees }) {
             </tbody>
           </table>
         </div>
-      )}
+      ) : isEmpty ? (
+        <EmptyState
+          title="مدرکی ثبت نشده است"
+          description="برای این پرسنل هنوز مدرکی آپلود نشده است."
+          className="border border-dashed border-slate-200"
+        />
+      ) : null}
     </Card>
   )
 }
