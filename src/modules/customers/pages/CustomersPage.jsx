@@ -1,14 +1,12 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Button, Select } from '@/components/shared/ui'
 import { CustomerDetailsModal } from '../components/CustomerDetailsModal'
 import { CustomerFormModal } from '../components/CustomerFormModal'
-import { CustomersTable } from '../components/CustomersTable'
-import { CustomersToolbar } from '../components/CustomersToolbar'
+import { CustomersDirectoryPanel } from '../components/CustomersDirectoryPanel'
 import { useCustomersDirectory } from '../hooks/useCustomersDirectory'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { customersApi } from '../services/customersApi'
-import { PAGE_SIZE_OPTIONS, createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
+import { createCustomerDraft, normalizeCustomerRecord } from '../utils/customersView'
 
 export const CustomersPage = ({ session }) => {
   const canManageCustomers = Boolean(session?.capabilities?.canManageCustomers)
@@ -49,8 +47,8 @@ export const CustomersPage = ({ session }) => {
     setPage(1)
   }
 
-  const handleViewChange = (mode) => {
-    setViewMode(mode)
+  const handleViewChange = () => {
+    setViewMode((prev) => (prev === 'active' ? 'archived' : 'active'))
     setPage(1)
   }
 
@@ -109,38 +107,6 @@ export const CustomersPage = ({ session }) => {
 
   return (
     <div className="mx-auto max-w-[1600px] space-y-4">
-
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="inline-flex rounded-full bg-slate-100 p-1">
-          <button
-            type="button"
-            className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${!isArchiveView ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-white'}`}
-            onClick={() => handleViewChange('active')}
-          >
-            فهرست مشتریان
-          </button>
-          <button
-            type="button"
-            className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${isArchiveView ? 'bg-amber-600 text-white' : 'text-slate-600 hover:bg-white'}`}
-            onClick={() => handleViewChange('archived')}
-          >
-            آرشیو مشتریان
-          </button>
-        </div>
-        {isArchiveView ? (
-          <div className="rounded-full bg-amber-50 px-4 py-2 text-[11px] font-bold text-amber-700">
-            مشتریان حذف‌شده در این بخش بایگانی شده‌اند؛ با «بازیابی» می‌توانید آن‌ها را برگردانید.
-          </div>
-        ) : null}
-      </div>
-
-      <CustomersToolbar
-        q={searchInput}
-        onQueryChange={handleSearchChange}
-        onCreateCustomer={handleCreateCustomer}
-        canWriteCustomers={canWriteCustomers}
-      />
-
       {error ? (
         <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-black text-rose-700">
           {error}
@@ -148,38 +114,27 @@ export const CustomersPage = ({ session }) => {
         </div>
       ) : null}
 
-      <CustomersTable
-        customers={customers}
-        isLoading={isLoading}
-        selectedCustomerId={activeRowId}
+      <CustomersDirectoryPanel
+        archiveMode={isArchiveView}
         canWriteCustomers={canWriteCustomers}
-        onOpenDetails={handleOpenDetails}
+        customers={customers}
+        loading={isLoading}
+        onArchiveModeToggle={handleViewChange}
+        onCreateCustomer={handleCreateCustomer}
         onDeleteCustomer={handleDeleteCustomer}
+        onOpenDetails={handleOpenDetails}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
+        onQueryChange={handleSearchChange}
+        onReload={reload}
         onRestoreCustomer={handleRestoreCustomer}
+        page={page}
+        pageSize={pageSize}
+        query={searchInput}
+        selectedCustomerId={activeRowId}
+        totalCount={pagination.total || 0}
+        totalPages={totalPages}
       />
-
-      {!isLoading && customers.length > 0 ? (
-        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-xs font-bold text-slate-500">
-            صفحه {pagination.page} از {totalPages} - {pagination.total || 0} نتیجه
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="flex items-center gap-1">
-              <span className="text-[11px] font-bold text-slate-500">تعداد ردیف:</span>
-              <Select
-                className="h-8 min-w-[110px] text-[11px]"
-                value={String(pageSize)}
-                onChange={(event) => handlePageSizeChange(Number(event.target.value))}
-              >
-                {PAGE_SIZE_OPTIONS.map((option) => <option key={option} value={option}>{option} ردیف</option>)}
-              </Select>
-            </div>
-            <Button variant="secondary" disabled={page <= 1} onClick={() => setPage((value) => Math.max(1, value - 1))}>قبلی</Button>
-            <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">{page}</span>
-            <Button variant="secondary" disabled={page >= totalPages} onClick={() => setPage((value) => Math.min(totalPages, value + 1))}>بعدی</Button>
-          </div>
-        </div>
-      ) : null}
 
       <CustomerFormModal
         isOpen={Boolean(formCustomer)}
