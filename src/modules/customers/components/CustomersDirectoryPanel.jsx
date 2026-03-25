@@ -78,14 +78,13 @@ export const CustomersDirectoryPanel = ({
           <table className="w-full text-center text-xs">
             <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
               <tr>
-                <th className="px-3 py-2.5">کد مشتری</th>
+                <th className="px-3 py-2.5 text-center">کد مشتری</th>
                 <th className="px-3 py-2.5 text-start">نام</th>
-                <th className="px-3 py-2.5 text-start">تلفن پیش‌فرض</th>
-                <th className="px-3 py-2.5">پروژه فعال</th>
-                <th className="px-3 py-2.5">سفارش فعال</th>
-                <th className="px-3 py-2.5 text-end">جمع فروش</th>
-                <th className="px-3 py-2.5 text-end">مانده</th>
-                <th className="px-3 py-2.5">عملیات</th>
+                <th className="px-3 py-2.5 text-center">تلفن پیش‌فرض</th>
+                <th className="px-3 py-2.5 text-center">سفارش فعال</th>
+                <th className="px-3 py-2.5 text-center">جمع فروش</th>
+                <th className="px-3 py-2.5 text-center">مانده</th>
+                <th className="px-3 py-2.5 text-center">عملیات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 bg-white">
@@ -94,18 +93,21 @@ export const CustomersDirectoryPanel = ({
                   key={customer.id}
                   className={`hover:bg-slate-50/70 transition-colors ${selectedCustomerId === customer.id ? 'bg-blue-50/40' : ''}`}
                 >
-                  <td className="px-3 py-2.5 font-mono font-black text-slate-900" dir="ltr">{customer.customerCode || '-'}</td>
+                  <td className="px-3 py-2.5 font-mono font-black text-slate-900 text-center" dir="ltr">{customer.customerCode || '-'}</td>
                   <td className="px-3 py-2.5 text-start">
-                    <button type="button" className="text-start" onClick={() => onOpenDetails(customer)}>
+                    <button type="button" className="block w-full text-start" onClick={() => onOpenDetails(customer)}>
                       <div className="truncate font-black text-slate-900">{customer.fullName || '-'}</div>
                       {customer.companyName ? <div className="mt-0.5 truncate text-[11px] font-bold text-slate-500">{customer.companyName}</div> : null}
                     </button>
                   </td>
-                  <td className="px-3 py-2.5 text-start font-bold text-slate-700" dir="ltr">{customer.defaultPhone || '-'}</td>
-                  <td className="px-3 py-2.5 font-black text-slate-800">{toPN(customer.activeProjectsCount || 0)}</td>
-                  <td className="px-3 py-2.5 font-black text-slate-800">{toPN(customer.activeOrdersCount || 0)}</td>
-                  <td className="px-3 py-2.5 text-end font-black text-slate-900">{formatAmount(customer.totalAmount || 0)}</td>
-                  <td className="px-3 py-2.5 text-end font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
+                  <td className="px-3 py-2.5 text-center font-bold text-slate-700">
+                    <span className="flex w-full justify-center" dir="ltr">
+                      <span className="whitespace-nowrap text-center">{customer.defaultPhone || '-'}</span>
+                    </span>
+                  </td>
+                  <td className="px-3 py-2.5 text-center font-black text-slate-800">{toPN(customer.activeOrdersCount || 0)}</td>
+                  <td className="px-3 py-2.5 text-center font-black text-slate-900">{formatAmount(customer.totalAmount || 0)}</td>
+                  <td className="px-3 py-2.5 text-center font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
                   <td className="px-3 py-2.5">
                     <div className="flex items-center justify-center gap-1">
                       <Button size="icon" variant="ghost" onClick={() => onOpenDetails(customer)} title="جزئیات / ویرایش">

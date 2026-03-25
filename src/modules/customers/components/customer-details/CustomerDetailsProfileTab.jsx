@@ -10,7 +10,6 @@ const OPTIONAL_FIELDS = [
 
 const FIELDS = [
   { key: 'fullName', label: 'نام', placeholder: 'نام مشتری *' },
-  { key: 'companyName', label: 'نام شرکت', placeholder: 'نام شرکت' },
   { key: 'defaultPhone', label: 'تلفن پیش‌فرض', placeholder: 'تلفن پیش‌فرض', inputMode: 'tel' },
   { key: 'address', label: 'آدرس', placeholder: 'آدرس' },
 ]
@@ -19,7 +18,7 @@ const toEnglishDigits = (value) => String(value ?? '').replace(/[۰-۹]/g, (digi
 
 const hasDisplayValue = (value) => value !== null && value !== undefined && String(value).trim() !== ''
 
-const FieldCard = ({
+function FieldCard({
   field,
   value,
   draftValue,
@@ -34,11 +33,11 @@ const FieldCard = ({
   onLabelDraftChange,
   onLabelDraftCommit,
   onValueChange,
-}) => {
+}) {
   const displayValue = hasDisplayValue(value) ? String(value) : '—'
 
   return (
-    <div className={`rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${field.className || ''}`}>
+    <div className={`rounded-2xl border border-slate-200 bg-white p-2.5 shadow-sm ${field.className || ''}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-1.5">
           {isLabelEditing && canWriteCustomers ? (
@@ -50,7 +49,7 @@ const FieldCard = ({
                 if (event.key === 'Enter') onLabelDraftCommit()
                 if (event.key === 'Escape') onToggleLabelEdit()
               }}
-              className="h-8 w-36 px-2 text-[11px]"
+              className="h-8 w-32 px-2 text-[11px]"
             />
           ) : (
             <span className="truncate text-[11px] font-bold text-slate-500">{label}</span>
@@ -94,7 +93,7 @@ const FieldCard = ({
         ) : null}
       </div>
 
-      <div className="mt-3">
+      <div className="mt-2.5">
         {isEditing && canWriteCustomers ? (
           <Input
             value={draftValue}
@@ -102,7 +101,7 @@ const FieldCard = ({
             placeholder={field.placeholder}
             inputMode={field.inputMode}
             dir={field.dir}
-            className="h-11"
+            className="h-10"
           />
         ) : (
           <div className="break-words rounded-xl bg-slate-50 px-3 py-2 text-sm font-black text-slate-800">
@@ -115,7 +114,6 @@ const FieldCard = ({
 }
 
 export const CustomerDetailsProfileTab = ({
-  customer = {},
   editDraft = {},
   setEditDraft = () => {},
   canWriteCustomers = false,
@@ -127,10 +125,9 @@ export const CustomerDetailsProfileTab = ({
   const [editingLabelField, setEditingLabelField] = useState('')
   const [customLabels, setCustomLabels] = useState({})
 
-  const fields = useMemo(
-    () => [...FIELDS, ...OPTIONAL_FIELDS.filter((field) => visibleOptional.includes(field.key))],
-    [visibleOptional],
-  )
+  const fields = useMemo(() => [...FIELDS, ...OPTIONAL_FIELDS.filter((field) => visibleOptional.includes(field.key))], [visibleOptional])
+  const baseFields = fields.filter((field) => FIELDS.some((baseField) => baseField.key === field.key))
+  const optionalFields = fields.filter((field) => !FIELDS.some((baseField) => baseField.key === field.key))
 
   const setField = (key, value) => setEditDraft((prev) => ({ ...prev, [key]: value }))
 
@@ -156,27 +153,14 @@ export const CustomerDetailsProfileTab = ({
     })
   }
 
-  const summaryCards = [
-    {
-      label: 'کد مشتری',
-      value: customer.customerCode || '—',
-      tone: 'bg-slate-900 text-white',
-    },
-    {
-      label: 'آخرین بروزرسانی',
-      value: customer.updatedAt || '—',
-      tone: 'bg-slate-50 text-slate-800',
-    },
-  ]
-
   return (
-    <div className="mt-4">
-      <Card tone="muted" className="space-y-4" padding="md">
+    <div className="mt-3">
+      <Card tone="muted" className="space-y-3" padding="md">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-black text-slate-900">خلاصه مشتری</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">
-              اطلاعات اصلی را در کارت‌های فشرده و خوانا ببینید و همان‌جا ویرایش کنید.
+            <div className="text-sm font-black text-slate-900">پروفایل مشتری</div>
+            <div className="mt-1 text-xs font-bold leading-6 text-slate-500">
+              نام، تلفن و آدرس را اینجا نگه دارید و فیلدهای تکمیلی را در ادامه همان لیست ببینید.
             </div>
           </div>
           {canWriteCustomers ? (
@@ -187,35 +171,46 @@ export const CustomerDetailsProfileTab = ({
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {summaryCards.map((item) => (
-            <div key={item.label} className={`rounded-2xl px-4 py-3 shadow-sm ${item.tone}`}>
-              <div className="text-[11px] font-bold opacity-70">{item.label}</div>
-              <div className="mt-1 text-sm font-black">{item.value}</div>
-            </div>
+        <div className="grid grid-cols-1 gap-2 md:grid-cols-2">
+          {baseFields.map((field) => (
+            <FieldCard
+              key={field.key}
+              field={field}
+              value={editDraft[field.key]}
+              draftValue={editDraft[field.key] || ''}
+              isEditing={editingField === field.key}
+              canWriteCustomers={canWriteCustomers}
+              label={field.label}
+              isLabelEditing={editingLabelField === field.key}
+              labelDraft={customLabels[field.key] ?? field.label}
+              onToggleEdit={() => setEditingField((prev) => (prev === field.key ? '' : field.key))}
+              onToggleLabelEdit={() => {
+                if (!canWriteCustomers) return
+                setEditingLabelField((prev) => (prev === field.key ? '' : field.key))
+                setEditingField((prev) => (prev === field.key ? '' : prev))
+              }}
+              onDeleteField={() => removeField(field.key)}
+              onLabelDraftChange={(value) => setCustomLabel(field.key, value || 'فیلد')}
+              onLabelDraftCommit={() => setEditingLabelField('')}
+              onValueChange={(value) => setField(field.key, field.inputMode ? toEnglishDigits(value) : value)}
+            />
           ))}
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-          {fields.map((field) => {
+          {optionalFields.map((field) => {
             const label = customLabels[field.key] || field.label
-            const isEditing = editingField === field.key
-            const isLabelEditing = editingLabelField === field.key
-
             return (
               <FieldCard
                 key={field.key}
                 field={{
                   ...field,
-                  allowLabelEdit: OPTIONAL_FIELDS.some((item) => item.key === field.key),
-                  allowDelete: OPTIONAL_FIELDS.some((item) => item.key === field.key),
+                  allowLabelEdit: true,
+                  allowDelete: true,
                 }}
                 value={editDraft[field.key]}
                 draftValue={editDraft[field.key] || ''}
-                isEditing={isEditing}
+                isEditing={editingField === field.key}
                 canWriteCustomers={canWriteCustomers}
                 label={label}
-                isLabelEditing={isLabelEditing}
+                isLabelEditing={editingLabelField === field.key}
                 labelDraft={customLabels[field.key] ?? field.label}
                 onToggleEdit={() => setEditingField((prev) => (prev === field.key ? '' : field.key))}
                 onToggleLabelEdit={() => {
