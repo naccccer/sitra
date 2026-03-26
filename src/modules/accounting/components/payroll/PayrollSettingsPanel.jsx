@@ -44,7 +44,6 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
     <Card padding="md" className="space-y-4">
       <div>
         <div className="text-sm font-black text-slate-900">تنظیمات فیش حقوقی</div>
-        <div className="text-xs font-bold text-slate-500">سربرگ چاپ + کاتالوگ آیتم‌های قابل مدیریت مدیر</div>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -61,37 +60,57 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         <textarea
           value={draft.footerNote || ''}
           onChange={(event) => patch('footerNote', event.target.value)}
-          className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
+          className="min-h-20 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
         />
       </label>
 
       <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div className="flex items-center justify-between">
-          <div>
-            <div className="text-sm font-black text-slate-900">کاتالوگ آیتم‌های فیش</div>
-            <div className="text-xs font-bold text-slate-500">نوع، ترتیب، فعال/غیرفعال و منبع هر آیتم را مدیریت کنید.</div>
-          </div>
+          <div className="text-sm font-black text-slate-900">کاتالوگ آیتم‌های فیش</div>
           <Button size="sm" variant="ghost" disabled={!canManage} onClick={addItem}>آیتم جدید</Button>
         </div>
-        <div className="space-y-2">
-          {items.map((item, index) => (
-            <div key={`${item.key}:${index}`} className="grid gap-2 rounded-xl border border-slate-200 bg-white p-2 xl:grid-cols-[1.4fr_1fr_1fr_1fr_auto_auto]">
-              <Input value={item.label} onChange={(event) => patchItem(index, { label: event.target.value })} placeholder="عنوان آیتم" />
-              <Input value={item.key} onChange={(event) => patchItem(index, { key: event.target.value, source: item.source || event.target.value })} placeholder="کلید" />
-              <Select value={item.type} onChange={(event) => patchItem(index, { type: event.target.value })}>
-                <option value="earning">دریافتی</option>
-                <option value="deduction">کسورات</option>
-                <option value="work">کارکرد</option>
-                <option value="info">اطلاعات</option>
-              </Select>
-              <Input value={item.source || ''} onChange={(event) => patchItem(index, { source: event.target.value })} placeholder="source" />
-              <label className="flex items-center gap-2 px-2 text-xs font-black text-slate-600">
-                <input type="checkbox" checked={item.active !== false} onChange={(event) => patchItem(index, { active: event.target.checked })} />
-                فعال
-              </label>
-              <Button size="sm" variant="danger" disabled={!canManage} onClick={() => removeItem(index)}>حذف</Button>
-            </div>
-          ))}
+
+        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <table className="w-full text-right text-xs">
+            <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
+              <tr>
+                <th className="px-2 py-2">عنوان</th>
+                <th className="px-2 py-2">نوع</th>
+                <th className="px-2 py-2">ترتیب</th>
+                <th className="px-2 py-2">فعال</th>
+                <th className="px-2 py-2">حذف</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {items.map((item, index) => (
+                <tr key={`${item.key}:${index}`}>
+                  <td className="px-2 py-2">
+                    <Input value={item.label} onChange={(event) => patchItem(index, { label: event.target.value })} placeholder="عنوان آیتم" />
+                  </td>
+                  <td className="px-2 py-2">
+                    <Select value={item.type} onChange={(event) => patchItem(index, { type: event.target.value })}>
+                      <option value="earning">دریافتی</option>
+                      <option value="deduction">کسورات</option>
+                      <option value="work">کارکرد</option>
+                      <option value="info">اطلاعات</option>
+                    </Select>
+                  </td>
+                  <td className="px-2 py-2">
+                    <Input type="number" value={item.sortOrder ?? 0} onChange={(event) => patchItem(index, { sortOrder: Number(event.target.value || 0) })} />
+                  </td>
+                  <td className="px-2 py-2 text-center">
+                    <input type="checkbox" checked={item.active !== false} onChange={(event) => patchItem(index, { active: event.target.checked })} />
+                  </td>
+                  <td className="px-2 py-2">
+                    <Button size="sm" variant="danger" disabled={!canManage} onClick={() => removeItem(index)}>حذف</Button>
+                  </td>
+                </tr>
+              ))}
+              {items.length === 0 && (
+                <tr><td colSpan={5} className="px-3 py-6 text-center font-bold text-slate-400">آیتمی ثبت نشده است.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
       </div>
 
@@ -103,4 +122,3 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
     </Card>
   )
 }
-
