@@ -50,14 +50,11 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
     <PayrollSurfaceCard density="spacious" className="space-y-4">
       <PayrollSectionHeader title="تنظیمات فیش حقوقی" />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <Input value={safeDraft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
-        <Input value={safeDraft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
-      </div>
-
       <PayrollSurfaceCard className="space-y-2" tone="muted">
-        <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
-        <div className="grid gap-2 sm:grid-cols-2">
+        <PayrollSectionHeader title="تنظیمات فیش حقوقی" subtitle="سربرگ و اطلاعات امضا در یک ردیف" />
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Input value={safeDraft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
+          <Input value={safeDraft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
           <Input value={safeDraft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
           <Input value={safeDraft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
         </div>

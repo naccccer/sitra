@@ -70,8 +70,8 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
         </div>
 
         <ItemTable title="کارکرد و اطلاعات" items={[...scopedCatalog.info, ...scopedCatalog.work]} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} />
-        <ItemTable title="دریافتی‌ها" items={scopedCatalog.earning} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} tone="emerald" />
-        <ItemTable title="کسورات" items={scopedCatalog.deduction} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} tone="rose" />
+        <ItemTable title="دریافتی‌ها" items={scopedCatalog.earning} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} />
+        <ItemTable title="کسورات" items={scopedCatalog.deduction} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} />
 
         <label className="block space-y-1">
           <span className="block text-xs font-black text-slate-600">یادداشت</span>
@@ -83,18 +83,10 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   )
 }
 
-function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
+function ItemTable({ title, items = [], onChange, payslip }) {
   if (!items.length) return null
-  const toneClass = tone === 'emerald'
-    ? 'border-emerald-300 bg-emerald-50/70'
-    : tone === 'rose'
-      ? 'border-rose-300 bg-rose-50/70'
-      : 'border-slate-300 bg-slate-50/80'
-  const itemToneClass = tone === 'emerald'
-    ? 'border-emerald-200 bg-emerald-100/60'
-    : tone === 'rose'
-      ? 'border-rose-200 bg-rose-100/60'
-      : 'border-slate-200 bg-slate-100/80'
+  const toneClass = 'border-slate-300 bg-slate-50/80'
+  const itemToneClass = 'border-slate-200 bg-white'
 
   return (
     <PayrollSurfaceCard className={`space-y-2 p-2 ${toneClass}`}>
