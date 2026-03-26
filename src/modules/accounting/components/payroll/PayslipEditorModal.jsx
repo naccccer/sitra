@@ -5,7 +5,6 @@ import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
 import { calculateCatalogTotals, resolveInputValueFromPayslip, splitCatalogByType } from './payrollCatalog'
 import { PayrollMetricCard } from './PayrollMetricCard'
-import { PayrollScrollableTableCard } from './PayrollScrollableTableCard'
 import { PayrollSurfaceCard } from './PayrollSurfaceCard'
 
 function updateDraftInput(draft, source, value) {
@@ -86,31 +85,25 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
 
 function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
   if (!items.length) return null
-  const toneClass = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/40' : tone === 'rose' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'
-  const half = Math.ceil(items.length / 2)
-  const columnA = items.slice(0, half)
-  const columnB = items.slice(half)
-
-  const renderColumn = (columnItems) => (
-    <div className="space-y-1.5">
-      {columnItems.map((item) => {
-        const source = String(item.source || item.key)
-        return (
-          <div key={item.key} className="grid items-center gap-2 rounded-xl border border-slate-200 bg-white px-2 py-1.5 sm:grid-cols-[1fr_9rem]">
-            <div className="text-xs font-bold text-slate-700">{item.label}</div>
-            <Input type="number" value={resolveInputValueFromPayslip(payslip, item)} onChange={(event) => onChange(source, Number(event.target.value || 0))} />
-          </div>
-        )
-      })}
-    </div>
-  )
+  const toneClass = tone === 'emerald'
+    ? 'border-emerald-300 bg-emerald-50/70'
+    : tone === 'rose'
+      ? 'border-rose-300 bg-rose-50/70'
+      : 'border-slate-300 bg-slate-50/80'
 
   return (
     <PayrollSurfaceCard className={`space-y-2 p-2 ${toneClass}`}>
       <div className="text-sm font-black text-slate-900">{title}</div>
-      <div className="grid gap-2 md:grid-cols-2">
-        {renderColumn(columnA)}
-        {columnB.length ? renderColumn(columnB) : <div className="hidden md:block" />}
+      <div className="grid gap-1.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+        {items.map((item) => {
+          const source = String(item.source || item.key)
+          return (
+            <div key={item.key} className="rounded-lg border border-white/70 bg-white px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+              <div className="mb-1 text-[11px] font-bold text-slate-600">{item.label}</div>
+              <Input type="number" value={resolveInputValueFromPayslip(payslip, item)} onChange={(event) => onChange(source, Number(event.target.value || 0))} />
+            </div>
+          )
+        })}
       </div>
     </PayrollSurfaceCard>
   )
