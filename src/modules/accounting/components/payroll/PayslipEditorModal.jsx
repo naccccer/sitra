@@ -85,8 +85,8 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
 
 function ItemTable({ title, items = [], onChange, payslip }) {
   if (!items.length) return null
-  const toneClass = 'border-slate-300 bg-slate-50/80'
-  const itemToneClass = 'border-slate-200 bg-white'
+  const toneClass = 'border-slate-300 bg-slate-50'
+  const itemToneClass = 'border-slate-200 bg-slate-50 shadow-[0_1px_2px_rgba(148,163,184,0.22)]'
 
   return (
     <PayrollSurfaceCard className={`space-y-2 p-2 ${toneClass}`}>
@@ -95,7 +95,7 @@ function ItemTable({ title, items = [], onChange, payslip }) {
         {items.map((item) => {
           const source = String(item.source || item.key)
           return (
-            <div key={item.key} className={`rounded-lg border px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${itemToneClass}`}>
+            <div key={item.key} className={`rounded-xl border px-2 py-1.5 ${itemToneClass}`}>
               <div className="mb-1 text-[11px] font-bold text-slate-600">{item.label}</div>
               <Input type="number" value={resolveInputValueFromPayslip(payslip, item)} onChange={(event) => onChange(source, Number(event.target.value || 0))} />
             </div>

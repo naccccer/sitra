@@ -48,10 +48,8 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
 
   return (
     <PayrollSurfaceCard density="spacious" className="space-y-4">
-      <PayrollSectionHeader title="تنظیمات فیش حقوقی" />
-
       <PayrollSurfaceCard className="space-y-2" tone="muted">
-        <PayrollSectionHeader title="تنظیمات فیش حقوقی" subtitle="سربرگ و اطلاعات امضا در یک ردیف" />
+        <PayrollSectionHeader title="سربرگ و امضا" subtitle="اطلاعات شرکت و امضا در یک ردیف" />
         <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
           <Input value={safeDraft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
           <Input value={safeDraft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
