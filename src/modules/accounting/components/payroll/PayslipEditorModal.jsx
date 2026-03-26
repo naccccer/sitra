@@ -4,6 +4,9 @@ import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
 import { calculateCatalogTotals, resolveInputValueFromPayslip, splitCatalogByType } from './payrollCatalog'
+import { PayrollMetricCard } from './PayrollMetricCard'
+import { PayrollScrollableTableCard } from './PayrollScrollableTableCard'
+import { PayrollSurfaceCard } from './PayrollSurfaceCard'
 
 function updateDraftInput(draft, source, value) {
   return {
@@ -92,7 +95,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       )}
     >
       <div className="space-y-3">
-        <div className="grid gap-2 rounded-2xl border border-slate-200 bg-slate-50 p-3 md:grid-cols-[1fr_auto_auto_auto] md:items-end">
+        <PayrollSurfaceCard className="grid gap-2 md:grid-cols-[1fr_auto_auto_auto] md:items-end" tone="muted">
           <label className="space-y-1">
             <span className="block text-xs font-black text-slate-600">پرسنل</span>
             <Input value={employeeQuery || formatEmployeeOption({ fullName: employeeName, employeeCode })} onChange={(event) => handleEmployeeFieldChange(event.target.value)} placeholder="انتخاب یا جستجوی پرسنل" list="payslip-editor-employees" className="text-right" dir="rtl" />
@@ -102,12 +105,12 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           <Tiny label="کد پرسنلی" value={toPN(employeeCode || '-')} />
           <Tiny label="واحد" value={employeeDepartment || '-'} />
           <Tiny label="وضعیت" value={draft?.status || payslip.status || 'draft'} />
-        </div>
+        </PayrollSurfaceCard>
 
         <div className="grid gap-2 sm:grid-cols-3">
-          <InfoCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
-          <InfoCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
-          <InfoCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
+          <PayrollMetricCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
+          <PayrollMetricCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
+          <PayrollMetricCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasis />
         </div>
 
         <ItemTable title="کارکرد و اطلاعات" items={[...scopedCatalog.info, ...scopedCatalog.work]} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} />
@@ -119,7 +122,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           <textarea value={draft?.notes || ''} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none" />
         </label>
 
-        <div className="rounded-2xl border border-slate-200 p-3">
+        <PayrollSurfaceCard>
           <div className="flex flex-wrap items-center gap-2">
             <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
             <Button size="sm" variant="secondary" onClick={() => pdfInputRef.current?.click()}>انتخاب فایل PDF</Button>
@@ -132,7 +135,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
             )}
             <Button size="sm" variant="secondary" disabled={!file || busy} onClick={() => onUploadPdf(file)}>{busy ? 'در حال ارسال...' : 'آپلود PDF'}</Button>
           </div>
-        </div>
+        </PayrollSurfaceCard>
       </div>
     </ModalShell>
   )
@@ -142,9 +145,9 @@ function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
   if (!items.length) return null
   const toneClass = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/40' : tone === 'rose' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'
   return (
-    <div className={`space-y-2 rounded-2xl border p-3 ${toneClass}`}>
+    <PayrollSurfaceCard className={`space-y-2 ${toneClass}`}>
       <div className="text-sm font-black text-slate-900">{title}</div>
-      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+      <PayrollScrollableTableCard maxHeightClass="max-h-80">
         <table className="w-full text-right text-xs">
           <thead className="bg-slate-50 text-[11px] font-black text-slate-500"><tr><th className="px-3 py-2">آیتم</th><th className="px-3 py-2 w-48">مقدار</th></tr></thead>
           <tbody className="divide-y divide-slate-100">
@@ -159,8 +162,8 @@ function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
             })}
           </tbody>
         </table>
-      </div>
-    </div>
+      </PayrollScrollableTableCard>
+    </PayrollSurfaceCard>
   )
 }
 
@@ -175,9 +178,10 @@ function formatEmployeeOption(employee = {}) {
 }
 
 function Tiny({ label, value }) {
-  return <div className="rounded-xl border border-slate-200 bg-white px-2 py-2 text-center"><div className="text-[10px] font-bold text-slate-500">{label}</div><div className="mt-1 text-sm font-black text-slate-900">{value}</div></div>
-}
-
-function InfoCard({ label, value, emphasize = false }) {
-  return <div className={`rounded-xl border px-3 py-2 ${emphasize ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white'}`}><div className={`text-[11px] font-bold ${emphasize ? 'text-white/70' : 'text-slate-500'}`}>{label}</div><div className="mt-1 text-sm font-black">{value}</div></div>
+  return (
+    <PayrollSurfaceCard density="compact" className="text-center">
+      <div className="text-[10px] font-bold text-slate-500">{label}</div>
+      <div className="mt-1 text-sm font-black text-slate-900">{value}</div>
+    </PayrollSurfaceCard>
+  )
 }
