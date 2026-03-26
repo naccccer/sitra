@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { CheckCheck, Trash2 } from 'lucide-react'
 import DateObject from 'react-date-object'
 import persian from 'react-date-object/calendars/persian'
 import gregorian from 'react-date-object/calendars/gregorian'
@@ -81,13 +82,26 @@ export function PayrollRunsPanel({
                     <div className="mt-1 text-xs font-bold text-slate-500">تاریخ صدور: {formatMaybeDate(selectedRun.issuedAt)}</div>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    {canApprove && draftPayslips.length > 0 && <Button size="sm" variant="secondary" disabled={busyKey === 'action:approve'} onClick={() => onRunAction({ id: selectedRun.id, action: 'approve' })}>تایید دوره</Button>}
+                    {canApprove && draftPayslips.length > 0 && (
+                      <Button
+                        size="icon"
+                        variant="secondary"
+                        disabled={busyKey === 'action:approve'}
+                        onClick={() => onRunAction({ id: selectedRun.id, action: 'approve' })}
+                        title="تایید دوره"
+                        aria-label="تایید دوره"
+                      >
+                        <CheckCheck className="h-4 w-4" />
+                      </Button>
+                    )}
                     {canIssue && approvedPayslips.length > 0 && <Button size="sm" variant="primary" disabled={busyKey === 'action:issue'} onClick={() => onRunAction({ id: selectedRun.id, action: 'issue' })}>صدور دوره</Button>}
                     {canManage && onDeleteRun && (
                       <Button
-                        size="sm"
+                        size="icon"
                         variant="danger"
                         disabled={deletingRun}
+                        title={deletingRun ? 'در حال حذف...' : 'حذف دوره'}
+                        aria-label={deletingRun ? 'در حال حذف دوره' : 'حذف دوره'}
                         onClick={() => {
                           if (!selectedRun?.id) return
                           const ok = window.confirm('این دوره و فیش های پیش نویس آن حذف شود؟')
@@ -95,7 +109,7 @@ export function PayrollRunsPanel({
                           onDeleteRun(selectedRun.id)
                         }}
                       >
-                        {deletingRun ? 'در حال حذف...' : 'حذف دوره'}
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
                   </div>

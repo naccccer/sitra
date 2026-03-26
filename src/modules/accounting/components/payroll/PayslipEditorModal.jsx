@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { Search } from 'lucide-react'
 import { Button, Input, ModalShell, Select } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
@@ -19,8 +20,17 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   const [draft, setDraft] = useState(() => payslip)
   const [file, setFile] = useState(null)
   const [error, setError] = useState('')
+  const [employeeQuery, setEmployeeQuery] = useState('')
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
+  const filteredEmployees = useMemo(() => {
+    if (!employeeQuery.trim()) return employeeList
+    const query = employeeQuery.trim().toLowerCase()
+    return employeeList.filter((employee) => {
+      const text = `${employee?.fullName || employee?.name || ''} ${resolveEmployeeCode(employee)}`.toLowerCase()
+      return text.includes(query)
+    })
+  }, [employeeList, employeeQuery])
   const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
   const totals = useMemo(() => {
     const fallback = calculatePayslipTotals(draft ?? payslip)
@@ -76,7 +86,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       onClose={onClose}
       title={`فیش حقوق ${employeeName || 'بدون نام'}`}
       description={`دوره ${run?.title || run?.periodKey || '-'}`}
-      maxWidthClass="max-w-5xl"
+      maxWidthClass="max-w-6xl"
       footer={(
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="text-xs font-bold text-slate-500">خالص پرداختی: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span></div>
@@ -88,24 +98,36 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       )}
     >
       <div className="space-y-4">
-        <label className="block space-y-1">
-          <span className="block text-xs font-black text-slate-600">پرسنل</span>
-          <Select value={String(draft?.employeeId || '')} onChange={(event) => handleEmployeeChange(String(event.target.value || ''))}>
-            <option value="">انتخاب پرسنل</option>
-            {draft?.employeeId && !hasValidEmployee && (
-              <option value={String(draft.employeeId)}>{formatEmployeeOption({ fullName: draft.employeeName, employeeCode: draft.employeeCode })}</option>
-            )}
-            {employeeList.map((employee) => (
-              <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
-            ))}
-          </Select>
-          {error && <span className="block text-xs font-bold text-rose-600">{error}</span>}
-        </label>
+        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.2fr_1fr]">
+          <div className="space-y-2">
+            <div className="text-xs font-black text-slate-600">انتخاب پرسنل</div>
+            <label className="relative block">
+              <Search className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+              <Input value={employeeQuery} onChange={(event) => setEmployeeQuery(event.target.value)} className="pe-8" placeholder="جستجوی نام یا کد پرسنلی" />
+            </label>
+            <Select value={String(draft?.employeeId || '')} onChange={(event) => handleEmployeeChange(String(event.target.value || ''))}>
+              <option value="">انتخاب پرسنل</option>
+              {draft?.employeeId && !hasValidEmployee && (
+                <option value={String(draft.employeeId)}>{formatEmployeeOption({ fullName: draft.employeeName, employeeCode: draft.employeeCode })}</option>
+              )}
+              {filteredEmployees.map((employee) => (
+                <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
+              ))}
+            </Select>
+            {error && <span className="block text-xs font-bold text-rose-600">{error}</span>}
+          </div>
 
-        <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-3">
-          <Info label="کد پرسنلی" value={toPN(employeeCode || '-')} />
-          <Info label="واحد" value={employeeDepartment || '-'} />
-          <Info label="وضعیت فیش" value={draft?.status || payslip.status || 'draft'} />
+          <div className="grid gap-2 sm:grid-cols-3">
+            <InfoCard label="کد پرسنلی" value={toPN(employeeCode || '-')} />
+            <InfoCard label="واحد" value={employeeDepartment || '-'} />
+            <InfoCard label="وضعیت فیش" value={draft?.status || payslip.status || 'draft'} />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-3">
+          <InfoCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
+          <InfoCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
+          <InfoCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
         </div>
 
         <ItemGrid
@@ -119,24 +141,20 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           items={scopedCatalog.earning}
           payslip={draft}
           onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+          tone="emerald"
         />
         <ItemGrid
           title="کسورات"
           items={scopedCatalog.deduction}
           payslip={draft}
           onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+          tone="rose"
         />
 
         <label className="block space-y-1">
           <span className="block text-xs font-black text-slate-600">یادداشت</span>
           <textarea value={draft?.notes || ''} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none" />
         </label>
-
-        <div className="grid gap-3 sm:grid-cols-3">
-          <InfoCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
-          <InfoCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
-          <InfoCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
-        </div>
 
         <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -155,16 +173,21 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   )
 }
 
-function ItemGrid({ title, items = [], onChange, payslip }) {
+function ItemGrid({ title, items = [], onChange, payslip, tone = 'slate' }) {
   if (!items.length) return null
+  const toneClass = tone === 'emerald'
+    ? 'border-emerald-200 bg-emerald-50/40'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50/40'
+      : 'border-slate-200 bg-white'
   return (
-    <div className="space-y-2 rounded-2xl border border-slate-200 p-3">
+    <div className={`space-y-2 rounded-2xl border p-3 ${toneClass}`}>
       <div className="text-sm font-black text-slate-900">{title}</div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((item) => {
           const source = String(item.source || item.key)
           return (
-            <label key={item.key} className="space-y-1">
+            <label key={item.key} className="space-y-1 rounded-xl border border-slate-200 bg-white p-2">
               <span className="block text-xs font-black text-slate-600">{item.label}</span>
               <Input
                 type="number"
@@ -187,10 +210,6 @@ function formatEmployeeOption(employee = {}) {
   const fullName = String(employee?.fullName || employee?.name || '').trim() || 'بدون نام'
   const employeeCode = resolveEmployeeCode(employee)
   return `${fullName} + ${toPN(employeeCode || 'بدون کد')}`
-}
-
-function Info({ label, value }) {
-  return <div><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-sm font-black text-slate-900">{value}</div></div>
 }
 
 function InfoCard({ label, value, emphasize = false }) {
