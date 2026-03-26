@@ -127,13 +127,29 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           <div className="flex flex-wrap items-center gap-2">
             <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
             <Button size="sm" variant="secondary" onClick={() => pdfInputRef.current?.click()}>انتخاب فایل PDF</Button>
-            {file && (
+            {file ? (
               <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700">
                 <FileText className="h-4 w-4 text-slate-500" />
                 <span>{file.name}</span>
-                <button type="button" className="rounded p-0.5 text-rose-600 hover:bg-rose-100" onClick={clearPdfFile} aria-label="پاک کردن فایل" title="پاک کردن فایل"><X className="h-3.5 w-3.5" /></button>
+                <button
+                  type="button"
+                  className="rounded p-0.5 text-rose-600 hover:bg-rose-100"
+                  onClick={clearPdfFile}
+                  aria-label="پاک کردن فایل"
+                  title="پاک کردن فایل"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
               </div>
-            </PayrollSurface>
+            ) : null}
+            <Button
+              size="sm"
+              variant="secondary"
+              disabled={!file || busy}
+              onClick={() => onUploadPdf(file)}
+            >
+              {busy ? 'در حال ارسال...' : 'آپلود PDF'}
+            </Button>
           </div>
         </PayrollSurfaceCard>
       </div>
