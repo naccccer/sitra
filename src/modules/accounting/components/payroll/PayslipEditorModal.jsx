@@ -1,5 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { FileText, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
 import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
@@ -12,17 +11,14 @@ function updateDraftInput(draft, source, value) {
   return { ...draft, [source]: value, inputs: { ...(draft.inputs || {}), [source]: value } }
 }
 
-export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
+export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
-  const [file, setFile] = useState(null)
   const [employeeQuery, setEmployeeQuery] = useState('')
   const [error, setError] = useState('')
   const [showNotes, setShowNotes] = useState(Boolean(payslip?.notes))
-  const pdfInputRef = useRef(null)
 
   useEffect(() => {
     setDraft(payslip)
-    setFile(null)
     setError('')
     setShowNotes(Boolean(payslip?.notes))
     setEmployeeQuery(payslip ? formatEmployeeOption({ fullName: payslip.employeeName, employeeCode: payslip.employeeCode }) : '')
@@ -72,12 +68,6 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     onSave({ ...draft, employeeId, employeeName: employee?.fullName || employee?.name || draft?.employeeName || '', employeeCode: resolveEmployeeCode(employee) || draft?.employeeCode || '', department: employee?.department || draft?.department || '' })
   }
 
-  const clearPdfFile = () => {
-    setFile(null)
-    if (pdfInputRef.current) pdfInputRef.current.value = ''
-  }
-  const handleUploadPdf = () => { if (file && onUploadPdf) onUploadPdf(file) }
-
   return (
     <ModalShell
       isOpen={Boolean(payslip)}
@@ -123,41 +113,12 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           <textarea value={draft?.notes || ''} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none" />
         </label>
 
-        <PayrollSurfaceCard>
-          <div className="flex flex-wrap items-center gap-2">
-            <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-            <Button size="sm" variant="secondary" onClick={() => pdfInputRef.current?.click()}>انتخاب فایل PDF</Button>
-            {file ? (
-              <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700">
-                <FileText className="h-4 w-4 text-slate-500" />
-                <span>{file.name}</span>
-                <button
-                  type="button"
-                  className="rounded p-0.5 text-rose-600 hover:bg-rose-100"
-                  onClick={clearPdfFile}
-                  aria-label="پاک کردن فایل"
-                  title="پاک کردن فایل"
-                >
-                  <X className="h-3.5 w-3.5" />
-                </button>
-              </div>
-            ) : null}
-            <Button
-              size="sm"
-              variant="secondary"
-              disabled={!file || busy}
-              onClick={() => onUploadPdf(file)}
-            >
-              {busy ? 'در حال ارسال...' : 'آپلود PDF'}
-            </Button>
-          </div>
-        </PayrollSurfaceCard>
       </div>
     </ModalShell>
   )
 }
 
-function ItemTable({ title, items = [], onChange, payslip, tone = 'slate', maxBodyHeightClass = 'max-h-44' }) {
+function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
   if (!items.length) return null
   const toneClass = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/40' : tone === 'rose' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'
   return (
