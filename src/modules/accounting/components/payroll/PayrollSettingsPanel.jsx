@@ -19,14 +19,15 @@ function createNewCatalogItem() {
 
 export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
   const [draft, setDraft] = useState(settings)
+  const safeDraft = draft || {}
 
   useEffect(() => {
     setDraft(settings)
   }, [settings])
 
   const items = useMemo(
-    () => (Array.isArray(draft?.payrollItemCatalog) ? draft.payrollItemCatalog : []).map((item, index) => normalizeCatalogItem(item, index)),
-    [draft?.payrollItemCatalog],
+    () => (Array.isArray(safeDraft.payrollItemCatalog) ? safeDraft.payrollItemCatalog : []).map((item, index) => normalizeCatalogItem(item, index)),
+    [safeDraft.payrollItemCatalog],
   )
 
   const patch = (field, value) => setDraft((current) => ({ ...current, [field]: value }))
@@ -48,23 +49,19 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
       <PayrollSectionHeader title="تنظیمات فیش حقوقی" />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <Input value={draft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
-        <Input value={draft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
-        <Input value={draft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
-        <Input value={draft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
-        <Input value={draft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
-        <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
+        <Input value={safeDraft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
+        <Input value={safeDraft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
       </div>
 
-          <PayrollSurface>
-            <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
-            <div className="grid gap-2">
-              <Input value={draft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
-              <Input value={draft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
-              <Input value={draft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
-              <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
-            </div>
-          </PayrollSurface>
+      <PayrollSurfaceCard className="space-y-2" tone="muted">
+        <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
+        <div className="grid gap-2">
+          <Input value={safeDraft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
+          <Input value={safeDraft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
+          <Input value={safeDraft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
+          <Input value={safeDraft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
+        </div>
+      </PayrollSurfaceCard>
 
       <PayrollSurfaceCard className="space-y-2" tone="muted">
         <PayrollSectionHeader
@@ -117,7 +114,7 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
           size="sm"
           variant="primary"
           disabled={!canManage || busy}
-          onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
+          onClick={() => onSave({ ...safeDraft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
         >
           {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
         </Button>
