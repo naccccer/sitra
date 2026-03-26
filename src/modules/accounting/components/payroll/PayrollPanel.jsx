@@ -189,6 +189,7 @@ export function PayrollPanel({ session }) {
 
       {editorModel && (
         <PayslipEditorModal
+          key={`${selectedRun?.id || 'run'}:${editorModel?.id || editorModel?.employeeId || 'draft'}`}
           busy={payroll.busyKey === 'payslip' || payroll.busyKey === 'pdf'}
           catalog={catalog}
           employees={payroll.employees}
