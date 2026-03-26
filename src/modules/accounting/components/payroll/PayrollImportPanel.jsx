@@ -1,12 +1,9 @@
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
-import { Button, Card, Input, Select } from '@/components/shared/ui'
+import { Download, FileSpreadsheet, Plus, X } from 'lucide-react'
+import { Button, Card, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
-
-function createTemplateRows(headers = []) {
-  return [Object.fromEntries(headers.map((header) => [header, '']))]
-}
 
 function createSampleRows(headers = []) {
   const base = Object.fromEntries(headers.map((header) => [header, '']))
@@ -34,14 +31,27 @@ function downloadWorkbook(fileName, rows) {
   XLSX.writeFile(book, fileName)
 }
 
-export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run }) {
+export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [manualEmployeeId, setManualEmployeeId] = useState('')
+  const [manualEmployeeQuery, setManualEmployeeQuery] = useState('')
+  const [importFile, setImportFile] = useState(null)
+  const fileInputRef = useRef(null)
+
+  const activeRunId = run?.id || runId || ''
+  const activePeriodKey = run?.periodKey || runPeriodKey || ''
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const templateHeaders = useMemo(() => buildPayrollTemplateHeaders(catalog), [catalog])
+  const employeeLabelIndex = useMemo(() => {
+    const index = new Map()
+    for (const employee of employeeList) {
+      index.set(formatEmployeeOption(employee), String(employee.id))
+    }
+    return index
+  }, [employeeList])
   const runPayslipByEmployeeId = useMemo(() => {
     const map = new Map()
     for (const payslip of (run?.payslips || [])) {
@@ -57,6 +67,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
 
   const handleFile = async (file) => {
     if (!file) return
+    setImportFile(file)
     setLoading(true)
     setError('')
     try {
@@ -69,16 +80,31 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     }
   }
 
+  const clearImportFile = () => {
+    setImportFile(null)
+    setPreview(null)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleManualEntry = () => {
-    if (!run?.id || !selectedEmployee || !onManualEntry) return
+    if (!activeRunId || !selectedEmployee || !onManualEntry) return
     onManualEntry({ employee: selectedEmployee, payslip: selectedEmployeePayslip })
   }
 
+  const handleEmployeeFieldChange = (value) => {
+    setManualEmployeeQuery(value)
+    const resolvedId = employeeLabelIndex.get(value)
+    setManualEmployeeId(resolvedId || '')
+  }
+
   const applyImport = async () => {
-    if (!run?.id || !preview) return
+    if (!activeRunId || !preview) {
+      setError('ابتدا یک دوره معتبر انتخاب کنید.')
+      return
+    }
     const payload = {
-      periodId: run.id,
-      periodKey: run.periodKey,
+      periodId: activeRunId,
+      periodKey: activePeriodKey,
       rows: preview.rows.filter((row) => row.errors.length === 0).map((row) => ({
         employeeId: row.employee.id,
         employeeCode: row.identifier.employeeCode || undefined,
@@ -97,10 +123,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     }
     await onApply(payload)
     setPreview(null)
-  }
-
-  const downloadTemplate = () => {
-    downloadWorkbook('payroll-import-template.xlsx', createTemplateRows(templateHeaders))
+    clearImportFile()
   }
 
   const downloadSamplePayslip = () => {
@@ -109,48 +132,62 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
 
   return (
     <Card padding="md" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
-          <div className="text-xs font-bold text-slate-500">ثبت دستی یا ورود اکسل کامل ماهانه با خروجی سازگار با HR</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" onClick={downloadTemplate}>دانلود template</Button>
-          <Button size="sm" variant="ghost" onClick={downloadSamplePayslip}>دانلود فایل نمونه فیش</Button>
-        </div>
-      </div>
+      <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-black text-slate-900">ثبت دستی فیش</div>
-            <div className="text-xs font-bold text-slate-500">فقط پرسنل فعال HR قابل انتخاب هستند.</div>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={manualEmployeeId} onChange={(event) => setManualEmployeeId(String(event.target.value || ''))} className="min-w-52">
-              <option value="">انتخاب پرسنل</option>
+        <div className="grid gap-2 sm:grid-cols-[minmax(0,26rem)_auto] sm:items-end">
+          <label className="space-y-1">
+            <span className="block text-xs font-black text-slate-600">پرسنل</span>
+            <Input
+              value={manualEmployeeQuery}
+              onChange={(event) => handleEmployeeFieldChange(event.target.value)}
+              placeholder="انتخاب یا جستجوی پرسنل"
+              list="payroll-import-employees"
+              className="text-right"
+              dir="rtl"
+            />
+            <datalist id="payroll-import-employees">
               {employeeList.map((employee) => (
-                <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
+                <option key={String(employee.id)} value={formatEmployeeOption(employee)} />
               ))}
-            </Select>
-            <Button size="sm" variant="primary" disabled={!run?.id || !manualEmployeeId} onClick={handleManualEntry}>
-              {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
-            </Button>
-          </div>
+            </datalist>
+          </label>
+          {importFile && (
+            <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700">
+              <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
+              <span>{importFile.name}</span>
+              <button type="button" className="rounded p-0.5 text-rose-600 hover:bg-rose-100" onClick={clearImportFile} aria-label="پاک کردن فایل" title="پاک کردن فایل">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div>
-          <div className="text-sm font-black text-slate-900">ورود اکسل ماهانه</div>
-          <div className="text-xs font-bold text-slate-500">فایل بر اساس کد پرسنلی/شماره بیمه و fallback کد ملی پردازش می‌شود.</div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2">
+          <Button size="sm" variant="primary" disabled={!activeRunId || !manualEmployeeId} onClick={handleManualEntry} className="gap-1">
+            <Plus className="h-4 w-4" />
+            {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            انتخاب فایل اکسل
+          </Button>
+          <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
+            <Download className="h-4 w-4" />
+            نمونه
+          </Button>
         </div>
-        <Input type="file" accept=".xlsx,.xls" className="h-10 max-w-72 cursor-pointer file:me-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
-      </div>
 
-      {!run?.id && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">برای اعمال فایل، ابتدا یک دوره حقوق را انتخاب کنید.</div>}
+      <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
+
+      {!activeRunId && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ابتدا دوره را انتخاب کنید.</div>}
       {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{error}</div>}
-      {loading && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">در حال خواندن فایل اکسل...</div>}
+      {loading && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">در حال خواندن فایل...</div>}
 
       {preview && (
         <>
@@ -192,7 +229,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           </div>
           <div className="flex flex-wrap justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setPreview(null)}>پاک کردن پیش نمایش</Button>
-            <Button size="sm" variant="primary" disabled={!run?.id || busy || hasBlockingErrors} onClick={applyImport}>
+            <Button size="sm" variant="primary" disabled={!activeRunId || busy || hasBlockingErrors} onClick={applyImport}>
               {busy ? 'در حال اعمال...' : 'اعمال به دوره انتخابی'}
             </Button>
           </div>
@@ -211,4 +248,3 @@ function formatEmployeeOption(employee = {}) {
 function Summary({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-lg font-black text-slate-900">{value}</div></div>
 }
-

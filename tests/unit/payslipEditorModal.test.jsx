@@ -49,7 +49,7 @@ describe('PayslipEditorModal', () => {
     const props = renderModal()
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره فیش' }))
 
-    expect(screen.getByText('لطفاً پرسنل را انتخاب کنید.')).toBeTruthy()
+    expect(screen.getByText('یک پرسنل معتبر انتخاب کنید.')).toBeTruthy()
     expect(props.onSave).not.toHaveBeenCalled()
   })
 
@@ -64,9 +64,9 @@ describe('PayslipEditorModal', () => {
     })
     const employeeSelect = screen.getByRole('combobox')
 
-    expect(employeeSelect.value).toBe('2')
+    expect(employeeSelect.value).toBe('ندا کرمی (۱۰۰۲)')
 
-    fireEvent.change(employeeSelect, { target: { value: '1' } })
+    fireEvent.change(employeeSelect, { target: { value: 'علی رضایی (۱۰۰۱)' } })
     fireEvent.click(screen.getByRole('button', { name: 'ذخیره فیش' }))
 
     expect(props.onSave).toHaveBeenCalledTimes(1)
