@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FileText, X } from 'lucide-react'
 import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
@@ -9,14 +9,7 @@ import { PayrollScrollableTableCard } from './PayrollScrollableTableCard'
 import { PayrollSurfaceCard } from './PayrollSurfaceCard'
 
 function updateDraftInput(draft, source, value) {
-  return {
-    ...draft,
-    [source]: value,
-    inputs: {
-      ...(draft.inputs || {}),
-      [source]: value,
-    },
-  }
+  return { ...draft, [source]: value, inputs: { ...(draft.inputs || {}), [source]: value } }
 }
 
 export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
@@ -24,7 +17,16 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   const [file, setFile] = useState(null)
   const [employeeQuery, setEmployeeQuery] = useState('')
   const [error, setError] = useState('')
+  const [showNotes, setShowNotes] = useState(Boolean(payslip?.notes))
   const pdfInputRef = useRef(null)
+
+  useEffect(() => {
+    setDraft(payslip)
+    setFile(null)
+    setError('')
+    setShowNotes(Boolean(payslip?.notes))
+    setEmployeeQuery(payslip ? formatEmployeeOption({ fullName: payslip.employeeName, employeeCode: payslip.employeeCode }) : '')
+  }, [payslip])
 
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
@@ -34,14 +36,11 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     return index
   }, [employeeList])
   const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
-
   const totals = useMemo(() => {
     const fallback = calculatePayslipTotals(draft ?? payslip)
     const catalogTotals = calculateCatalogTotals(draft ?? payslip, catalog)
-    if (catalogTotals.gross === 0 && catalogTotals.deductions === 0) return fallback
-    return catalogTotals
+    return catalogTotals.gross === 0 && catalogTotals.deductions === 0 ? fallback : catalogTotals
   }, [catalog, draft, payslip])
-
   const scopedCatalog = useMemo(() => splitCatalogByType(catalog), [catalog])
   if (!payslip) return null
 
@@ -54,6 +53,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     const nextId = employeeLabelIndex.get(value)
     if (!nextId) {
       setDraft((current) => ({ ...current, employeeId: '' }))
+      setError('')
       return
     }
     const employee = employeeMap.get(nextId)
@@ -76,6 +76,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     setFile(null)
     if (pdfInputRef.current) pdfInputRef.current.value = ''
   }
+  const handleUploadPdf = () => { if (file && onUploadPdf) onUploadPdf(file) }
 
   return (
     <ModalShell
@@ -132,8 +133,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
                 <span>{file.name}</span>
                 <button type="button" className="rounded p-0.5 text-rose-600 hover:bg-rose-100" onClick={clearPdfFile} aria-label="پاک کردن فایل" title="پاک کردن فایل"><X className="h-3.5 w-3.5" /></button>
               </div>
-            )}
-            <Button size="sm" variant="secondary" disabled={!file || busy} onClick={() => onUploadPdf(file)}>{busy ? 'در حال ارسال...' : 'آپلود PDF'}</Button>
+            </PayrollSurface>
           </div>
         </PayrollSurfaceCard>
       </div>
@@ -141,7 +141,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   )
 }
 
-function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
+function ItemTable({ title, items = [], onChange, payslip, tone = 'slate', maxBodyHeightClass = 'max-h-44' }) {
   if (!items.length) return null
   const toneClass = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/40' : tone === 'rose' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'
   return (

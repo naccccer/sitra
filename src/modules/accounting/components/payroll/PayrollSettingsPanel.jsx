@@ -56,14 +56,15 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
       </div>
 
-      <label className="block space-y-1">
-        <span className="block text-xs font-black text-slate-600">یادداشت پایین فیش</span>
-        <textarea
-          value={draft.footerNote || ''}
-          onChange={(event) => patch('footerNote', event.target.value)}
-          className="min-h-20 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
-        />
-      </label>
+          <PayrollSurface>
+            <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
+            <div className="grid gap-2">
+              <Input value={draft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
+              <Input value={draft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
+              <Input value={draft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
+              <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
+            </div>
+          </PayrollSurface>
 
       <PayrollSurfaceCard className="space-y-2" tone="muted">
         <PayrollSectionHeader
@@ -111,10 +112,17 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         </PayrollScrollableTableCard>
       </PayrollSurfaceCard>
 
-      <div className="flex justify-end">
-        <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}>
-          {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
-        </Button>
+          <div className="mt-3 flex justify-end">
+            <Button
+              size="sm"
+              variant="primary"
+              disabled={!canManage || busy}
+              onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
+            >
+              {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
+            </Button>
+          </div>
+        </PayrollSurface>
       </div>
     </PayrollSurfaceCard>
   )
