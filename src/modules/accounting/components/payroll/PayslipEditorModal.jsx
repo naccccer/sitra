@@ -74,11 +74,6 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     if (pdfInputRef.current) pdfInputRef.current.value = ''
   }
 
-  const clearPdfFile = () => {
-    setFile(null)
-    if (pdfInputRef.current) pdfInputRef.current.value = ''
-  }
-
   return (
     <ModalShell
       isOpen={Boolean(payslip)}
