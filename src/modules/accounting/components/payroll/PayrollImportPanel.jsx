@@ -37,6 +37,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
   const [error, setError] = useState('')
   const [manualEmployeeId, setManualEmployeeId] = useState('')
   const [manualEmployeeQuery, setManualEmployeeQuery] = useState('')
+  const [isEmployeeMenuOpen, setIsEmployeeMenuOpen] = useState(false)
   const [importFile, setImportFile] = useState(null)
   const fileInputRef = useRef(null)
 
@@ -45,13 +46,17 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const templateHeaders = useMemo(() => buildPayrollTemplateHeaders(catalog), [catalog])
-  const employeeLabelIndex = useMemo(() => {
-    const index = new Map()
-    for (const employee of employeeList) {
-      index.set(formatEmployeeOption(employee), String(employee.id))
-    }
-    return index
-  }, [employeeList])
+  const filteredEmployees = useMemo(() => {
+    const query = String(manualEmployeeQuery || '').trim().toLowerCase()
+    if (!query) return employeeList.slice(0, 40)
+    return employeeList
+      .filter((employee) => {
+        const name = String(employee?.fullName || employee?.name || '').toLowerCase()
+        const code = String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').toLowerCase()
+        return name.includes(query) || code.includes(query)
+      })
+      .slice(0, 40)
+  }, [employeeList, manualEmployeeQuery])
   const runPayslipByEmployeeId = useMemo(() => {
     const map = new Map()
     for (const payslip of (run?.payslips || [])) {
@@ -93,8 +98,14 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
 
   const handleEmployeeFieldChange = (value) => {
     setManualEmployeeQuery(value)
-    const resolvedId = employeeLabelIndex.get(value)
-    setManualEmployeeId(resolvedId || '')
+    setManualEmployeeId('')
+    setIsEmployeeMenuOpen(true)
+  }
+
+  const selectEmployee = (employee) => {
+    setManualEmployeeId(String(employee?.id || ''))
+    setManualEmployeeQuery(formatEmployeeOption(employee))
+    setIsEmployeeMenuOpen(false)
   }
 
   const applyImport = async () => {
@@ -135,23 +146,60 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
       <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <div className="grid gap-2 sm:grid-cols-[minmax(0,26rem)_auto] sm:items-end">
-          <label className="space-y-1">
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="min-w-[18rem] flex-1 space-y-1">
             <span className="block text-xs font-black text-slate-600">پرسنل</span>
-            <Input
-              value={manualEmployeeQuery}
-              onChange={(event) => handleEmployeeFieldChange(event.target.value)}
-              placeholder="انتخاب یا جستجوی پرسنل"
-              list="payroll-import-employees"
-              className="text-right"
-              dir="rtl"
-            />
-            <datalist id="payroll-import-employees">
-              {employeeList.map((employee) => (
-                <option key={String(employee.id)} value={formatEmployeeOption(employee)} />
-              ))}
-            </datalist>
+            <div className="relative">
+              <Input
+                value={manualEmployeeQuery}
+                onChange={(event) => handleEmployeeFieldChange(event.target.value)}
+                onFocus={() => {
+                  if (manualEmployeeId) setManualEmployeeQuery('')
+                  setManualEmployeeId('')
+                  setIsEmployeeMenuOpen(true)
+                }}
+                onBlur={() => setTimeout(() => setIsEmployeeMenuOpen(false), 140)}
+                placeholder="انتخاب یا جستجوی پرسنل"
+                className="text-right"
+                dir="rtl"
+              />
+              {isEmployeeMenuOpen && (
+                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-slate-200 bg-white p-1 shadow-lg">
+                  {filteredEmployees.map((employee) => (
+                    <button
+                      key={String(employee.id)}
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg px-2 py-1.5 text-right text-xs font-bold text-slate-700 hover:bg-slate-100"
+                      onMouseDown={(event) => event.preventDefault()}
+                      onClick={() => selectEmployee(employee)}
+                    >
+                      <span>{employee?.fullName || employee?.name || 'بدون نام'}</span>
+                      <span className="text-[11px] text-slate-500">{toPN(employee?.employeeCode || employee?.code || employee?.personnelNo || '-')}</span>
+                    </button>
+                  ))}
+                  {filteredEmployees.length === 0 && <div className="px-2 py-2 text-xs font-bold text-slate-400">پرسنلی یافت نشد.</div>}
+                </div>
+              )}
+            </div>
           </label>
+          <div className="flex flex-wrap items-center gap-2 border-slate-200 sm:border-t-0 sm:pt-0">
+            <Button size="sm" variant="primary" disabled={!activeRunId || !manualEmployeeId} onClick={handleManualEntry} className="gap-1">
+              <Plus className="h-4 w-4" />
+              {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
+            </Button>
+            <Button
+              size="sm"
+              variant="primary"
+              className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              انتخاب فایل اکسل
+            </Button>
+            <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
+              <Download className="h-4 w-4" />
+              نمونه
+            </Button>
+          </div>
           {importFile && (
             <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white px-2 py-1 text-xs font-bold text-slate-700">
               <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
@@ -163,25 +211,6 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           )}
         </div>
       </div>
-
-        <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2">
-          <Button size="sm" variant="primary" disabled={!activeRunId || !manualEmployeeId} onClick={handleManualEntry} className="gap-1">
-            <Plus className="h-4 w-4" />
-            {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
-          </Button>
-          <Button
-            size="sm"
-            variant="primary"
-            className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            انتخاب فایل اکسل
-          </Button>
-          <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
-            <Download className="h-4 w-4" />
-            نمونه
-          </Button>
-        </div>
 
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
 
