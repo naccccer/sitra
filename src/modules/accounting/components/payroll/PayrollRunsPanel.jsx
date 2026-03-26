@@ -36,153 +36,147 @@ export function PayrollRunsPanel({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-black text-slate-900">دوره های حقوق و دستمزد</div>
-            <div className="text-xs font-bold text-slate-500">ایجاد ماهانه، بازبینی فیش ها و صدور نهایی</div>
+            <div className="text-xs font-bold text-slate-500">نمایش جدولی برای مدیریت تعداد بالای دوره‌ها</div>
           </div>
-          {canManage && <RunCreateForm busy={busyKey === 'run'} onCreateRun={onCreateRun} />}
+          {canManage && <RunCreateForm busy={busyKey === 'run'} onCreateRun={onCreateRun} onSelectRun={onSelectRun} runs={runs} />}
         </div>
 
-        <div className="grid gap-3 lg:grid-cols-[.92fr_1.08fr]">
-          <div className="space-y-2">
-            {runs.map((run) => {
-              const meta = getRunStatusMeta(run.status)
-              const runSummary = run.summary || buildRunSummary(run)
-              return (
-                <button
-                  key={run.id}
-                  type="button"
-                  onClick={() => onSelectRun(run.id)}
-                  className={`w-full rounded-2xl border p-4 text-start transition-colors ${selectedRunId === run.id ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-black">{run.title || `لیست حقوق ${monthLabel(run.periodKey)}`}</div>
-                      <div className={`mt-1 inline-flex rounded-full border px-2 py-1 text-[10px] font-black ${selectedRunId === run.id ? 'border-white/20 bg-white/10 text-white' : meta.tone}`}>
-                        {meta.label}
-                      </div>
-                    </div>
-                    <div className="text-xs font-bold opacity-80">{toPN(runSummary.employees)} نفر</div>
-                  </div>
-                  <div className={`mt-3 grid grid-cols-3 gap-2 text-[11px] font-bold ${selectedRunId === run.id ? 'text-white/80' : 'text-slate-500'}`}>
-                    <Metric label="خالص" value={formatMoney(runSummary.net)} />
-                    <Metric label="پرداخت" value={formatMoney(runSummary.paid)} />
-                    <Metric label="مانده" value={formatMoney(runSummary.due)} />
-                  </div>
-                </button>
-              )
-            })}
-            {runs.length === 0 && <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 px-4 py-8 text-center text-xs font-bold text-slate-400">هنوز دوره ای ثبت نشده است.</div>}
-          </div>
-
-          <Card padding="md" tone="muted" className="space-y-4">
-            {selectedRun ? (
-              <>
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div>
-                    <div className="text-base font-black text-slate-900">{selectedRun.title || `لیست حقوق ${monthLabel(selectedRun.periodKey)}`}</div>
-                    <div className="mt-1 text-xs font-bold text-slate-500">تاریخ صدور: {formatMaybeDate(selectedRun.issuedAt)}</div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {canApprove && draftPayslips.length > 0 && (
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        disabled={busyKey === 'action:approve'}
-                        onClick={() => onRunAction({ id: selectedRun.id, action: 'approve' })}
-                        title="تایید دوره"
-                        aria-label="تایید دوره"
-                      >
-                        <CheckCheck className="h-4 w-4" />
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <table className="w-full text-right text-xs">
+            <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
+              <tr>
+                <th className="px-3 py-2">دوره</th>
+                <th className="px-3 py-2">وضعیت</th>
+                <th className="px-3 py-2">پرسنل</th>
+                <th className="px-3 py-2">خالص</th>
+                <th className="px-3 py-2">مانده</th>
+                <th className="px-3 py-2">انتخاب</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {runs.map((run) => {
+                const meta = getRunStatusMeta(run.status)
+                const runSummary = run.summary || buildRunSummary(run)
+                return (
+                  <tr key={run.id} className={selectedRunId === run.id ? 'bg-slate-50' : 'hover:bg-slate-50'}>
+                    <td className="px-3 py-2 font-black text-slate-900">{run.title || `لیست حقوق ${monthLabel(run.periodKey)}`}</td>
+                    <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${meta.tone}`}>{meta.label}</span></td>
+                    <td className="px-3 py-2 font-bold text-slate-600">{toPN(runSummary.employees)} نفر</td>
+                    <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.net)}</td>
+                    <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.due)}</td>
+                    <td className="px-3 py-2">
+                      <Button size="sm" variant={selectedRunId === run.id ? 'primary' : 'secondary'} onClick={() => onSelectRun(run.id)}>
+                        {selectedRunId === run.id ? 'انتخاب شده' : 'انتخاب'}
                       </Button>
-                    )}
-                    {canIssue && approvedPayslips.length > 0 && <Button size="sm" variant="primary" disabled={busyKey === 'action:issue'} onClick={() => onRunAction({ id: selectedRun.id, action: 'issue' })}>صدور دوره</Button>}
-                    {canManage && onDeleteRun && (
-                      <Button
-                        size="icon"
-                        variant="danger"
-                        disabled={deletingRun}
-                        title={deletingRun ? 'در حال حذف...' : 'حذف دوره'}
-                        aria-label={deletingRun ? 'در حال حذف دوره' : 'حذف دوره'}
-                        onClick={() => {
-                          if (!selectedRun?.id) return
-                          const ok = window.confirm('این دوره و فیش های پیش نویس آن حذف شود؟')
-                          if (!ok) return
-                          onDeleteRun(selectedRun.id)
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </div>
-
-                <div className="grid gap-2 sm:grid-cols-4">
-                  <SummaryChip label="پرسنل" value={toPN(summary.employees)} />
-                  <SummaryChip label="جمع ناخالص" value={formatMoney(summary.gross)} />
-                  <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
-                  <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />
-                </div>
-
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
-                  <table className="w-full text-right text-xs">
-                    <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
-                      <tr>
-                        <th className="px-3 py-2">پرسنل</th>
-                        <th className="px-3 py-2">خالص</th>
-                        <th className="px-3 py-2">وضعیت پرداخت</th>
-                        <th className="px-3 py-2">وضعیت فیش</th>
-                        <th className="px-3 py-2">عملیات</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {selectedRun.payslips?.map((payslip) => {
-                        const paymentMeta = getPaymentMeta(payslip.paymentStatus)
-                        const statusMeta = getRunStatusMeta(payslip.status)
-                        return (
-                          <tr key={payslip.id || payslip.employeeId} className="hover:bg-slate-50">
-                            <td className="px-3 py-2">
-                              <div className="font-black text-slate-900">{payslip.employeeName}</div>
-                              <div className="text-[11px] font-bold text-slate-500">{toPN(payslip.employeeCode || '-')}</div>
-                            </td>
-                            <td className="px-3 py-2 font-black text-slate-900">{formatMoney(payslip.net)}</td>
-                            <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${paymentMeta.tone}`}>{paymentMeta.label}</span></td>
-                            <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${statusMeta.tone}`}>{statusMeta.label}</span></td>
-                            <td className="px-3 py-2">
-                              <div className="flex flex-wrap gap-1">
-                                {canManage && <Button size="sm" variant="ghost" onClick={() => onEditPayslip(payslip)}>ویرایش</Button>}
-                                {canApprove && payslip.status === 'draft' && <Button size="sm" variant="secondary" onClick={() => onRunAction({ id: selectedRun.id, payslipId: payslip.id, action: 'approve' })}>تایید</Button>}
-                                {canIssue && payslip.status === 'approved' && <Button size="sm" variant="primary" onClick={() => onRunAction({ id: selectedRun.id, payslipId: payslip.id, action: 'issue' })}>صدور</Button>}
-                                <Button size="sm" variant="ghost" onClick={() => onPrint(payslip)}>چاپ</Button>
-                              </div>
-                            </td>
-                          </tr>
-                        )
-                      })}
-                      {selectedRun.payslips?.length === 0 && (
-                        <tr><td colSpan={5} className="px-3 py-8 text-center font-bold text-slate-400">برای این دوره فیشی ثبت نشده است.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              </>
-            ) : (
-              <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm font-bold text-slate-400">یک دوره را برای مشاهده جزییات انتخاب کنید.</div>
-            )}
-          </Card>
+                    </td>
+                  </tr>
+                )
+              })}
+              {runs.length === 0 && (
+                <tr><td colSpan={6} className="px-3 py-8 text-center font-bold text-slate-400">هنوز دوره ای ثبت نشده است.</td></tr>
+              )}
+            </tbody>
+          </table>
         </div>
+
+        <Card padding="md" tone="muted" className="space-y-4">
+          {selectedRun ? (
+            <>
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <div className="text-base font-black text-slate-900">{selectedRun.title || `لیست حقوق ${monthLabel(selectedRun.periodKey)}`}</div>
+                  <div className="mt-1 text-xs font-bold text-slate-500">تاریخ صدور: {formatMaybeDate(selectedRun.issuedAt)}</div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {canApprove && draftPayslips.length > 0 && (
+                    <Button size="icon" variant="secondary" disabled={busyKey === 'action:approve'} onClick={() => onRunAction({ id: selectedRun.id, action: 'approve' })} title="تایید دوره" aria-label="تایید دوره">
+                      <CheckCheck className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {canIssue && approvedPayslips.length > 0 && <Button size="sm" variant="primary" disabled={busyKey === 'action:issue'} onClick={() => onRunAction({ id: selectedRun.id, action: 'issue' })}>صدور دوره</Button>}
+                  {canManage && onDeleteRun && (
+                    <Button
+                      size="icon"
+                      variant="danger"
+                      disabled={deletingRun}
+                      title={deletingRun ? 'در حال حذف...' : 'حذف دوره'}
+                      aria-label={deletingRun ? 'در حال حذف دوره' : 'حذف دوره'}
+                      onClick={() => {
+                        if (!selectedRun?.id) return
+                        const ok = window.confirm('این دوره و فیش های پیش نویس آن حذف شود؟')
+                        if (!ok) return
+                        onDeleteRun(selectedRun.id)
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
+              </div>
+
+              <div className="grid gap-2 sm:grid-cols-4">
+                <SummaryChip label="پرسنل" value={toPN(summary.employees)} />
+                <SummaryChip label="جمع ناخالص" value={formatMoney(summary.gross)} />
+                <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
+                <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />
+              </div>
+
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+                <table className="w-full text-right text-xs">
+                  <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
+                    <tr>
+                      <th className="px-3 py-2">پرسنل</th>
+                      <th className="px-3 py-2">خالص</th>
+                      <th className="px-3 py-2">وضعیت پرداخت</th>
+                      <th className="px-3 py-2">وضعیت فیش</th>
+                      <th className="px-3 py-2">عملیات</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {selectedRun.payslips?.map((payslip) => {
+                      const paymentMeta = getPaymentMeta(payslip.paymentStatus)
+                      const statusMeta = getRunStatusMeta(payslip.status)
+                      return (
+                        <tr key={payslip.id || payslip.employeeId} className="hover:bg-slate-50">
+                          <td className="px-3 py-2"><div className="font-black text-slate-900">{payslip.employeeName}</div><div className="text-[11px] font-bold text-slate-500">{toPN(payslip.employeeCode || '-')}</div></td>
+                          <td className="px-3 py-2 font-black text-slate-900">{formatMoney(payslip.net)}</td>
+                          <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${paymentMeta.tone}`}>{paymentMeta.label}</span></td>
+                          <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${statusMeta.tone}`}>{statusMeta.label}</span></td>
+                          <td className="px-3 py-2"><div className="flex flex-wrap gap-1">{canManage && <Button size="sm" variant="ghost" onClick={() => onEditPayslip(payslip)}>ویرایش</Button>}{canApprove && payslip.status === 'draft' && <Button size="sm" variant="secondary" onClick={() => onRunAction({ id: selectedRun.id, payslipId: payslip.id, action: 'approve' })}>تایید</Button>}{canIssue && payslip.status === 'approved' && <Button size="sm" variant="primary" onClick={() => onRunAction({ id: selectedRun.id, payslipId: payslip.id, action: 'issue' })}>صدور</Button>}<Button size="sm" variant="ghost" onClick={() => onPrint(payslip)}>چاپ</Button></div></td>
+                        </tr>
+                      )
+                    })}
+                    {selectedRun.payslips?.length === 0 && <tr><td colSpan={5} className="px-3 py-8 text-center font-bold text-slate-400">برای این دوره فیشی ثبت نشده است.</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-slate-300 bg-white px-4 py-10 text-center text-sm font-bold text-slate-400">یک دوره را برای مشاهده جزییات انتخاب کنید.</div>
+          )}
+        </Card>
       </Card>
     </div>
   )
 }
 
-function RunCreateForm({ busy, onCreateRun }) {
+function RunCreateForm({ busy, onCreateRun, onSelectRun, runs = [] }) {
   const [periodKey, setPeriodKey] = useState(() => toShamsiMonthKey(new Date()))
   const [title, setTitle] = useState('')
+  const [localError, setLocalError] = useState('')
 
   return (
     <form
       className="flex flex-wrap items-center gap-2"
       onSubmit={(event) => {
         event.preventDefault()
+        const duplicate = runs.find((item) => String(item.periodKey) === String(periodKey))
+        if (duplicate?.id) {
+          onSelectRun(duplicate.id)
+          setLocalError('این دوره قبلاً ثبت شده و انتخاب شد.')
+          return
+        }
+        setLocalError('')
         onCreateRun({ periodKey, title })
         setTitle('')
       }}
@@ -190,6 +184,7 @@ function RunCreateForm({ busy, onCreateRun }) {
       <ShamsiMonthPicker value={periodKey} onChange={setPeriodKey} />
       <Input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="عنوان اختیاری" className="sm:w-48" />
       <Button type="submit" size="sm" variant="primary" disabled={busy}>{busy ? 'در حال ایجاد...' : 'دوره جدید'}</Button>
+      {localError && <span className="text-xs font-bold text-amber-700">{localError}</span>}
     </form>
   )
 }
@@ -234,8 +229,4 @@ function toShamsiMonthKey(value) {
 
 function SummaryChip({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-sm font-black text-slate-900">{value}</div></div>
-}
-
-function Metric({ label, value }) {
-  return <div><div>{label}</div><div className="mt-1 text-sm font-black">{value}</div></div>
 }

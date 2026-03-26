@@ -125,18 +125,25 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     }
   }, [loadAll])
 
-  const saveRun = useCallback((payload) => mutate('run', async () => {
-    const range = shamsiMonthKeyToGregorianRange(payload?.periodKey)
-    const result = await accountingApi.savePayrollPeriod({
-      ...payload,
-      ...(range ? { startDate: range.startDate, endDate: range.endDate, payDate: range.endDate } : {}),
+  const saveRun = useCallback((payload) => {
+    const duplicate = periods.find((item) => String(item.periodKey || '') === String(payload?.periodKey || ''))
+    if (duplicate?.id) {
+      setSelectedRunId(duplicate.id)
+      return Promise.resolve({ period: duplicate, reused: true })
+    }
+    return mutate('run', async () => {
+      const range = shamsiMonthKeyToGregorianRange(payload?.periodKey)
+      const result = await accountingApi.savePayrollPeriod({
+        ...payload,
+        ...(range ? { startDate: range.startDate, endDate: range.endDate, payDate: range.endDate } : {}),
+      })
+      return result
+    }).then((result) => {
+      const nextId = result?.period?.id ?? result?.id ?? payload?.id ?? ''
+      if (nextId) setSelectedRunId(nextId)
+      return result
     })
-    return result
-  }).then((result) => {
-    const nextId = result?.period?.id ?? result?.id ?? payload?.id ?? ''
-    if (nextId) setSelectedRunId(nextId)
-    return result
-  }), [mutate])
+  }, [mutate, periods])
 
   const deleteRun = useCallback((runId) => mutate('run-delete', async () => {
     if (!runId) {

@@ -132,27 +132,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
 
   return (
     <Card padding="md" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
-        <div className="flex flex-wrap gap-2">
-          <Button
-            size="sm"
-            variant="primary"
-            className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            انتخاب فایل اکسل
-          </Button>
-          <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
-            <Download className="h-4 w-4" />
-            نمونه
-          </Button>
-          <Button size="sm" variant="primary" disabled={!activeRunId || !manualEmployeeId} onClick={handleManualEntry} className="gap-1">
-            <Plus className="h-4 w-4" />
-            {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
-          </Button>
-        </div>
-      </div>
+      <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div className="grid gap-2 sm:grid-cols-[minmax(0,26rem)_auto] sm:items-end">
@@ -183,6 +163,25 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           )}
         </div>
       </div>
+
+        <div className="flex flex-wrap items-center gap-2 border-t border-slate-200 pt-2">
+          <Button size="sm" variant="primary" disabled={!activeRunId || !manualEmployeeId} onClick={handleManualEntry} className="gap-1">
+            <Plus className="h-4 w-4" />
+            {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
+          </Button>
+          <Button
+            size="sm"
+            variant="primary"
+            className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            انتخاب فایل اکسل
+          </Button>
+          <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
+            <Download className="h-4 w-4" />
+            نمونه
+          </Button>
+        </div>
 
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
 

@@ -76,7 +76,6 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
               <tr>
                 <th className="px-2 py-2">عنوان</th>
                 <th className="px-2 py-2">نوع</th>
-                <th className="px-2 py-2">ترتیب</th>
                 <th className="px-2 py-2">فعال</th>
                 <th className="px-2 py-2">حذف</th>
               </tr>
@@ -95,9 +94,6 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
                       <option value="info">اطلاعات</option>
                     </Select>
                   </td>
-                  <td className="px-2 py-2">
-                    <Input type="number" value={item.sortOrder ?? 0} onChange={(event) => patchItem(index, { sortOrder: Number(event.target.value || 0) })} />
-                  </td>
                   <td className="px-2 py-2 text-center">
                     <input type="checkbox" checked={item.active !== false} onChange={(event) => patchItem(index, { active: event.target.checked })} />
                   </td>
@@ -107,7 +103,7 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
                 </tr>
               ))}
               {items.length === 0 && (
-                <tr><td colSpan={5} className="px-3 py-6 text-center font-bold text-slate-400">آیتمی ثبت نشده است.</td></tr>
+                <tr><td colSpan={4} className="px-3 py-6 text-center font-bold text-slate-400">آیتمی ثبت نشده است.</td></tr>
               )}
             </tbody>
           </table>
@@ -115,7 +111,7 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
       </div>
 
       <div className="flex justify-end">
-        <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave({ ...draft, payrollItemCatalog: items })}>
+        <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}>
           {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
         </Button>
       </div>
