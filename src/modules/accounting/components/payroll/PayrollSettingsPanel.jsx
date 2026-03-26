@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Plus, Trash2 } from 'lucide-react'
 import { Button, Input } from '@/components/shared/ui'
 import { normalizeCatalogItem } from './payrollCatalog'
 import { PayrollSectionHeader } from './PayrollSectionHeader'
@@ -109,17 +110,33 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
 function CatalogGroup({ canManage, items = [], onAdd, onPatch, onRemove, title }) {
   return (
     <PayrollSurfaceCard className="space-y-2" tone="muted">
-      <PayrollSectionHeader
-        title={title}
-        action={<Button size="sm" variant="ghost" disabled={!canManage} onClick={onAdd}>افزودن فیلد</Button>}
-      />
-      <div className="grid gap-2 md:grid-cols-2">
+      <PayrollSectionHeader title={title} />
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {items.map((item) => (
-          <div key={item.key} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white p-2">
+          <div key={item.key} className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-2">
             <Input value={item.label} onChange={(event) => onPatch(item.key, event.target.value)} placeholder="عنوان فیلد" />
-            <Button size="sm" variant="danger" disabled={!canManage} onClick={() => onRemove(item.key)}>حذف</Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled={!canManage}
+              onClick={() => onRemove(item.key)}
+              title="حذف فیلد"
+              aria-label="حذف فیلد"
+              className="h-8 w-8 text-rose-600 hover:bg-rose-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
           </div>
         ))}
+        <button
+          type="button"
+          disabled={!canManage}
+          onClick={onAdd}
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          افزودن فیلد
+        </button>
         {items.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 px-3 py-4 text-center text-xs font-bold text-slate-400">فیلدی ثبت نشده است.</div>}
       </div>
     </PayrollSurfaceCard>

@@ -90,6 +90,11 @@ function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
     : tone === 'rose'
       ? 'border-rose-300 bg-rose-50/70'
       : 'border-slate-300 bg-slate-50/80'
+  const itemToneClass = tone === 'emerald'
+    ? 'border-emerald-200 bg-emerald-100/60'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-100/60'
+      : 'border-slate-200 bg-slate-100/80'
 
   return (
     <PayrollSurfaceCard className={`space-y-2 p-2 ${toneClass}`}>
@@ -98,7 +103,7 @@ function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
         {items.map((item) => {
           const source = String(item.source || item.key)
           return (
-            <div key={item.key} className="rounded-lg border border-white/70 bg-white px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.05)]">
+            <div key={item.key} className={`rounded-lg border px-2 py-1.5 shadow-[0_1px_2px_rgba(15,23,42,0.05)] ${itemToneClass}`}>
               <div className="mb-1 text-[11px] font-bold text-slate-600">{item.label}</div>
               <Input type="number" value={resolveInputValueFromPayslip(payslip, item)} onChange={(event) => onChange(source, Number(event.target.value || 0))} />
             </div>
