@@ -1,12 +1,9 @@
 import { useMemo, useState } from 'react'
 import * as XLSX from 'xlsx'
+import { Download } from 'lucide-react'
 import { Button, Card, Input, Select } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
-
-function createTemplateRows(headers = []) {
-  return [Object.fromEntries(headers.map((header) => [header, '']))]
-}
 
 function createSampleRows(headers = []) {
   const base = Object.fromEntries(headers.map((header) => [header, '']))
@@ -39,9 +36,18 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [manualEmployeeId, setManualEmployeeId] = useState('')
+  const [employeeQuery, setEmployeeQuery] = useState('')
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const templateHeaders = useMemo(() => buildPayrollTemplateHeaders(catalog), [catalog])
+  const filteredEmployees = useMemo(() => {
+    if (!employeeQuery.trim()) return employeeList
+    const query = employeeQuery.trim().toLowerCase()
+    return employeeList.filter((employee) => {
+      const text = `${employee?.fullName || employee?.name || ''} ${employee?.employeeCode || employee?.code || employee?.personnelNo || ''}`.toLowerCase()
+      return text.includes(query)
+    })
+  }, [employeeList, employeeQuery])
   const runPayslipByEmployeeId = useMemo(() => {
     const map = new Map()
     for (const payslip of (run?.payslips || [])) {
@@ -99,10 +105,6 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     setPreview(null)
   }
 
-  const downloadTemplate = () => {
-    downloadWorkbook('payroll-import-template.xlsx', createTemplateRows(templateHeaders))
-  }
-
   const downloadSamplePayslip = () => {
     downloadWorkbook('payroll-sample-slip.xlsx', createSampleRows(templateHeaders))
   }
@@ -114,22 +116,23 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
           <div className="text-xs font-bold text-slate-500">ثبت دستی یا ورود اکسل کامل ماهانه با خروجی سازگار با HR</div>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button size="sm" variant="ghost" onClick={downloadTemplate}>دانلود template</Button>
-          <Button size="sm" variant="ghost" onClick={downloadSamplePayslip}>دانلود فایل نمونه فیش</Button>
-        </div>
+        <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
+          <Download className="h-4 w-4" />
+          نمونه
+        </Button>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="space-y-3">
           <div>
             <div className="text-sm font-black text-slate-900">ثبت دستی فیش</div>
             <div className="text-xs font-bold text-slate-500">فقط پرسنل فعال HR قابل انتخاب هستند.</div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Select value={manualEmployeeId} onChange={(event) => setManualEmployeeId(String(event.target.value || ''))} className="min-w-52">
+          <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
+            <Input value={employeeQuery} onChange={(event) => setEmployeeQuery(event.target.value)} placeholder="جستجوی نام یا کد پرسنلی" />
+            <Select value={manualEmployeeId} onChange={(event) => setManualEmployeeId(String(event.target.value || ''))}>
               <option value="">انتخاب پرسنل</option>
-              {employeeList.map((employee) => (
+              {filteredEmployees.map((employee) => (
                 <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
               ))}
             </Select>
@@ -211,4 +214,3 @@ function formatEmployeeOption(employee = {}) {
 function Summary({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-lg font-black text-slate-900">{value}</div></div>
 }
-
