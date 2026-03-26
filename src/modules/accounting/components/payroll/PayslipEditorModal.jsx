@@ -108,13 +108,15 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     >
       <div className="space-y-4">
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.2fr_1fr]">
-          <label className="space-y-1">
+          <label className="max-w-md space-y-1">
             <span className="block text-xs font-black text-slate-600">پرسنل</span>
             <Input
               value={employeeQuery || formatEmployeeOption({ fullName: employeeName, employeeCode })}
               onChange={(event) => handleEmployeeFieldChange(event.target.value)}
               placeholder="انتخاب یا جستجوی پرسنل"
               list="payslip-editor-employees"
+              className="text-right"
+              dir="rtl"
             />
             <datalist id="payslip-editor-employees">
               {employeeList.map((employee) => (

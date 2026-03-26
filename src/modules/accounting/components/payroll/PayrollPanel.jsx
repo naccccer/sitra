@@ -69,6 +69,10 @@ export function PayrollPanel({ session }) {
   )
 
   const selectedRun = payroll.selectedRun || currentRun
+  const selectedRunSummary = useMemo(
+    () => payroll.runs.find((item) => item.id === payroll.selectedRunId) || null,
+    [payroll.runs, payroll.selectedRunId],
+  )
   const catalog = Array.isArray(payroll.settings?.payrollItemCatalog) ? payroll.settings.payrollItemCatalog : []
   const editorPayslip = resolveScopedPayslip(selectedRun, editorPayslipId)
   const editorModel = editorPayslip || manualDraft
@@ -140,6 +144,8 @@ export function PayrollPanel({ session }) {
         onManualEntry={openManualEntry}
         onPreviewImport={payroll.previewImport}
         run={selectedRun}
+        runId={payroll.selectedRunId}
+        runPeriodKey={selectedRunSummary?.periodKey || ''}
       />
 
       <PayrollPaymentsPanel busy={payroll.busyKey === 'payment'} canManage={canManagePayments} onRecordPayment={payroll.recordPayment} payslip={selectedPayslip} />
