@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
 import { calculateCatalogTotals, resolveInputValueFromPayslip, splitCatalogByType } from './payrollCatalog'
+import { PayrollSectionHeader, PayrollStat, PayrollSurface, PayrollTiny } from './PayrollUiPrimitives'
 
 function updateDraftInput(draft, source, value) {
   return {
@@ -17,6 +18,14 @@ function updateDraftInput(draft, source, value) {
 export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
   const [showNotes, setShowNotes] = useState(false)
+
+  useEffect(() => {
+    setDraft(payslip)
+    setFile(null)
+    setError('')
+    setShowNotes(Boolean(payslip?.notes))
+    setEmployeeQuery(payslip ? formatEmployeeOption({ fullName: payslip.employeeName, employeeCode: payslip.employeeCode }) : '')
+  }, [payslip])
 
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
@@ -46,6 +55,11 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     })
   }
 
+  const handleUploadPdf = () => {
+    if (!file || !onUploadPdf) return
+    onUploadPdf(file)
+  }
+
   return (
     <ModalShell
       isOpen={Boolean(payslip)}
@@ -55,10 +69,14 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       maxWidthClass="max-w-5xl"
       footer={(
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs font-bold text-slate-500">خالص پرداختی: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span></div>
+          <div className="text-xs font-bold text-slate-500">
+            خالص پرداختی: <span className="font-black text-slate-900">{formatMoney(totals.net)}</span>
+          </div>
           <div className="flex gap-2">
             <Button size="sm" variant="ghost" onClick={onClose}>انصراف</Button>
-            <Button size="sm" variant="primary" disabled={busy} onClick={handleSave}>{busy ? 'در حال ذخیره...' : 'ذخیره فیش'}</Button>
+            <Button size="sm" variant="primary" disabled={busy} onClick={handleSave}>
+              {busy ? 'در حال ذخیره...' : 'ذخیره فیش'}
+            </Button>
           </div>
         </div>
       )}
@@ -121,7 +139,12 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
 
 function ItemTable({ title, items = [], onChange, payslip, tone = 'slate', maxBodyHeightClass = 'max-h-44' }) {
   if (!items.length) return null
-  const toneClass = tone === 'emerald' ? 'border-emerald-200 bg-emerald-50/40' : tone === 'rose' ? 'border-rose-200 bg-rose-50/40' : 'border-slate-200 bg-white'
+  const toneClass = tone === 'emerald'
+    ? 'border-emerald-200 bg-emerald-50/40'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50/40'
+      : 'border-slate-200 bg-white'
+
   return (
     <div className={`space-y-2 rounded-2xl border p-3 ${toneClass}`}>
       <div className="text-sm font-black text-slate-900">{title}</div>
@@ -143,7 +166,7 @@ function ItemTable({ title, items = [], onChange, payslip, tone = 'slate', maxBo
           </table>
         </div>
       </div>
-    </div>
+    </PayrollSurface>
   )
 }
 
