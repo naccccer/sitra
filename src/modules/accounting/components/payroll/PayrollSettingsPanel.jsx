@@ -112,17 +112,15 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         </PayrollScrollableTableCard>
       </PayrollSurfaceCard>
 
-          <div className="mt-3 flex justify-end">
-            <Button
-              size="sm"
-              variant="primary"
-              disabled={!canManage || busy}
-              onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
-            >
-              {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
-            </Button>
-          </div>
-        </PayrollSurface>
+      <div className="flex justify-end">
+        <Button
+          size="sm"
+          variant="primary"
+          disabled={!canManage || busy}
+          onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
+        >
+          {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
+        </Button>
       </div>
     </PayrollSurfaceCard>
   )
