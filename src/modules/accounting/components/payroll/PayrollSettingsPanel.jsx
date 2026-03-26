@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Card, Input, Select } from '@/components/shared/ui'
+import { Button, Input, Select } from '@/components/shared/ui'
 import { normalizeCatalogItem } from './payrollCatalog'
+import { PayrollScrollableTableCard } from './PayrollScrollableTableCard'
+import { PayrollSectionHeader } from './PayrollSectionHeader'
+import { PayrollSurfaceCard } from './PayrollSurfaceCard'
 
 function createNewCatalogItem() {
   const nonce = Date.now()
@@ -41,10 +44,8 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
   }
 
   return (
-    <Card padding="md" className="space-y-4">
-      <div>
-        <div className="text-sm font-black text-slate-900">تنظیمات فیش حقوقی</div>
-      </div>
+    <PayrollSurfaceCard density="spacious" className="space-y-4">
+      <PayrollSectionHeader title="تنظیمات فیش حقوقی" />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <Input value={draft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
@@ -64,13 +65,13 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
         />
       </label>
 
-      <div className="space-y-2 rounded-2xl border border-slate-200 bg-slate-50 p-3">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-black text-slate-900">کاتالوگ آیتم‌های فیش</div>
-          <Button size="sm" variant="ghost" disabled={!canManage} onClick={addItem}>آیتم جدید</Button>
-        </div>
+      <PayrollSurfaceCard className="space-y-2" tone="muted">
+        <PayrollSectionHeader
+          title="کاتالوگ آیتم‌های فیش"
+          action={<Button size="sm" variant="ghost" disabled={!canManage} onClick={addItem}>آیتم جدید</Button>}
+        />
 
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <PayrollScrollableTableCard>
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
               <tr>
@@ -107,14 +108,14 @@ export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
+        </PayrollScrollableTableCard>
+      </PayrollSurfaceCard>
 
       <div className="flex justify-end">
         <Button size="sm" variant="primary" disabled={!canManage || busy} onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}>
           {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
         </Button>
       </div>
-    </Card>
+    </PayrollSurfaceCard>
   )
 }
