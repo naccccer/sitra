@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Button, Input, Select } from '@/components/shared/ui'
+import { Plus, Trash2 } from 'lucide-react'
+import { Button, Input } from '@/components/shared/ui'
 import { normalizeCatalogItem } from './payrollCatalog'
-import { PayrollScrollableTableCard } from './PayrollScrollableTableCard'
 import { PayrollSectionHeader } from './PayrollSectionHeader'
 import { PayrollSurfaceCard } from './PayrollSurfaceCard'
 
@@ -19,108 +19,125 @@ function createNewCatalogItem() {
 
 export function PayrollSettingsPanel({ busy, canManage, onSave, settings }) {
   const [draft, setDraft] = useState(settings)
+  const safeDraft = draft || {}
 
   useEffect(() => {
     setDraft(settings)
   }, [settings])
 
   const items = useMemo(
-    () => (Array.isArray(draft?.payrollItemCatalog) ? draft.payrollItemCatalog : []).map((item, index) => normalizeCatalogItem(item, index)),
-    [draft?.payrollItemCatalog],
+    () => (Array.isArray(safeDraft.payrollItemCatalog) ? safeDraft.payrollItemCatalog : []).map((item, index) => normalizeCatalogItem(item, index)),
+    [safeDraft.payrollItemCatalog],
   )
 
   const patch = (field, value) => setDraft((current) => ({ ...current, [field]: value }))
 
-  const patchItem = (index, next) => {
-    patch('payrollItemCatalog', items.map((item, itemIndex) => (itemIndex === index ? { ...item, ...next } : item)))
+  const patchItem = (itemKey, nextLabel) => patch('payrollItemCatalog', items.map((item) => (item.key === itemKey ? { ...item, label: nextLabel } : item)))
+
+  const removeItem = (itemKey) => patch('payrollItemCatalog', items.filter((item) => item.key !== itemKey))
+
+  const addItem = (type) => {
+    patch('payrollItemCatalog', [...items, { ...createNewCatalogItem(), type }])
   }
 
-  const removeItem = (index) => {
-    patch('payrollItemCatalog', items.filter((_, itemIndex) => itemIndex !== index))
-  }
-
-  const addItem = () => {
-    patch('payrollItemCatalog', [...items, createNewCatalogItem()])
-  }
+  const grouped = useMemo(() => ({
+    workInfo: items.filter((item) => item.type === 'work' || item.type === 'info'),
+    earning: items.filter((item) => item.type === 'earning'),
+    deduction: items.filter((item) => item.type === 'deduction'),
+  }), [items])
 
   return (
     <PayrollSurfaceCard density="spacious" className="space-y-4">
       <PayrollSectionHeader title="تنظیمات فیش حقوقی" />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <Input value={draft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
-        <Input value={draft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
-        <Input value={draft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
-        <Input value={draft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
-        <Input value={draft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
-        <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
+        <Input value={safeDraft.companyName || ''} onChange={(event) => patch('companyName', event.target.value)} placeholder="نام شرکت" />
+        <Input value={safeDraft.companyId || ''} onChange={(event) => patch('companyId', event.target.value)} placeholder="شناسه / کد کارگاهی" />
       </div>
 
-          <PayrollSurface>
-            <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
-            <div className="grid gap-2">
-              <Input value={draft.signatureLabel || ''} onChange={(event) => patch('signatureLabel', event.target.value)} placeholder="عنوان بلوک امضا" />
-              <Input value={draft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
-              <Input value={draft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
-              <Input value={draft.signatureNote || ''} onChange={(event) => patch('signatureNote', event.target.value)} placeholder="یادداشت امضا" />
-            </div>
-          </PayrollSurface>
-
       <PayrollSurfaceCard className="space-y-2" tone="muted">
-        <PayrollSectionHeader
-          title="کاتالوگ آیتم‌های فیش"
-          action={<Button size="sm" variant="ghost" disabled={!canManage} onClick={addItem}>آیتم جدید</Button>}
-        />
-
-        <PayrollScrollableTableCard>
-          <table className="w-full text-right text-xs">
-            <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
-              <tr>
-                <th className="px-2 py-2">عنوان</th>
-                <th className="px-2 py-2">نوع</th>
-                <th className="px-2 py-2">فعال</th>
-                <th className="px-2 py-2">حذف</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {items.map((item, index) => (
-                <tr key={`${item.key}:${index}`}>
-                  <td className="px-2 py-2">
-                    <Input value={item.label} onChange={(event) => patchItem(index, { label: event.target.value })} placeholder="عنوان آیتم" />
-                  </td>
-                  <td className="px-2 py-2">
-                    <Select value={item.type} onChange={(event) => patchItem(index, { type: event.target.value })}>
-                      <option value="earning">دریافتی</option>
-                      <option value="deduction">کسورات</option>
-                      <option value="work">کارکرد</option>
-                      <option value="info">اطلاعات</option>
-                    </Select>
-                  </td>
-                  <td className="px-2 py-2 text-center">
-                    <input type="checkbox" checked={item.active !== false} onChange={(event) => patchItem(index, { active: event.target.checked })} />
-                  </td>
-                  <td className="px-2 py-2">
-                    <Button size="sm" variant="danger" disabled={!canManage} onClick={() => removeItem(index)}>حذف</Button>
-                  </td>
-                </tr>
-              ))}
-              {items.length === 0 && (
-                <tr><td colSpan={4} className="px-3 py-6 text-center font-bold text-slate-400">آیتمی ثبت نشده است.</td></tr>
-              )}
-            </tbody>
-          </table>
-        </PayrollScrollableTableCard>
+        <PayrollSectionHeader title="تنظیمات امضا" subtitle="نمایش در چاپ فیش" />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Input value={safeDraft.signatoryName || ''} onChange={(event) => patch('signatoryName', event.target.value)} placeholder="نام امضاکننده" />
+          <Input value={safeDraft.signatoryTitle || ''} onChange={(event) => patch('signatoryTitle', event.target.value)} placeholder="سمت امضاکننده" />
+        </div>
       </PayrollSurfaceCard>
+
+      <CatalogGroup
+        items={grouped.workInfo}
+        canManage={canManage}
+        onAdd={() => addItem('work')}
+        onPatch={patchItem}
+        onRemove={removeItem}
+        title="کارکرد و اطلاعات"
+      />
+      <CatalogGroup
+        items={grouped.earning}
+        canManage={canManage}
+        onAdd={() => addItem('earning')}
+        onPatch={patchItem}
+        onRemove={removeItem}
+        title="دریافتی‌ها"
+      />
+      <CatalogGroup
+        items={grouped.deduction}
+        canManage={canManage}
+        onAdd={() => addItem('deduction')}
+        onPatch={patchItem}
+        onRemove={removeItem}
+        title="کسورات"
+      />
 
       <div className="flex justify-end">
         <Button
           size="sm"
           variant="primary"
           disabled={!canManage || busy}
-          onClick={() => onSave({ ...draft, payrollItemCatalog: items.map((item, index) => ({ ...item, sortOrder: index + 1 })) })}
+          onClick={() => onSave({
+            ...safeDraft,
+            signatureLabel: 'امضا و تایید',
+            signatureNote: '',
+            payrollItemCatalog: items.map((item, index) => ({ ...item, active: true, sortOrder: index + 1 })),
+          })}
         >
           {busy ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
         </Button>
+      </div>
+    </PayrollSurfaceCard>
+  )
+}
+
+function CatalogGroup({ canManage, items = [], onAdd, onPatch, onRemove, title }) {
+  return (
+    <PayrollSurfaceCard className="space-y-2" tone="muted">
+      <PayrollSectionHeader title={title} />
+      <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {items.map((item) => (
+          <div key={item.key} className="flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white p-2">
+            <Input value={item.label} onChange={(event) => onPatch(item.key, event.target.value)} placeholder="عنوان فیلد" />
+            <Button
+              size="icon"
+              variant="ghost"
+              disabled={!canManage}
+              onClick={() => onRemove(item.key)}
+              title="حذف فیلد"
+              aria-label="حذف فیلد"
+              className="h-8 w-8 text-rose-600 hover:bg-rose-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <button
+          type="button"
+          disabled={!canManage}
+          onClick={onAdd}
+          className="flex min-h-11 items-center justify-center gap-1.5 rounded-xl border border-dashed border-slate-300 bg-white px-3 py-2 text-xs font-black text-slate-600 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <Plus className="h-3.5 w-3.5" />
+          افزودن فیلد
+        </button>
+        {items.length === 0 && <div className="rounded-xl border border-dashed border-slate-300 px-3 py-4 text-center text-xs font-bold text-slate-400">فیلدی ثبت نشده است.</div>}
       </div>
     </PayrollSurfaceCard>
   )
