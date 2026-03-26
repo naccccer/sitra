@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { FileText, X } from 'lucide-react'
 import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
@@ -22,7 +22,16 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   const [file, setFile] = useState(null)
   const [employeeQuery, setEmployeeQuery] = useState('')
   const [error, setError] = useState('')
+  const [showNotes, setShowNotes] = useState(Boolean(payslip?.notes))
   const pdfInputRef = useRef(null)
+
+  useEffect(() => {
+    setDraft(payslip)
+    setFile(null)
+    setError('')
+    setShowNotes(Boolean(payslip?.notes))
+    setEmployeeQuery(payslip ? formatEmployeeOption({ fullName: payslip.employeeName, employeeCode: payslip.employeeCode }) : '')
+  }, [payslip])
 
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
@@ -52,6 +61,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     const nextId = employeeLabelIndex.get(value)
     if (!nextId) {
       setDraft((current) => ({ ...current, employeeId: '' }))
+      setError('')
       return
     }
     const employee = employeeMap.get(nextId)
@@ -71,6 +81,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       setError('یک پرسنل معتبر انتخاب کنید.')
       return
     }
+
     const employee = employeeMap.get(employeeId)
     setError('')
     onSave({
@@ -85,6 +96,11 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   const clearPdfFile = () => {
     setFile(null)
     if (pdfInputRef.current) pdfInputRef.current.value = ''
+  }
+
+  const handleUploadPdf = () => {
+    if (!file || !onUploadPdf) return
+    onUploadPdf(file)
   }
 
   return (
@@ -108,8 +124,8 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
         </div>
       )}
     >
-      <div className="h-[min(76vh,640px)] overflow-hidden">
-        <div className="grid h-full gap-3 xl:grid-cols-[1fr_1.2fr_0.9fr]">
+      <div className="h-[min(78vh,700px)] overflow-hidden">
+        <div className="grid h-full gap-3 xl:grid-cols-[1fr_1.2fr_0.95fr]">
           <div className="grid gap-3 overflow-hidden">
             <PayrollSurface className="space-y-2">
               <PayrollSectionHeader title="مشخصات پرسنل" subtitle="انتخاب پرسنل و مشاهده وضعیت" />
@@ -136,12 +152,20 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
             </PayrollSurface>
 
             <PayrollSurface className="flex min-h-0 flex-col">
-              <PayrollSectionHeader title="یادداشت" subtitle="توضیحات فیش حقوقی" />
-              <textarea
-                value={draft?.notes || ''}
-                onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
-                className="min-h-0 flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
+              <PayrollSectionHeader
+                title="یادداشت"
+                subtitle="توضیحات فیش حقوقی"
+                actions={showNotes ? <Button size="sm" variant="ghost" onClick={() => setShowNotes(false)}>بستن یادداشت</Button> : null}
               />
+              {!showNotes ? (
+                <Button size="sm" variant="secondary" onClick={() => setShowNotes(true)}>افزودن یادداشت</Button>
+              ) : (
+                <textarea
+                  value={draft?.notes || ''}
+                  onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
+                  className="min-h-[120px] flex-1 resize-none rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
+                />
+              )}
             </PayrollSurface>
           </div>
 
@@ -151,6 +175,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
               items={[...scopedCatalog.info, ...scopedCatalog.work]}
               payslip={draft}
               onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
+              maxBodyHeightClass="max-h-44"
             />
             <ItemTable
               title="دریافتی‌ها"
@@ -158,6 +183,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
               payslip={draft}
               onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
               tone="emerald"
+              maxBodyHeightClass="max-h-40"
             />
             <ItemTable
               title="کسورات"
@@ -165,6 +191,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
               payslip={draft}
               onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
               tone="rose"
+              maxBodyHeightClass="max-h-40"
             />
           </div>
 
@@ -179,7 +206,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
             </PayrollSurface>
 
             <PayrollSurface className="space-y-2">
-              <PayrollSectionHeader title="عملیات" subtitle="صدور/تایید از لیست دوره انجام می‌شود" />
+              <PayrollSectionHeader title="عملیات" subtitle="صدور و تایید از لیست دوره انجام می‌شود" />
               <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
                 برای حفظ گردش‌کار (draft/approved/issued/cancelled)، فقط ذخیره این فرم فعال است.
               </div>
@@ -205,7 +232,7 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
                     </button>
                   </div>
                 )}
-                <Button size="sm" variant="secondary" disabled={!file || busy} onClick={() => onUploadPdf(file)}>
+                <Button size="sm" variant="secondary" disabled={!file || busy || !onUploadPdf} onClick={handleUploadPdf}>
                   {busy ? 'در حال ارسال...' : 'آپلود PDF'}
                 </Button>
               </div>
@@ -217,20 +244,19 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   )
 }
 
-function ItemTable({ title, items = [], onChange, payslip, tone = 'slate' }) {
+function ItemTable({ title, items = [], onChange, payslip, tone = 'slate', maxBodyHeightClass = 'max-h-44' }) {
   if (!items.length) return null
-  const toneClass =
-    tone === 'emerald'
-      ? 'border-emerald-200 bg-emerald-50/40'
-      : tone === 'rose'
-        ? 'border-rose-200 bg-rose-50/40'
-        : 'border-slate-200 bg-white'
+  const toneClass = tone === 'emerald'
+    ? 'border-emerald-200 bg-emerald-50/40'
+    : tone === 'rose'
+      ? 'border-rose-200 bg-rose-50/40'
+      : 'border-slate-200 bg-white'
 
   return (
     <PayrollSurface className={`min-h-0 space-y-2 ${toneClass}`}>
       <PayrollSectionHeader title={title} />
       <div className="min-h-0 flex-1 overflow-hidden rounded-xl border border-slate-200 bg-white">
-        <div className="max-h-44 overflow-auto">
+        <div className={`${maxBodyHeightClass} overflow-auto`}>
           <table className="w-full text-right text-xs">
             <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
               <tr>
