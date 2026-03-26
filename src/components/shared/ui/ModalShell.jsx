@@ -1,4 +1,5 @@
 import React from 'react';
+import { X } from 'lucide-react';
 import { Button } from '@/components/shared/ui/Button';
 import { Card } from '@/components/shared/ui/Card';
 import { cn } from '@/components/shared/ui/cn';
@@ -11,6 +12,7 @@ export const ModalShell = ({
   children = null,
   footer = null,
   maxWidthClass = 'max-w-2xl',
+  closeButtonMode = 'text',
 }) => {
   if (!isOpen) return null;
 
@@ -25,7 +27,9 @@ export const ModalShell = ({
             <h3 className="text-sm font-black text-slate-900">{title}</h3>
             {description ? <p className="mt-1 text-xs font-bold text-slate-500">{description}</p> : null}
           </div>
-          <Button onClick={onClose} variant="ghost" size="sm">بستن</Button>
+          <Button onClick={onClose} variant="ghost" size="sm" aria-label="بستن" title="بستن">
+            {closeButtonMode === 'icon' ? <X className="h-4 w-4" /> : 'بستن'}
+          </Button>
         </div>
 
         <div className="max-h-[80vh] overflow-y-auto p-4">{children}</div>
