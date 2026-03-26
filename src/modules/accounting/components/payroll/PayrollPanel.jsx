@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import DateObject from 'react-date-object'
 import persian from 'react-date-object/calendars/persian'
 import persianFa from 'react-date-object/locales/persian_fa'
@@ -68,13 +68,7 @@ export function PayrollPanel({ session }) {
     [currentPeriodKey, payroll.runs],
   )
 
-  useEffect(() => {
-    if (currentRun?.id && currentRun.id !== payroll.selectedRunId) {
-      payroll.setSelectedRunId(currentRun.id)
-    }
-  }, [currentRun?.id, payroll])
-
-  const selectedRun = currentRun || payroll.selectedRun
+  const selectedRun = payroll.selectedRun || currentRun
   const catalog = Array.isArray(payroll.settings?.payrollItemCatalog) ? payroll.settings.payrollItemCatalog : []
   const editorPayslip = resolveScopedPayslip(selectedRun, editorPayslipId)
   const editorModel = editorPayslip || manualDraft
@@ -128,12 +122,12 @@ export function PayrollPanel({ session }) {
         {payroll.error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{payroll.error}</div>}
 
         <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-          <Select value={selectedRun?.id || ''} disabled>
-            <option value="">دوره جاری یافت نشد</option>
-            {selectedRun?.id && <option value={selectedRun.id}>{selectedRun.title || selectedRun.periodKey}</option>}
+          <Select value={payroll.selectedRunId || ''} onChange={(event) => payroll.setSelectedRunId(String(event.target.value || ''))}>
+            <option value="">انتخاب دوره</option>
+            {payroll.runs.map((run) => <option key={run.id} value={run.id}>{run.title || run.periodKey}</option>)}
           </Select>
           <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">
-            فقط دوره جاری ({currentPeriodKey || '-'}) قابل ثبت است.
+            دوره جاری: {currentPeriodKey || '-'}
           </div>
         </div>
       </Card>

@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
-import { Search } from 'lucide-react'
-import { Button, Input, ModalShell, Select } from '@/components/shared/ui'
+import { useMemo, useRef, useState } from 'react'
+import { FileText, X } from 'lucide-react'
+import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
 import { calculateCatalogTotals, resolveInputValueFromPayslip, splitCatalogByType } from './payrollCatalog'
@@ -19,25 +19,28 @@ function updateDraftInput(draft, source, value) {
 export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, onUploadPdf, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
   const [file, setFile] = useState(null)
-  const [error, setError] = useState('')
   const [employeeQuery, setEmployeeQuery] = useState('')
+  const [error, setError] = useState('')
+  const pdfInputRef = useRef(null)
+
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
-  const filteredEmployees = useMemo(() => {
-    if (!employeeQuery.trim()) return employeeList
-    const query = employeeQuery.trim().toLowerCase()
-    return employeeList.filter((employee) => {
-      const text = `${employee?.fullName || employee?.name || ''} ${resolveEmployeeCode(employee)}`.toLowerCase()
-      return text.includes(query)
-    })
-  }, [employeeList, employeeQuery])
+  const employeeLabelIndex = useMemo(() => {
+    const index = new Map()
+    for (const employee of employeeList) {
+      index.set(formatEmployeeOption(employee), String(employee.id))
+    }
+    return index
+  }, [employeeList])
   const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
+
   const totals = useMemo(() => {
     const fallback = calculatePayslipTotals(draft ?? payslip)
     const catalogTotals = calculateCatalogTotals(draft ?? payslip, catalog)
     if (catalogTotals.gross === 0 && catalogTotals.deductions === 0) return fallback
     return catalogTotals
   }, [catalog, draft, payslip])
+
   const scopedCatalog = useMemo(() => splitCatalogByType(catalog), [catalog])
 
   if (!payslip) return null
@@ -45,13 +48,18 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
   const employeeName = selectedEmployee?.fullName || selectedEmployee?.name || draft?.employeeName || payslip?.employeeName || ''
   const employeeCode = resolveEmployeeCode(selectedEmployee) || draft?.employeeCode || payslip?.employeeCode || ''
   const employeeDepartment = selectedEmployee?.department || draft?.department || payslip?.department || ''
-  const hasValidEmployee = Boolean(draft?.employeeId) && employeeMap.has(String(draft?.employeeId))
 
-  const handleEmployeeChange = (nextEmployeeId) => {
-    const employee = employeeMap.get(nextEmployeeId)
+  const handleEmployeeFieldChange = (value) => {
+    setEmployeeQuery(value)
+    const nextId = employeeLabelIndex.get(value)
+    if (!nextId) {
+      setDraft((current) => ({ ...current, employeeId: '' }))
+      return
+    }
+    const employee = employeeMap.get(nextId)
     setDraft((current) => ({
       ...current,
-      employeeId: nextEmployeeId,
+      employeeId: nextId,
       employeeName: employee?.fullName || employee?.name || '',
       employeeCode: resolveEmployeeCode(employee),
       department: employee?.department || '',
@@ -61,12 +69,8 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
 
   const handleSave = () => {
     const employeeId = String(draft?.employeeId || '').trim()
-    if (!employeeId) {
-      setError('لطفاً پرسنل را انتخاب کنید.')
-      return
-    }
-    if (!employeeMap.has(employeeId)) {
-      setError('پرسنل انتخاب‌شده معتبر نیست. لطفاً از لیست پرسنل انتخاب کنید.')
+    if (!employeeId || !employeeMap.has(employeeId)) {
+      setError('یک پرسنل معتبر انتخاب کنید.')
       return
     }
     const employee = employeeMap.get(employeeId)
@@ -78,6 +82,11 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       employeeCode: resolveEmployeeCode(employee) || draft?.employeeCode || '',
       department: employee?.department || draft?.department || '',
     })
+  }
+
+  const clearPdfFile = () => {
+    setFile(null)
+    if (pdfInputRef.current) pdfInputRef.current.value = ''
   }
 
   return (
@@ -99,28 +108,26 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
     >
       <div className="space-y-4">
         <div className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1.2fr_1fr]">
-          <div className="space-y-2">
-            <div className="text-xs font-black text-slate-600">انتخاب پرسنل</div>
-            <label className="relative block">
-              <Search className="pointer-events-none absolute end-2 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <Input value={employeeQuery} onChange={(event) => setEmployeeQuery(event.target.value)} className="pe-8" placeholder="جستجوی نام یا کد پرسنلی" />
-            </label>
-            <Select value={String(draft?.employeeId || '')} onChange={(event) => handleEmployeeChange(String(event.target.value || ''))}>
-              <option value="">انتخاب پرسنل</option>
-              {draft?.employeeId && !hasValidEmployee && (
-                <option value={String(draft.employeeId)}>{formatEmployeeOption({ fullName: draft.employeeName, employeeCode: draft.employeeCode })}</option>
-              )}
-              {filteredEmployees.map((employee) => (
-                <option key={String(employee.id)} value={String(employee.id)}>{formatEmployeeOption(employee)}</option>
+          <label className="space-y-1">
+            <span className="block text-xs font-black text-slate-600">پرسنل</span>
+            <Input
+              value={employeeQuery || formatEmployeeOption({ fullName: employeeName, employeeCode })}
+              onChange={(event) => handleEmployeeFieldChange(event.target.value)}
+              placeholder="انتخاب یا جستجوی پرسنل"
+              list="payslip-editor-employees"
+            />
+            <datalist id="payslip-editor-employees">
+              {employeeList.map((employee) => (
+                <option key={String(employee.id)} value={formatEmployeeOption(employee)} />
               ))}
-            </Select>
+            </datalist>
             {error && <span className="block text-xs font-bold text-rose-600">{error}</span>}
-          </div>
+          </label>
 
           <div className="grid gap-2 sm:grid-cols-3">
             <InfoCard label="کد پرسنلی" value={toPN(employeeCode || '-')} />
             <InfoCard label="واحد" value={employeeDepartment || '-'} />
-            <InfoCard label="وضعیت فیش" value={draft?.status || payslip.status || 'draft'} />
+            <InfoCard label="وضعیت" value={draft?.status || payslip.status || 'draft'} />
           </div>
         </div>
 
@@ -130,42 +137,29 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           <InfoCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
         </div>
 
-        <ItemGrid
-          title="کارکرد و اطلاعات ماه"
-          items={[...scopedCatalog.info, ...scopedCatalog.work]}
-          payslip={draft}
-          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
-        />
-        <ItemGrid
-          title="دریافتی‌ها"
-          items={scopedCatalog.earning}
-          payslip={draft}
-          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
-          tone="emerald"
-        />
-        <ItemGrid
-          title="کسورات"
-          items={scopedCatalog.deduction}
-          payslip={draft}
-          onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
-          tone="rose"
-        />
+        <ItemGrid title="کارکرد و اطلاعات" items={[...scopedCatalog.info, ...scopedCatalog.work]} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} />
+        <ItemGrid title="دریافتی‌ها" items={scopedCatalog.earning} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} tone="emerald" />
+        <ItemGrid title="کسورات" items={scopedCatalog.deduction} payslip={draft} onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))} tone="rose" />
 
         <label className="block space-y-1">
           <span className="block text-xs font-black text-slate-600">یادداشت</span>
-          <textarea value={draft?.notes || ''} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none" />
+          <textarea value={draft?.notes || ''} onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))} className="min-h-20 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none" />
         </label>
 
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <div>
-              <div className="text-sm font-black text-slate-900">بارگذاری PDF نهایی</div>
-              <div className="text-xs font-bold text-slate-500">برای ضمیمه نسخه امضاشده یا فایل صادرشده</div>
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Input type="file" accept="application/pdf" className="h-10 max-w-64 cursor-pointer file:me-3 file:rounded-lg file:border-0 file:bg-slate-900 file:px-3 file:py-2 file:text-xs file:font-black file:text-white" onChange={(event) => setFile(event.target.files?.[0] || null)} />
-              <Button size="sm" variant="secondary" disabled={!file || busy} onClick={() => onUploadPdf(file)}>{busy ? 'در حال ارسال...' : 'آپلود PDF'}</Button>
-            </div>
+        <div className="rounded-2xl border border-slate-200 p-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <input ref={pdfInputRef} type="file" accept="application/pdf" className="hidden" onChange={(event) => setFile(event.target.files?.[0] || null)} />
+            <Button size="sm" variant="secondary" onClick={() => pdfInputRef.current?.click()}>انتخاب فایل PDF</Button>
+            {file && (
+              <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-bold text-slate-700">
+                <FileText className="h-4 w-4 text-slate-500" />
+                <span>{file.name}</span>
+                <button type="button" className="rounded p-0.5 text-rose-600 hover:bg-rose-100" onClick={clearPdfFile} aria-label="پاک کردن فایل" title="پاک کردن فایل">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
+            <Button size="sm" variant="secondary" disabled={!file || busy} onClick={() => onUploadPdf(file)}>{busy ? 'در حال ارسال...' : 'آپلود PDF'}</Button>
           </div>
         </div>
       </div>
@@ -189,11 +183,7 @@ function ItemGrid({ title, items = [], onChange, payslip, tone = 'slate' }) {
           return (
             <label key={item.key} className="space-y-1 rounded-xl border border-slate-200 bg-white p-2">
               <span className="block text-xs font-black text-slate-600">{item.label}</span>
-              <Input
-                type="number"
-                value={resolveInputValueFromPayslip(payslip, item)}
-                onChange={(event) => onChange(source, Number(event.target.value || 0))}
-              />
+              <Input type="number" value={resolveInputValueFromPayslip(payslip, item)} onChange={(event) => onChange(source, Number(event.target.value || 0))} />
             </label>
           )
         })}
@@ -209,7 +199,7 @@ function resolveEmployeeCode(employee = {}) {
 function formatEmployeeOption(employee = {}) {
   const fullName = String(employee?.fullName || employee?.name || '').trim() || 'بدون نام'
   const employeeCode = resolveEmployeeCode(employee)
-  return `${fullName} + ${toPN(employeeCode || 'بدون کد')}`
+  return `${fullName} (${toPN(employeeCode || 'بدون کد')})`
 }
 
 function InfoCard({ label, value, emphasize = false }) {
