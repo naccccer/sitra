@@ -6,7 +6,6 @@ import { isModuleEnabled } from '@/kernel/moduleRegistry';
 
 const SETTINGS_TABS = [
   { id: 'catalog', to: '/management/catalog', label: 'مدیریت قیمت‌ها', capability: 'canManageCatalog', moduleId: 'master-data' },
-  { id: 'users', to: '/management/users', label: 'مدیریت کاربران', capability: 'canManageUsers', moduleId: 'users-access' },
   { id: 'audit', to: '/management/audit', label: 'ممیزی فعالیت‌ها', capability: 'canViewAuditLogs' },
 ];
 

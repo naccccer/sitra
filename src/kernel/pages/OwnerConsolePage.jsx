@@ -4,7 +4,6 @@ import { Badge, Card } from '@/components/shared/ui';
 
 const OWNER_TABS = [
   { id: 'modules', to: '/owner/modules', label: 'کنترل ماژول‌ها' },
-  { id: 'users', to: '/owner/users', label: 'کاربران و دسترسی‌ها' },
 ];
 
 const tabClassName = (isActive) => (

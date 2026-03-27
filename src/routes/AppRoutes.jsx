@@ -38,9 +38,6 @@ export const AppRoutes = ({
     if (policy.view === 'catalog') {
       return <AdminPage catalog={catalog} setCatalog={setCatalog} session={session} />
     }
-    if (policy.view === 'users') {
-      return <UsersPage session={session} onRefreshSession={onRefreshSession} />
-    }
     return <AuditLogsPage />
   }
 
@@ -100,12 +97,26 @@ export const AppRoutes = ({
             )}
           />
 
+          <Route
+            path="users-access"
+            element={(
+              <CapabilityRouteGuard session={session} capability="canManageUsers">
+                <ModuleRouteGuard session={session} moduleId="users-access">
+                  <UsersPage session={session} onRefreshSession={onRefreshSession} />
+                </ModuleRouteGuard>
+              </CapabilityRouteGuard>
+            )}
+          />
+
           <Route path="management" element={<SettingsPage session={session} />}>
             {SETTINGS_ROUTE_POLICIES.map((policy) => (
               <Route key={policy.path} path={policy.path} element={renderSettingsRoute(policy)} />
             ))}
+            <Route path="users" element={<Navigate to="/users-access" replace />} />
             <Route path="system" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
           </Route>
+
+          <Route path="owner/users" element={<Navigate to="/users-access" replace />} />
 
           <Route
             path="owner"
@@ -117,7 +128,6 @@ export const AppRoutes = ({
           >
             <Route index element={<Navigate to="/owner/modules" replace />} />
             <Route path="modules" element={<SystemSettingsPage session={session} onRegistryUpdated={onRefreshSession} />} />
-            <Route path="users" element={<UsersPage session={session} onRefreshSession={onRefreshSession} />} />
           </Route>
 
           {SETTINGS_ALIAS_REDIRECTS.map((alias) => (
@@ -125,10 +135,10 @@ export const AppRoutes = ({
           ))}
           <Route path="settings" element={<Navigate to="/management" replace />} />
           <Route path="settings/catalog" element={<Navigate to="/management/catalog" replace />} />
-          <Route path="settings/users" element={<Navigate to="/management/users" replace />} />
+          <Route path="settings/users" element={<Navigate to="/users-access" replace />} />
           <Route path="settings/audit" element={<Navigate to="/management/audit" replace />} />
           <Route path="settings/profile" element={<Navigate to="/profile" replace />} />
-          <Route path="users" element={<Navigate to="/management/users" replace />} />
+          <Route path="users" element={<Navigate to="/users-access" replace />} />
           <Route path="system-settings" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
         </Route>
       </Route>

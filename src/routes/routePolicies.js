@@ -6,12 +6,6 @@ export const SETTINGS_ROUTE_POLICIES = [
     view: 'catalog',
   },
   {
-    path: 'users',
-    capability: 'canManageUsers',
-    moduleId: 'users-access',
-    view: 'users',
-  },
-  {
     path: 'audit',
     capability: 'canViewAuditLogs',
     moduleId: null,

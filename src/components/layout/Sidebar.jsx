@@ -42,9 +42,15 @@ const navSections = [
         when: (capabilities) => Boolean(
           capabilities.canManageCatalog
           || capabilities.canManageProfile
-          || capabilities.canManageUsers
           || capabilities.canViewAuditLogs,
         ),
+      },
+      {
+        to: '/users-access',
+        label: 'کاربران و دسترسی',
+        icon: Users,
+        capability: 'canManageUsers',
+        moduleId: 'users-access',
       },
     ],
   },
@@ -89,7 +95,6 @@ export const Sidebar = ({
   const canAccessSettings = Boolean(
     capabilities.canManageCatalog
     || capabilities.canManageProfile
-    || capabilities.canManageUsers
     || capabilities.canViewAuditLogs
     || capabilities.canManageSystemSettings,
   );
@@ -198,4 +203,3 @@ export const Sidebar = ({
     </aside>
   );
 };
-

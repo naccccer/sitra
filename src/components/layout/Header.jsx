@@ -16,7 +16,7 @@ const getPageTitle = (pathname) => {
   if (pathname === '/inventory') return 'مدیریت انبار'
   if (pathname === '/admin') return 'مدیریت قیمت ها'
   if (pathname === '/profile') return 'پروفایل کسب وکار'
-  if (pathname === '/users') return 'مدیریت کاربران'
+  if (pathname === '/users-access' || pathname === '/users') return 'کاربران و دسترسی'
   if (pathname === '/system-settings') return 'مدیریت سیستم'
   return 'پنل مدیریت'
 }
