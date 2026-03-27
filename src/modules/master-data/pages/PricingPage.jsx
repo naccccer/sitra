@@ -2,11 +2,11 @@ import React from 'react';
 import { AccessDenied } from '@/components/shared/AccessDenied';
 import { AdminSettingsView } from '@/modules/master-data/components/AdminSettingsView';
 
-export const AdminPage = ({ catalog, setCatalog, session }) => {
+export const PricingPage = ({ catalog, setCatalog, session }) => {
   const canManageSettings = Boolean(session?.capabilities?.canManageCatalog);
 
   if (!canManageSettings) {
-    return <AccessDenied message="دسترسی کافی برای مدیریت قیمت‌ها وجود ندارد" />;
+    return <AccessDenied message="دسترسی کافی برای قیمت‌گذاری وجود ندارد" />;
   }
 
   return (

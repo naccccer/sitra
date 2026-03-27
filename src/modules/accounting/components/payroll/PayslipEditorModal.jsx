@@ -1,5 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
-import { FileText, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Button, Input, ModalShell } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { calculatePayslipTotals, formatMoney } from './payrollMath'
@@ -13,11 +12,21 @@ function updateDraftInput(draft, source, value) {
 
 export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose, onSave, payslip, run }) {
   const [draft, setDraft] = useState(() => payslip)
-  const [file, setFile] = useState(null)
-  const pdfInputRef = useRef(null)
+  const [errorMsg, setErrorMsg] = useState('')
 
   const employeeList = useMemo(() => (Array.isArray(employees) ? employees : []), [employees])
   const employeeMap = useMemo(() => new Map(employeeList.map((employee) => [String(employee.id ?? ''), employee])), [employeeList])
+  const employeeOptions = useMemo(
+    () => employeeList.map((employee) => ({
+      id: String(employee.id ?? ''),
+      label: formatEmployeeOption(employee),
+      fullName: String(employee.fullName || employee.name || ''),
+      employeeCode: resolveEmployeeCode(employee),
+      department: String(employee.department || ''),
+    })),
+    [employeeList],
+  )
+  const employeeOptionMap = useMemo(() => new Map(employeeOptions.map((employee) => [employee.label, employee])), [employeeOptions])
   const selectedEmployee = useMemo(() => employeeMap.get(String(draft?.employeeId ?? '')) || null, [draft?.employeeId, employeeMap])
   const totals = useMemo(() => {
     const fallback = calculatePayslipTotals(draft ?? payslip)
@@ -29,19 +38,36 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
 
   const employeeName = selectedEmployee?.fullName || selectedEmployee?.name || draft?.employeeName || payslip?.employeeName || ''
   const employeeCode = resolveEmployeeCode(selectedEmployee) || draft?.employeeCode || payslip?.employeeCode || ''
+  const employeeDisplayValue = selectedEmployee
+    ? formatEmployeeOption(selectedEmployee)
+    : formatEmployeeOption({ fullName: draft?.employeeName, employeeCode: draft?.employeeCode })
+
+  const handleEmployeeChange = (event) => {
+    const nextValue = String(event.target.value || '')
+    const matchedEmployee = employeeOptionMap.get(nextValue) || null
+    setErrorMsg('')
+    if (!matchedEmployee) {
+      setDraft((current) => ({ ...current, employeeId: '', employeeName: nextValue, employeeCode: '', department: '' }))
+      return
+    }
+    setDraft((current) => ({
+      ...current,
+      employeeId: matchedEmployee.id,
+      employeeName: matchedEmployee.fullName,
+      employeeCode: matchedEmployee.employeeCode,
+      department: matchedEmployee.department,
+    }))
+  }
 
   const handleSave = () => {
     const employeeId = String(draft?.employeeId || '').trim()
-    if (!employeeId) {
+    const employee = employeeMap.get(employeeId) || null
+    if (!employeeId || !employee) {
+      setErrorMsg('یک پرسنل معتبر انتخاب کنید.')
       return
     }
-    const employee = employeeMap.get(employeeId) || null
+    setErrorMsg('')
     onSave({ ...draft, employeeId, employeeName: employee?.fullName || employee?.name || draft?.employeeName || '', employeeCode: resolveEmployeeCode(employee) || draft?.employeeCode || '', department: employee?.department || draft?.department || '' })
-  }
-
-  const clearPdfFile = () => {
-    setFile(null)
-    if (pdfInputRef.current) pdfInputRef.current.value = ''
   }
 
   return (
@@ -63,6 +89,23 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
       )}
     >
       <div className="space-y-2">
+        <label className="block space-y-1">
+          <span className="block text-xs font-black text-slate-600">پرسنل</span>
+          <input
+            list="payslip-editor-employee-options"
+            value={employeeDisplayValue}
+            onChange={handleEmployeeChange}
+            placeholder="پرسنل را انتخاب کنید"
+            className="w-full rounded-2xl border border-slate-200 bg-white px-3 py-2 text-sm font-bold text-slate-700 outline-none"
+          />
+          <datalist id="payslip-editor-employee-options">
+            {employeeOptions.map((employee) => (
+              <option key={employee.id} value={employee.label} />
+            ))}
+          </datalist>
+        </label>
+        {errorMsg ? <div className="text-xs font-black text-rose-600">{errorMsg}</div> : null}
+
         <div className="grid gap-2 sm:grid-cols-3">
           <PayrollMetricCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
           <PayrollMetricCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
@@ -108,4 +151,11 @@ function ItemTable({ title, items = [], onChange, payslip }) {
 
 function resolveEmployeeCode(employee = {}) {
   return String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').trim()
+}
+
+function formatEmployeeOption(employee = {}) {
+  const employeeName = String(employee?.fullName || employee?.name || '').trim()
+  const employeeCode = resolveEmployeeCode(employee)
+  if (!employeeName) return ''
+  return employeeCode ? `${employeeName} (${toPN(employeeCode)})` : employeeName
 }

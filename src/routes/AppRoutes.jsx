@@ -10,13 +10,12 @@ import { CustomersPage } from '../modules/customers'
 import { HumanResourcesPage } from '../modules/human-resources'
 import { InventoryV2Page } from '../modules/inventory'
 import { AccountingPage } from '../modules/accounting'
-import { AdminPage } from '../modules/master-data'
+import { MasterDataPage, PricingPage, ProfilePage } from '../modules/master-data'
 import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { UsersPage } from '../modules/users-access'
-import { ProfilePage } from '../pages/ProfilePage'
 import { CapabilityRouteGuard, ModuleRouteGuard, OwnerRouteGuard, ProtectedRoute } from './RouteGuards'
-import { SETTINGS_ALIAS_REDIRECTS, SETTINGS_ROUTE_POLICIES } from './routePolicies'
+import { MANAGEMENT_ROUTE_POLICIES, MASTER_DATA_ROUTE_POLICIES } from './routePolicies'
 
 export const AppRoutes = ({
   session,
@@ -32,17 +31,7 @@ export const AppRoutes = ({
   onLogout,
   onRefreshSession,
 }) => {
-  const canManageSystemSettings = Boolean(session?.capabilities?.canManageSystemSettings)
-
-  const renderSettingsView = (policy) => {
-    if (policy.view === 'catalog') {
-      return <AdminPage catalog={catalog} setCatalog={setCatalog} session={session} />
-    }
-    return <AuditLogsPage />
-  }
-
-  const renderSettingsRoute = (policy) => {
-    const content = renderSettingsView(policy)
+  const renderGuardedRoute = (policy, content) => {
     const withModuleGuard = policy.moduleId
       ? <ModuleRouteGuard session={session} moduleId={policy.moduleId}>{content}</ModuleRouteGuard>
       : content
@@ -86,16 +75,21 @@ export const AppRoutes = ({
           <Route path="inventory" element={<CapabilityRouteGuard session={session} capability="canAccessInventory"><ModuleRouteGuard session={session} moduleId="inventory"><InventoryV2Page session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="accounting" element={<CapabilityRouteGuard session={session} capability="canAccessAccounting"><ModuleRouteGuard session={session} moduleId="accounting"><AccountingPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
 
-          <Route
-            path="profile"
-            element={(
-              <CapabilityRouteGuard session={session} capability="canManageProfile">
-                <ModuleRouteGuard session={session} moduleId="master-data">
-                  <ProfilePage profile={profile} setProfile={setProfile} session={session} />
-                </ModuleRouteGuard>
-              </CapabilityRouteGuard>
-            )}
-          />
+          <Route path="master-data" element={<MasterDataPage session={session} />}>
+            {MASTER_DATA_ROUTE_POLICIES.map((policy) => {
+              const content = policy.view === 'pricing'
+                ? <PricingPage catalog={catalog} setCatalog={setCatalog} session={session} />
+                : <ProfilePage profile={profile} setProfile={setProfile} session={session} />
+
+              return (
+                <Route
+                  key={policy.path}
+                  path={policy.path}
+                  element={renderGuardedRoute(policy, content)}
+                />
+              )
+            })}
+          </Route>
 
           <Route
             path="users-access"
@@ -109,11 +103,9 @@ export const AppRoutes = ({
           />
 
           <Route path="management" element={<SettingsPage session={session} />}>
-            {SETTINGS_ROUTE_POLICIES.map((policy) => (
-              <Route key={policy.path} path={policy.path} element={renderSettingsRoute(policy)} />
+            {MANAGEMENT_ROUTE_POLICIES.map((policy) => (
+              <Route key={policy.path} path={policy.path} element={renderGuardedRoute(policy, <AuditLogsPage />)} />
             ))}
-            <Route path="users" element={<Navigate to="/users-access" replace />} />
-            <Route path="system" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
           </Route>
 
           <Route path="owner/users" element={<Navigate to="/users-access" replace />} />
@@ -130,16 +122,7 @@ export const AppRoutes = ({
             <Route path="modules" element={<SystemSettingsPage session={session} onRegistryUpdated={onRefreshSession} />} />
           </Route>
 
-          {SETTINGS_ALIAS_REDIRECTS.map((alias) => (
-            <Route key={alias.path} path={alias.path} element={<Navigate to={alias.to} replace />} />
-          ))}
-          <Route path="settings" element={<Navigate to="/management" replace />} />
-          <Route path="settings/catalog" element={<Navigate to="/management/catalog" replace />} />
-          <Route path="settings/users" element={<Navigate to="/users-access" replace />} />
-          <Route path="settings/audit" element={<Navigate to="/management/audit" replace />} />
-          <Route path="settings/profile" element={<Navigate to="/profile" replace />} />
           <Route path="users" element={<Navigate to="/users-access" replace />} />
-          <Route path="system-settings" element={<Navigate to={canManageSystemSettings ? '/owner/modules' : '/management'} replace />} />
         </Route>
       </Route>
 

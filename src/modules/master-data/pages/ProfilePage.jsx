@@ -7,7 +7,7 @@ export const ProfilePage = ({ profile, setProfile, session }) => {
   const canManageSettings = Boolean(session?.capabilities?.canManageProfile);
 
   if (!canManageSettings) {
-    return <AccessDenied message="دسترسی کافی برای مدیریت پروفایل وجود ندارد" />;
+    return <AccessDenied message="دسترسی کافی برای پروفایل کسب‌وکار وجود ندارد" />;
   }
 
   return (

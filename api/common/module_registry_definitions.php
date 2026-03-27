@@ -64,7 +64,7 @@ function app_module_registry_seed_rows(): array
         ],
         [
             'module_key' => 'master-data',
-            'label' => 'داده‌های پایه',
+            'label' => 'اطلاعات پایه',
             'phase' => 'active',
             'is_enabled' => 1,
             'is_protected' => 0,

@@ -26,7 +26,7 @@ const MODULE_PERSIAN_LABELS = {
   customers: '\u0645\u0634\u062a\u0631\u06cc\u0627\u0646',
   'human-resources': '\u0645\u0646\u0627\u0628\u0639 \u0627\u0646\u0633\u0627\u0646\u06cc',
   inventory: '\u0627\u0646\u0628\u0627\u0631',
-  'master-data': '\u062f\u0627\u062f\u0647\u200c\u0647\u0627\u06cc \u067e\u0627\u06cc\u0647',
+  'master-data': '\u0627\u0637\u0644\u0627\u0639\u0627\u062a \u067e\u0627\u06cc\u0647',
 }
 
 export const moduleLabelFa = (moduleId = '', modules = []) => {

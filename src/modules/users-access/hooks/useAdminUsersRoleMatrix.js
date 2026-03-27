@@ -17,7 +17,7 @@ const MODULE_LABELS = {
   customers: 'مشتریان',
   inventory: 'انبار',
   'users-access': 'کاربران و دسترسی',
-  'master-data': 'داده‌های پایه',
+  'master-data': 'اطلاعات پایه',
   kernel: 'هسته',
 };
 

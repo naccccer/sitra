@@ -1,4 +1,5 @@
-﻿import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 import { Button, Card } from '@/components/shared/ui'
 import { AccountsPanel } from '../components/accounts/AccountsPanel'
@@ -12,34 +13,22 @@ import { FiscalYearPanel } from '../components/settings/FiscalYearPanel'
 import { SalesBridgePanel } from '../components/bridge/SalesBridgePanel'
 import { HelpPanel } from '../components/help/HelpPanel'
 import { useTabSettings } from '../hooks/useTabSettings'
-
-const TAB_DEFINITIONS = [
-  { id: 'vouchers', label: 'اسناد', permission: 'accounting.vouchers.read', configurable: true },
-  { id: 'accounts', label: 'سرفصل حساب ها', permission: 'accounting.accounts.read', configurable: true },
-  { id: 'trial_balance', label: 'تراز آزمایشی', permission: 'accounting.reports.read', configurable: true },
-  { id: 'general_ledger', label: 'دفتر کل', permission: 'accounting.reports.read', configurable: true },
-  { id: 'ar_summary', label: 'مانده مشتریان', permission: 'accounting.reports.read', configurable: true },
-  { id: 'pnl', label: 'درآمد/هزینه', permission: 'accounting.reports.read', configurable: true },
-  { id: 'bridge', label: 'پل فروش', permission: 'accounting.sales_bridge.read', configurable: true },
-  { id: 'payroll', label: 'حقوق و دستمزد', permission: 'accounting.payroll.read', configurable: true },
-  { id: 'settings', label: 'تنظیمات', permission: 'accounting.fiscal_years.read', configurable: false },
-  { id: 'help', label: 'راهنما', permission: null, configurable: false },
-]
+import { getVisibleAccountingTabs } from '../navigation'
 
 export const AccountingPage = ({ session }) => {
   const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session])
   const capabilities = session?.capabilities ?? {}
   const canAccessAccounting = Boolean(capabilities.canAccessAccounting)
+  const [searchParams, setSearchParams] = useSearchParams()
   const { isVisible } = useTabSettings()
 
-  const visibleTabs = useMemo(() => TAB_DEFINITIONS.filter((tab) => {
-    if (tab.permission && !permissions.includes(tab.permission)) return false
-    if (tab.configurable && !isVisible(tab.id)) return false
-    return true
-  }), [permissions, isVisible])
+  const visibleTabs = useMemo(
+    () => getVisibleAccountingTabs(permissions, isVisible),
+    [permissions, isVisible],
+  )
 
-  const [activeTab, setActiveTab] = useState('vouchers')
-  const resolvedTab = visibleTabs.find((tab) => tab.id === activeTab)?.id ?? visibleTabs[0]?.id
+  const currentTab = String(searchParams.get('tab') || '').trim()
+  const resolvedTab = visibleTabs.find((tab) => tab.id === currentTab)?.id ?? visibleTabs[0]?.id
 
   if (!canAccessAccounting) {
     return <AccessDenied message="دسترسی کافی برای ماژول حسابداری وجود ندارد." />
@@ -70,7 +59,12 @@ export const AccountingPage = ({ session }) => {
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (
-            <Button key={tab.id} size="sm" variant={resolvedTab === tab.id ? 'primary' : 'secondary'} onClick={() => setActiveTab(tab.id)}>
+            <Button
+              key={tab.id}
+              size="sm"
+              variant={resolvedTab === tab.id ? 'primary' : 'secondary'}
+              onClick={() => setSearchParams({ tab: tab.id })}
+            >
               {tab.label}
             </Button>
           ))}
@@ -80,3 +74,4 @@ export const AccountingPage = ({ session }) => {
     </div>
   )
 }
+

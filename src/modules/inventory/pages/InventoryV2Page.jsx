@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 import { Button, Card } from '@/components/shared/ui'
 import { InventoryProductsPanel } from '@/modules/inventory/components/InventoryProductsPanel'
@@ -11,36 +12,19 @@ import { InventoryCountsPanel } from '@/modules/inventory/components/InventoryCo
 import { InventoryReplenishmentPanel } from '@/modules/inventory/components/InventoryReplenishmentPanel'
 import { InventoryReportsPanel } from '@/modules/inventory/components/InventoryReportsPanel'
 import { InventorySettingsPanel } from '@/modules/inventory/components/InventorySettingsPanel'
+import { getVisibleInventoryTabs } from '@/modules/inventory/navigation'
 
 const EMPTY_PERMISSIONS = Object.freeze([])
-
-const TAB_DEFINITIONS = [
-  { id: 'dashboard', label: 'داشبورد', permission: null },
-  { id: 'products', label: 'محصولات', permission: 'inventory.v2_products.read' },
-  { id: 'receipts', label: 'رسیدها', permission: 'inventory.v2_operations.read' },
-  { id: 'deliveries', label: 'حواله‌ها', permission: 'inventory.v2_operations.read' },
-  { id: 'transfers', label: 'انتقال‌ها', permission: 'inventory.v2_operations.read' },
-  { id: 'productionMoves', label: 'حرکت‌های تولید', permission: 'inventory.v2_operations.read' },
-  { id: 'adjustments', label: 'تعدیلات', permission: 'inventory.v2_operations.read' },
-  { id: 'counts', label: 'شمارش‌ها', permission: 'inventory.v2_operations.read' },
-  { id: 'replenishment', label: 'تامین مجدد', permission: 'inventory.v2_reports.read' },
-  { id: 'reports', label: 'گزارشات', permission: 'inventory.v2_reports.read' },
-  { id: 'settings', label: 'تنظیمات', permission: 'inventory.v2_settings.read' },
-]
 
 export const InventoryV2Page = ({ session }) => {
   const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}
   const canAccessInventory = Boolean(capabilities.canAccessInventory)
+  const [searchParams, setSearchParams] = useSearchParams()
 
-  const visibleTabs = useMemo(
-    () => TAB_DEFINITIONS.filter((tab) => !tab.permission || permissions.includes(tab.permission)),
-    [permissions],
-  )
-
-  const [activeTab, setActiveTab] = useState('dashboard')
-
-  const resolvedTab = visibleTabs.find((tab) => tab.id === activeTab) ? activeTab : (visibleTabs[0]?.id ?? 'dashboard')
+  const visibleTabs = useMemo(() => getVisibleInventoryTabs(permissions), [permissions])
+  const currentTab = String(searchParams.get('tab') || '').trim()
+  const resolvedTab = visibleTabs.find((tab) => tab.id === currentTab)?.id ?? (visibleTabs[0]?.id ?? 'dashboard')
 
   if (!canAccessInventory) {
     return <AccessDenied message="دسترسی کافی برای ماژول انبار وجود ندارد." />
@@ -104,7 +88,7 @@ export const InventoryV2Page = ({ session }) => {
               key={tab.id}
               size="sm"
               variant={resolvedTab === tab.id ? 'primary' : 'secondary'}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => setSearchParams({ tab: tab.id })}
             >
               {tab.label}
             </Button>
@@ -115,3 +99,4 @@ export const InventoryV2Page = ({ session }) => {
     </div>
   )
 }
+

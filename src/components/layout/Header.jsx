@@ -7,17 +7,16 @@ import { identityDisplayJobTitle, identityDisplayName } from '@/utils/userIdenti
 const getPageTitle = (pathname) => {
   // تنظیمات
   if (pathname === '/owner' || pathname.startsWith('/owner/')) return 'اتاق فرمان ERP'
-  if (pathname === '/management' || pathname.startsWith('/management/')) return 'مدیریت'
-  if (pathname === '/settings' || pathname.startsWith('/settings/')) return 'مدیریت'
+  if (pathname === '/management' || pathname.startsWith('/management/')) return 'ممیزی فعالیت‌ها'
+  if (pathname === '/master-data/pricing') return 'قیمت‌گذاری'
+  if (pathname === '/master-data/profile') return 'پروفایل کسب‌وکار'
+  if (pathname === '/master-data' || pathname.startsWith('/master-data/')) return 'اطلاعات پایه'
   if (pathname === '/') return 'داشبورد'
   if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return 'ویرایش سفارش'
   if (pathname === '/orders') return 'مدیریت سفارشات'
   if (pathname === '/orders/new') return 'ثبت سفارش جدید'
   if (pathname === '/inventory') return 'مدیریت انبار'
-  if (pathname === '/admin') return 'مدیریت قیمت ها'
-  if (pathname === '/profile') return 'پروفایل کسب وکار'
   if (pathname === '/users-access' || pathname === '/users') return 'کاربران و دسترسی'
-  if (pathname === '/system-settings') return 'مدیریت سیستم'
   return 'پنل مدیریت'
 }
 

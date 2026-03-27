@@ -1,13 +1,9 @@
 import React, { useMemo } from 'react';
 import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom';
 import { AccessDenied } from '@/components/shared/AccessDenied';
+import { MANAGEMENT_ROUTE_POLICIES } from '@/routes/routePolicies';
 import { Card } from '@/components/shared/ui';
 import { isModuleEnabled } from '@/kernel/moduleRegistry';
-
-const SETTINGS_TABS = [
-  { id: 'catalog', to: '/management/catalog', label: 'مدیریت قیمت‌ها', capability: 'canManageCatalog', moduleId: 'master-data' },
-  { id: 'audit', to: '/management/audit', label: 'ممیزی فعالیت‌ها', capability: 'canViewAuditLogs' },
-];
 
 const tabClassName = (isActive) => (
   `focus-ring rounded-2xl border px-4 py-2.5 text-xs font-black transition-all ${
@@ -24,7 +20,11 @@ export const SettingsPage = ({ session }) => {
     const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {};
     const modules = Array.isArray(session?.modules) ? session.modules : [];
 
-    return SETTINGS_TABS.filter((tab) => {
+    return MANAGEMENT_ROUTE_POLICIES.map((policy) => ({
+      ...policy,
+      id: policy.path,
+      to: `/management/${policy.path}`,
+    })).filter((tab) => {
       if (tab.capability && !capabilities[tab.capability]) return false;
       if (tab.moduleId && !isModuleEnabled(modules, tab.moduleId)) return false;
       return true;
@@ -46,7 +46,7 @@ export const SettingsPage = ({ session }) => {
 
   return (
     <div className="mx-auto max-w-[1300px] space-y-4" dir="rtl">
-      <h1 className="sr-only">تنظیمات</h1>
+      <h1 className="sr-only">مدیریت</h1>
       <Card className="border-slate-200/90" padding="sm">
         <div className="overflow-x-auto hide-scrollbar">
           <div className="flex min-w-max items-center gap-2">
