@@ -15,7 +15,7 @@ import {
   toNavTarget,
 } from '@/components/layout/sidebarNav'
 
-// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
+// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها | امنیت و دسترسی
 const EMPTY_PERMISSIONS = Object.freeze([])
 
 export const Sidebar = ({
@@ -88,6 +88,37 @@ export const Sidebar = ({
     return defaultTabByPath[item.to] === item.tab
   }
 
+  const resolveNavTarget = (item) => {
+    if (item.dynamicToFirstVisibleChild && Array.isArray(item.children) && item.children.length > 0) {
+      return toNavTarget(item.children[0])
+    }
+    return toNavTarget(item)
+  }
+
+  const getSectionGroups = (section) => {
+    if (section.id !== 'system') return [{ id: `${section.id}-default`, label: '', items: section.items }]
+
+    const groupDefs = [
+      { id: 'daily-config', label: 'تنظیمات روزمره' },
+      { id: 'owner-config', label: 'سطح مالک/پیشرفته' },
+    ]
+
+    const grouped = groupDefs
+      .map((group) => ({ ...group, items: section.items.filter((item) => item.group === group.id) }))
+      .filter((group) => group.items.length > 0)
+
+    const ungrouped = section.items.filter((item) => !item.group)
+    if (ungrouped.length > 0) {
+      if (grouped.length > 0) {
+        grouped[0] = { ...grouped[0], items: [...grouped[0].items, ...ungrouped] }
+      } else {
+        grouped.push({ id: 'fallback', label: '', items: ungrouped })
+      }
+    }
+
+    return grouped.length > 0 ? grouped : [{ id: 'system-fallback', label: '', items: section.items }]
+  }
+
   const accordionItems = visibleSections
     .flatMap((section) => section.items)
     .filter((item) => Array.isArray(item.children) && item.children.length > 0)
@@ -144,72 +175,86 @@ export const Sidebar = ({
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-1.5">
               <div className={`px-1 text-[10px] font-black text-slate-400 ${isCollapsed ? 'lg:hidden' : ''}`}>{section.label}</div>
-              <div className="space-y-1.5">
-                {section.items.map((item) => {
-                  const Icon = item.icon
-                  const hasChildren = Array.isArray(item.children) && item.children.length > 0
-                  const isGroupOpen = hasChildren && openGroupId === item.id
 
-                  if (!hasChildren) {
-                    return (
-                      <NavLink
-                        key={item.to}
-                        to={item.to}
-                        end={Boolean(item.end)}
-                        onClick={onNavigate}
-                        className={({ isActive }) => navLinkClass(isActive, isCollapsed)}
-                        title={item.label}
-                      >
-                        <Icon size={16} />
-                        <span className={`text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                      </NavLink>
-                    )
-                  }
+              {getSectionGroups(section).map((group, groupIndex, allGroups) => (
+                <div key={group.id} className="space-y-1.5">
+                  {section.id === 'system' && group.label && (
+                    <div className={`px-1 text-[10px] font-bold text-slate-500 ${isCollapsed ? 'lg:hidden' : ''}`}>{group.label}</div>
+                  )}
 
-                  return (
-                    <div key={item.id || item.to} className="space-y-1">
-                      <NavLink
-                        to={toNavTarget(item)}
-                        onClick={() => {
-                          setManualGroupState(() => (
-                            openGroupId === item.id
-                              ? { id: item.id, collapsed: true }
-                              : { id: item.id, collapsed: false }
-                          ))
-                          onNavigate()
-                        }}
-                        className={() => navLinkClass(
-                          isTargetActive(item) || item.children.some((child) => isTargetActive(child)),
-                          isCollapsed,
-                        )}
-                        title={item.label}
-                      >
-                        <Icon size={16} />
-                        <span className={`flex-1 text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                        <span className={isCollapsed ? 'lg:hidden' : ''}>
-                          {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
-                        </span>
-                      </NavLink>
+                  <div className="space-y-1.5">
+                    {group.items.map((item) => {
+                      const Icon = item.icon
+                      const hasChildren = Array.isArray(item.children) && item.children.length > 0
+                      const isGroupOpen = hasChildren && openGroupId === item.id
 
-                      {isGroupOpen && (
-                        <div className={`space-y-1 rounded-xl bg-slate-100/80 p-1 pe-1.5 ring-1 ring-slate-200/70 ${isCollapsed ? 'lg:hidden' : ''}`}>
-                          {item.children.map((child) => (
-                            <NavLink
-                              key={`${child.to}:${child.tab || ''}`}
-                              to={toNavTarget(child)}
-                              onClick={onNavigate}
-                              className={() => navChildLinkClass(isTargetActive(child))}
-                              title={child.label}
-                            >
-                              <span className="truncate">{child.label}</span>
-                            </NavLink>
-                          ))}
+                      if (!hasChildren) {
+                        return (
+                          <NavLink
+                            key={item.to}
+                            to={item.to}
+                            end={Boolean(item.end)}
+                            onClick={onNavigate}
+                            className={({ isActive }) => navLinkClass(isActive, isCollapsed, item.id === 'owner' ? 'owner' : 'default')}
+                            title={item.label}
+                          >
+                            <Icon size={16} />
+                            <span className={`text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                          </NavLink>
+                        )
+                      }
+
+                      return (
+                        <div key={item.id || item.to} className="space-y-1">
+                          <NavLink
+                            to={resolveNavTarget(item)}
+                            onClick={() => {
+                              setManualGroupState(() => (
+                                openGroupId === item.id
+                                  ? { id: item.id, collapsed: true }
+                                  : { id: item.id, collapsed: false }
+                              ))
+                              onNavigate()
+                            }}
+                            className={() => navLinkClass(
+                              isTargetActive(item) || item.children.some((child) => isTargetActive(child)),
+                              isCollapsed,
+                              item.id === 'owner' ? 'owner' : 'default',
+                            )}
+                            title={item.label}
+                          >
+                            <Icon size={16} />
+                            <span className={`flex-1 text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                            <span className={isCollapsed ? 'lg:hidden' : ''}>
+                              {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
+                            </span>
+                          </NavLink>
+
+                          {isGroupOpen && (
+                            <div className={`space-y-1 rounded-xl p-1 pe-1.5 ring-1 ${item.id === 'owner' ? 'bg-amber-50/90 ring-amber-200/70' : 'bg-slate-100/80 ring-slate-200/70'} ${isCollapsed ? 'lg:hidden' : ''}`}>
+                              {item.children.map((child) => (
+                                <NavLink
+                                  key={`${child.to}:${child.tab || ''}`}
+                                  to={toNavTarget(child)}
+                                  onClick={onNavigate}
+                                  className={() => navChildLinkClass(isTargetActive(child), item.id === 'owner' ? 'owner' : 'default')}
+                                  title={child.label}
+                                >
+                                  <span className="truncate">{child.label}</span>
+                                </NavLink>
+                              ))}
+                            </div>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )
-                })}
-              </div>
+                      )
+                    })}
+                  </div>
+
+                  {section.id === 'system' && groupIndex < allGroups.length - 1 && (
+                    <div className={`my-1 h-px bg-slate-200/80 ${isCollapsed ? 'lg:hidden' : ''}`} />
+                  )}
+                </div>
+              ))}
             </div>
           ))}
         </nav>

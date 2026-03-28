@@ -6,6 +6,7 @@ export const PriceInput = ({
   onChange,
   placeholder = "-",
   disabled = false,
+  onFocus,
   className = '',
 }) => {
   const hasValue = value !== undefined && value !== null && value !== '';
@@ -22,11 +23,21 @@ export const PriceInput = ({
     onChange(raw ? parseInt(raw, 10) : '');
   };
 
+  const handleFocus = (event) => {
+    if (Number.isFinite(numericValue) && numericValue === 0) {
+      event.target.select();
+    }
+    if (typeof onFocus === 'function') {
+      onFocus(event);
+    }
+  };
+
   return (
     <input 
       type="text" 
       value={toPN(displayValue)} 
       onChange={handleChange} 
+      onFocus={handleFocus}
       placeholder={placeholder} 
       className={`w-full h-full text-center outline-none bg-transparent font-bold text-blue-700 placeholder-slate-300 focus:bg-blue-50/50 py-2 rounded-lg ${className}`}
       disabled={disabled}

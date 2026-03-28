@@ -1,8 +1,9 @@
 ﻿import { useMemo, useState } from 'react'
 import { Button, Card, Input } from '@/components/shared/ui'
+import { PriceInput } from '@/components/shared/PriceInput'
 import { Select } from '@/components/shared/ui/Select'
 import { toPN } from '@/utils/helpers'
-import { formatMoney } from './payrollMath'
+import { formatMoney, formatNumber } from './payrollMath'
 
 const EMPTY_EMPLOYEE = {
   id: '',
@@ -116,7 +117,9 @@ export function PayrollEmployeesPanel({ employees, busy, canManage, onSave }) {
             <Input value={draft.nationalId} onChange={(event) => patchDraft('nationalId', event.target.value)} placeholder="کد ملی" />
             <Input value={draft.department} onChange={(event) => patchDraft('department', event.target.value)} placeholder="واحد / سمت" />
             <Input value={draft.bankAccount} onChange={(event) => patchDraft('bankAccount', event.target.value)} placeholder="شماره حساب / شبا" />
-            <Input type="number" value={draft.baseSalary} onChange={(event) => patchDraft('baseSalary', event.target.value)} placeholder="حقوق پایه" />
+            <div className="h-10 rounded-lg border border-slate-200 bg-white px-1">
+              <PriceInput value={draft.baseSalary} onChange={(value) => patchDraft('baseSalary', value)} placeholder="حقوق پایه" className="text-slate-800" />
+            </div>
           </div>
           <div className="flex items-center gap-2 text-xs font-bold text-slate-600">
             <input type="checkbox" className="accent-slate-900" checked={draft.isActive !== false} onChange={(event) => patchDraft('isActive', event.target.checked)} />
@@ -127,7 +130,7 @@ export function PayrollEmployeesPanel({ employees, busy, canManage, onSave }) {
               {busy ? 'در حال ذخیره...' : draft.id ? 'ذخیره تغییرات' : 'ایجاد پرسنل'}
             </Button>
             <Select value={String(filteredEmployees.length)} disabled className="max-w-32 bg-white text-center">
-              <option>{`تعداد ${toPN(filteredEmployees.length)}`}</option>
+              <option>{`تعداد ${formatNumber(filteredEmployees.length)}`}</option>
             </Select>
           </div>
         </form>

@@ -198,7 +198,7 @@ export function PayrollPanel({ session }) {
             setManualDraft(null)
           }}
           onSave={async (draft) => {
-            await payroll.updatePayslip(selectedRun?.id, draft)
+            await payroll.updatePayslip(selectedRun?.id || payroll.selectedRunId, draft)
             setEditorPayslipId('')
             setManualDraft(null)
           }}

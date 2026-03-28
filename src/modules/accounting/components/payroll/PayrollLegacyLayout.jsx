@@ -6,7 +6,7 @@ import { PayslipPrintView } from './PayslipPrintView'
 import { PayrollImportPanel } from './PayrollImportPanel'
 import { PayrollPaymentsPanel } from './PayrollPaymentsPanel'
 import { PayrollSettingsPanel } from './PayrollSettingsPanel'
-import { formatMoney } from './payrollMath'
+import { formatMoney, formatNumber } from './payrollMath'
 
 function useScopedPayslip(run, payslipId, options = {}) {
   const { fallbackToFirst = false } = options
@@ -96,8 +96,8 @@ export function PayrollLegacyLayout({ canApprove, canIssue, canManage, canManage
           <Button size="sm" variant="ghost" onClick={payroll.reload} disabled={payroll.loading}>بازخوانی</Button>
         </div>
         <div className="grid gap-3 sm:grid-cols-4">
-          <StatCard label="پرسنل" value={payroll.dashboard.employees} />
-          <StatCard label="تعداد دوره" value={payroll.dashboard.runs} />
+          <StatCard label="پرسنل" value={formatNumber(payroll.dashboard.employees)} />
+          <StatCard label="تعداد دوره" value={formatNumber(payroll.dashboard.runs)} />
           <StatCard label="جمع خالص" value={formatMoney(payroll.dashboard.net)} textValue />
           <StatCard label="مانده قابل پرداخت" value={formatMoney(payroll.dashboard.due)} textValue />
         </div>
@@ -145,7 +145,7 @@ export function PayrollLegacyLayout({ canApprove, canIssue, canManage, canManage
           setManualDraft(null)
         }}
         onSave={async (draft) => {
-          await payroll.updatePayslip(payroll.selectedRun?.id, draft)
+          await payroll.updatePayslip(payroll.selectedRun?.id || payroll.selectedRunId, draft)
           setEditorPayslipId('')
           setManualDraft(null)
         }}

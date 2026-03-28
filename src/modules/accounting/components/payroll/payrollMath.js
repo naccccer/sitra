@@ -25,6 +25,9 @@ export function safeNumber(value) {
 export function formatMoney(value) {
   return toPN(Math.round(safeNumber(value)).toLocaleString('en-US'))
 }
+export function formatNumber(value) {
+  return toPN(Math.round(safeNumber(value)).toLocaleString('en-US'))
+}
 export function formatMaybeDate(value) {
   return value ? toShamsiDisplay(value) : '-'
 }

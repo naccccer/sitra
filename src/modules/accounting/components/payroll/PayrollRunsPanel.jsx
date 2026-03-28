@@ -8,7 +8,7 @@ import gregorianEn from 'react-date-object/locales/gregorian_en'
 import DatePicker from 'react-multi-date-picker'
 import { Button, Card, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
-import { buildRunSummary, formatMaybeDate, formatMoney, getPaymentMeta, getRunStatusMeta, monthLabel } from './payrollMath'
+import { buildRunSummary, formatMaybeDate, formatMoney, formatNumber, getPaymentMeta, getRunStatusMeta, monthLabel } from './payrollMath'
 
 export function PayrollRunsPanel({
   busyKey,
@@ -61,7 +61,7 @@ export function PayrollRunsPanel({
                   <tr key={run.id} className={selectedRunId === run.id ? 'bg-slate-50' : 'hover:bg-slate-50'}>
                     <td className="px-3 py-2 font-black text-slate-900">{run.title || `لیست حقوق ${monthLabel(run.periodKey)}`}</td>
                     <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${meta.tone}`}>{meta.label}</span></td>
-                    <td className="px-3 py-2 font-bold text-slate-600">{toPN(runSummary.employees)} نفر</td>
+                    <td className="px-3 py-2 font-bold text-slate-600">{formatNumber(runSummary.employees)} نفر</td>
                     <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.net)}</td>
                     <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.due)}</td>
                     <td className="px-3 py-2">
@@ -115,7 +115,7 @@ export function PayrollRunsPanel({
               </div>
 
               <div className="grid gap-2 sm:grid-cols-4">
-                <SummaryChip label="پرسنل" value={toPN(summary.employees)} />
+                <SummaryChip label="پرسنل" value={formatNumber(summary.employees)} />
                 <SummaryChip label="جمع ناخالص" value={formatMoney(summary.gross)} />
                 <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
                 <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />

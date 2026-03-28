@@ -1,5 +1,6 @@
 ﻿import { useMemo, useState } from 'react'
 import { Button, Card, Input, Select } from '@/components/shared/ui'
+import { PriceInput } from '@/components/shared/PriceInput'
 import { todayGregorian } from '../../utils/dateUtils.js'
 import { ShamsiDateInput } from '../DatePickerWrapper'
 import { formatMaybeDate, formatMoney, getPaymentMeta, sumPayments } from './payrollMath'
@@ -99,7 +100,9 @@ function PayrollPaymentForm({ busy, canManage, onRecordPayment, payslipId }) {
 
   return (
     <form onSubmit={submit} className="grid gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 lg:grid-cols-[1fr_1fr_1fr_1fr_1.4fr_auto]">
-      <Input type="number" value={draft.amount} onChange={(event) => setDraft((current) => ({ ...current, amount: event.target.value }))} placeholder="مبلغ پرداخت" />
+      <div className="h-10 rounded-lg border border-slate-200 bg-white px-1">
+        <PriceInput value={draft.amount} onChange={(value) => setDraft((current) => ({ ...current, amount: value }))} placeholder="مبلغ پرداخت" className="text-slate-800" />
+      </div>
       <ShamsiDateInput
         value={draft.paymentDate}
         onChange={(paymentDate) => setDraft((current) => ({ ...current, paymentDate }))}

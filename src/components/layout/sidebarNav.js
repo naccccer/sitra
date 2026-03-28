@@ -12,21 +12,29 @@ import { isModuleEnabled } from '@/kernel/moduleRegistry'
 
 export const pathMatches = (pathname, to) => Boolean(to) && (pathname === to || pathname.startsWith(`${to}/`))
 
-export const navLinkClass = (isActive, isCollapsed) => (
+export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
   `focus-ring flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[13px] font-black transition-colors ${
     isCollapsed ? 'lg:justify-center lg:px-2' : ''
   } ${
-    isActive
-      ? 'bg-slate-900 text-white shadow-[0_6px_14px_rgba(15,23,42,0.24)]'
-      : 'bg-slate-50/60 text-slate-700 hover:bg-slate-100/70'
+    tone === 'owner'
+      ? isActive
+        ? 'bg-amber-400 text-slate-900 shadow-[0_8px_18px_rgba(251,191,36,0.26)]'
+        : 'bg-slate-950 text-amber-100 hover:bg-slate-900'
+      : isActive
+        ? 'bg-slate-900 text-white shadow-[0_6px_14px_rgba(15,23,42,0.24)]'
+        : 'bg-slate-50/60 text-slate-700 hover:bg-slate-100/70'
   }`
 )
 
-export const navChildLinkClass = (isActive) => (
+export const navChildLinkClass = (isActive, tone = 'default') => (
   `focus-ring flex items-center rounded-lg px-2.5 py-1.5 text-[12px] font-bold transition-colors ${
-    isActive
-      ? 'bg-white text-slate-900 ring-1 ring-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
-      : 'text-slate-700 hover:bg-white/80'
+    tone === 'owner'
+      ? isActive
+        ? 'bg-amber-100 text-slate-900 ring-1 ring-amber-200 shadow-[0_2px_8px_rgba(251,191,36,0.16)]'
+        : 'text-slate-800 hover:bg-amber-50/80'
+      : isActive
+        ? 'bg-white text-slate-900 ring-1 ring-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
+        : 'text-slate-700 hover:bg-white/80'
   }`
 )
 
@@ -64,20 +72,11 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
     label: 'پیکربندی',
     items: [
       {
-        id: 'owner',
-        to: '/owner',
-        label: 'اتاق فرمان',
-        icon: ShieldCheck,
-        capability: 'canManageSystemSettings',
-        children: [
-          { to: '/owner/modules', label: 'کنترل ماژول‌ها', capability: 'canManageSystemSettings' },
-        ],
-      },
-      {
         id: 'master-data',
         to: '/master-data',
         label: 'اطلاعات پایه',
         icon: Database,
+        group: 'daily-config',
         when: (capabilities, modules) => (
           isModuleEnabled(modules, 'master-data')
           && Boolean(capabilities.canManageCatalog || capabilities.canManageProfile)
@@ -88,21 +87,27 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
         ],
       },
       {
-        id: 'management',
-        to: '/management',
-        label: 'ممیزی فعالیت‌ها',
+        id: 'security-access',
+        to: '/management/audit',
+        label: 'امنیت و دسترسی',
         icon: SlidersHorizontal,
-        when: (capabilities) => Boolean(capabilities.canViewAuditLogs),
+        group: 'daily-config',
+        dynamicToFirstVisibleChild: true,
         children: [
           { to: '/management/audit', label: 'ممیزی فعالیت‌ها', capability: 'canViewAuditLogs' },
+          { to: '/users-access', label: 'کاربران و دسترسی', capability: 'canManageUsers', moduleId: 'users-access' },
         ],
       },
       {
-        to: '/users-access',
-        label: 'کاربران و دسترسی',
-        icon: Users,
-        capability: 'canManageUsers',
-        moduleId: 'users-access',
+        id: 'owner',
+        to: '/owner',
+        label: 'اتاق فرمان',
+        icon: ShieldCheck,
+        group: 'owner-config',
+        capability: 'canManageSystemSettings',
+        children: [
+          { to: '/owner/modules', label: 'کنترل ماژول‌ها', capability: 'canManageSystemSettings' },
+        ],
       },
     ],
   },

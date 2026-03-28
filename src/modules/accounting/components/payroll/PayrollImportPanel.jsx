@@ -3,6 +3,7 @@ import * as XLSX from 'xlsx'
 import { Download, FileSpreadsheet, Plus, X } from 'lucide-react'
 import { Button, Card, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
+import { formatNumber } from './payrollMath'
 import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
 
 function createSampleRows(headers = []) {
@@ -221,10 +222,10 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
       {preview && (
         <>
           <div className="grid gap-2 sm:grid-cols-4">
-            <Summary label="تعداد ردیف" value={preview.summary.total} />
-            <Summary label="قابل اعمال" value={preview.summary.valid} />
-            <Summary label="هشدار" value={preview.summary.warnings} />
-            <Summary label="خطا" value={preview.summary.errors} />
+            <Summary label="تعداد ردیف" value={formatNumber(preview.summary.total)} />
+            <Summary label="قابل اعمال" value={formatNumber(preview.summary.valid)} />
+            <Summary label="هشدار" value={formatNumber(preview.summary.warnings)} />
+            <Summary label="خطا" value={formatNumber(preview.summary.errors)} />
           </div>
           {preview.unknownHeaders.length > 0 && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ستون‌های نادیده گرفته شده: {preview.unknownHeaders.join('، ')}</div>}
           <div className="overflow-hidden rounded-2xl border border-slate-200">
@@ -240,7 +241,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
               <tbody className="divide-y divide-slate-100 bg-white">
                 {preview.rows.map((row) => (
                   <tr key={`${row.rowNumber}:${row.employee?.id || row.identifier.employeeCode || row.identifier.nationalId || 'row'}`}>
-                    <td className="px-3 py-2 font-black text-slate-900">{row.rowNumber}</td>
+                    <td className="px-3 py-2 font-black text-slate-900">{formatNumber(row.rowNumber)}</td>
                     <td className="px-3 py-2">
                       <div className="font-black text-slate-900">{row.employee?.fullName || row.employee?.name || '-'}</div>
                       <div className="text-[11px] font-bold text-slate-500">{row.identifier.employeeCode || row.identifier.personnelNo || row.identifier.nationalId || '-'}</div>
