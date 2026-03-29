@@ -6,7 +6,7 @@
  */
 export const __type_AccountingPayrollActionBulkResponse = null
 /**
- * @typedef { id?: string | number, ids?: Array<string | number>, action: "approve" | "issue" | "record_payment" | "cancel", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
+ * @typedef { id?: string | number, periodId?: string | number, ids?: Array<string | number>, action: "approve" | "issue" | "record_payment" | "cancel" | "finalize_period", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
  */
 export const __type_AccountingPayrollActionRequest = null
 /**
@@ -26,7 +26,7 @@ export const __type_AccountingPayrollImportRequest = null
  */
 export const __type_AccountingPayrollUpdateRequest = null
 /**
- * @typedef { success: boolean, workspace: { period: Record<string, any>, summary: { employees?: number, draft?: number, approved?: number, issued?: number, cancelled?: number, net?: number, paid?: number, due?: number }, actionable: { approve?: Array<string>, issue?: Array<string>, payments?: Array<string> }, stepStatus: Record<string, any>, blockers: Array<Record<string, any>> } } AccountingPayrollWorkspaceResponse
+ * @typedef { success: boolean, workspace: { period: Record<string, any>, workflowState: "in_progress" | "ready_to_finalize" | "finalized", summary: { employees?: number, draft?: number, approved?: number, issued?: number, cancelled?: number, net?: number, paid?: number, due?: number, workflowStatusLabel?: string, settlementStatus?: string, settlementStatusLabel?: string }, checklist: Array<{ id?: string, label?: string, ok?: boolean, value?: number }>, importStatus: { mode?: string, totalRows?: number, validRows?: number, errorRows?: number, manualEntrySupported?: boolean }, finalizationReadiness: { canFinalize?: boolean, counts?: { personnelCount?: number, payslipCount?: number, rowsWithErrors?: number, incompletePayslips?: number, readyToFinalize?: number, finalizedPayslips?: number, cancelledPayslips?: number }, blockers?: Array<Record<string, any>> }, actionable: { approve?: Array<string>, issue?: Array<string>, payments?: Array<string> }, stepStatus: Record<string, any>, blockers: Array<Record<string, any>> } } AccountingPayrollWorkspaceResponse
  */
 export const __type_AccountingPayrollWorkspaceResponse = null
 /**

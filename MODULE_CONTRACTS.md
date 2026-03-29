@@ -409,8 +409,9 @@
     - `notes?: string`
 - Input (`PATCH` action):
   - `id?: string | number`
+  - `periodId?: string | number` (required for `finalize_period`)
   - `ids?: array<string | number>` for bulk action
-  - `action: 'approve' | 'issue' | 'record_payment' | 'cancel'`
+  - `action: 'approve' | 'issue' | 'record_payment' | 'cancel' | 'finalize_period'`
   - `amount?: number`
   - `paymentMethod?: string`
   - `paymentDate?: string`
@@ -425,10 +426,13 @@
   - GET payslip list: `{ payslips, total, page, pageSize, totalPages }`
   - POST/PUT: `{ period }`, `{ employee }`, or `{ payslip }`
   - PATCH single: `{ payslip }`
+  - PATCH finalize period: `{ action:'finalize_period', result, workspace }`
   - PATCH bulk: `{ action, total, succeeded, failed, results }`
 - Response roots commonly: `period`, `employee`, `payslip`, `periods`, `employees`, `payslips`
 - Employee ownership is backed by `human_resources.employee_directory.v1`; `/api/acc_payroll.php?entity=employee` remains a compatibility adapter over HR data.
 - Workflow: `draft` -> `approved` -> `issued` -> `cancelled`
+- User-facing payroll flow: `انتخاب/ایجاد دوره` -> `ورود/بازبینی` -> `نهایی‌سازی`
+- `GET ?entity=workspace` read model exposes: `workflowState`, `checklist`, `summary`, `importStatus`, `finalizationReadiness`
 - Settings: `GET|POST /api/acc_settings.php?key=accounting.payroll.settings`
 - Schemas: `accounting.payroll.create.request.schema.json`, `accounting.payroll.update.request.schema.json`, `accounting.payroll.action.request.schema.json`, `accounting.payroll.workspace.response.schema.json`, `accounting.payroll.action.bulk.response.schema.json`, `accounting.payroll.import.request.schema.json`, `accounting.payroll.import.preview.response.schema.json`
 
@@ -485,4 +489,5 @@
 - `/api/audit_logs.php` -> kernel audit read model
 
 ## Contract Maintenance Notes
+- 2026-03-29: Added payroll `finalize_period` workflow action and expanded payroll workspace read model (`workflowState`, `checklist`, `summary`, `importStatus`, `finalizationReadiness`) while keeping legacy approve/issue actions for compatibility.
 - 2026-03-21: Extracted the accounting payroll workspace aggregation into `api/modules/accounting/payroll_workspace.php`; no endpoint, schema, or response-shape contract changes.

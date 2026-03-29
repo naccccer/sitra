@@ -176,6 +176,11 @@ export function usePayroll(filters = EMPTY_FILTERS) {
 
   const runAction = useCallback((payload) => mutate(`action:${payload?.action || 'run'}`, async () => {
     const action = payload?.action
+    if (action === 'finalize_period') {
+      const periodId = payload?.periodId || payload?.id || selectedRunId
+      if (!periodId) throw new Error('Payroll period is required for finalization.')
+      return accountingApi.runPayrollAction({ action, periodId })
+    }
     if (Array.isArray(payload?.ids) && payload.ids.length > 0) {
       const result = await accountingApi.runPayrollBulkAction({ action, ids: payload.ids })
       trackPayrollEvent('payroll_bulk_action_result', { action, successCount: safeNumber(result?.succeeded), failCount: safeNumber(result?.failed) })
@@ -260,7 +265,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     due: summary.due + safeNumber(run.summary?.due),
   }), { employees: employees.length, runs: 0, net: 0, due: 0 }), [employees.length, runs])
 
-  const workflow = usePayrollWorkflow(selectedRun)
+  const workflow = usePayrollWorkflow(selectedRun, workspace)
 
   return {
     employees,

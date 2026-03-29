@@ -1,86 +1,78 @@
-import { useMemo, useState } from 'react'
-import { safeNumber } from '../components/payroll/payrollMath'
+import { useState } from 'react'
 
-const STEPS = ['period', 'prepare', 'approve_issue', 'payments']
+const STEPS = ['period', 'entry_review', 'finalize']
 
-export function usePayrollWorkflow(selectedRun) {
+function fallbackCountsFromRun(selectedRun) {
+  const payslips = Array.isArray(selectedRun?.payslips) ? selectedRun.payslips : []
+  return payslips.reduce((result, payslip) => {
+    const status = String(payslip?.status || 'draft')
+    result.payslipCount += 1
+    if (status === 'issued') result.finalizedPayslips += 1
+    if (status === 'cancelled') result.cancelledPayslips += 1
+    if (status === 'draft' || status === 'approved') result.readyToFinalize += 1
+    return result
+  }, {
+    payslipCount: 0,
+    readyToFinalize: 0,
+    finalizedPayslips: 0,
+    cancelledPayslips: 0,
+    rowsWithErrors: 0,
+    incompletePayslips: 0,
+  })
+}
+
+function buildFallbackWorkspace(selectedRun) {
+  const counts = fallbackCountsFromRun(selectedRun)
+  const isFinalized = counts.payslipCount > 0 && (counts.finalizedPayslips + counts.cancelledPayslips) === counts.payslipCount
+  const canFinalize = counts.payslipCount > 0 && !isFinalized && counts.readyToFinalize > 0
+  const blockers = counts.payslipCount > 0
+    ? []
+    : [{ step: 'entry_review', code: 'no_payslips', message: 'برای این دوره هنوز فیشی ثبت نشده است.' }]
+  return {
+    workflowState: isFinalized ? 'finalized' : (canFinalize ? 'ready_to_finalize' : 'in_progress'),
+    finalizationReadiness: { canFinalize, counts, blockers },
+    stepStatus: {
+      period: 'ready',
+      entry_review: counts.payslipCount > 0 ? 'ready' : 'blocked',
+      finalize: isFinalized ? 'completed' : (canFinalize ? 'ready' : 'blocked'),
+    },
+    blockers,
+  }
+}
+
+export function usePayrollWorkflow(selectedRun, workspace) {
   const [internalStep, setInternalStep] = useState('period')
 
-  const counts = useMemo(() => {
-    const payslips = Array.isArray(selectedRun?.payslips) ? selectedRun.payslips : []
-    return payslips.reduce((result, payslip) => {
-      const status = String(payslip?.status || 'draft')
-      const due = safeNumber(payslip?.due ?? payslip?.totals?.balanceDue)
-      const net = safeNumber(payslip?.net ?? payslip?.totals?.netTotal)
-      result.total += 1
-      result.net += net
-      result.due += due
-      if (status === 'draft') result.draft += 1
-      if (status === 'approved') result.approved += 1
-      if (status === 'issued') {
-        result.issued += 1
-        if (due > 0) result.unpaidIssued += 1
-      }
-      if (status === 'cancelled') result.cancelled += 1
-      return result
-    }, {
-      total: 0,
-      draft: 0,
-      approved: 0,
-      issued: 0,
-      cancelled: 0,
-      unpaidIssued: 0,
-      net: 0,
-      due: 0,
-    })
-  }, [selectedRun])
+  const normalized = selectedRun?.id ? (workspace || buildFallbackWorkspace(selectedRun)) : null
 
-  const blockers = useMemo(() => {
-    if (!selectedRun?.id) {
-      return [
-        { step: 'period', code: 'no_period', message: 'ابتدا یک دوره حقوق انتخاب کنید.' },
-        { step: 'prepare', code: 'no_period', message: 'برای ورود به آماده سازی، دوره انتخاب نشده است.' },
-        { step: 'approve_issue', code: 'no_period', message: 'برای تایید و صدور، دوره انتخاب نشده است.' },
-        { step: 'payments', code: 'no_period', message: 'برای پرداخت، دوره انتخاب نشده است.' },
-      ]
-    }
-    const nextBlockers = []
-    if (counts.total === 0) {
-      nextBlockers.push({ step: 'prepare', code: 'no_payslips', message: 'برای این دوره هنوز فیشی ثبت نشده است.' })
-    }
-    if ((counts.draft + counts.approved) === 0 && counts.issued === 0) {
-      nextBlockers.push({ step: 'approve_issue', code: 'no_actionable_payslips', message: 'فیشی برای تایید یا صدور وجود ندارد.' })
-    }
-    if (counts.issued === 0) {
-      nextBlockers.push({ step: 'payments', code: 'no_issued_payslips', message: 'ابتدا حداقل یک فیش را صادر کنید.' })
-    }
-    return nextBlockers
-  }, [counts, selectedRun?.id])
+  const blockers = !selectedRun?.id
+    ? [
+      { step: 'period', code: 'no_period', message: 'ابتدا یک دوره حقوق انتخاب کنید.' },
+      { step: 'entry_review', code: 'no_period', message: 'برای ورود و بازبینی اطلاعات، دوره انتخاب نشده است.' },
+      { step: 'finalize', code: 'no_period', message: 'برای نهایی‌سازی، دوره انتخاب نشده است.' },
+    ]
+    : (Array.isArray(normalized?.blockers) ? normalized.blockers : []).map((item) => ({ ...item, step: item?.step || 'finalize' }))
 
-  const stepStatus = useMemo(() => ({
-    period: selectedRun?.id ? 'ready' : 'blocked',
-    prepare: counts.total > 0 ? 'ready' : selectedRun?.id ? 'blocked' : 'blocked',
-    approve_issue: (counts.draft + counts.approved) > 0 ? 'ready' : counts.issued > 0 ? 'completed' : 'blocked',
-    payments: counts.issued > 0 ? (counts.unpaidIssued > 0 ? 'ready' : 'completed') : 'blocked',
-  }), [counts, selectedRun?.id])
+  const blockersByStep = { period: [], entry_review: [], finalize: [] }
+  blockers.forEach((blocker) => {
+    if (blockersByStep[blocker.step]) blockersByStep[blocker.step].push(blocker)
+  })
 
-  const actionableCounts = useMemo(() => ({
-    ...counts,
-    approveEligible: counts.draft,
-    issueEligible: counts.approved,
-    paymentEligible: counts.unpaidIssued,
-  }), [counts])
-
-  const blockersByStep = useMemo(() => {
-    const grouped = { period: [], prepare: [], approve_issue: [], payments: [] }
-    blockers.forEach((blocker) => {
-      if (grouped[blocker.step]) grouped[blocker.step].push(blocker)
-    })
-    return grouped
-  }, [blockers])
+  const stepStatus = !selectedRun?.id
+    ? { period: 'blocked', entry_review: 'blocked', finalize: 'blocked' }
+    : {
+      period: normalized?.stepStatus?.period || 'ready',
+      entry_review: normalized?.stepStatus?.entry_review || 'blocked',
+      finalize: normalized?.stepStatus?.finalize || 'blocked',
+    }
 
   const currentStep = selectedRun?.id ? internalStep : 'period'
-  const canAdvance = (step = currentStep) => (blockersByStep[step]?.length || 0) === 0
+
+  const canAdvance = (step = currentStep) => {
+    if (!selectedRun?.id) return false
+    if (stepStatus[step] === 'blocked') return false
+    return (blockersByStep[step]?.length || 0) === 0
+  }
 
   const goNext = () => {
     const currentIndex = STEPS.indexOf(currentStep)
@@ -101,7 +93,9 @@ export function usePayrollWorkflow(selectedRun) {
     stepStatus,
     blockers,
     blockersByStep,
-    actionableCounts,
+    workflowState: normalized?.workflowState || 'in_progress',
+    finalizationReadiness: normalized?.finalizationReadiness || { canFinalize: false, counts: {}, blockers: [] },
+    checklist: Array.isArray(normalized?.checklist) ? normalized.checklist : [],
     canAdvance,
     goNext,
     goPrev,

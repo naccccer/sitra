@@ -41,10 +41,13 @@ $moduleContracts = read_text_file(__DIR__ . '/../../MODULE_CONTRACTS.md');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.v1'), 'MODULE_CONTRACTS documents payroll contract');
 test_assert(str_contains($moduleContracts, 'period`, `employee`, `payslip`'), 'MODULE_CONTRACTS documents payroll entities');
 test_assert(str_contains($moduleContracts, 'record_payment'), 'MODULE_CONTRACTS mentions payment recording');
+test_assert(str_contains($moduleContracts, 'finalize_period'), 'MODULE_CONTRACTS mentions payroll finalize action');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.payments'), 'MODULE_CONTRACTS mentions payment permission');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.settings'), 'MODULE_CONTRACTS mentions payroll settings');
 test_assert(str_contains($moduleContracts, 'accounting.payroll.import.v1'), 'MODULE_CONTRACTS documents payroll import contract');
 test_assert(str_contains($moduleContracts, 'workspace'), 'MODULE_CONTRACTS documents payroll workspace entity');
+test_assert(str_contains($moduleContracts, 'workflowState'), 'MODULE_CONTRACTS documents workflowState in workspace read model');
+test_assert(str_contains($moduleContracts, 'finalizationReadiness'), 'MODULE_CONTRACTS documents finalization readiness read model');
 test_assert(str_contains($moduleContracts, 'ids?: array<string | number>'), 'MODULE_CONTRACTS documents bulk action ids');
 test_assert(str_contains($moduleContracts, 'dryRun?: boolean'), 'MODULE_CONTRACTS documents payroll import dryRun');
 test_assert(str_contains($moduleContracts, 'periodId'), 'MODULE_CONTRACTS documents periodId context');
@@ -53,6 +56,7 @@ test_assert(str_contains($moduleContracts, 'created, updated, results, warnings,
 
 $apiIndex = read_text_file(__DIR__ . '/../../docs/api-contracts-index.md');
 test_assert(str_contains($apiIndex, '/api/acc_payroll.php'), 'API index includes payroll endpoint');
+test_assert(str_contains($apiIndex, 'finalize_period'), 'API index includes payroll finalize action');
 test_assert(str_contains($apiIndex, 'accounting.payroll.payments'), 'API index includes payroll payments permission');
 test_assert(str_contains($apiIndex, 'accounting.payroll.settings'), 'API index includes payroll settings permission');
 test_assert(str_contains($apiIndex, '/api/acc_payroll_import.php'), 'API index includes payroll import endpoint');
@@ -97,8 +101,10 @@ test_assert_equals('AccountingPayrollActionRequest', $actionSchema['title'] ?? n
 test_assert_contains('approve', schema_enum_values($actionSchema, 'action'), 'action schema includes approve');
 test_assert_contains('issue', schema_enum_values($actionSchema, 'action'), 'action schema includes issue');
 test_assert_contains('record_payment', schema_enum_values($actionSchema, 'action'), 'action schema includes record_payment');
+test_assert_contains('finalize_period', schema_enum_values($actionSchema, 'action'), 'action schema includes finalize_period');
 test_assert_contains('cancel', schema_enum_values($actionSchema, 'action'), 'action schema includes cancel');
 test_assert_contains('ids', array_keys($actionSchema['properties'] ?? []), 'action schema exposes ids for bulk operations');
+test_assert_contains('periodId', array_keys($actionSchema['properties'] ?? []), 'action schema exposes periodId');
 test_assert_contains('amount', array_keys($actionSchema['properties'] ?? []), 'action schema exposes amount');
 $paymentMethods = $actionSchema['properties']['paymentMethod']['enum'] ?? [];
 test_assert_contains('cash', is_array($paymentMethods) ? $paymentMethods : [], 'action schema includes cash payment method');

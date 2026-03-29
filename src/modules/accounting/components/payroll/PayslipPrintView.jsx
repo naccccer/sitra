@@ -1,181 +1,282 @@
-import { useMemo } from 'react'
-import { Button, Card } from '@/components/shared/ui'
+import { useEffect, useMemo } from 'react'
 import { calculatePayslipTotals, formatMaybeDate, formatMoney, monthLabel } from './payrollMath'
 import { calculateCatalogTotals, resolveCatalogDisplayValue, splitCatalogByType } from './payrollCatalog'
 
-export function PayslipPrintView({ catalog = [], onClose, payslip, run, settings }) {
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+}
+
+function formatCompanyLabel(settings = {}) {
+  return String(settings.companyName || 'سازمان').trim()
+}
+
+function formatCompanyId(settings = {}) {
+  return String(settings.companyId || '-').trim()
+}
+
+function formatSignatory(settings = {}) {
+  const name = String(settings.signatoryName || '').trim()
+  const title = String(settings.signatoryTitle || '').trim()
+  return { name: name || '....................', title: title || '....................' }
+}
+
+function resolvePrintNotes(payslip, settings = {}) {
+  const rawNote = String(payslip.notes || settings.footerNote || '').trim()
+  if (!rawNote) return ''
+  const normalized = rawNote.replace(/\s+/g, ' ').trim()
+  const hiddenNotes = new Set(['بدون توضیح', 'فیش به صورت سیستمی تولید شده', 'این فیش به صورت سیستمی تولید شده'])
+  return hiddenNotes.has(normalized) ? '' : rawNote
+}
+
+function renderRows(rows, payslip, catalog, total = null) {
+  if (!rows.length) return ''
+  const body = rows
+    .map((item) => `
+      <tr>
+        <td>${escapeHtml(item.label)}</td>
+        <td class="num">${escapeHtml(formatMoney(resolveCatalogDisplayValue(payslip, catalog, item)))}</td>
+      </tr>
+    `)
+    .join('')
+
+  const totalRow = total === null
+    ? ''
+    : `
+      <tr class="total-row">
+        <td>جمع</td>
+        <td class="num">${escapeHtml(formatMoney(total))}</td>
+      </tr>
+    `
+
+  return `${body}${totalRow}`
+}
+
+function buildPrintHtml({ assetBase, catalog, groupedCatalog, payslip, run, settings, totals }) {
+  const companyLabel = formatCompanyLabel(settings)
+  const companyId = formatCompanyId(settings)
+  const signatory = formatSignatory(settings)
+  const issueDate = formatMaybeDate(run?.issuedAt || payslip.issuedAt)
+  const notes = resolvePrintNotes(payslip, settings)
+  const notesSection = notes ? `<section class="notes"><div class="notes-title">توضیحات</div><div class="notes-body">${escapeHtml(notes)}</div></section>` : ''
+
+  return `<!doctype html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <base href="${escapeHtml(assetBase)}/" />
+  <title>فیش حقوقی</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm; }
+    @font-face {
+      font-family: 'Vazirmatn';
+      src: url('${escapeHtml(assetBase)}/fonts/Vazirmatn-Regular.woff2') format('woff2');
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Vazirmatn';
+      src: url('${escapeHtml(assetBase)}/fonts/Vazirmatn-Bold.woff2') format('woff2');
+      font-weight: 700;
+      font-style: normal;
+      font-display: swap;
+    }
+    @font-face {
+      font-family: 'Vazirmatn';
+      src: url('${escapeHtml(assetBase)}/fonts/Vazirmatn-Black.woff2') format('woff2');
+      font-weight: 900;
+      font-style: normal;
+      font-display: swap;
+    }
+    :root {
+      --ink: #0f172a;
+      --muted: #475569;
+      --line: #dbe4f0;
+      --line-strong: #c3d2e6;
+      --surface: #f7fafc;
+      --surface-strong: #eef4fb;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #fff; color: var(--ink); font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }
+    body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    .sheet { width: 188mm; margin: 0 auto; padding: 3mm 2mm 1mm; }
+    .header { position: relative; padding: 3.2mm 3mm 2.2mm; background: linear-gradient(180deg, var(--surface-strong), #fff 75%); border-radius: 5mm; border: 1px solid var(--line); }
+    .header::before { content: ''; position: absolute; inset: 0 0 auto; height: 2.2mm; background: var(--ink); border-radius: 5mm 5mm 0 0; }
+    .header-top { display: block; width: 100%; }
+    .company { font-size: 17px; font-weight: 900; margin-top: 1.2mm; }
+    .sub { font-size: 10px; color: var(--muted); margin-top: 0.8mm; }
+    .chips { margin-top: 2.4mm; display: table; width: 100%; border-spacing: 1.5mm 0; }
+    .chip { display: table-cell; width: 25%; background: #fff; border: 1px solid var(--line); border-radius: 3.6mm; padding: 1.7mm 2mm; box-shadow: 0 .6mm 1.8mm rgba(15,23,42,.03); }
+    .chip-label { font-size: 8.5px; color: #64748b; font-weight: 700; }
+    .chip-value { margin-top: 0.9mm; font-size: 10px; font-weight: 800; }
+    .tables { margin-top: 1.8mm; display: table; width: 100%; border-spacing: 1.5mm 1.5mm; }
+    .table-wrap { display: table-cell; width: 50%; vertical-align: top; border: 1px solid var(--line); border-radius: 4mm; overflow: hidden; background: #fff; }
+    .table-title { background: linear-gradient(180deg, var(--surface), #fdfefe); padding: 1.6mm 2.2mm; border-bottom: 1px solid var(--line); font-size: 10.5px; font-weight: 800; }
+    table { width: 100%; border-collapse: collapse; }
+    td { padding: 1.15mm 2.1mm; border-bottom: 1px solid #edf2f7; font-size: 9px; font-weight: 700; }
+    td.num { text-align: left; font-weight: 800; }
+    .total-row td { background: var(--surface); font-weight: 800; }
+    .notes { margin-top: 1.6mm; background: var(--surface); border: 1px solid var(--line); border-radius: 4mm; padding: 1.7mm 2.1mm; }
+    .notes-title { font-size: 10px; font-weight: 800; }
+    .notes-body { margin-top: 0.9mm; font-size: 8.8px; line-height: 1.55; color: var(--muted); min-height: 0; }
+    .signatures { margin-top: 1.6mm; display: table; width: 100%; border-spacing: 1.5mm 0; }
+    .sign { display: table-cell; width: 33.33%; vertical-align: top; background: #fff; border: 1px solid var(--line); border-radius: 4mm; padding: 1.6mm 2mm; min-height: 15mm; }
+    .sign-title { font-size: 9.5px; font-weight: 800; }
+    .sign-line { margin-top: 3.2mm; min-height: 4.5mm; border-bottom: 1px dashed #9fb0c5; }
+    .sign-name { margin-top: 1.1mm; font-size: 8.8px; font-weight: 800; text-align: center; }
+    .sign-sub { margin-top: 0.5mm; font-size: 7.9px; color: #64748b; font-weight: 700; text-align: center; }
+  </style>
+</head>
+<body>
+  <main class="sheet">
+    <section class="header">
+      <div class="header-top">
+          <div class="company">${escapeHtml(companyLabel)}</div>
+          <div class="sub">شناسه / کد کارگاهی: ${escapeHtml(companyId)}</div>
+          <div class="sub">فیش حقوقی ماه ${escapeHtml(monthLabel(run?.periodKey))}</div>
+      </div>
+
+      <div class="chips">
+        <div class="chip"><div class="chip-label">نام پرسنل</div><div class="chip-value">${escapeHtml(payslip.employeeName || '-')}</div></div>
+        <div class="chip"><div class="chip-label">کد پرسنلی</div><div class="chip-value">${escapeHtml(payslip.employeeCode || '-')}</div></div>
+        <div class="chip"><div class="chip-label">واحد</div><div class="chip-value">${escapeHtml(payslip.department || '-')}</div></div>
+        <div class="chip"><div class="chip-label">تاریخ صدور</div><div class="chip-value">${escapeHtml(issueDate)}</div></div>
+      </div>
+    </section>
+
+    <section class="tables">
+      <div class="table-wrap">
+        <div class="table-title">کارکرد و اطلاعات</div>
+        <table><tbody>${renderRows([...groupedCatalog.info, ...groupedCatalog.work], payslip, catalog)}</tbody></table>
+      </div>
+      <div class="table-wrap">
+        <div class="table-title">دریافتی ها</div>
+        <table><tbody>${renderRows(groupedCatalog.earning, payslip, catalog, totals.gross)}</tbody></table>
+      </div>
+    </section>
+
+    <section class="tables">
+      <div class="table-wrap">
+        <div class="table-title">کسورات</div>
+        <table><tbody>${renderRows(groupedCatalog.deduction, payslip, catalog, totals.deductions)}</tbody></table>
+      </div>
+      <div class="table-wrap">
+        <div class="table-title">خلاصه مالی</div>
+        <table>
+          <tbody>
+            <tr><td>جمع دریافتی</td><td class="num">${escapeHtml(formatMoney(totals.gross))}</td></tr>
+            <tr><td>جمع کسورات</td><td class="num">${escapeHtml(formatMoney(totals.deductions))}</td></tr>
+            <tr class="total-row"><td>خالص پرداختی</td><td class="num">${escapeHtml(formatMoney(totals.net))}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    ${notesSection}
+
+    <section class="signatures">
+      <div class="sign">
+        <div class="sign-title">امضای کارمند</div>
+        <div class="sign-line"></div>
+        <div class="sign-name">${escapeHtml(payslip.employeeName || '....................')}</div>
+      </div>
+      <div class="sign">
+        <div class="sign-title">${escapeHtml(settings.signatureLabel || 'امضا و تایید')}</div>
+        <div class="sign-line"></div>
+        <div class="sign-name">${escapeHtml(signatory.name)}</div>
+        <div class="sign-sub">${escapeHtml(signatory.title)}</div>
+      </div>
+      <div class="sign">
+        <div class="sign-title">مهر و امضای واحد مالی</div>
+        <div class="sign-line"></div>
+        <div class="sign-name">${escapeHtml(companyLabel)}</div>
+        <div class="sign-sub">${escapeHtml(companyId)}</div>
+      </div>
+    </section>
+  </main>
+</body>
+</html>`
+}
+
+export function PayslipPrintView({ catalog = [], onClose, payslip, run, settings = {} }) {
   const groupedCatalog = useMemo(() => splitCatalogByType(catalog), [catalog])
-  if (!payslip) return null
 
-  const fallback = calculatePayslipTotals(payslip)
-  const catalogTotals = calculateCatalogTotals(payslip, catalog)
-  const totals = catalogTotals.gross || catalogTotals.deductions ? catalogTotals : fallback
-  const employeeInitial = String(payslip.employeeName || 'ف').trim().slice(0, 1)
+  useEffect(() => {
+    if (!payslip || typeof document === 'undefined') return undefined
 
-  return (
-    <Card padding="none" className="overflow-hidden border-slate-200 shadow-[0_18px_45px_rgba(15,23,42,0.08)]">
-      <div className="print-hide flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur">
-        <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-950 text-[10px] font-black tracking-[0.35em] text-white shadow-lg shadow-slate-950/15">
-            PAY
-          </div>
-          <div>
-            <div className="text-sm font-black text-slate-900">پیش‌نمایش فیش حقوقی</div>
-            <div className="text-xs font-bold text-slate-500">چیدمان A4 راست‌به‌چپ برای چاپ و بایگانی</div>
-          </div>
-        </div>
-        <div className="flex gap-2">
-          <Button size="sm" variant="ghost" onClick={onClose}>بستن</Button>
-          <Button size="sm" variant="primary" onClick={() => window.print()}>چاپ فیش</Button>
-        </div>
-      </div>
+    const fallback = calculatePayslipTotals(payslip)
+    const catalogTotals = calculateCatalogTotals(payslip, catalog)
+    const totals = catalogTotals.gross || catalogTotals.deductions ? catalogTotals : fallback
+    const assetBase = window.location.origin
+    const html = buildPrintHtml({ assetBase, catalog, groupedCatalog, payslip, run, settings, totals })
 
-      <div className="printable-area bg-[radial-gradient(circle_at_top,_rgba(15,23,42,0.06),_transparent_42%),linear-gradient(180deg,#f8fafc_0%,#f3f4f6_100%)] p-2 md:p-4" dir="rtl">
-        <div className="mx-auto w-full max-w-[1120px] rounded-[32px] border border-slate-200 bg-white p-3 text-slate-900 shadow-[0_24px_70px_rgba(15,23,42,0.10)] print:shadow-none md:p-4">
-          <div className="grid gap-3 lg:grid-cols-[1.15fr_0.95fr]">
-            <div className="rounded-[28px] bg-slate-950 px-4 py-4 text-white shadow-[0_18px_40px_rgba(15,23,42,0.18)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.45em] text-white/55">PAYSLIP</div>
-                  <div className="mt-1 text-xl font-black leading-tight">{settings.companyName || 'سامانه حقوق و دستمزد'}</div>
-                  <div className="mt-1 text-xs font-bold text-white/70">شناسه / کد کارگاهی: {settings.companyId || '-'}</div>
-                </div>
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-white/10 text-lg font-black text-white ring-1 ring-white/10">
-                  {employeeInitial}
-                </div>
-              </div>
+    const frame = document.createElement('iframe')
+    frame.setAttribute('title', 'payslip-print-frame')
+    frame.style.position = 'fixed'
+    frame.style.left = '-10000px'
+    frame.style.top = '0'
+    frame.style.width = '1px'
+    frame.style.height = '1px'
+    frame.style.opacity = '0'
+    frame.style.pointerEvents = 'none'
+    document.body.appendChild(frame)
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                <MiniStat label="کارمند" value={payslip.employeeName || '-'} />
-                <MiniStat label="کد پرسنلی" value={payslip.employeeCode || '-'} />
-                <MiniStat label="واحد" value={payslip.department || '-'} />
-              </div>
-            </div>
+    const win = frame.contentWindow
+    const doc = frame.contentDocument || win?.document
+    if (!win || !doc) {
+      frame.remove()
+      onClose?.()
+      return undefined
+    }
 
-            <div className="rounded-[28px] border border-slate-200 bg-slate-50/80 px-4 py-4 shadow-[0_12px_30px_rgba(15,23,42,0.05)]">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="text-[10px] font-black uppercase tracking-[0.35em] text-slate-400">ISSUED</div>
-                  <div className="mt-1 text-base font-black text-slate-900">{run?.title || monthLabel(run?.periodKey)}</div>
-                  <div className="mt-1 text-xs font-bold text-slate-500">تاریخ صدور: {formatMaybeDate(run?.issuedAt || payslip.issuedAt)}</div>
-                </div>
-                <div className="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-end">
-                  <div className="text-[10px] font-bold text-slate-500">خالص پرداختی</div>
-                  <div className="mt-1 text-base font-black text-slate-950">{formatMoney(totals.net)}</div>
-                </div>
-              </div>
+    let finished = false
+    let loadTimer = 0
+    let fallbackCloseTimer = 0
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                <SoftStat label="جمع دریافتی" value={formatMoney(totals.gross)} />
-                <SoftStat label="جمع کسورات" value={formatMoney(totals.deductions)} />
-              </div>
-            </div>
-          </div>
+    const teardown = () => {
+      win.removeEventListener('afterprint', handleAfterPrint)
+      window.clearTimeout(fallbackCloseTimer)
+      window.clearTimeout(loadTimer)
+      if (frame.parentNode) {
+        frame.parentNode.removeChild(frame)
+      }
+    }
+    const finalizePrintFlow = () => {
+      if (finished) return
+      finished = true
+      teardown()
+      onClose?.()
+    }
+    const handleAfterPrint = () => finalizePrintFlow()
+    const triggerPrint = async () => {
+      if (doc.fonts?.ready) {
+        try {
+          await doc.fonts.ready
+        } catch {
+          // Keep printing even if the browser rejects the font-ready promise.
+        }
+      }
+      win.focus()
+      win.print()
+    }
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <Identity label="نام پرسنل" value={payslip.employeeName || '-'} />
-            <Identity label="کد پرسنلی" value={payslip.employeeCode || '-'} />
-            <Identity label="واحد" value={payslip.department || '-'} />
-            <Identity label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
-          </div>
+    doc.open()
+    doc.write(html)
+    doc.close()
 
-          <div className="mt-4 grid gap-4 lg:grid-cols-2">
-            <RowsSection title="کارکرد و اطلاعات" catalog={catalog} rows={[...groupedCatalog.info, ...groupedCatalog.work]} payslip={payslip} tone="neutral" />
-            <RowsSection title="دریافتی‌ها" catalog={catalog} rows={groupedCatalog.earning} payslip={payslip} total={totals.gross} tone="earnings" />
-            <RowsSection title="کسورات" catalog={catalog} rows={groupedCatalog.deduction} payslip={payslip} total={totals.deductions} tone="deductions" />
-          </div>
+    win.addEventListener('afterprint', handleAfterPrint)
+    fallbackCloseTimer = window.setTimeout(finalizePrintFlow, 1500)
+    loadTimer = window.setTimeout(triggerPrint, 150)
 
-          <div className="mt-4 grid gap-3 sm:grid-cols-3">
-            <TotalCard label="جمع دریافتی" value={formatMoney(totals.gross)} />
-            <TotalCard label="جمع کسورات" value={formatMoney(totals.deductions)} />
-            <TotalCard label="خالص پرداختی" value={formatMoney(totals.net)} emphasize />
-          </div>
+    return () => {
+      teardown()
+    }
+  }, [catalog, groupedCatalog, onClose, payslip, run, settings])
 
-          <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50/80 px-4 py-4">
-            <div className="text-xs font-black text-amber-700">یادداشت</div>
-            <div className="mt-1 text-xs font-bold leading-6 text-slate-700">{payslip.notes || settings.footerNote || 'بدون توضیح'}</div>
-          </div>
-        </div>
-      </div>
-    </Card>
-  )
-}
-
-function RowsSection({ catalog = [], payslip, rows = [], title, tone = 'neutral', total = null }) {
-  if (!rows.length) return null
-
-  const shellClass =
-    tone === 'deductions'
-      ? 'border-rose-200 bg-rose-50/50'
-      : tone === 'earnings'
-        ? 'border-emerald-200 bg-emerald-50/50'
-        : 'border-slate-200 bg-slate-50/50'
-
-  const headClass =
-    tone === 'deductions'
-      ? 'bg-rose-950 text-white'
-      : tone === 'earnings'
-        ? 'bg-emerald-950 text-white'
-        : 'bg-slate-950 text-white'
-
-  return (
-    <div className={`overflow-hidden rounded-[24px] border ${shellClass}`}>
-      <div className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 text-sm font-black ${headClass}`}>
-        <div>{title}</div>
-        <div className="text-[11px] font-bold text-white/70">{rows.length} آیتم</div>
-      </div>
-      <table className="w-full text-right text-xs md:text-sm">
-        <tbody className="divide-y divide-slate-100 bg-white">
-          {rows.map((item) => (
-            <tr key={item.key} className="odd:bg-slate-50/40">
-              <td className="px-4 py-3 font-bold text-slate-600">{item.label}</td>
-              <td className="px-4 py-3 text-end font-black text-slate-900">{formatMoney(resolveCatalogDisplayValue(payslip, catalog, item))}</td>
-            </tr>
-          ))}
-          {total !== null && (
-            <tr className="bg-slate-50">
-              <td className="px-4 py-3 font-black text-slate-700">جمع</td>
-              <td className="px-4 py-3 text-end font-black text-slate-900">{formatMoney(total)}</td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function Identity({ emphasize = false, label, value }) {
-  return (
-    <div className={`rounded-[22px] border px-3 py-3 ${emphasize ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white'}`}>
-      <div className={`text-[10px] font-bold ${emphasize ? 'text-white/60' : 'text-slate-500'}`}>{label}</div>
-      <div className={`mt-1 text-xs font-black md:text-sm ${emphasize ? 'text-white' : 'text-slate-900'}`}>{value}</div>
-    </div>
-  )
-}
-
-function TotalCard({ emphasize = false, label, value }) {
-  return (
-    <div className={`rounded-[24px] border px-4 py-4 shadow-[0_10px_26px_rgba(15,23,42,0.05)] ${emphasize ? 'border-slate-950 bg-slate-950 text-white' : 'border-slate-200 bg-white'}`}>
-      <div className={`text-[10px] font-bold ${emphasize ? 'text-white/60' : 'text-slate-500'}`}>{label}</div>
-      <div className="mt-1 text-lg font-black md:text-xl">{value}</div>
-    </div>
-  )
-}
-
-function MiniStat({ label, value }) {
-  return (
-    <div className="rounded-2xl bg-white/10 px-3 py-2 ring-1 ring-white/10">
-      <div className="text-[10px] font-bold text-white/60">{label}</div>
-      <div className="mt-1 text-sm font-black text-white">{value}</div>
-    </div>
-  )
-}
-
-function SoftStat({ label, value }) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3">
-      <div className="text-[10px] font-bold text-slate-500">{label}</div>
-      <div className="mt-1 text-sm font-black text-slate-900">{value}</div>
-    </div>
-  )
+  return null
 }

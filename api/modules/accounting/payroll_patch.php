@@ -1,6 +1,8 @@
 <?php
 declare(strict_types=1);
 
+require_once __DIR__ . '/payroll_finalize.php';
+
 final class AccPayrollPatchError extends RuntimeException
 {
     public int $status;
@@ -24,6 +26,9 @@ function acc_payroll_require_patch_permission(array $actor, string $action, PDO 
     if ($isBulk && $action === 'record_payment') {
         acc_payroll_patch_fail('Bulk payment recording is not supported.', 400, 'bulk_record_payment_not_supported');
     }
+    if ($isBulk && $action === 'finalize_period') {
+        acc_payroll_patch_fail('Bulk finalize is not supported.', 400, 'bulk_finalize_not_supported');
+    }
 
     if ($action === 'approve') {
         acc_require_permission($actor, 'accounting.payroll.approve', $pdo);
@@ -46,8 +51,12 @@ function acc_payroll_require_patch_permission(array $actor, string $action, PDO 
         }
         return;
     }
+    if ($action === 'finalize_period') {
+        acc_payroll_require_finalize_permission($actor, $pdo);
+        return;
+    }
 
-    acc_payroll_patch_fail('Unknown action. Use approve, issue, cancel, or record_payment.', 400, 'unknown_action');
+    acc_payroll_patch_fail('Unknown action. Use approve, issue, cancel, record_payment, or finalize_period.', 400, 'unknown_action');
 }
 
 function acc_payroll_apply_patch_action(PDO $pdo, array $actor, int $payslipId, string $action, array $payload): array
@@ -217,6 +226,19 @@ function acc_payroll_handle_patch(PDO $pdo, array $actor, array $payload): void
     }
 
     try {
+        if ($action === 'finalize_period') {
+            acc_payroll_require_patch_permission($actor, $action, $pdo, false);
+            $result = acc_payroll_finalize_period($pdo, $actor, $payload);
+            $periodId = acc_parse_id($result['periodId'] ?? ($payload['periodId'] ?? null));
+            $workspace = $periodId !== null ? acc_payroll_fetch_workspace($pdo, $periodId) : null;
+            app_json([
+                'success' => true,
+                'action' => $action,
+                'result' => $result,
+                'workspace' => $workspace,
+            ]);
+        }
+
         if (count($ids) > 0) {
             if (count($ids) > 200) {
                 acc_payroll_patch_fail('Bulk actions are limited to 200 payslips per request.', 422, 'bulk_limit_exceeded');

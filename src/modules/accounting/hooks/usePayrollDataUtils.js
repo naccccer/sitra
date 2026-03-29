@@ -9,7 +9,7 @@ export const DEFAULT_PAYROLL_SETTINGS = {
   signatoryName: '',
   signatoryTitle: '',
   signatureNote: '',
-  footerNote: 'این فیش به صورت سیستمی تولید شده است.',
+  footerNote: '',
   payrollItemCatalog: DEFAULT_PAYROLL_ITEM_CATALOG,
 }
 

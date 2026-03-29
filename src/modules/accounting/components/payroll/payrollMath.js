@@ -1,4 +1,4 @@
-import { toPN } from '@/utils/helpers'
+﻿import { toPN } from '@/utils/helpers'
 import { toShamsiDisplay } from '../../utils/dateUtils'
 const ADDITION_FIELDS = ['baseSalary', 'housingAllowance', 'foodAllowance', 'childAllowance', 'seniorityAllowance', 'overtimePay', 'bonus', 'otherAdditions']
 const DEDUCTION_FIELDS = ['insurance', 'tax', 'loanDeduction', 'advanceDeduction', 'absenceDeduction', 'otherDeductions']
@@ -96,11 +96,12 @@ export function getPaymentMeta(status) {
 }
 export function getRunStatusMeta(status) {
   const map = {
-    draft: { label: 'پیش نویس', tone: 'bg-slate-100 text-slate-700 border-slate-200' },
-    open: { label: 'پیش نویس', tone: 'bg-slate-100 text-slate-700 border-slate-200' },
-    approved: { label: 'تایید شده', tone: 'bg-blue-50 text-blue-700 border-blue-200' },
-    issued: { label: 'صادر شده', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
-    closed: { label: 'صادر شده', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    draft: { label: 'در حال تکمیل', tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+    open: { label: 'در حال تکمیل', tone: 'bg-amber-50 text-amber-700 border-amber-200' },
+    approved: { label: 'آماده نهایی‌سازی', tone: 'bg-blue-50 text-blue-700 border-blue-200' },
+    issued: { label: 'نهایی شده', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    closed: { label: 'نهایی شده', tone: 'bg-emerald-50 text-emerald-700 border-emerald-200' },
+    cancelled: { label: 'لغو شده', tone: 'bg-slate-100 text-slate-700 border-slate-200' },
   }
   return map[status] ?? { label: status || 'نامشخص', tone: 'bg-slate-100 text-slate-600 border-slate-200' }
 }
@@ -295,3 +296,4 @@ export function createEmptyPayslip(employee = {}) {
     documents: [],
   }
 }
+

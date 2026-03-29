@@ -181,6 +181,19 @@ export function PayslipEditorModal({ busy, catalog = [], employees = [], onClose
           onChange={(source, value) => setDraft((current) => updateDraftInput(current, source, value))}
         />
 
+        <PayrollSurfaceCard className="border-slate-200 bg-slate-50/80 shadow-[0_12px_34px_rgba(15,23,42,0.05)]" density="compact">
+          <label className="block space-y-1.5">
+            <span className="block text-xs font-black text-slate-700">توضیحات فیش</span>
+            <textarea
+              value={draft?.notes || ''}
+              onChange={(event) => setDraft((current) => ({ ...current, notes: event.target.value }))}
+              rows={3}
+              placeholder="در صورت نیاز، توضیحی برای چاپ روی فیش بنویسید"
+              className="min-h-24 w-full rounded-2xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-bold text-slate-700 outline-none transition focus:border-slate-400"
+            />
+          </label>
+        </PayrollSurfaceCard>
+
       </div>
     </ModalShell>
   )

@@ -79,8 +79,12 @@ function app_load_env_local(): void
                 }
             }
 
+            // Allow local env files to override database-related variables even
+            // when a global/server env is present (common in local XAMPP setups).
+            $allowFileOverride = preg_match('/^(DB_|MYSQL_|DATABASE_)/', $name) === 1;
+
             // Do not override vars already injected by hosting/server env.
-            if (isset($lockedNames[$name])) {
+            if (isset($lockedNames[$name]) && !$allowFileOverride) {
                 continue;
             }
 
@@ -103,17 +107,17 @@ function app_load_env_local(): void
 
 function app_env_raw(string $name): ?string
 {
-    $value = getenv($name);
-    if ($value !== false) {
-        return (string)$value;
-    }
-
     if (array_key_exists($name, $_ENV)) {
         return (string)$_ENV[$name];
     }
 
     if (array_key_exists($name, $_SERVER)) {
         return (string)$_SERVER[$name];
+    }
+
+    $value = getenv($name);
+    if ($value !== false) {
+        return (string)$value;
     }
 
     return null;

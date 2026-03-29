@@ -1,4 +1,4 @@
-{
+﻿{
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "AccountingPayrollWorkspaceResponse",
   "type": "object",
@@ -7,9 +7,23 @@
     "success": { "type": "boolean" },
     "workspace": {
       "type": "object",
-      "required": ["period", "summary", "actionable", "stepStatus", "blockers"],
+      "required": [
+        "period",
+        "workflowState",
+        "summary",
+        "checklist",
+        "importStatus",
+        "finalizationReadiness",
+        "actionable",
+        "stepStatus",
+        "blockers"
+      ],
       "properties": {
         "period": { "type": "object" },
+        "workflowState": {
+          "type": "string",
+          "enum": ["in_progress", "ready_to_finalize", "finalized"]
+        },
         "summary": {
           "type": "object",
           "properties": {
@@ -20,7 +34,51 @@
             "cancelled": { "type": "integer" },
             "net": { "type": "number" },
             "paid": { "type": "number" },
-            "due": { "type": "number" }
+            "due": { "type": "number" },
+            "workflowStatusLabel": { "type": "string" },
+            "settlementStatus": { "type": "string" },
+            "settlementStatusLabel": { "type": "string" }
+          }
+        },
+        "checklist": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string" },
+              "label": { "type": "string" },
+              "ok": { "type": "boolean" },
+              "value": { "type": "number" }
+            }
+          }
+        },
+        "importStatus": {
+          "type": "object",
+          "properties": {
+            "mode": { "type": "string" },
+            "totalRows": { "type": "number" },
+            "validRows": { "type": "number" },
+            "errorRows": { "type": "number" },
+            "manualEntrySupported": { "type": "boolean" }
+          }
+        },
+        "finalizationReadiness": {
+          "type": "object",
+          "properties": {
+            "canFinalize": { "type": "boolean" },
+            "counts": {
+              "type": "object",
+              "properties": {
+                "personnelCount": { "type": "number" },
+                "payslipCount": { "type": "number" },
+                "rowsWithErrors": { "type": "number" },
+                "incompletePayslips": { "type": "number" },
+                "readyToFinalize": { "type": "number" },
+                "finalizedPayslips": { "type": "number" },
+                "cancelledPayslips": { "type": "number" }
+              }
+            },
+            "blockers": { "type": "array", "items": { "type": "object" } }
           }
         },
         "actionable": {
