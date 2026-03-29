@@ -137,7 +137,7 @@ function acc_payroll_find_or_create_period(PDO $pdo, array $payload, array $acto
     if ($periodId !== null) {
         $row = acc_payroll_fetch_period($pdo, $periodId);
         if (!$row) {
-            app_json(['success' => false, 'error' => 'Payroll period not found.'], 404);
+            app_json(['success' => false, 'error' => 'دوره حقوق و دستمزد یافت نشد.'], 404);
         }
         return $row;
     }
@@ -147,7 +147,7 @@ function acc_payroll_find_or_create_period(PDO $pdo, array $payload, array $acto
         $periodKey = sprintf('%04d-%02d', (int)$payload['year'], (int)$payload['month']);
     }
     if (!preg_match('/^\d{4}-\d{2}$/', $periodKey)) {
-        app_json(['success' => false, 'error' => 'periodKey in YYYY-MM format is required.'], 400);
+        app_json(['success' => false, 'error' => 'periodKey با فرمت YYYY-MM الزامی است.'], 400);
     }
 
     $stmt = $pdo->prepare('SELECT * FROM acc_payroll_periods WHERE period_key = :period_key LIMIT 1');

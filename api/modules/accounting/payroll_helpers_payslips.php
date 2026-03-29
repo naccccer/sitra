@@ -78,11 +78,11 @@ function acc_payroll_store_payslip(PDO $pdo, array $payload, array $actor, ?int 
 {
     $employeeId = acc_parse_id($payload['employeeId'] ?? null);
     if ($employeeId === null) {
-        app_json(['success' => false, 'error' => 'employeeId is required.'], 400);
+        app_json(['success' => false, 'error' => 'employeeId الزامی است.'], 400);
     }
     $employee = app_hr_fetch_employee($pdo, $employeeId);
     if (!$employee) {
-        app_json(['success' => false, 'error' => 'Employee not found.'], 404);
+        app_json(['success' => false, 'error' => 'پرسنل یافت نشد.'], 404);
     }
     $period = acc_payroll_find_or_create_period($pdo, $payload, $actor);
     $inputs = is_array($payload['inputs'] ?? null) ? $payload['inputs'] : [];
@@ -91,10 +91,10 @@ function acc_payroll_store_payslip(PDO $pdo, array $payload, array $actor, ?int 
     if ($payslipId !== null) {
         $current = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
         if (!$current) {
-            app_json(['success' => false, 'error' => 'Payslip not found.'], 404);
+            app_json(['success' => false, 'error' => 'فیش حقوقی یافت نشد.'], 404);
         }
         if ($current['status'] !== 'draft') {
-            app_json(['success' => false, 'error' => 'Only draft payslips can be edited.'], 400);
+            app_json(['success' => false, 'error' => 'فقط فیش‌های حقوقی در وضعیت پیش‌نویس قابل ویرایش هستند.'], 400);
         }
     }
 

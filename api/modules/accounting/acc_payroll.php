@@ -11,6 +11,7 @@ app_handle_preflight(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 app_require_module_enabled($pdo, 'accounting');
 acc_payroll_ensure($pdo);
+app_ensure_audit_logs_table($pdo);
 $actor = app_require_auth(['admin', 'manager']);
 $entity = acc_normalize_text($_GET['entity'] ?? '');
 

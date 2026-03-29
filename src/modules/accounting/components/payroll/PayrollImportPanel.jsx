@@ -5,7 +5,6 @@ import { Button, Card, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { formatNumber } from './payrollMath'
 import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
-
 function createSampleRows(headers = []) {
   const base = Object.fromEntries(headers.map((header) => [header, '']))
   if (Object.hasOwn(base, 'کد پرسنلی')) base['کد پرسنلی'] = '1001'
@@ -31,17 +30,16 @@ function downloadWorkbook(fileName, rows) {
   XLSX.utils.book_append_sheet(book, sheet, 'Payroll')
   XLSX.writeFile(book, fileName)
 }
-
 export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [notice, setNotice] = useState('')
   const [manualEmployeeId, setManualEmployeeId] = useState('')
   const [manualEmployeeQuery, setManualEmployeeQuery] = useState('')
   const [isEmployeeMenuOpen, setIsEmployeeMenuOpen] = useState(false)
   const [importFile, setImportFile] = useState(null)
   const fileInputRef = useRef(null)
-
   const activeRunId = run?.id || runId || ''
   const activePeriodKey = run?.periodKey || runPeriodKey || ''
   const hasBlockingErrors = useMemo(() => preview?.summary?.errors > 0, [preview])
@@ -70,12 +68,12 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     [employeeList, manualEmployeeId],
   )
   const selectedEmployeePayslip = selectedEmployee ? runPayslipByEmployeeId.get(String(selectedEmployee.id)) || null : null
-
   const handleFile = async (file) => {
     if (!file) return
     setImportFile(file)
     setLoading(true)
     setError('')
+    setNotice('')
     try {
       setPreview(await parsePayrollImportFile(file, employeeList, catalog))
     } catch (parseError) {
@@ -85,10 +83,10 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
       setLoading(false)
     }
   }
-
   const clearImportFile = () => {
     setImportFile(null)
     setPreview(null)
+    setNotice('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
@@ -96,7 +94,6 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     if (!activeRunId || !selectedEmployee || !onManualEntry) return
     onManualEntry({ employee: selectedEmployee, payslip: selectedEmployeePayslip })
   }
-
   const handleEmployeeFieldChange = (value) => {
     setManualEmployeeQuery(value)
     setManualEmployeeId('')
@@ -108,9 +105,9 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     setManualEmployeeQuery(formatEmployeeOption(employee))
     setIsEmployeeMenuOpen(false)
   }
-
   const applyImport = async () => {
     if (!activeRunId || !preview) {
+      setNotice('')
       setError('ابتدا یک دوره معتبر انتخاب کنید.')
       return
     }
@@ -125,19 +122,34 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
         notes: row.values.notes || '',
       })),
     }
+    if (payload.rows.length === 0) {
+      setNotice('')
+      setError('هیچ ردیف قابل اعمالی در پیش نمایش وجود ندارد.')
+      return
+    }
     if (onPreviewImport) {
       const dryRun = await onPreviewImport(payload)
       const previewErrors = Array.isArray(dryRun?.errors) ? dryRun.errors : []
       if (previewErrors.length > 0) {
-        setError('پیش نمایش سرور خطا دارد. ابتدا خطاهای فایل را اصلاح کنید.')
+        setNotice('')
+        setError(formatImportIssue(previewErrors[0]) || 'پیش نمایش سرور خطا دارد. ابتدا خطاهای فایل را اصلاح کنید.')
         return
       }
     }
-    await onApply(payload)
+    const result = await onApply(payload)
+    const created = Number(result?.created || 0)
+    const updated = Number(result?.updated || 0)
+    const resultErrors = Array.isArray(result?.errors) ? result.errors : []
+    if (created + updated <= 0) {
+      setNotice('')
+      setError(resultErrors[0]?.error || 'هیچ فیشی از فایل به دوره انتخابی اعمال نشد.')
+      return
+    }
+    setError('')
     setPreview(null)
     clearImportFile()
+    setNotice(`ایمپورت انجام شد: ${toPN(created)} ایجاد و ${toPN(updated)} به روزرسانی.`)
   }
-
   const downloadSamplePayslip = () => {
     downloadWorkbook('payroll-sample-slip.xlsx', createSampleRows(templateHeaders))
   }
@@ -212,13 +224,11 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           )}
         </div>
       </div>
-
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
-
       {!activeRunId && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ابتدا دوره را انتخاب کنید.</div>}
       {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{error}</div>}
+      {notice && <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-bold text-emerald-700">{notice}</div>}
       {loading && <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">در حال خواندن فایل...</div>}
-
       {preview && (
         <>
           <div className="grid gap-2 sm:grid-cols-4">
@@ -274,7 +284,13 @@ function formatEmployeeOption(employee = {}) {
   const employeeCode = String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').trim()
   return `${fullName} (${toPN(employeeCode || 'بدون کد')})`
 }
-
+function formatImportIssue(issue = {}) {
+  const rowNumber = Number.isFinite(Number(issue?.rowIndex)) ? Number(issue.rowIndex) + 1 : null
+  const rowLabel = rowNumber !== null ? `ردیف ${toPN(rowNumber)}` : ''
+  const message = String(issue?.error || issue?.warning || '').trim()
+  if (!message) return ''
+  return rowLabel ? `${rowLabel}: ${message}` : message
+}
 function Summary({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-lg font-black text-slate-900">{value}</div></div>
 }

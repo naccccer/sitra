@@ -11,13 +11,14 @@ app_require_method(['POST']);
 app_require_module_enabled($pdo, 'accounting');
 app_ensure_accounting_schema($pdo);
 acc_payroll_ensure($pdo);
+app_ensure_audit_logs_table($pdo);
 
 $actor = app_require_auth(['admin', 'manager']);
 if (
     !app_user_has_permission($actor, 'accounting.payroll.write', $pdo)
     && !app_user_has_permission($actor, 'accounting.payroll.import', $pdo)
 ) {
-    app_json(['success' => false, 'error' => 'Access denied.'], 403);
+    app_json(['success' => false, 'error' => 'دسترسی غیرمجاز است.'], 403);
 }
 app_require_csrf();
 
@@ -25,7 +26,7 @@ $payload = app_read_json_body();
 $dryRun = acc_parse_bool($payload['dryRun'] ?? false, false) === true;
 $rows = $payload['rows'] ?? null;
 if (!is_array($rows) || $rows === []) {
-    app_json(['success' => false, 'error' => 'rows array is required.'], 400);
+    app_json(['success' => false, 'error' => 'آرایه rows الزامی است.'], 400);
 }
 
 $period = null;
@@ -43,7 +44,7 @@ if ($dryRun) {
         }
     }
     if (!$period) {
-        app_json(['success' => false, 'error' => 'For dryRun, an existing periodId or periodKey is required.'], 422);
+        app_json(['success' => false, 'error' => 'برای پیش‌نمایش، periodId یا periodKey معتبر و موجود الزامی است.'], 422);
     }
 } else {
     try {
@@ -63,7 +64,7 @@ $findPayslip = $pdo->prepare('SELECT id, status FROM acc_payslips WHERE employee
 
 foreach ($rows as $index => $row) {
     if (!is_array($row)) {
-        $errors[] = ['rowIndex' => $index, 'error' => 'Row must be an object.'];
+        $errors[] = ['rowIndex' => $index, 'error' => 'هر ردیف باید به‌صورت آبجکت ارسال شود.'];
         continue;
     }
 
@@ -73,7 +74,7 @@ foreach ($rows as $index => $row) {
     $employee = null;
 
     if ($employeeId !== null) {
-        $employee = acc_payroll_fetch_employee($pdo, $employeeId);
+        $employee = app_hr_fetch_employee($pdo, $employeeId);
     } elseif ($employeeCode !== '') {
         $employee = app_hr_find_employee_by_code($pdo, $employeeCode);
         if (!$employee && $nationalId !== '') {
@@ -84,19 +85,19 @@ foreach ($rows as $index => $row) {
     }
 
     if (!$employee) {
-        $errors[] = ['rowIndex' => $index, 'employeeCode' => $employeeCode !== '' ? $employeeCode : null, 'error' => 'Employee not found.'];
+        $errors[] = ['rowIndex' => $index, 'employeeCode' => $employeeCode !== '' ? $employeeCode : null, 'error' => 'پرسنل یافت نشد.'];
         continue;
     }
 
     $inputs = is_array($row['inputs'] ?? null) ? $row['inputs'] : [];
     if ($inputs === []) {
-        $warnings[] = ['rowIndex' => $index, 'employeeId' => (string)$employee['id'], 'warning' => 'No inputs supplied; employee defaults/base salary were used.'];
+        $warnings[] = ['rowIndex' => $index, 'employeeId' => (string)$employee['id'], 'warning' => 'هیچ ورودی‌ای ارسال نشد؛ مقادیر پیش‌فرض و حقوق پایه پرسنل استفاده شد.'];
     }
 
     $findPayslip->execute(['employee_id' => (int)$employee['id'], 'period_id' => (int)$period['id']]);
     $existing = $findPayslip->fetch();
     if ($existing && (string)$existing['status'] !== 'draft') {
-        $errors[] = ['rowIndex' => $index, 'employeeId' => (string)$employee['id'], 'error' => 'Existing payslip is not in draft status.'];
+        $errors[] = ['rowIndex' => $index, 'employeeId' => (string)$employee['id'], 'error' => 'فیش حقوقی موجود در وضعیت پیش‌نویس نیست.'];
         continue;
     }
 

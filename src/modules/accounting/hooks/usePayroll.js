@@ -224,9 +224,9 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     return result
   }), [mutate])
 
-  const applyImport = useCallback((payload) => mutate('import', async () => {
-    await accountingApi.importPayroll(payload)
-  }), [mutate])
+  const applyImport = useCallback((payload) => mutate('import', async () => (
+    accountingApi.importPayroll(payload)
+  )), [mutate])
 
   const previewImport = useCallback(async (payload) => accountingApi.previewPayrollImport(payload), [])
 
