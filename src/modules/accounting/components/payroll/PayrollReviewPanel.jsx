@@ -5,7 +5,7 @@ import { toPN } from '@/utils/helpers'
 import { formatMoney, getPaymentMeta, getRunStatusMeta } from './payrollMath'
 import { PayrollConfirmModal } from './PayrollConfirmModal'
 
-export function PayrollReviewPanel({ canManage, embedded = false, onDeletePayslip, onEditPayslip, onPaperSizeChange, onPrint, paperSize, run }) {
+export function PayrollReviewPanel({ canManage, onDeletePayslip, onEditPayslip, onPaperSizeChange, onPrint, paperSize, run }) {
   const payslips = Array.isArray(run?.payslips) ? run.payslips : []
   const [pendingDeletePayslip, setPendingDeletePayslip] = useState(null)
 

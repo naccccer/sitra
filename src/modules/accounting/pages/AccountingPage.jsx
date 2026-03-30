@@ -21,12 +21,7 @@ export const AccountingPage = ({ session }) => {
   const canAccessAccounting = Boolean(capabilities.canAccessAccounting)
   const [searchParams, setSearchParams] = useSearchParams()
   const { isVisible } = useTabSettings()
-
-  const visibleTabs = useMemo(
-    () => getVisibleAccountingTabs(permissions, isVisible),
-    [permissions, isVisible],
-  )
-
+  const visibleTabs = useMemo(() => getVisibleAccountingTabs(permissions, isVisible), [permissions, isVisible])
   const currentTab = String(searchParams.get('tab') || '').trim()
   const resolvedTab = visibleTabs.find((tab) => tab.id === currentTab)?.id ?? visibleTabs[0]?.id
 
@@ -59,12 +54,7 @@ export const AccountingPage = ({ session }) => {
         </div>
         <div className="flex flex-wrap gap-2">
           {visibleTabs.map((tab) => (
-            <Button
-              key={tab.id}
-              size="sm"
-              variant={resolvedTab === tab.id ? 'primary' : 'secondary'}
-              onClick={() => setSearchParams({ tab: tab.id })}
-            >
+            <Button key={tab.id} size="sm" variant={resolvedTab === tab.id ? 'primary' : 'secondary'} onClick={() => setSearchParams({ tab: tab.id })}>
               {tab.label}
             </Button>
           ))}
@@ -74,4 +64,3 @@ export const AccountingPage = ({ session }) => {
     </div>
   )
 }
-

@@ -1,5 +1,6 @@
 ﻿import { toPN } from '@/utils/helpers'
 import { toShamsiDisplay } from '../../utils/dateUtils'
+import { resolvePayrollPeriodTitle } from './payrollPeriodTitle'
 const ADDITION_FIELDS = ['baseSalary', 'housingAllowance', 'foodAllowance', 'childAllowance', 'seniorityAllowance', 'overtimePay', 'bonus', 'otherAdditions']
 const DEDUCTION_FIELDS = ['insurance', 'tax', 'loanDeduction', 'advanceDeduction', 'absenceDeduction', 'otherDeductions']
 const ITEM_KEY_MAP = {
@@ -241,7 +242,7 @@ export function buildPayrollRun(period = {}, payslips = []) {
   return {
     ...normalizedPeriod,
     status: resolvePayrollRunStatus(normalizedPeriod.status, payslips),
-    title: normalizedPeriod.title || `لیست حقوق ${monthLabel(normalizedPeriod.periodKey)}`,
+    title: resolvePayrollPeriodTitle(normalizedPeriod.periodKey, normalizedPeriod.title),
     issuedAt,
     payslips,
     summary,
@@ -296,4 +297,3 @@ export function createEmptyPayslip(employee = {}) {
     documents: [],
   }
 }
-

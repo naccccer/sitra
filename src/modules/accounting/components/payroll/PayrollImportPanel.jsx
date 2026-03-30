@@ -32,7 +32,7 @@ function downloadWorkbook(fileName, rows) {
   XLSX.writeFile(book, fileName)
 }
 
-export function PayrollImportPanel({ busy, catalog = [], employees, embedded = false, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
+export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')

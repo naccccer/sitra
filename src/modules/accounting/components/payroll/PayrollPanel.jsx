@@ -1,13 +1,12 @@
 import { useMemo, useState } from 'react'
 import { RefreshCw, Settings2 } from 'lucide-react'
 import { Button, Card, ModalShell, Select } from '@/components/shared/ui'
-import { usePayrollCurrentRunSelection } from '@/modules/accounting/hooks/usePayrollCurrentRunSelection'
 import { accountingApi } from '../../services/accountingApi'
 import { usePayroll } from '../../hooks/usePayroll'
 import { buildFormulaConfigFromCatalog } from './payrollCatalog'
 import { PayrollFinalizeConfirmModal } from './PayrollFinalizeConfirmModal'
-import { PayrollImportPanel } from './PayrollImportPanel'
 import { PayrollFinalizePanel } from './PayrollFinalizePanel'
+import { PayrollImportPanel } from './PayrollImportPanel'
 import { PayrollPaymentsPanel } from './PayrollPaymentsPanel'
 import { PayrollReviewPanel } from './PayrollReviewPanel'
 import { PayrollRunsPanel } from './PayrollRunsPanel'
@@ -51,20 +50,18 @@ export function PayrollPanel({ session }) {
   const [activePayslipId, setActivePayslipId] = useState('')
   const [paymentPayslipId, setPaymentPayslipId] = useState('')
   const [showSettingsModal, setShowSettingsModal] = useState(false)
+  const [showPeriodsModal, setShowPeriodsModal] = useState(false)
   const [showPrint, setShowPrint] = useState(false)
   const [activeView, setActiveView] = useState('workflow')
   const [paperSize, setPaperSize] = useState('a4')
   const [pendingFinalizePeriodId, setPendingFinalizePeriodId] = useState('')
-  const { currentPeriodKey, selectedRun, selectedRunSummary } = usePayrollCurrentRunSelection({
-    runs: payroll.runs,
-    selectedRun: payroll.selectedRun,
-    selectedRunId: payroll.selectedRunId,
-    setSelectedRunId: payroll.setSelectedRunId,
-  })
+  const selectedRun = payroll.selectedRun
   const catalog = Array.isArray(payroll.settings?.payrollItemCatalog) ? payroll.settings.payrollItemCatalog : []
   const editorPayslip = resolveScopedPayslip(selectedRun, editorPayslipId)
   const editorModel = editorPayslip || manualDraft
   const printModel = resolveScopedPayslip(selectedRun, activePayslipId)
+  const currentRunLabel = selectedRun?.title || 'هنوز دوره‌ای انتخاب نشده است'
+  const currentRunMeta = selectedRun?.periodKey ? `ماه ${selectedRun.periodKey}` : 'برای شروع، یک دوره را انتخاب یا ایجاد کنید.'
   const issuedPayslips = useMemo(() => (Array.isArray(selectedRun?.payslips) ? selectedRun.payslips.filter((item) => item.status === 'issued') : []), [selectedRun])
   const isFinalizedPeriod = payroll.workspace?.workflowState === 'finalized'
   const canReopenPeriod = canManage && isFinalizedPeriod && Number(payroll.workspace?.summary?.issued || 0) > 0 && Number(payroll.workspace?.summary?.paid || 0) <= 0
@@ -112,115 +109,131 @@ export function PayrollPanel({ session }) {
     setActiveView('payments')
   }
 
-  const handleReopen = async (periodId) => {
-    await payroll.runAction({ action: 'reopen_period', periodId })
+  const handleSelectRun = (runId) => {
+    payroll.setSelectedRunId(String(runId || ''))
+    setShowPeriodsModal(false)
     setActiveView('workflow')
   }
 
-  const handleDeletePayslip = async (payslip) => {
-    if (!payslip?.id) return
-    await accountingApi.deletePayrollPayslip(payslip.id)
-    await payroll.reload()
+  const handleCreateRun = async (payload) => {
+    const result = await payroll.saveRun(payload)
+    const nextId = String(result?.period?.id ?? result?.id ?? '')
+    if (nextId) handleSelectRun(nextId)
+    return result
   }
 
   return (
     <div className="space-y-5">
-      <Card padding="md" className="space-y-4 border-slate-200 bg-gradient-to-l from-white via-slate-50 to-slate-100 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="text-lg font-black text-slate-900">حقوق و دستمزد</div>
-            <div className="mt-1 text-xs font-bold text-slate-500">ساخت فیش و پرداخت در دو نمای جدا مدیریت می‌شود.</div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <Button size="icon" variant="ghost" onClick={payroll.reload} disabled={payroll.loading} title="بازخوانی" aria-label="بازخوانی"><RefreshCw className="h-4 w-4" /></Button>
-            <Button size="icon" variant="secondary" onClick={() => setShowSettingsModal(true)} title="تنظیمات تخصصی حقوق" aria-label="تنظیمات تخصصی حقوق"><Settings2 className="h-4 w-4" /></Button>
-          </div>
-        </div>
-        {payroll.error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{payroll.error}</div>}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/80 px-3 py-3 shadow-sm">
+      <Card padding="md" className="space-y-3 border-slate-200 bg-gradient-to-l from-white via-slate-50 to-slate-100 shadow-sm">
+        {payroll.error ? <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{payroll.error}</div> : null}
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/70 bg-white/80 px-3 py-2.5 shadow-sm">
           <div className="flex flex-wrap items-center gap-2">
             <Button size="sm" variant={resolvedView === 'workflow' ? 'primary' : 'secondary'} onClick={() => setActiveView('workflow')}>ساخت فیش</Button>
             <Button size="sm" variant={resolvedView === 'payments' ? 'primary' : 'secondary'} onClick={() => setActiveView('payments')} disabled={!canOpenPayments}>پرداخت‌ها</Button>
           </div>
-          <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">دوره جاری: {currentPeriodKey || '-'}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button size="icon" variant="ghost" onClick={payroll.reload} disabled={payroll.loading} title="بازخوانی" aria-label="بازخوانی"><RefreshCw className="h-4 w-4" /></Button>
+            <Button size="icon" variant="secondary" onClick={() => setShowSettingsModal(true)} title="تنظیمات تخصصی حقوق" aria-label="تنظیمات تخصصی حقوق"><Settings2 className="h-4 w-4" /></Button>
+          </div>
         </div>
       </Card>
 
-      {resolvedView === 'workflow' && (
+      <PayrollStageFrame
+        stageNumber="1"
+        title="انتخاب یا ایجاد دوره"
+        subtitle="ابتدا دوره فعال را مشخص کنید، سپس ادامه ساخت فیش و نهایی‌سازی در همین صفحه انجام می‌شود."
+        actions={(
+          <Button size="sm" variant="secondary" onClick={() => setShowPeriodsModal(true)}>
+            {selectedRun ? 'تغییر یا ایجاد دوره' : 'انتخاب دوره'}
+          </Button>
+        )}
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3">
+          <div className="min-w-0">
+            <div className="text-[11px] font-bold text-slate-500">دوره فعال</div>
+            <div className="mt-1 text-sm font-black text-slate-900">{currentRunLabel}</div>
+            <div className="mt-1 text-xs font-bold text-slate-500">{currentRunMeta}</div>
+          </div>
+          {!selectedRun ? <div className="text-xs font-bold text-slate-500">هنوز دوره‌ای انتخاب نشده است.</div> : null}
+        </div>
+      </PayrollStageFrame>
+
+      {selectedRun && resolvedView === 'workflow' ? (
         <>
-          <PayrollRunsPanel
+          <PayrollStageFrame stageNumber="2" title="ورود و بازبینی اطلاعات" subtitle="ورود، اصلاح و کنترل فیش‌ها در یک مرحله انجام می‌شود." tone="blue">
+            <PayrollImportPanel
+              busy={payroll.busyKey === 'import'}
+              catalog={catalog}
+              employees={payroll.employees}
+              onApply={payroll.applyImport}
+              onManualEntry={openManualEntry}
+              onPreviewImport={payroll.previewImport}
+              run={selectedRun}
+              runId={payroll.selectedRunId}
+              runPeriodKey={selectedRun?.periodKey || ''}
+            />
+            <PayrollReviewPanel
+              canManage={canManage}
+              onDeletePayslip={async (payslip) => {
+                if (!payslip?.id) return
+                await accountingApi.deletePayrollPayslip(payslip.id)
+                await payroll.reload()
+              }}
+              onEditPayslip={openEditor}
+              onPaperSizeChange={setPaperSize}
+              onPrint={(payslip) => {
+                setActivePayslipId(payslip.id)
+                setShowPrint(true)
+              }}
+              paperSize={paperSize}
+              run={selectedRun}
+            />
+          </PayrollStageFrame>
+          <PayrollFinalizePanel
             busyKey={payroll.busyKey}
+            canFinalize={canFinalize}
             canManage={canManage}
-            onCreateRun={payroll.saveRun}
-            onSelectRun={payroll.setSelectedRunId}
-            runs={payroll.runs}
+            canReopen={canReopenPeriod}
+            onDeleteRun={payroll.deleteRun}
+            onFinalize={handleFinalize}
+            onReopen={(periodId) => payroll.runAction({ action: 'reopen_period', periodId }).then(() => setActiveView('workflow'))}
+            reopenDisabledReason={reopenDisabledReason}
             selectedRun={selectedRun}
-            selectedRunId={payroll.selectedRunId}
             workspace={payroll.workspace}
           />
-          {selectedRun && (
-            <>
-              <PayrollStageFrame stageNumber="2" title="ورود و بازبینی اطلاعات" subtitle="ورود، اصلاح و کنترل فیش‌ها در یک مرحله انجام می‌شود." tone="blue">
-                <PayrollImportPanel
-                  busy={payroll.busyKey === 'import'}
-                  catalog={catalog}
-                  employees={payroll.employees}
-                  embedded
-                  onApply={payroll.applyImport}
-                  onManualEntry={openManualEntry}
-                  onPreviewImport={payroll.previewImport}
-                  run={selectedRun}
-                  runId={payroll.selectedRunId}
-                  runPeriodKey={selectedRunSummary?.periodKey || selectedRun?.periodKey || ''}
-                />
-                <PayrollReviewPanel
-                  canManage={canManage}
-                  embedded
-                  onDeletePayslip={handleDeletePayslip}
-                  onEditPayslip={openEditor}
-                  onPaperSizeChange={setPaperSize}
-                  onPrint={(payslip) => {
-                    setActivePayslipId(payslip.id)
-                    setShowPrint(true)
-                  }}
-                  paperSize={paperSize}
-                  run={selectedRun}
-                />
-              </PayrollStageFrame>
-              <PayrollFinalizePanel
-                busyKey={payroll.busyKey}
-                canFinalize={canFinalize}
-                canManage={canManage}
-                onDeleteRun={payroll.deleteRun}
-                onFinalize={handleFinalize}
-                onReopen={handleReopen}
-                canReopen={canReopenPeriod}
-                reopenDisabledReason={reopenDisabledReason}
-                selectedRun={selectedRun}
-                workspace={payroll.workspace}
-              />
-            </>
-          )}
         </>
-      )}
+      ) : null}
 
-      {resolvedView === 'payments' && (
+      {selectedRun && resolvedView === 'payments' ? (
         <Card padding="md" className="space-y-3">
           <div>
             <div className="text-sm font-black text-slate-900">مدیریت پرداخت‌های دوره نهایی‌شده</div>
             <div className="text-xs font-bold text-slate-500">ثبت تسویه بعد از نهایی‌سازی انجام می‌شود و از جریان ساخت فیش جدا است.</div>
           </div>
-          {!canOpenPayments && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">برای ورود به پرداخت‌ها، ابتدا دوره را نهایی‌سازی کنید.</div>}
-          {canOpenPayments && (
+          {!canOpenPayments ? <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">برای ورود به پرداخت‌ها، ابتدا دوره را نهایی‌سازی کنید.</div> : null}
+          {canOpenPayments ? (
             <>
               <Select value={effectivePaymentPayslipId || ''} onChange={(event) => setPaymentPayslipId(String(event.target.value || ''))}>
                 {issuedPayslips.map((item) => <option key={item.id} value={item.id}>{item.employeeName || item.employeeCode || item.id}</option>)}
               </Select>
               <PayrollPaymentsPanel busy={payroll.busyKey === 'payment'} canManage={canManagePayments} onRecordPayment={payroll.recordPayment} payslip={paymentPayslip} />
             </>
-          )}
+          ) : null}
         </Card>
-      )}
+      ) : null}
+
+      <ModalShell isOpen={showPeriodsModal} onClose={() => setShowPeriodsModal(false)} title="دوره‌های حقوق" description="انتخاب، ایجاد و مرور دوره‌ها از همین پنجره انجام می‌شود." maxWidthClass="max-w-6xl">
+        <PayrollRunsPanel
+          busyKey={payroll.busyKey}
+          canManage={canManage}
+          onCreateRun={handleCreateRun}
+          onSelectRun={handleSelectRun}
+          runs={payroll.runs}
+          selectedRun={selectedRun}
+          selectedRunId={payroll.selectedRunId}
+          workspace={payroll.workspace}
+        />
+      </ModalShell>
 
       <ModalShell
         isOpen={showSettingsModal}
@@ -234,7 +247,7 @@ export function PayrollPanel({ session }) {
 
       <PayrollFinalizeConfirmModal isOpen={Boolean(pendingFinalizePeriodId)} onClose={() => setPendingFinalizePeriodId('')} onConfirm={confirmFinalize} />
 
-      {editorModel && (
+      {editorModel ? (
         <PayslipEditorModal
           key={`${selectedRun?.id || 'run'}:${editorModel?.id || editorModel?.employeeId || 'draft'}`}
           busy={payroll.busyKey === 'payslip' || payroll.busyKey === 'pdf'}
@@ -253,9 +266,9 @@ export function PayrollPanel({ session }) {
           payslip={editorModel}
           run={selectedRun}
         />
-      )}
+      ) : null}
 
-      {showPrint && printModel && <PayslipPrintView catalog={catalog} paperSize={paperSize} onClose={() => setShowPrint(false)} payslip={printModel} run={selectedRun} settings={payroll.settings} />}
+      {showPrint && printModel ? <PayslipPrintView catalog={catalog} paperSize={paperSize} onClose={() => setShowPrint(false)} payslip={printModel} run={selectedRun} settings={payroll.settings} /> : null}
     </div>
   )
 }

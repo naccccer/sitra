@@ -7,6 +7,7 @@ import {
   normalizePayrollPeriod,
   safeNumber,
 } from '../components/payroll/payrollMath'
+import { formatPayrollPeriodTitle } from '../components/payroll/payrollPeriodTitle'
 import { DEFAULT_PAYROLL_SETTINGS, fetchAllPayrollPayslips, normalizePayrollSettings, PAYROLL_INPUT_FIELDS } from './usePayrollDataUtils'
 import { usePayrollWorkflow } from './usePayrollWorkflow'
 import { trackPayrollEvent } from '../utils/payrollTelemetry'
@@ -36,9 +37,8 @@ export function usePayroll(filters = EMPTY_FILTERS) {
     const nextPeriods = (Array.isArray(data?.periods) ? data.periods : []).map(normalizePayrollPeriod)
     setPeriods(nextPeriods)
     setSelectedRunId((current) => {
-      if (nextPeriods.length === 0) return ''
-      if (current && nextPeriods.some((item) => item.id === current)) return current
-      return nextPeriods[0]?.id || ''
+      if (!current) return ''
+      return nextPeriods.some((item) => item.id === current) ? current : ''
     })
   }, [filters])
 
@@ -135,6 +135,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
       const range = shamsiMonthKeyToGregorianRange(payload?.periodKey)
       const result = await accountingApi.savePayrollPeriod({
         ...payload,
+        title: formatPayrollPeriodTitle(payload?.periodKey),
         ...(range ? { startDate: range.startDate, endDate: range.endDate, payDate: range.endDate } : {}),
       })
       return result
