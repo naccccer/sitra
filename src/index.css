@@ -105,6 +105,20 @@
   }
 }
 
+.pdf-preview-thumb {
+  display: block;
+  width: 100%;
+  height: 220px;
+  max-height: 220px;
+}
+
+.pdf-preview-thumb .pdf-preview-canvas {
+  width: auto !important;
+  height: auto !important;
+  max-width: 100%;
+  max-height: 100%;
+}
+
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
   body { 
@@ -119,9 +133,26 @@
     left: auto; 
     top: auto; 
     width: 100%; 
+    max-height: none !important;
     min-height: auto; 
+    overflow: visible !important;
     background: white; 
     z-index: auto;
+  }
+  .app-print-shell,
+  .app-print-frame,
+  .app-print-main,
+  .app-print-content,
+  .app-content-area {
+    display: block !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+  .app-print-shell {
+    background: white !important;
+    background-image: none !important;
   }
   .payroll-a4-sheet {
     max-width: 100% !important;
@@ -148,14 +179,21 @@
     break-inside: avoid; 
     page-break-inside: avoid; 
   }
-  .page-break-before {
-    break-before: page;
-    page-break-before: always;
+  .print-page {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    box-sizing: border-box !important;
+    overflow: visible !important;
+  }
+  .print-page-break {
+    break-after: page !important;
+    page-break-after: always !important;
   }
   .appendix-grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    gap: 8mm;
+    gap: 4mm;
   }
   .appendix-card {
     break-inside: avoid;
@@ -164,7 +202,20 @@
   .pattern-preview-thumb {
     display: block;
     width: 100%;
-    min-height: 40mm;
-    max-height: 70mm;
+    min-height: 28mm;
+    max-height: 48mm;
+  }
+  .pdf-preview-thumb {
+    display: block;
+    width: 100%;
+    min-height: 78mm;
+    height: 78mm;
+    max-height: none;
+  }
+  .pdf-preview-thumb .pdf-preview-canvas {
+    width: auto !important;
+    height: auto !important;
+    max-width: 100%;
+    max-height: 100%;
   }
 }

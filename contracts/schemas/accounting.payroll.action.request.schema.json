@@ -18,7 +18,7 @@
     },
     "action": {
       "type": "string",
-      "enum": ["approve", "issue", "record_payment", "cancel", "finalize_period"]
+      "enum": ["approve", "issue", "record_payment", "cancel", "finalize_period", "reopen_period"]
     },
     "amount": { "type": "number", "minimum": 0 },
     "paymentMethod": {

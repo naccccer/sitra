@@ -1,16 +1,20 @@
-﻿# Sitra ERP Roadmap
+# Sitra ERP Roadmap
 
-## Current Baseline (Completed)
-- Module boundaries stabilized around:
+This file is forward-looking only. It does not define the current architecture or current active module list; use `docs/code-map.md` for that.
+
+## Current Platform Snapshot
+- Active business modules already in repo:
   - `sales`
+  - `customers`
+  - `inventory`
+  - `human-resources`
+  - `accounting`
   - `master-data`
   - `users-access`
-  - `kernel/auth`
-- Roles simplified to:
-  - `admin`
-  - `manager`
-  - `sales`
-- Added machine-readable contract schemas and generated frontend contract types.
+- Shared runtime:
+  - `kernel`
+- Reserved, inactive scaffold:
+  - `production`
 
 ## Next Priorities
 
@@ -24,8 +28,8 @@
 - Improve catalog edit ergonomics for large operation lists.
 - Add import/export for catalog snapshots.
 
-### 3) Users & Access
-- Improve role-permission matrix UX (bulk toggles, audit-friendly diff preview).
+### 3) Access and Control Plane
+- Improve role-permission matrix UX.
 - Add stronger safeguards for owner-only operations.
 
 ### 4) Platform Reliability

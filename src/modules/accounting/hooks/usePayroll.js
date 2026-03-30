@@ -108,7 +108,7 @@ export function usePayroll(filters = EMPTY_FILTERS) {
   }, [loadSelectedRun, selectedRunId])
   useEffect(() => {
     loadWorkspace(selectedRunId).catch(() => {})
-  }, [loadWorkspace, selectedRunId, payslips.length])
+  }, [loadWorkspace, selectedRunId, payslips])
 
   const mutate = useCallback(async (key, action) => {
     setBusyKey(key)
@@ -176,10 +176,12 @@ export function usePayroll(filters = EMPTY_FILTERS) {
 
   const runAction = useCallback((payload) => mutate(`action:${payload?.action || 'run'}`, async () => {
     const action = payload?.action
-    if (action === 'finalize_period') {
+    if (action === 'finalize_period' || action === 'reopen_period') {
       const periodId = payload?.periodId || payload?.id || selectedRunId
-      if (!periodId) throw new Error('Payroll period is required for finalization.')
-      return accountingApi.runPayrollAction({ action, periodId })
+      if (!periodId) throw new Error('Payroll period is required for this action.')
+      const result = await accountingApi.runPayrollAction({ action, periodId })
+      if (result?.workspace) setWorkspace(result.workspace)
+      return result
     }
     if (Array.isArray(payload?.ids) && payload.ids.length > 0) {
       const result = await accountingApi.runPayrollBulkAction({ action, ids: payload.ids })

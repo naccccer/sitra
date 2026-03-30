@@ -1,10 +1,11 @@
 import { useMemo, useRef, useState } from 'react'
 import * as XLSX from 'xlsx'
 import { Download, FileSpreadsheet, Plus, X } from 'lucide-react'
-import { Button, Card, Input } from '@/components/shared/ui'
+import { Button, Input } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { formatNumber } from './payrollMath'
 import { buildPayrollTemplateHeaders, parsePayrollImportFile } from './payrollImportXlsx'
+
 function createSampleRows(headers = []) {
   const base = Object.fromEntries(headers.map((header) => [header, '']))
   if (Object.hasOwn(base, 'کد پرسنلی')) base['کد پرسنلی'] = '1001'
@@ -30,7 +31,8 @@ function downloadWorkbook(fileName, rows) {
   XLSX.utils.book_append_sheet(book, sheet, 'Payroll')
   XLSX.writeFile(book, fileName)
 }
-export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
+
+export function PayrollImportPanel({ busy, catalog = [], employees, embedded = false, onApply, onManualEntry, onPreviewImport, run, runId = '', runPeriodKey = '' }) {
   const [preview, setPreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -89,7 +91,6 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     setNotice('')
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
-
   const handleManualEntry = () => {
     if (!activeRunId || !selectedEmployee || !onManualEntry) return
     onManualEntry({ employee: selectedEmployee, payslip: selectedEmployeePayslip })
@@ -99,7 +100,6 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     setManualEmployeeId('')
     setIsEmployeeMenuOpen(true)
   }
-
   const selectEmployee = (employee) => {
     setManualEmployeeId(String(employee?.id || ''))
     setManualEmployeeQuery(formatEmployeeOption(employee))
@@ -150,14 +150,10 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
     clearImportFile()
     setNotice(`ایمپورت انجام شد: ${toPN(created)} ایجاد و ${toPN(updated)} به روزرسانی.`)
   }
-  const downloadSamplePayslip = () => {
-    downloadWorkbook('payroll-sample-slip.xlsx', createSampleRows(templateHeaders))
-  }
+  const downloadSamplePayslip = () => downloadWorkbook('payroll-sample-slip.xlsx', createSampleRows(templateHeaders))
 
-  return (
-    <Card padding="md" className="space-y-4">
-      <div className="text-sm font-black text-slate-900">ورود اطلاعات فیش</div>
-
+  const content = (
+    <>
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3">
         <div className="flex flex-wrap items-end gap-2">
           <label className="min-w-[18rem] flex-1 space-y-1">
@@ -200,12 +196,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
               <Plus className="h-4 w-4" />
               {selectedEmployeePayslip ? 'ویرایش فیش' : 'فیش جدید'}
             </Button>
-            <Button
-              size="sm"
-              variant="primary"
-              className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800"
-              onClick={() => fileInputRef.current?.click()}
-            >
+            <Button size="sm" variant="primary" className="gap-1.5 bg-emerald-700 text-white hover:bg-emerald-800" onClick={() => fileInputRef.current?.click()}>
               انتخاب فایل اکسل
             </Button>
             <Button size="sm" variant="success" onClick={downloadSamplePayslip} className="gap-1.5">
@@ -224,6 +215,7 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           )}
         </div>
       </div>
+
       <input ref={fileInputRef} type="file" accept=".xlsx,.xls" className="hidden" onChange={(event) => handleFile(event.target.files?.[0] || null)} />
       {!activeRunId && <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">ابتدا دوره را انتخاب کنید.</div>}
       {error && <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-bold text-rose-700">{error}</div>}
@@ -275,8 +267,10 @@ export function PayrollImportPanel({ busy, catalog = [], employees, onApply, onM
           </div>
         </>
       )}
-    </Card>
+    </>
   )
+
+  return content
 }
 
 function formatEmployeeOption(employee = {}) {
@@ -284,6 +278,7 @@ function formatEmployeeOption(employee = {}) {
   const employeeCode = String(employee?.employeeCode || employee?.code || employee?.personnelNo || '').trim()
   return `${fullName} (${toPN(employeeCode || 'بدون کد')})`
 }
+
 function formatImportIssue(issue = {}) {
   const rowNumber = Number.isFinite(Number(issue?.rowIndex)) ? Number(issue.rowIndex) + 1 : null
   const rowLabel = rowNumber !== null ? `ردیف ${toPN(rowNumber)}` : ''
@@ -291,6 +286,7 @@ function formatImportIssue(issue = {}) {
   if (!message) return ''
   return rowLabel ? `${rowLabel}: ${message}` : message
 }
+
 function Summary({ label, value }) {
   return <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-lg font-black text-slate-900">{value}</div></div>
 }

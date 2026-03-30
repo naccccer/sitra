@@ -76,7 +76,9 @@ function acc_payroll_create_posted_voucher(
     array $lines,
     array $actor
 ): int {
-    app_ensure_accounting_schema($pdo);
+    if (!$pdo->inTransaction()) {
+        app_ensure_accounting_schema($pdo);
+    }
     if (!acc_validate_lines_balance($lines)) {
         throw new RuntimeException('Payroll journal lines are not balanced.');
     }

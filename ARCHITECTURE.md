@@ -1,7 +1,11 @@
 # Sitra ERP Architecture Rulebook
 
 ## 1) Purpose and Authority
-- This file is the source of truth for architecture decisions.
+- This file is the source of truth for non-negotiable architecture decisions.
+- Supporting authority hierarchy:
+  - `MODULE_CONTRACTS.md` for public contract shape and compatibility.
+  - `docs/code-map.md` for the current active module map and ownership.
+  - `docs/ROADMAP.md` for future work only.
 - All changes must comply with these rules unless this file is updated first.
 
 ## 2) Non-Negotiable Decisions
@@ -29,12 +33,20 @@
   - Customer registry, customer projects, and project contacts.
 - `human-resources`
   - Employee directory and other HR-owned reference data.
+- `accounting`
+  - Payroll workspace, accounting settings, and accounting-owned ledger/account tables.
+  - May consume HR and sales data only through contracts, read models, or compatibility adapters.
 - `inventory`
   - Inventory V2 foundation masters (products, warehouses, locations, lots) and V2 stock model tables.
   - Operation lifecycle (receipt/delivery/transfer/adjustment), posting engine, immutable stock ledger, no-negative stock enforcement.
-  - Reservation subsystem (reserve/release/fulfill), production operation types (production_consume, production_output), delivery-fulfills-reservation integration.
+  - Reservation subsystem (reserve/release/fulfill), production operation types (`production_consume`, `production_output`), delivery-fulfills-reservation integration.
 - `users-access`
   - Users, role assignment, activation/deactivation.
+
+### 3.3 Reserved Scaffolds
+- `production`
+  - Reserved for future scope.
+  - Must remain inactive until contracts, routes, and migration plan are documented.
 
 ## 4) Hard Dependency Rules
 - Allowed:
@@ -48,7 +60,7 @@
 
 ## 5) Data Ownership
 - Each table has exactly one owning module.
-- Only owner module writes to its tables.
+- Only the owner module writes to its tables.
 - Cross-module reads/writes must go through contracts.
 
 ## 6) Workflow and State Constraints
@@ -58,12 +70,12 @@
   - `delivered`
   - `archived`
 - Inventory V2 operation status lifecycle:
-  - `draft` → `submitted` → `approved` → `posted`
-  - Any non-posted status → `cancelled`
+  - `draft` -> `submitted` -> `approved` -> `posted`
+  - Any non-posted status -> `cancelled`
   - Only `approved` operations may be posted; posting is irreversible.
   - Stock mutations and ledger writes occur exclusively at post time.
 - Inventory V2 reservation lifecycle:
-  - `active` → `fulfilled` (auto on delivery post) | `released` (manual)
+  - `active` -> `fulfilled` | `released`
   - Creating a reservation increments `quantity_reserved` in quants.
   - Delivery posting fulfills matching active reservations and releases reserved quantity.
 
@@ -81,6 +93,11 @@
   - `/api/inventory_v2_lots.php`
   - `/api/inventory_v2_operations.php`
   - `/api/inventory_v2_reservations.php`
+  - `/api/inventory_v2_replenishment.php`
+  - `/api/inventory_v2_reports.php`
+  - `/api/acc_payroll.php`
+  - `/api/acc_payroll_import.php`
+  - `/api/acc_settings.php`
   - `/api/catalog.php`
   - `/api/profile.php`
   - `/api/users.php`
@@ -108,14 +125,15 @@
 
 ## 10) Backend Constraints
 - Backend structure converges to:
-  - `api/kernel/*`
+  - `api/modules/kernel/*`
   - `api/modules/<module-name>/*`
-  - Thin endpoint adapters in `api/*.php`
+  - thin endpoint adapters in `api/*.php`
 
 ## 11) Quality Gates
 - Encoding check: `npm run check:encoding`
 - Naming check: `npm run check:naming`
 - File-size budget check: `npm run check:file-size`
+- Boundary check: `npm run check:boundaries`
 - Lint: `npm run lint`
 - Build: `npm run build`
 - Manual smoke checks for affected scope.

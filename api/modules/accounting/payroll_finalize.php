@@ -177,3 +177,120 @@ function acc_payroll_finalize_period(PDO $pdo, array $actor, array $payload): ar
         'workflowState' => (string)($refreshedWorkspace['workflowState'] ?? 'in_progress'),
     ];
 }
+
+function acc_payroll_reopen_period(PDO $pdo, array $actor, array $payload): array
+{
+    $periodId = acc_parse_id($payload['periodId'] ?? ($payload['id'] ?? null));
+    if ($periodId === null) {
+        acc_payroll_patch_fail('Valid periodId is required.', 400, 'missing_period_id');
+    }
+
+    $period = acc_payroll_fetch_period($pdo, $periodId);
+    if (!$period) {
+        acc_payroll_patch_fail('Payroll period not found.', 404, 'period_not_found');
+    }
+    if ((string)($period['status'] ?? 'open') !== 'issued') {
+        acc_payroll_patch_fail('Only finalized payroll periods can be reopened.', 422, 'period_not_finalized');
+    }
+
+    $statsStmt = $pdo->prepare(
+        'SELECT
+            COUNT(*) AS total,
+            SUM(CASE WHEN status = \'issued\' THEN 1 ELSE 0 END) AS issued_total,
+            SUM(CASE WHEN payments_total > 0 THEN 1 ELSE 0 END) AS paid_total
+         FROM acc_payslips
+         WHERE period_id = :period_id'
+    );
+    $statsStmt->execute(['period_id' => $periodId]);
+    $stats = $statsStmt->fetch() ?: [];
+    $issuedTotal = (int)($stats['issued_total'] ?? 0);
+    $paidTotal = (int)($stats['paid_total'] ?? 0);
+
+    if ($issuedTotal <= 0) {
+        acc_payroll_patch_fail('This period has no finalized payslips to reopen.', 422, 'no_issued_payslips');
+    }
+    if ($paidTotal > 0) {
+        acc_payroll_patch_fail('Paid payroll periods cannot be reopened.', 422, 'paid_period_cannot_be_reopened');
+    }
+
+    try {
+        $pdo->beginTransaction();
+
+        $voucherStmt = $pdo->prepare(
+            'SELECT DISTINCT accrual_voucher_id
+             FROM acc_payslips
+             WHERE period_id = :period_id
+               AND status = :status
+               AND accrual_voucher_id IS NOT NULL'
+        );
+        $voucherStmt->execute([
+            'period_id' => $periodId,
+            'status' => 'issued',
+        ]);
+        $voucherIds = [];
+        foreach ($voucherStmt->fetchAll() ?: [] as $row) {
+            $voucherId = acc_parse_id($row['accrual_voucher_id'] ?? null);
+            if ($voucherId !== null) {
+                $voucherIds[] = $voucherId;
+            }
+        }
+
+        if (count($voucherIds) > 0) {
+            $placeholders = implode(',', array_fill(0, count($voucherIds), '?'));
+            $pdo->prepare("UPDATE acc_vouchers SET status = 'cancelled' WHERE id IN ($placeholders)")
+                ->execute($voucherIds);
+        }
+
+        $pdo->prepare(
+            'UPDATE acc_payslips
+             SET status = :status,
+                 accrual_voucher_id = NULL,
+                 approved_by_user_id = NULL,
+                 approved_at = NULL,
+                 issued_by_user_id = NULL,
+                 issued_at = NULL,
+                 updated_by_user_id = :user_id
+             WHERE period_id = :period_id AND status = :current_status'
+        )->execute([
+            'status' => 'draft',
+            'user_id' => (int)$actor['id'],
+            'period_id' => $periodId,
+            'current_status' => 'issued',
+        ]);
+
+        $pdo->prepare(
+            'UPDATE acc_payroll_periods
+             SET status = :status, updated_by_user_id = :user_id
+             WHERE id = :id'
+        )->execute([
+            'status' => 'open',
+            'user_id' => (int)$actor['id'],
+            'id' => $periodId,
+        ]);
+
+        $pdo->commit();
+    } catch (AccPayrollPatchError $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        throw $e;
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+        acc_payroll_patch_fail($e->getMessage(), 422, 'reopen_period_failed');
+    }
+
+    app_audit_log($pdo, 'accounting.payroll.period.reopened', 'acc_payroll_periods', (string)$periodId, [
+        'reopenedPayslips' => $issuedTotal,
+    ], $actor);
+
+    $refreshedWorkspace = acc_payroll_fetch_workspace($pdo, $periodId);
+
+    return [
+        'periodId' => (string)$periodId,
+        'periodStatus' => (string)(($refreshedWorkspace['period']['status'] ?? 'open')),
+        'reopenedCount' => $issuedTotal,
+        'workflowState' => (string)($refreshedWorkspace['workflowState'] ?? 'in_progress'),
+    ];
+}

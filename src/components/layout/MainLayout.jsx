@@ -49,8 +49,8 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
   }, []);
 
   return (
-    <div className="app-shell h-screen overflow-hidden">
-      <div className="app-content-wrap relative h-full">
+    <div className="app-shell app-print-shell h-screen overflow-hidden">
+      <div className="app-content-wrap app-print-frame relative h-full">
         {isSidebarOpen && (
           <button
             type="button"
@@ -70,9 +70,9 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
           onNavigate={closeMobileSidebar}
         />
 
-        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="app-print-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <Header session={session} onToggleSidebar={handleToggleSidebar} />
-          <main className="flex-1 overflow-y-auto px-4 py-5 lg:px-6">
+          <main className="app-print-content flex-1 overflow-y-auto px-4 py-5 lg:px-6">
             <div className="app-content-area">
               {children || <Outlet />}
             </div>

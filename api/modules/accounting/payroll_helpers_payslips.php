@@ -191,3 +191,26 @@ function acc_payroll_store_payslip(PDO $pdo, array $payload, array $actor, ?int 
 
     return acc_payroll_fetch_payslip_detail($pdo, $payslipId) ?: [];
 }
+
+function acc_payroll_delete_payslip(PDO $pdo, int $payslipId): array
+{
+    $payslip = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
+    if (!$payslip) {
+        throw new RuntimeException('فیش حقوقی یافت نشد.');
+    }
+    if ((string)($payslip['status'] ?? 'draft') !== 'draft') {
+        throw new RuntimeException('فقط فیش‌های پیش‌نویس قابل حذف هستند.');
+    }
+    if ((int)(($payslip['totals'] ?? [])['paymentsTotal'] ?? 0) > 0 || !empty($payslip['accrualVoucherId'])) {
+        throw new RuntimeException('فیشی که پرداخت یا سند حسابداری دارد قابل حذف نیست.');
+    }
+
+    acc_payroll_transact($pdo, function() use ($pdo, $payslipId) {
+        $pdo->prepare('DELETE FROM acc_payslip_documents WHERE payslip_id = :id')->execute(['id' => $payslipId]);
+        $pdo->prepare('DELETE FROM acc_payslip_items WHERE payslip_id = :id')->execute(['id' => $payslipId]);
+        $pdo->prepare('DELETE FROM acc_payslip_payments WHERE payslip_id = :id')->execute(['id' => $payslipId]);
+        $pdo->prepare('DELETE FROM acc_payslips WHERE id = :id')->execute(['id' => $payslipId]);
+    });
+
+    return $payslip;
+}

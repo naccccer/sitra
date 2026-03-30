@@ -170,8 +170,33 @@ if ($method === 'PUT') {
 if ($method === 'DELETE') {
     acc_require_permission($actor, 'accounting.payroll.write', $pdo);
     $entity   = acc_normalize_text($payload['entity'] ?? $entity);
+    if ($entity === 'payslip') {
+        $payslipId = acc_parse_id($payload['id'] ?? ($_GET['id'] ?? null));
+        if ($payslipId === null) {
+            app_json(['success' => false, 'error' => 'Valid payslip id is required.'], 400);
+        }
+
+        try {
+            $deletedPayslip = acc_payroll_delete_payslip($pdo, $payslipId);
+        } catch (Throwable $e) {
+            app_json(['success' => false, 'error' => $e->getMessage()], 422);
+        }
+
+        app_audit_log($pdo, 'accounting.payroll.payslip.deleted', 'acc_payslips', (string)$payslipId, [
+            'periodId' => (string)($deletedPayslip['period']['id'] ?? ''),
+            'employeeId' => (string)($deletedPayslip['employee']['id'] ?? ''),
+        ], $actor);
+
+        app_json([
+            'success' => true,
+            'deleted' => [
+                'id' => (string)$payslipId,
+                'periodId' => (string)($deletedPayslip['period']['id'] ?? ''),
+            ],
+        ]);
+    }
     if ($entity !== 'period') {
-        app_json(['success' => false, 'error' => 'Delete is only supported for payroll periods.'], 400);
+        app_json(['success' => false, 'error' => 'Delete is only supported for payroll periods or draft payslips.'], 400);
     }
     $periodId = acc_parse_id($payload['id'] ?? ($_GET['id'] ?? null));
     if ($periodId === null) {

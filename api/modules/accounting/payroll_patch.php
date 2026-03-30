@@ -1,8 +1,6 @@
 <?php
 declare(strict_types=1);
-
 require_once __DIR__ . '/payroll_finalize.php';
-
 final class AccPayrollPatchError extends RuntimeException
 {
     public int $status;
@@ -15,12 +13,10 @@ final class AccPayrollPatchError extends RuntimeException
         $this->codeName = $codeName;
     }
 }
-
 function acc_payroll_patch_fail(string $message, int $status = 400, string $codeName = 'payroll_patch_error'): void
 {
     throw new AccPayrollPatchError($message, $status, $codeName);
 }
-
 function acc_payroll_require_patch_permission(array $actor, string $action, PDO $pdo, bool $isBulk): void
 {
     if ($isBulk && $action === 'record_payment') {
@@ -29,7 +25,9 @@ function acc_payroll_require_patch_permission(array $actor, string $action, PDO 
     if ($isBulk && $action === 'finalize_period') {
         acc_payroll_patch_fail('Bulk finalize is not supported.', 400, 'bulk_finalize_not_supported');
     }
-
+    if ($isBulk && $action === 'reopen_period') {
+        acc_payroll_patch_fail('Bulk reopen is not supported.', 400, 'bulk_reopen_not_supported');
+    }
     if ($action === 'approve') {
         acc_require_permission($actor, 'accounting.payroll.approve', $pdo);
         return;
@@ -55,17 +53,18 @@ function acc_payroll_require_patch_permission(array $actor, string $action, PDO 
         acc_payroll_require_finalize_permission($actor, $pdo);
         return;
     }
-
-    acc_payroll_patch_fail('Unknown action. Use approve, issue, cancel, record_payment, or finalize_period.', 400, 'unknown_action');
+    if ($action === 'reopen_period') {
+        acc_require_permission($actor, 'accounting.payroll.write', $pdo);
+        return;
+    }
+    acc_payroll_patch_fail('Unknown action. Use approve, issue, cancel, record_payment, finalize_period, or reopen_period.', 400, 'unknown_action');
 }
-
 function acc_payroll_apply_patch_action(PDO $pdo, array $actor, int $payslipId, string $action, array $payload): array
 {
     $payslip = acc_payroll_fetch_payslip_detail($pdo, $payslipId);
     if (!$payslip) {
         acc_payroll_patch_fail('Payslip not found.', 404, 'payslip_not_found');
     }
-
     try {
         if ($action === 'approve') {
             if ($payslip['status'] !== 'draft') {
@@ -208,10 +207,8 @@ function acc_payroll_apply_patch_action(PDO $pdo, array $actor, int $payslipId, 
         }
         acc_payroll_patch_fail($e->getMessage(), 422, 'patch_runtime_error');
     }
-
     return acc_payroll_fetch_payslip_detail($pdo, $payslipId) ?: [];
 }
-
 function acc_payroll_handle_patch(PDO $pdo, array $actor, array $payload): void
 {
     $action = acc_normalize_text($payload['action'] ?? '');
@@ -224,7 +221,6 @@ function acc_payroll_handle_patch(PDO $pdo, array $actor, array $payload): void
             }
         }
     }
-
     try {
         if ($action === 'finalize_period') {
             acc_payroll_require_patch_permission($actor, $action, $pdo, false);
@@ -238,7 +234,13 @@ function acc_payroll_handle_patch(PDO $pdo, array $actor, array $payload): void
                 'workspace' => $workspace,
             ]);
         }
-
+        if ($action === 'reopen_period') {
+            acc_payroll_require_patch_permission($actor, $action, $pdo, false);
+            $result = acc_payroll_reopen_period($pdo, $actor, $payload);
+            $periodId = acc_parse_id($result['periodId'] ?? ($payload['periodId'] ?? null));
+            $workspace = $periodId !== null ? acc_payroll_fetch_workspace($pdo, $periodId) : null;
+            app_json(['success' => true, 'action' => $action, 'result' => $result, 'workspace' => $workspace]);
+        }
         if (count($ids) > 0) {
             if (count($ids) > 200) {
                 acc_payroll_patch_fail('Bulk actions are limited to 200 payslips per request.', 422, 'bulk_limit_exceeded');
@@ -266,7 +268,6 @@ function acc_payroll_handle_patch(PDO $pdo, array $actor, array $payload): void
                 'results' => $results,
             ], $succeeded > 0 ? 200 : 422);
         }
-
         acc_payroll_require_patch_permission($actor, $action, $pdo, false);
         $payslipId = acc_parse_id($payload['id'] ?? null);
         if ($payslipId === null) {

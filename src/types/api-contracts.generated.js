@@ -6,7 +6,7 @@
  */
 export const __type_AccountingPayrollActionBulkResponse = null
 /**
- * @typedef { id?: string | number, periodId?: string | number, ids?: Array<string | number>, action: "approve" | "issue" | "record_payment" | "cancel" | "finalize_period", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
+ * @typedef { id?: string | number, periodId?: string | number, ids?: Array<string | number>, action: "approve" | "issue" | "record_payment" | "cancel" | "finalize_period" | "reopen_period", amount?: number, paymentMethod?: "cash" | "bank", paymentDate?: string, accountId?: string | number, referenceNo?: string, notes?: string, clientRequestId?: string } AccountingPayrollActionRequest
  */
 export const __type_AccountingPayrollActionRequest = null
 /**

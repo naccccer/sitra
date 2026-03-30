@@ -3,16 +3,18 @@
 Business modules live here.
 
 Rules:
-- Keep logic inside owner module.
+- Keep logic inside the owner module.
 - Do not import private code from another module.
-- Use kernel/shared contracts for cross-module integration.
+- Route cross-module needs through kernel/shared layers and public contracts.
 
 Active modules:
-- `sales`
+- `accounting`
 - `customers`
+- `human-resources`
 - `inventory`
 - `master-data`
+- `sales`
 - `users-access`
 
-Inactive scaffolds (do not implement business logic unless explicitly activated):
+Inactive scaffolds:
 - `production`

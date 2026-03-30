@@ -30,3 +30,32 @@ export function resolveApiFileUrl(path = '') {
   return `${normalizedBase}${absolutePath}`
 }
 
+/**
+ * Resolve a public asset path to a runtime-safe URL.
+ * Accepts either a filename or a path under the public folder.
+ * @param {string} path
+ * @param {string} fallbackFolder
+ * @returns {string}
+ */
+export function resolvePublicAssetUrl(path = '', fallbackFolder = '') {
+  const raw = String(path || '').trim()
+  if (!raw) return ''
+  if (/^(https?:|data:|blob:)/i.test(raw)) return raw
+
+  const normalizedPath = raw
+    .replace(/\\/g, '/')
+    .replace(/^\.?\//, '')
+    .replace(/^public\//i, '')
+    .replace(/^\/+/, '')
+
+  const baseUrl = APP_BASE_URL === '/' ? '/' : APP_BASE_URL
+  const hasFolderPrefix = fallbackFolder && normalizedPath.startsWith(`${fallbackFolder}/`)
+
+  if (hasFolderPrefix || !fallbackFolder) {
+    return `${baseUrl}${normalizedPath}`
+  }
+
+  const fileName = normalizedPath.split('/').filter(Boolean).pop()
+  return fileName ? `${baseUrl}${fallbackFolder}/${fileName}` : ''
+}
+

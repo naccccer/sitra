@@ -11,6 +11,11 @@ require_once __DIR__ . '/payroll_helpers_payslips.php';
 
 function acc_payroll_ensure(PDO $pdo): void
 {
+    // Accounting tables must be ensured before payroll transactions begin.
+    // Running schema DDL from deep voucher helpers can implicitly end an
+    // active MySQL transaction and break finalize/issue flows.
+    app_ensure_accounting_schema($pdo);
+
     if (acc_payroll_schema_ready($pdo)) {
         return;
     }
@@ -262,7 +267,7 @@ function acc_payroll_delete_period(PDO $pdo, int $periodId): int
     $journaledTotal = (int)($stats['journaled_total'] ?? 0);
 
     if ($nonDraftTotal > 0 || $paidTotal > 0 || $journaledTotal > 0) {
-        throw new RuntimeException('This period contains approved/issued or paid payslips and cannot be deleted.');
+        throw new RuntimeException('این دوره فیش تاییدشده، نهایی‌شده، پرداخت‌شده یا سندخورده دارد و قابل حذف نیست.');
     }
 
     acc_payroll_transact($pdo, function() use ($pdo, $payslipCount, $periodId) {

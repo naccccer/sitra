@@ -38,6 +38,7 @@
   },
   "dependencies": {
     "lucide-react": "^0.575.0",
+    "pdfjs-dist": "^5.4.149",
     "react": "^19.2.0",
     "react-date-object": "^2.1.9",
     "react-dom": "^19.2.0",

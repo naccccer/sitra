@@ -121,6 +121,9 @@ export const accountingApi = {
   async fetchPayrollPayslip(id) {
     return request(`/api/acc_payroll.php${buildQuery({ id })}`, { method: 'GET' })
   },
+  async deletePayrollPayslip(id) {
+    return payrollRequest('DELETE', { entity: 'payslip', id }, { entity: 'payslip', id })
+  },
   async fetchPayrollWorkspace(periodId) {
     return request(`/api/acc_payroll.php${buildQuery({ entity: 'workspace', periodId })}`, { method: 'GET' })
   },

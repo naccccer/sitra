@@ -81,12 +81,11 @@ function resolveJsImport(fromFile, specifier) {
   return null;
 }
 
-function isAllowedFrontendModuleTarget(targetFile, targetModuleName) {
-  const targetModuleRoot = path.join(SRC_MODULES_DIR, targetModuleName);
-  const allowed = new Set(
-    JS_EXTENSIONS.map((ext) => path.resolve(targetModuleRoot, 'index' + ext))
-  );
-  return allowed.has(path.resolve(targetFile));
+function getAliasedFrontendTarget(specifier) {
+  if (!specifier.startsWith('@/modules/')) return null;
+  const rel = specifier.slice('@/modules/'.length);
+  const [moduleName] = rel.split('/');
+  return moduleName || null;
 }
 
 function checkFrontendBoundaries(filePath) {
@@ -100,6 +99,15 @@ function checkFrontendBoundaries(filePath) {
   let match;
   while ((match = IMPORT_RE.exec(source)) !== null) {
     const specifier = match[1];
+    const aliasedTargetModule = getAliasedFrontendTarget(specifier);
+    if (aliasedTargetModule && aliasedTargetModule !== currentModule) {
+      violations.push({
+        file: normalizePath(path.relative(ROOT, filePath)),
+        message: `cross-module frontend import not allowed: ${specifier}`,
+      });
+      continue;
+    }
+
     if (!specifier.startsWith('.')) continue;
 
     const resolved = resolveJsImport(filePath, specifier);
@@ -108,12 +116,10 @@ function checkFrontendBoundaries(filePath) {
     const targetModule = getModuleName(resolved, SRC_MODULES_DIR);
     if (!targetModule || targetModule === currentModule) continue;
 
-    if (!isAllowedFrontendModuleTarget(resolved, targetModule)) {
-      violations.push({
-        file: normalizePath(path.relative(ROOT, filePath)),
-        message: `cross-module frontend import not allowed: ${specifier} -> ${normalizePath(path.relative(ROOT, resolved))}`,
-      });
-    }
+    violations.push({
+      file: normalizePath(path.relative(ROOT, filePath)),
+      message: `cross-module frontend import not allowed: ${specifier} -> ${normalizePath(path.relative(ROOT, resolved))}`,
+    });
   }
 }
 

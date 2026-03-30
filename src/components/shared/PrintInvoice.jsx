@@ -3,50 +3,7 @@ import { toPN } from '../../utils/helpers';
 import { StructureDetails } from './StructureDetails';
 import { getPaymentMethodLabel, normalizePaymentMethod } from '../../utils/invoice';
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
-import { resolveApiFileUrl } from '@/utils/url';
-
-const OPERATION_ICON_BASE_PATH = '/icons/operations';
-
-const getDataUrlMimeType = (dataUrl = '') => {
-  if (typeof dataUrl !== 'string' || !dataUrl.startsWith('data:')) return '';
-  const semiIndex = dataUrl.indexOf(';');
-  if (semiIndex <= 5) return '';
-  return dataUrl.slice(5, semiIndex).toLowerCase();
-};
-
-const getFileExtension = (fileName = '') => {
-  const normalized = String(fileName || '').trim().toLowerCase();
-  if (!normalized.includes('.')) return '';
-  const parts = normalized.split('.');
-  return parts[parts.length - 1] || '';
-};
-
-const isImageMime = (mime = '') => String(mime || '').toLowerCase().startsWith('image/');
-const isPdfMime = (mime = '') => String(mime || '').toLowerCase() === 'application/pdf';
-
-const parsePositiveNumber = (value) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
-};
-
-const formatCm = (value) => {
-  const numeric = Number(value);
-  if (!Number.isFinite(numeric)) return toPN('0');
-  const rounded = Math.round(numeric * 10) / 10;
-  return toPN(rounded.toString());
-};
-
-const holeCenterFromEdges = (hole, widthCm, heightCm) => {
-  const distanceY = Math.max(0, Number(hole?.distanceYCm) || 0);
-  const distanceZ = Math.max(0, Number(hole?.distanceZCm) || 0);
-  const fromYEdge = hole?.fromYEdge === 'bottom' ? 'bottom' : 'top';
-  const fromZEdge = hole?.fromZEdge === 'right' ? 'right' : 'left';
-
-  return {
-    centerX: fromZEdge === 'left' ? distanceZ : widthCm - distanceZ,
-    centerY: fromYEdge === 'top' ? distanceY : heightCm - distanceY,
-  };
-};
+import { OperationChip, PatternPreview } from '@/components/shared/print-invoice/PatternPreview';
 
 const normalizePayment = (payment = {}, fallbackIndex = 0) => ({
   id: String(payment.id || `pay_${fallbackIndex}`),
@@ -69,254 +26,6 @@ const getPaymentStatusMeta = (status = '') => {
   if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-100 text-emerald-700' };
   if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' };
   return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
-};
-
-const OperationChip = ({ title, iconFile, qty = 1 }) => {
-  const [iconFailed, setIconFailed] = useState(false);
-  const normalizedTitle = title || 'خدمت';
-  const iconSrc = iconFile ? `${OPERATION_ICON_BASE_PATH}/${iconFile}` : '';
-  const showFallback = !iconSrc || iconFailed;
-
-  return (
-    <div className="rounded-lg border border-slate-300 bg-white overflow-hidden flex flex-col aspect-[2/3]">
-      <div className="flex-1 flex items-center justify-center p-1 bg-slate-50/40">
-        {showFallback ? (
-          <div className="w-full h-full flex items-center justify-center text-2xl font-black text-slate-400">
-            {normalizedTitle.charAt(0)}
-          </div>
-        ) : (
-          <img
-            src={iconSrc}
-            alt={normalizedTitle}
-            loading="lazy"
-            onError={() => setIconFailed(true)}
-            className="w-full h-full object-contain"
-          />
-        )}
-      </div>
-      <div className="min-h-12 px-1.5 py-1 text-center border-t border-slate-200 flex flex-col items-center justify-center">
-        <div className="text-[10px] leading-4 font-black text-slate-700">{normalizedTitle}</div>
-        {qty > 1 && <div className="mt-0.5 text-[9px] font-bold text-slate-500">× {toPN(qty)}</div>}
-      </div>
-    </div>
-  );
-};
-
-const PatternPreview = ({ pattern, width, height }) => {
-  const type = pattern?.type || 'none';
-
-  if (type === 'carton') {
-    return (
-      <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-[11px] font-bold text-amber-800">
-        این آیتم با الگوی فیزیکی (کارتن/شابلون) ثبت شده است.
-      </div>
-    );
-  }
-
-  if (type === 'hole_map') {
-    const holeMap = pattern?.holeMap && typeof pattern.holeMap === 'object' ? pattern.holeMap : {};
-    const holes = Array.isArray(holeMap?.holes) ? holeMap.holes : [];
-    const widthCm = parsePositiveNumber(width);
-    const heightCm = parsePositiveNumber(height);
-    const canRenderPreview = widthCm > 0 && heightCm > 0;
-
-    const normalizedHoles = holes.map((hole, index) => {
-      const diameterCm = Math.max(0, Number(hole?.diameterCm) || 0);
-      const fromYEdge = hole?.fromYEdge === 'bottom' ? 'bottom' : 'top';
-      const fromZEdge = hole?.fromZEdge === 'right' ? 'right' : 'left';
-      const distanceYCm = Math.max(0, Number(hole?.distanceYCm) || 0);
-      const distanceZCm = Math.max(0, Number(hole?.distanceZCm) || 0);
-      const center = canRenderPreview
-        ? holeCenterFromEdges({ fromYEdge, fromZEdge, distanceYCm, distanceZCm }, widthCm, heightCm)
-        : { centerX: 0, centerY: 0 };
-
-      return {
-        id: String(hole?.id || `hole_${index}`),
-        index,
-        diameterCm,
-        fromYEdge,
-        fromZEdge,
-        distanceYCm,
-        distanceZCm,
-        centerX: center.centerX,
-        centerY: center.centerY,
-      };
-    });
-
-    const fromYLabel = (edge) => (edge === 'bottom' ? 'از پایین' : 'از بالا');
-    const fromZLabel = (edge) => (edge === 'right' ? 'از راست' : 'از چپ');
-
-    return (
-      <div className="space-y-3 rounded-lg border border-emerald-200 bg-emerald-50/40 p-3">
-        <div className="grid grid-cols-2 gap-2 text-[10px] font-bold text-slate-700">
-          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1">
-            تعداد سوراخ: <span className="font-black">{toPN(normalizedHoles.length)}</span>
-          </div>
-          <div className="rounded-md border border-emerald-200 bg-white px-2 py-1">
-            ابعاد: <span className="font-black">{widthCm > 0 ? toPN(widthCm) : '-'} × {heightCm > 0 ? toPN(heightCm) : '-'}</span> cm
-          </div>
-        </div>
-
-        {canRenderPreview ? (
-          <div className="rounded-lg border border-emerald-200 bg-white p-2">
-            <svg viewBox={`0 0 ${widthCm} ${heightCm}`} className="pattern-preview-thumb w-full rounded-md bg-gradient-to-br from-cyan-50 to-slate-100">
-              <rect x="0" y="0" width={widthCm} height={heightCm} fill="transparent" stroke="#94a3b8" strokeWidth={Math.max(0.8, Math.min(widthCm, heightCm) * 0.003)} />
-              {normalizedHoles.map((hole) => (
-                <g key={hole.id}>
-                  <circle
-                    cx={hole.centerX}
-                    cy={hole.centerY}
-                    r={Math.max(0.2, hole.diameterCm / 2)}
-                    fill="rgba(14,116,144,0.10)"
-                    stroke="#0e7490"
-                    strokeWidth={Math.max(0.2, hole.diameterCm * 0.05)}
-                  />
-                  <text
-                    x={hole.centerX}
-                    y={hole.centerY}
-                    textAnchor="middle"
-                    dominantBaseline="central"
-                    fill="#0f172a"
-                    fontSize={Math.max(1.6, Math.min(widthCm, heightCm) * 0.045)}
-                    fontWeight="700"
-                  >
-                    {hole.index + 1}
-                  </text>
-                </g>
-              ))}
-            </svg>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-2 text-[10px] font-bold text-slate-500">
-            برای پیش‌نمایش موقعیت سوراخ‌ها، ابعاد آیتم باید معتبر باشد.
-          </div>
-        )}
-
-        {normalizedHoles.length > 0 ? (
-          <div className="overflow-x-auto rounded-lg border border-emerald-200 bg-white">
-            <table className="w-full text-[10px]">
-              <thead className="bg-emerald-100/70 text-emerald-900">
-                <tr>
-                  <th className="px-2 py-1 text-right font-black">#</th>
-                  <th className="px-2 py-1 text-right font-black">x (قطر)</th>
-                  <th className="px-2 py-1 text-right font-black">y</th>
-                  <th className="px-2 py-1 text-right font-black">z</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-emerald-100">
-                {normalizedHoles.map((hole) => (
-                  <tr key={hole.id} className="text-slate-700">
-                    <td className="px-2 py-1 font-bold">{toPN(hole.index + 1)}</td>
-                    <td className="px-2 py-1 font-bold">{formatCm(hole.diameterCm)} cm</td>
-                    <td className="px-2 py-1 font-bold">{fromYLabel(hole.fromYEdge)}: {formatCm(hole.distanceYCm)}</td>
-                    <td className="px-2 py-1 font-bold">{fromZLabel(hole.fromZEdge)}: {formatCm(hole.distanceZCm)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-2 text-[10px] font-bold text-slate-500">
-            برای این آیتم هنوز سوراخی در نقشه ثبت نشده است.
-          </div>
-        )}
-      </div>
-    );
-  }
-
-  if (type !== 'upload') {
-    return (
-      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-[10px] font-bold text-slate-500">
-        برای این آیتم الگوی آپلودی ثبت نشده است.
-      </div>
-    );
-  }
-
-  const fileName = pattern?.fileName || 'pattern-file';
-  const previewDataUrl = pattern?.previewDataUrl || '';
-  const filePath = pattern?.filePath || pattern?.path || pattern?.url || '';
-  const resolvedFileUrl = resolveApiFileUrl(filePath);
-  const mimeType = String(pattern?.mimeType || getDataUrlMimeType(previewDataUrl)).toLowerCase();
-  const fileExtension = getFileExtension(fileName) || getFileExtension(filePath);
-  const hasPreviewSource = Boolean(previewDataUrl || resolvedFileUrl);
-  const isCad = ['dwg', 'dxf'].includes(fileExtension)
-    || mimeType.includes('vnd.dwg')
-    || mimeType.includes('vnd.dxf')
-    || mimeType.includes('/dxf')
-    || mimeType.includes('/dwg');
-  const isImage = hasPreviewSource && (
-    previewDataUrl.startsWith('data:image/')
-    || (!previewDataUrl && (isImageMime(mimeType) || ['jpg', 'jpeg', 'png', 'webp', 'gif'].includes(fileExtension)))
-  );
-  const canTryEmbeddedPreview = hasPreviewSource
-    && !isImage
-    && !isCad
-    && (isPdfMime(mimeType) || fileExtension === 'pdf');
-  const previewSource = previewDataUrl || resolvedFileUrl;
-
-  return (
-    <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
-      <div className="rounded-md border border-slate-200 bg-white px-2 py-1 text-[10px] font-mono text-slate-600 break-all">
-        {fileName}
-      </div>
-
-      {isImage && (
-        <img
-          src={previewSource}
-          alt={fileName}
-          loading="eager"
-          className="pattern-preview-thumb w-full rounded-lg border border-slate-200 bg-white object-contain"
-        />
-      )}
-
-      {canTryEmbeddedPreview && (
-        <div className="space-y-2">
-          <object
-            data={previewSource}
-            type={mimeType || 'application/pdf'}
-            className="pattern-preview-thumb w-full rounded-lg border border-slate-200 bg-white"
-            aria-label={`preview-${fileName}`}
-          >
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-[10px] font-bold text-slate-500">
-              پیش‌نمایش فایل قابل نمایش نبود. از نام فایل برای پیگیری استفاده شود.
-            </div>
-          </object>
-          <div className="text-[10px] font-bold text-slate-500">
-            اگر پیش‌نمایش نمایش داده نشد، از نام فایل برای پیگیری استفاده شود.
-          </div>
-        </div>
-      )}
-
-      {hasPreviewSource && isCad && (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 p-3 text-[10px] font-bold text-amber-700">
-          پیش‌نمایش مستقیم فایل‌های CAD (DWG/DXF) در فاکتور پشتیبانی نمی‌شود. فایل را باز یا دانلود کنید.
-        </div>
-      )}
-
-      {hasPreviewSource && !isImage && !canTryEmbeddedPreview && !isCad && (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-[10px] font-bold text-slate-500">
-          پیش‌نمایش مستقیم برای این نوع فایل در فاکتور قابل نمایش نیست.
-        </div>
-      )}
-
-      {resolvedFileUrl && (
-        <a
-          href={resolvedFileUrl}
-          target="_blank"
-          rel="noreferrer"
-          className="inline-flex w-fit items-center rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-black text-blue-700"
-        >
-          باز کردن فایل الگو
-        </a>
-      )}
-
-      {!hasPreviewSource && (
-        <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-[10px] font-bold text-slate-500">
-          پیش‌نمایش فایل در داده سفارش موجود نیست.
-        </div>
-      )}
-    </div>
-  );
 };
 
 export const PrintInvoice = ({
@@ -414,6 +123,7 @@ export const PrintInvoice = ({
 
   return (
     <div className={rootClassName} dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
+      <section className={`print-page ${includeAppendix && appendixEntries.length > 0 ? 'print-page-break' : ''}`}>
       <div className="flex justify-between items-start border-b-[2px] border-slate-800 pb-3 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl overflow-hidden">
@@ -476,63 +186,49 @@ export const PrintInvoice = ({
         </tbody>
       </table>
 
-      <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch mb-4 break-inside-avoid">
-        <div className="md:w-1/2 p-3 text-[10px] font-bold text-slate-500 space-y-1.5 border border-slate-200 rounded-xl bg-slate-50">
-          <p className="text-slate-700">{isFactory ? 'ملاحظات تولید:' : 'توضیحات و شرایط:'}</p>
-          <ul className="list-disc list-inside space-y-1">
-            {isFactory ? (
-              <>
-                <li>برش و تولید دقیقاً مطابق با ابعاد و پیکربندی درج شده انجام شود.</li>
-                <li>در صورت وجود الگو (فایل یا کارتن)، تطبیق نهایی الزامی است.</li>
-                {!factoryIncludeNonProductionManual && <li>آیتم‌های دستی غیرتولیدی در این نسخه چاپ حذف شده‌اند.</li>}
-              </>
-            ) : (
-              <>
-                <li>تمامی ابعاد به سانتی‌متر ثبت شده‌اند.</li>
-                <li>اعتبار پیش‌فاکتور ۳ روز کاری است.</li>
-                <li>مبنای تسویه، مبالغ نهایی درج‌شده در همین نسخه است.</li>
-              </>
+      {!isFactory && (
+        <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch mb-4 break-inside-avoid">
+          <div className="md:w-1/2 p-3 text-[10px] font-bold text-slate-500 space-y-1.5 border border-slate-200 rounded-xl bg-slate-50">
+            <p className="text-slate-700">توضیحات و شرایط:</p>
+            <ul className="list-disc list-inside space-y-1">
+              <li>تمامی ابعاد به سانتی‌متر ثبت شده‌اند.</li>
+              <li>اعتبار پیش‌فاکتور ۳ روز کاری است.</li>
+              <li>مبنای تسویه، مبالغ نهایی درج‌شده در همین نسخه است.</li>
+            </ul>
+            {invoiceNotes && (
+              <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-700">
+                <div className="font-black mb-1">یادداشت فاکتور:</div>
+                <div className="font-bold whitespace-pre-wrap">{invoiceNotes}</div>
+              </div>
             )}
-          </ul>
-          {!isFactory && invoiceNotes && (
-            <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-700">
-              <div className="font-black mb-1">یادداشت فاکتور:</div>
-              <div className="font-bold whitespace-pre-wrap">{invoiceNotes}</div>
-            </div>
-          )}
-        </div>
+          </div>
 
-        <div className="md:w-72 border border-slate-300 p-4 rounded-2xl bg-white text-slate-900">
-          {!isFactory && (
+          <div className="md:w-72 border border-slate-300 p-4 rounded-2xl bg-white text-slate-900">
             <div className="mb-2">
               <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black ${paymentStatusMeta.className}`}>
                 {paymentStatusMeta.label}
               </span>
             </div>
-          )}
 
-          {!isFactory && (
             <div className="space-y-1 border-b border-slate-200 pb-2 mb-2 text-[11px]">
               <div className="flex justify-between"><span className="text-slate-600">جمع قبل از تخفیف:</span><span className="tabular-nums">{toPN(normalizedFinancials.subTotal.toLocaleString())}</span></div>
               <div className="flex justify-between"><span className="text-slate-600">تخفیف سطری:</span><span className="tabular-nums">{toPN(normalizedFinancials.itemDiscountTotal.toLocaleString())}</span></div>
               <div className="flex justify-between"><span className="text-slate-600">تخفیف فاکتور:</span><span className="tabular-nums">{toPN(normalizedFinancials.invoiceDiscountAmount.toLocaleString())}</span></div>
               <div className="flex justify-between"><span className="text-slate-600">مالیات:</span><span className="tabular-nums">{toPN(normalizedFinancials.taxAmount.toLocaleString())}</span></div>
             </div>
-          )}
 
-          <div className="flex justify-between text-lg font-black tabular-nums items-center">
-            <span className="text-slate-600 text-xs">{isFactory ? 'جمع کل سفارش:' : 'جمع کل فاکتور:'}</span>
-            <span>{toPN(normalizedFinancials.grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
-          </div>
+            <div className="flex justify-between text-lg font-black tabular-nums items-center">
+              <span className="text-slate-600 text-xs">جمع کل فاکتور:</span>
+              <span>{toPN(normalizedFinancials.grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
+            </div>
 
-          {!isFactory && (
             <div className="space-y-1 mt-2 pt-2 border-t border-slate-200 text-[11px] tabular-nums">
               <div className="flex justify-between"><span className="text-slate-600">پرداخت‌شده:</span><span>{toPN(normalizedFinancials.paidTotal.toLocaleString())}</span></div>
               <div className="flex justify-between font-black"><span className="text-slate-600">مانده:</span><span>{toPN(normalizedFinancials.dueAmount.toLocaleString())}</span></div>
             </div>
-          )}
+          </div>
         </div>
-      </div>
+      )}
 
       {!isFactory && normalizedPayments.length > 0 && (
         <div className="mb-4 break-inside-avoid border border-slate-200 rounded-xl overflow-hidden">
@@ -567,52 +263,58 @@ export const PrintInvoice = ({
         <span className="text-slate-800">شماره تماس:</span>
         <span className="tabular-nums" dir="ltr">{normalizedProfile.phones}</span>
       </div>
+      </section>
 
       {includeAppendix && appendixEntries.length > 0 && (
-        <section className="page-break-before mt-6">
-          <div className="mb-4 border-b-2 border-slate-800 pb-2">
-            <h2 className="text-lg font-black text-slate-900">پیوست الگوها و خدمات انتخابی</h2>
-            <p className="mt-1 text-[11px] font-bold text-slate-500">هر کارت مربوط به یک ردیف از جدول اصلی فاکتور است.</p>
+        <section className="print-page appendix-page">
+          <div className="mb-3 flex items-end justify-between border-b-2 border-slate-800 pb-2">
+            <div>
+              <h2 className="text-base font-black text-slate-900">پیوست الگوها و خدمات انتخابی</h2>
+              <p className="mt-0.5 text-[10px] font-bold text-slate-500">جزئیات هر ردیف در یک کارت فشرده.</p>
+            </div>
+            <div className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-black text-slate-500">
+              {toPN(appendixEntries.length)} مورد
+            </div>
           </div>
 
-          <div className="appendix-grid grid grid-cols-1 gap-4">
+          <div className="appendix-grid grid grid-cols-1 gap-3">
             {appendixEntries.map((entry) => (
-              <article key={entry.key} className="appendix-card break-inside-avoid rounded-xl border border-slate-300 bg-white p-4">
-                <div className="mb-3 rounded-lg border border-blue-200 bg-blue-50 p-3 text-[12px] font-bold text-slate-700">
-                  <div className="text-blue-700">آیتم ردیف {toPN(entry.rowNumber)} فاکتور</div>
-                  <div className="mt-1">{entry.title}</div>
-                  <div className="mt-1 tabular-nums" dir="ltr">
+              <article key={entry.key} className="appendix-card break-inside-avoid rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+                <div className="mb-2 flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-2.5 py-2 text-[10px] font-bold text-slate-700">
+                  <span className="rounded-full bg-slate-900 px-2 py-0.5 text-white">ردیف {toPN(entry.rowNumber)}</span>
+                  <span className="min-w-0 flex-1 text-sm font-black text-slate-800">{entry.title}</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-slate-600 tabular-nums" dir="ltr">
                     {toPN(entry.width)} × {toPN(entry.height)} | {toPN(entry.count)} عدد
-                  </div>
+                  </span>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <div className="mb-1 text-[11px] font-black text-slate-700">الگو</div>
+                <div className="grid gap-2 md:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
+                  <div className="space-y-2">
                     {entry.hasPattern ? (
                       <PatternPreview pattern={entry.pattern} width={entry.width} height={entry.height} />
                     ) : (
-                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-[10px] font-bold text-slate-500">
+                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2.5 text-[10px] font-bold text-slate-500">
                         برای این آیتم الگو ثبت نشده است.
                       </div>
                     )}
                   </div>
 
-                  <div>
-                    <div className="mb-2 text-[12px] font-black text-slate-700">خدمات و جاساز انتخابی</div>
+                  <div className="space-y-2">
+                    <div className="text-[10px] font-black text-slate-700">خدمات و جاساز انتخابی</div>
                     {entry.services.length > 0 ? (
-                      <div className="grid grid-cols-4 gap-2">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                         {entry.services.map((service) => (
                           <OperationChip
                             key={`${entry.key}-${service.id}`}
                             title={service.title}
                             iconFile={service.iconFile}
                             qty={service.qty}
+                            compact
                           />
                         ))}
                       </div>
                     ) : (
-                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-3 text-[10px] font-bold text-slate-500">
+                      <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-2.5 text-[10px] font-bold text-slate-500">
                         خدمتی برای این آیتم انتخاب نشده است.
                       </div>
                     )}

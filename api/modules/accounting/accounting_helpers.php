@@ -239,11 +239,14 @@ function acc_find_fiscal_year_for_date(PDO $pdo, string $date): ?array
     $stmt = $pdo->prepare(
         'SELECT *
          FROM acc_fiscal_years
-         WHERE start_date <= :date AND end_date >= :date
+         WHERE start_date <= :start_date_check AND end_date >= :end_date_check
          ORDER BY is_default DESC, start_date DESC
          LIMIT 1'
     );
-    $stmt->execute(['date' => $date]);
+    $stmt->execute([
+        'start_date_check' => $date,
+        'end_date_check' => $date,
+    ]);
     $row = $stmt->fetch();
     return is_array($row) ? $row : null;
 }

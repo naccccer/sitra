@@ -4,33 +4,62 @@ import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import { defineConfig, globalIgnores } from 'eslint/config'
 
-const moduleNames = ['sales', 'master-data', 'users-access']
+const moduleNames = [
+  'accounting',
+  'customers',
+  'human-resources',
+  'inventory',
+  'master-data',
+  'production',
+  'sales',
+  'users-access',
+]
 
-const moduleBoundaryOverrides = moduleNames.map((moduleName) => {
-  const restricted = moduleNames
-    .filter((name) => name !== moduleName)
-    .map((name) => `src/modules/${name}/**`)
+const moduleBoundaryOverrides = moduleNames.flatMap((moduleName) => {
+  const otherModules = moduleNames.filter((name) => name !== moduleName)
+  const restricted = otherModules.map((name) => `src/modules/${name}/**`)
+  const aliasRestricted = otherModules.flatMap((name) => [
+    `@/modules/${name}`,
+    `@/modules/${name}/**`,
+  ])
 
-  return {
-    files: [`src/modules/${moduleName}/{components,pages,hooks,domain}/**/*.{js,jsx,ts,tsx}`],
-    rules: {
-      'no-restricted-imports': [
-        'error',
-        {
-          patterns: [
-            {
-              group: restricted,
-              message: 'Cross-module imports are forbidden. Use module public contracts via kernel/services.',
-            },
-            {
-              group: ['**/services/api', 'src/services/api', '@services/api'],
-              message: 'Use module-local service facade instead of importing src/services/api directly.',
-            },
-          ],
-        },
-      ],
+  return [
+    {
+      files: [`src/modules/${moduleName}/**/*.{js,jsx,ts,tsx}`],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: [
+                  ...restricted,
+                  ...aliasRestricted,
+                ],
+                message: 'Cross-module imports are forbidden. Use module public contracts via kernel/services.',
+              },
+            ],
+          },
+        ],
+      },
     },
-  }
+    {
+      files: [`src/modules/${moduleName}/{components,pages,hooks,domain,utils}/**/*.{js,jsx,ts,tsx}`],
+      rules: {
+        'no-restricted-imports': [
+          'error',
+          {
+            patterns: [
+              {
+                group: ['**/services/api', 'src/services/api', '@/services/api', '@services/api'],
+                message: 'Use module-local service facade instead of importing src/services/api directly.',
+              },
+            ],
+          },
+        ],
+      },
+    },
+  ]
 })
 
 export default defineConfig([

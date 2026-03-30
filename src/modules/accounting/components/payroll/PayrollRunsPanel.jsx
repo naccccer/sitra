@@ -1,13 +1,13 @@
-import { useMemo, useState } from 'react'
-import { CheckCircle2, CircleAlert, CircleDot, Trash2 } from 'lucide-react'
+import { useState } from 'react'
 import DateObject from 'react-date-object'
 import persian from 'react-date-object/calendars/persian'
 import gregorian from 'react-date-object/calendars/gregorian'
 import persianFa from 'react-date-object/locales/persian_fa'
 import gregorianEn from 'react-date-object/locales/gregorian_en'
 import DatePicker from 'react-multi-date-picker'
-import { Button, Card, Input } from '@/components/shared/ui'
+import { Button, Input } from '@/components/shared/ui'
 import { buildRunSummary, formatMoney, formatNumber, getPaymentMeta, getRunStatusMeta, monthLabel } from './payrollMath'
+import { PayrollStageFrame } from './PayrollStageFrame'
 
 function getWorkflowMeta(state) {
   if (state === 'finalized') {
@@ -39,32 +39,24 @@ function resolveRunSettlementMeta(run, selectedRun, workspace) {
 
 export function PayrollRunsPanel({
   busyKey,
-  canFinalize,
   canManage,
   onCreateRun,
-  onDeleteRun,
-  onFinalize,
   onSelectRun,
   runs,
   selectedRun,
   selectedRunId,
   workspace,
 }) {
-  const summary = useMemo(() => buildRunSummary(selectedRun || {}), [selectedRun])
-  const readiness = workspace?.finalizationReadiness || { canFinalize: false, blockers: [], counts: {} }
-  const checklist = Array.isArray(workspace?.checklist) ? workspace.checklist : []
-  const finalizing = busyKey === 'action:finalize_period'
+  const createForm = canManage ? <RunCreateForm busy={busyKey === 'run'} onCreateRun={onCreateRun} onSelectRun={onSelectRun} runs={runs} /> : null
 
   return (
-    <Card padding="md" className="space-y-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <div className="text-sm font-black text-slate-900">مرحله ۱: انتخاب یا ایجاد دوره</div>
-          <div className="text-xs font-bold text-slate-500">برای هر ماه یک دوره انتخاب کنید و همان‌جا فیش‌ها را کامل و نهایی کنید.</div>
-        </div>
-        {canManage && <RunCreateForm busy={busyKey === 'run'} onCreateRun={onCreateRun} onSelectRun={onSelectRun} runs={runs} />}
-      </div>
-
+    <PayrollStageFrame
+      stageNumber="1"
+      title="انتخاب یا ایجاد دوره"
+      subtitle="برای هر ماه یک دوره انتخاب کنید و کل جریان ساخت، بازبینی و نهایی‌سازی را داخل همان دوره ادامه دهید."
+      tone="slate"
+      actions={createForm}
+    >
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
         <table className="w-full text-right text-xs">
           <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
@@ -85,7 +77,10 @@ export function PayrollRunsPanel({
               const settlementMeta = resolveRunSettlementMeta(run, selectedRun, workspace)
               return (
                 <tr key={run.id} className={selectedRunId === run.id ? 'bg-slate-50' : 'hover:bg-slate-50'}>
-                  <td className="px-3 py-2 font-black text-slate-900">{run.title || `لیست حقوق ${monthLabel(run.periodKey)}`}</td>
+                  <td className="px-3 py-2">
+                    <div className="font-black text-slate-900">{run.title || `لیست حقوق ${monthLabel(run.periodKey)}`}</div>
+                    <div className="text-[11px] font-bold text-slate-500">{run.periodKey || '-'}</div>
+                  </td>
                   <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${workflowMeta.tone}`}>{workflowMeta.label}</span></td>
                   <td className="px-3 py-2"><span className={`rounded-full border px-2 py-1 text-[10px] font-black ${settlementMeta.tone}`}>{settlementMeta.label}</span></td>
                   <td className="px-3 py-2 font-bold text-slate-600">{formatNumber(runSummary.employees)} نفر</td>
@@ -105,79 +100,7 @@ export function PayrollRunsPanel({
           </tbody>
         </table>
       </div>
-
-      {selectedRun && (
-        <Card padding="md" tone="muted" className="space-y-4">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="text-base font-black text-slate-900">مرحله ۳: نهایی‌سازی دوره</div>
-              <div className="mt-1 text-xs font-bold text-slate-500">{selectedRun.title || `لیست حقوق ${monthLabel(selectedRun.periodKey)}`}</div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                size="sm"
-                variant="primary"
-                disabled={!canFinalize || finalizing || !readiness.canFinalize}
-                onClick={() => onFinalize(selectedRun.id)}
-              >
-                {finalizing ? 'در حال نهایی‌سازی...' : 'نهایی‌سازی دوره'}
-              </Button>
-              {canManage && onDeleteRun && (
-                <Button
-                  size="icon"
-                  variant="danger"
-                  disabled={busyKey === 'run-delete'}
-                  title="حذف دوره"
-                  aria-label="حذف دوره"
-                  onClick={() => {
-                    const ok = window.confirm('این دوره و فیش‌های پیش‌نویس آن حذف شود؟')
-                    if (ok) onDeleteRun(selectedRun.id)
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-2 sm:grid-cols-4">
-            <SummaryChip label="پرسنل" value={formatNumber(summary.employees)} />
-            <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
-            <SummaryChip label="جمع پرداخت" value={formatMoney(summary.paid)} />
-            <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-white p-3">
-            <div className="mb-2 text-xs font-black text-slate-700">چک‌لیست آمادگی نهایی‌سازی</div>
-            <div className="space-y-2">
-              {checklist.map((item) => (
-                <div key={item.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
-                  <div className="flex items-center gap-2 font-bold text-slate-700">
-                    {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <CircleAlert className="h-4 w-4 text-amber-600" />}
-                    <span>{item.label}</span>
-                  </div>
-                  <span className="font-black text-slate-900">{formatNumber(item.value || 0)}</span>
-                </div>
-              ))}
-              {checklist.length === 0 && (
-                <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-                  <CircleDot className="h-4 w-4" />
-                  داده‌ای برای چک‌لیست این دوره موجود نیست.
-                </div>
-              )}
-            </div>
-          </div>
-
-          {(readiness.blockers || []).length > 0 && (
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
-              {(readiness.blockers || []).map((blocker) => (
-                <div key={`${blocker.code}:${blocker.step}`}>{blocker.message}</div>
-              ))}
-            </div>
-          )}
-        </Card>
-      )}
-    </Card>
+    </PayrollStageFrame>
   )
 }
 
@@ -281,8 +204,4 @@ function toShamsiMonthKey(value) {
   } catch {
     return ''
   }
-}
-
-function SummaryChip({ label, value }) {
-  return <div className="rounded-2xl border border-slate-200 bg-white px-3 py-3 text-center"><div className="text-[11px] font-bold text-slate-500">{label}</div><div className="mt-1 text-sm font-black text-slate-900">{value}</div></div>
 }

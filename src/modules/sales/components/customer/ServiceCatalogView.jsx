@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
 import { X, CheckCircle2 } from 'lucide-react';
+import { resolvePublicAssetUrl } from '@/utils/url';
 
 const OPERATION_ICON_BASE_PATH = '/icons/operations';
 
 const OperationIcon = ({ title, iconFile }) => {
   const [hasError, setHasError] = useState(false);
-  const iconPath = iconFile ? `${OPERATION_ICON_BASE_PATH}/${iconFile}` : null;
+  const iconPath = resolvePublicAssetUrl(iconFile, OPERATION_ICON_BASE_PATH);
 
   if (!iconPath || hasError) {
     return (

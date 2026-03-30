@@ -1,37 +1,34 @@
-﻿# AI Playbook
+# AI Playbook
+
+## Read Order
+1. `ARCHITECTURE.md`
+2. `MODULE_CONTRACTS.md`
+3. `docs/code-map.md`
+4. `docs/guardrails.md`
+5. `AGENTS.md`
 
 ## Canonical Commands
-
-- Install: `npm ci --prefer-offline --no-audit --no-fund` (or `npm run deps:install`)
+- Install: `npm ci --prefer-offline --no-audit --no-fund`
 - Fast validation: `npm run verify:fast`
 - Safe validation: `npm run verify:safe`
-- All tests: `npm run test:all`
-- Generate contract types: `npm run contracts:types`
-- File budget check: `npm run check:file-size`
-- Naming check: `npm run check:naming`
+- Full tests: `npm run test:all`
+- Contract types: `npm run contracts:types`
 
-## Preferred Edit Paths
+## Guardrail Summary
+- Hard guardrails: security, auth/csrf, prepared SQL, contract-first boundaries, data ownership, locked statuses/roles.
+- Repository defaults: file size, naming, canonical edit paths, module-local service facades, doc updates for contract-sensitive changes.
+- Temporary rules: phase plans, migration runbooks, and roadmap items.
 
-- Business UI/API changes: `src/modules/*` and `api/modules/*`
-- Shared runtime: `src/kernel/*`, `src/services/*`, `src/hooks/*`
+## Working Pattern
+1. Read the current ownership map before editing.
+2. Change the owning module first.
+3. Keep wrappers/adapters thin.
+4. Update authoritative docs when contracts or module ownership guidance changes.
+5. Pick `verify:fast` or `verify:safe` based on scope.
 
-## Do Not Touch (Without Explicit Scope)
-
-- `api/_common.php` guard semantics
-- Status enum contract: `pending`, `processing`, `delivered`, `archived`
-- Module boundary rules in lint/check scripts
-
-## High-Risk Pitfalls
-
-- Direct module-to-module imports (frontend/backend)
-- Missing CSRF on mutating endpoints
-- Role/permission key drift (`users-access` vs `users_access`)
-- File growth above 300 lines without extraction
-- Increasing an allowlisted oversized file without splitting/reducing scope
-
-## Recommended Edit Pattern
-
-1. Update module-local service or handler first.
-2. Keep adapter endpoints/wrappers thin.
-3. Update contracts/docs/examples in same change.
-4. Run `verify:fast` or `verify:safe` based on scope.
+## Documentation Refresh Stage
+Include a doc sync pass whenever current code exposes drift in:
+- active/inactive module lists
+- source-of-truth notes
+- canonical edit paths
+- enforcement behavior vs documented policy
