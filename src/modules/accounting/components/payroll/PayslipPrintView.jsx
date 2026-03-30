@@ -50,15 +50,61 @@ function renderRows(rows, payslip, catalog, total = null) {
   return `${body}${totalRow}`
 }
 
-function buildPrintHtml({ assetBase, catalog, groupedCatalog, paperSize = 'a4', payslip, run, settings, totals }) {
-  const paper = String(paperSize).toLowerCase() === 'a5' ? 'a5' : 'a4'
-  const pageSize = paper === 'a5' ? 'A5' : 'A4'
+function buildSheetHtml({ catalog, groupedCatalog, payslip, run, settings, totals }) {
   const noteText = resolveNotes(payslip, settings)
   const noteSection = noteText
     ? `<section class="notes"><div class="notes-title">توضیحات</div><div class="notes-body">${escapeHtml(noteText)}</div></section>`
     : ''
   const signer = signatory(settings)
   const issueDate = formatMaybeDate(run?.issuedAt || payslip.issuedAt)
+  return `
+  <main class="sheet">
+    <section class="header">
+      <div class="company">${escapeHtml(companyName(settings))}</div>
+      <div class="sub">شناسه / کد کارگاهی: ${escapeHtml(companyId(settings))}</div>
+      <div class="sub">فیش حقوقی ماه ${escapeHtml(monthLabel(run?.periodKey))}</div>
+      <div class="chips">
+        <div class="chip"><div class="chip-label">نام پرسنل</div><div class="chip-value">${escapeHtml(payslip.employeeName || '-')}</div></div>
+        <div class="chip"><div class="chip-label">کد پرسنلی</div><div class="chip-value">${escapeHtml(payslip.employeeCode || '-')}</div></div>
+        <div class="chip"><div class="chip-label">واحد</div><div class="chip-value">${escapeHtml(payslip.department || '-')}</div></div>
+        <div class="chip"><div class="chip-label">تاریخ صدور</div><div class="chip-value">${escapeHtml(issueDate)}</div></div>
+      </div>
+    </section>
+    <section class="tables">
+      <div class="table-wrap"><div class="table-title">کارکرد و اطلاعات</div><table><tbody>${renderRows([...groupedCatalog.info, ...groupedCatalog.work], payslip, catalog)}</tbody></table></div>
+      <div class="table-wrap"><div class="table-title">دریافتی ها</div><table><tbody>${renderRows(groupedCatalog.earning, payslip, catalog, totals.gross)}</tbody></table></div>
+    </section>
+    <section class="tables">
+      <div class="table-wrap"><div class="table-title">کسورات</div><table><tbody>${renderRows(groupedCatalog.deduction, payslip, catalog, totals.deductions)}</tbody></table></div>
+      <div class="table-wrap">
+        <div class="table-title">خلاصه مالی</div>
+        <table>
+          <tbody>
+            <tr><td>جمع دریافتی</td><td class="num">${escapeHtml(formatMoney(totals.gross))}</td></tr>
+            <tr><td>جمع کسورات</td><td class="num">${escapeHtml(formatMoney(totals.deductions))}</td></tr>
+            <tr class="total-row"><td>خالص پرداختی</td><td class="num">${escapeHtml(formatMoney(totals.net))}</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+    ${noteSection}
+    <section class="signatures">
+      <div class="sign"><div class="sign-title">امضای کارمند</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(payslip.employeeName || '....................')}</div></div>
+      <div class="sign"><div class="sign-title">${escapeHtml(settings.signatureLabel || 'امضا و تایید')}</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(signer.name)}</div><div class="sign-sub">${escapeHtml(signer.title)}</div></div>
+      <div class="sign"><div class="sign-title">مهر و امضای واحد مالی</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(companyName(settings))}</div><div class="sign-sub">${escapeHtml(companyId(settings))}</div></div>
+    </section>
+  </main>`
+}
+
+function buildPrintHtml({ assetBase, catalog, groupedCatalog, paperSize = 'a4', payslips = [], run, settings }) {
+  const paper = String(paperSize || 'a4').toLowerCase() === 'a5' ? 'a5' : 'a4'
+  const pageSize = paper === 'a5' ? 'A5' : 'A4'
+  const sheets = payslips.map((payslip) => {
+    const fallback = calculatePayslipTotals(payslip)
+    const catalogTotals = calculateCatalogTotals(payslip, catalog)
+    const totals = catalogTotals.gross || catalogTotals.deductions ? catalogTotals : fallback
+    return buildSheetHtml({ catalog, groupedCatalog, payslip, run, settings, totals })
+  }).join('')
 
   return `<!doctype html>
 <html lang="fa" dir="rtl">
@@ -76,6 +122,7 @@ function buildPrintHtml({ assetBase, catalog, groupedCatalog, paperSize = 'a4', 
     html, body { margin: 0; padding: 0; background: #fff; color: var(--ink); font-family: 'Vazirmatn', Tahoma, Arial, sans-serif; }
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     .sheet { width: 188mm; margin: 0 auto; padding: 3mm 2mm 1mm; }
+    .sheet + .sheet { break-before: page; page-break-before: always; }
     .header { position: relative; padding: 3.2mm 3mm 2.2mm; background: linear-gradient(180deg, var(--surface-strong), #fff 75%); border: 1px solid var(--line); border-radius: 5mm; break-inside: avoid; page-break-inside: avoid; }
     .header::before { content: ''; position: absolute; inset: 0 0 auto; height: 2.2mm; background: var(--ink); border-radius: 5mm 5mm 0 0; }
     .company { font-size: 17px; font-weight: 900; margin-top: 1.2mm; }
@@ -126,64 +173,26 @@ function buildPrintHtml({ assetBase, catalog, groupedCatalog, paperSize = 'a4', 
   </style>
 </head>
 <body data-paper-size="${paper}">
-  <main class="sheet">
-    <section class="header">
-      <div class="company">${escapeHtml(companyName(settings))}</div>
-      <div class="sub">شناسه / کد کارگاهی: ${escapeHtml(companyId(settings))}</div>
-      <div class="sub">فیش حقوقی ماه ${escapeHtml(monthLabel(run?.periodKey))}</div>
-      <div class="chips">
-        <div class="chip"><div class="chip-label">نام پرسنل</div><div class="chip-value">${escapeHtml(payslip.employeeName || '-')}</div></div>
-        <div class="chip"><div class="chip-label">کد پرسنلی</div><div class="chip-value">${escapeHtml(payslip.employeeCode || '-')}</div></div>
-        <div class="chip"><div class="chip-label">واحد</div><div class="chip-value">${escapeHtml(payslip.department || '-')}</div></div>
-        <div class="chip"><div class="chip-label">تاریخ صدور</div><div class="chip-value">${escapeHtml(issueDate)}</div></div>
-      </div>
-    </section>
-    <section class="tables">
-      <div class="table-wrap"><div class="table-title">کارکرد و اطلاعات</div><table><tbody>${renderRows([...groupedCatalog.info, ...groupedCatalog.work], payslip, catalog)}</tbody></table></div>
-      <div class="table-wrap"><div class="table-title">دریافتی ها</div><table><tbody>${renderRows(groupedCatalog.earning, payslip, catalog, totals.gross)}</tbody></table></div>
-    </section>
-    <section class="tables">
-      <div class="table-wrap"><div class="table-title">کسورات</div><table><tbody>${renderRows(groupedCatalog.deduction, payslip, catalog, totals.deductions)}</tbody></table></div>
-      <div class="table-wrap">
-        <div class="table-title">خلاصه مالی</div>
-        <table>
-          <tbody>
-            <tr><td>جمع دریافتی</td><td class="num">${escapeHtml(formatMoney(totals.gross))}</td></tr>
-            <tr><td>جمع کسورات</td><td class="num">${escapeHtml(formatMoney(totals.deductions))}</td></tr>
-            <tr class="total-row"><td>خالص پرداختی</td><td class="num">${escapeHtml(formatMoney(totals.net))}</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-    ${noteSection}
-    <section class="signatures">
-      <div class="sign"><div class="sign-title">امضای کارمند</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(payslip.employeeName || '....................')}</div></div>
-      <div class="sign"><div class="sign-title">${escapeHtml(settings.signatureLabel || 'امضا و تایید')}</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(signer.name)}</div><div class="sign-sub">${escapeHtml(signer.title)}</div></div>
-      <div class="sign"><div class="sign-title">مهر و امضای واحد مالی</div><div class="sign-line"></div><div class="sign-name">${escapeHtml(companyName(settings))}</div><div class="sign-sub">${escapeHtml(companyId(settings))}</div></div>
-    </section>
-  </main>
+  ${sheets}
 </body>
 </html>`
 }
 
-export function PayslipPrintView({ catalog = [], onClose, paperSize = 'a4', payslip, run, settings = {} }) {
+export function PayslipPrintView({ catalog = [], onClose, paperSize = 'a4', payslip, payslips = [], run, settings = {} }) {
   const groupedCatalog = useMemo(() => splitCatalogByType(catalog), [catalog])
 
   useEffect(() => {
-    if (!payslip || typeof document === 'undefined') return undefined
+    const printItems = Array.isArray(payslips) && payslips.length > 0 ? payslips : (payslip ? [payslip] : [])
+    if (printItems.length === 0 || typeof document === 'undefined') return undefined
     const normalizedPaperSize = String(paperSize || 'a4').toLowerCase() === 'a5' ? 'a5' : 'a4'
-    const fallback = calculatePayslipTotals(payslip)
-    const catalogTotals = calculateCatalogTotals(payslip, catalog)
-    const totals = catalogTotals.gross || catalogTotals.deductions ? catalogTotals : fallback
     const html = buildPrintHtml({
       assetBase: window.location.origin,
       catalog,
       groupedCatalog,
       paperSize: normalizedPaperSize,
-      payslip,
+      payslips: printItems,
       run,
       settings,
-      totals,
     })
     const frame = document.createElement('iframe')
     frame.setAttribute('title', 'payslip-print-frame')
@@ -223,7 +232,7 @@ export function PayslipPrintView({ catalog = [], onClose, paperSize = 'a4', pays
         try {
           await doc.fonts.ready
         } catch {
-          // Ignore font promise errors and continue printing.
+          // Ignore font loading errors and continue printing.
         }
       }
       win.focus()
@@ -236,7 +245,7 @@ export function PayslipPrintView({ catalog = [], onClose, paperSize = 'a4', pays
     fallbackCloseTimer = window.setTimeout(finalize, 1500)
     loadTimer = window.setTimeout(triggerPrint, 150)
     return () => teardown()
-  }, [catalog, groupedCatalog, onClose, paperSize, payslip, run, settings])
+  }, [catalog, groupedCatalog, onClose, paperSize, payslip, payslips, run, settings])
 
   return null
 }

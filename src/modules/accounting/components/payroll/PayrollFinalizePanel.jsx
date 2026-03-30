@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, CircleAlert, CircleDot, RotateCcw, Trash2 } from 'lucide-react'
 import { Button } from '@/components/shared/ui'
-import { buildRunSummary, formatMoney, formatNumber, monthLabel } from './payrollMath'
+import { buildRunSummary, formatMoney, formatNumber } from './payrollMath'
 import { PayrollConfirmModal } from './PayrollConfirmModal'
 import { PayrollStageFrame } from './PayrollStageFrame'
 
@@ -52,7 +52,6 @@ export function PayrollFinalizePanel({ busyKey, canFinalize, canManage, canReope
     <PayrollStageFrame
       stageNumber="3"
       title="نهایی‌سازی دوره"
-      subtitle={`پس از کنترل نهایی، این دوره را صادر کنید تا وارد مدیریت پرداخت‌ها شود.${selectedRun.title ? ` ${selectedRun.title}` : ` لیست حقوق ${monthLabel(selectedRun.periodKey)}`}`}
       tone="emerald"
       actions={(
         <>
@@ -92,45 +91,49 @@ export function PayrollFinalizePanel({ busyKey, canFinalize, canManage, canReope
         </>
       )}
     >
-      <div className="grid gap-2 sm:grid-cols-4">
-        <SummaryChip label="پرسنل" value={formatNumber(summary.employees)} />
-        <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
-        <SummaryChip label="جمع پرداخت" value={formatMoney(summary.paid)} />
-        <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />
-      </div>
+      <div className="grid gap-3 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
+        <div className="space-y-3">
+          <div className="grid gap-2 sm:grid-cols-2">
+            <SummaryChip label="پرسنل" value={formatNumber(summary.employees)} />
+            <SummaryChip label="جمع خالص" value={formatMoney(summary.net)} />
+            <SummaryChip label="جمع پرداخت" value={formatMoney(summary.paid)} />
+            <SummaryChip label="مانده پرداخت" value={formatMoney(summary.due)} />
+          </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-3">
-        <div className="mb-2 text-xs font-black text-slate-700">چک‌لیست آمادگی نهایی‌سازی</div>
-        <div className="space-y-2">
-          {checklist.map((item) => (
-            <div key={item.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
-              <div className="flex items-center gap-2 font-bold text-slate-700">
-                {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <CircleAlert className="h-4 w-4 text-amber-600" />}
-                <span>{item.label}</span>
-              </div>
-              <span className="font-black text-slate-900">{formatNumber(item.value || 0)}</span>
-            </div>
-          ))}
-          {checklist.length === 0 && (
-            <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
-              <CircleDot className="h-4 w-4" />
-              داده‌ای برای چک‌لیست این دوره موجود نیست.
+          {(readiness.blockers || []).length > 0 && (
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
+              {(readiness.blockers || []).map((blocker) => (
+                <div key={`${blocker.code}:${blocker.step}`}>{blocker.message}</div>
+              ))}
             </div>
           )}
+
+          {isFinalized && !canReopen && reopenDisabledReason && (
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">{reopenDisabledReason}</div>
+          )}
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-3">
+          <div className="mb-2 text-xs font-black text-slate-700">چک‌لیست آمادگی نهایی‌سازی</div>
+          <div className="space-y-2">
+            {checklist.map((item) => (
+              <div key={item.id} className="flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs">
+                <div className="flex items-center gap-2 font-bold text-slate-700">
+                  {item.ok ? <CheckCircle2 className="h-4 w-4 text-emerald-600" /> : <CircleAlert className="h-4 w-4 text-amber-600" />}
+                  <span>{item.label}</span>
+                </div>
+                <span className="font-black text-slate-900">{formatNumber(item.value || 0)}</span>
+              </div>
+            ))}
+            {checklist.length === 0 && (
+              <div className="flex items-center gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-500">
+                <CircleDot className="h-4 w-4" />
+                داده‌ای برای چک‌لیست این دوره موجود نیست.
+              </div>
+            )}
+          </div>
         </div>
       </div>
-
-      {(readiness.blockers || []).length > 0 && (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-700">
-          {(readiness.blockers || []).map((blocker) => (
-            <div key={`${blocker.code}:${blocker.step}`}>{blocker.message}</div>
-          ))}
-        </div>
-      )}
-
-      {isFinalized && !canReopen && reopenDisabledReason && (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-bold text-slate-600">{reopenDisabledReason}</div>
-      )}
 
       {confirmConfig && (
         <PayrollConfirmModal

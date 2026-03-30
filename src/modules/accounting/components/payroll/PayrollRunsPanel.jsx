@@ -5,9 +5,10 @@ import gregorian from 'react-date-object/calendars/gregorian'
 import persianFa from 'react-date-object/locales/persian_fa'
 import gregorianEn from 'react-date-object/locales/gregorian_en'
 import DatePicker from 'react-multi-date-picker'
-import { ArrowLeft, Plus, X } from 'lucide-react'
+import { ArrowLeft, Plus, Trash2, X } from 'lucide-react'
 import { Button, Input } from '@/components/shared/ui'
 import { buildRunSummary, formatMoney, formatNumber, getPaymentMeta, getRunStatusMeta } from './payrollMath'
+import { PayrollConfirmModal } from './PayrollConfirmModal'
 import { formatPayrollPeriodTitle } from './payrollPeriodTitle'
 import { PayrollStageFrame } from './PayrollStageFrame'
 
@@ -29,8 +30,9 @@ function resolveRunSettlementMeta(run, selectedRun, workspace) {
   return getPaymentMeta(due <= 0 ? 'paid' : due >= net ? 'unpaid' : 'partial')
 }
 
-export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onSelectRun, runs, selectedRun, selectedRunId, workspace }) {
+export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onDeleteRun, onSelectRun, runs, selectedRun, selectedRunId, workspace }) {
   const [query, setQuery] = useState('')
+  const [pendingDeleteRun, setPendingDeleteRun] = useState(null)
   const normalizedQuery = String(query || '').trim().toLowerCase()
   const filteredRuns = useMemo(() => (
     normalizedQuery
@@ -45,7 +47,6 @@ export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onSelectRun,
   return (
     <PayrollStageFrame
       title="دوره‌های حقوق"
-      subtitle="ایجاد ماه جدید، مرور دوره‌های قبلی و ورود به فضای کار از همین صفحه انجام می‌شود."
       actions={(
         <div className="flex flex-wrap items-center gap-2">
           <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جستجوی دوره" className="sm:w-44" />
@@ -63,7 +64,7 @@ export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onSelectRun,
               <th className="px-3 py-2">پرسنل</th>
               <th className="px-3 py-2">خالص</th>
               <th className="px-3 py-2">مانده</th>
-              <th className="px-3 py-2 text-center">ورود</th>
+              <th className="px-3 py-2 text-center">عملیات</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -84,10 +85,24 @@ export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onSelectRun,
                   <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.net)}</td>
                   <td className="px-3 py-2 font-black text-slate-900">{formatMoney(runSummary.due)}</td>
                   <td className="px-3 py-2 text-center">
-                    <Button size="sm" variant={isSelected ? 'primary' : 'secondary'} onClick={() => onSelectRun(run.id)} className="gap-1.5">
-                      <ArrowLeft className="h-4 w-4" />
-                      {isSelected ? 'انتخاب شده' : 'انتخاب'}
-                    </Button>
+                    <div className="flex items-center justify-center gap-2">
+                      <Button size="sm" variant={isSelected ? 'primary' : 'secondary'} onClick={() => onSelectRun(run.id)} className="gap-1.5">
+                        <ArrowLeft className="h-4 w-4" />
+                        {isSelected ? 'انتخاب شده' : 'انتخاب'}
+                      </Button>
+                      {canManage && onDeleteRun ? (
+                        <Button
+                          size="icon"
+                          variant="danger"
+                          disabled={busyKey === 'run-delete'}
+                          title="حذف دوره"
+                          aria-label="حذف دوره"
+                          onClick={() => setPendingDeleteRun(run)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      ) : null}
+                    </div>
                   </td>
                 </tr>
               )
@@ -102,6 +117,22 @@ export function PayrollRunsPanel({ busyKey, canManage, onCreateRun, onSelectRun,
           </tbody>
         </table>
       </div>
+      <PayrollConfirmModal
+        isOpen={Boolean(pendingDeleteRun)}
+        onClose={() => setPendingDeleteRun(null)}
+        onConfirm={async () => {
+          if (!pendingDeleteRun?.id || !onDeleteRun) return
+          const runId = pendingDeleteRun.id
+          setPendingDeleteRun(null)
+          await onDeleteRun(runId)
+        }}
+        title="حذف دوره"
+        description="این دوره و فیش‌های پیش‌نویس آن حذف می‌شوند."
+        confirmLabel="حذف دوره"
+        confirmVariant="danger"
+        icon={Trash2}
+        body={`آیا حذف دوره ${formatPayrollPeriodTitle(pendingDeleteRun?.periodKey || pendingDeleteRun?.title || '')} را تایید می‌کنید؟`}
+      />
     </PayrollStageFrame>
   )
 }

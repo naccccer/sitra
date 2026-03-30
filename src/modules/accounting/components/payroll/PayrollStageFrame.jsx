@@ -5,11 +5,11 @@ export function PayrollStageFrame({ actions = null, children, stageNumber, subti
 
   return (
     <Card padding="none" className="overflow-hidden border-slate-200 shadow-sm">
-      <div className={`rounded-t-2xl border-b border-slate-200 px-4 py-4 ${headerClassName}`}>
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="flex items-start gap-3">
+      <div className={`rounded-t-2xl border-b border-slate-200 px-4 py-3 ${headerClassName}`}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             {stageNumber ? (
-              <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-black text-white shadow-sm">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-sm font-black text-white shadow-sm">
                 {stageNumber}
               </div>
             ) : null}

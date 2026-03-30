@@ -48,6 +48,7 @@ export function PayrollPanel({ session }) {
   const [editorPayslipId, setEditorPayslipId] = useState('')
   const [manualDraft, setManualDraft] = useState(null)
   const [activePayslipId, setActivePayslipId] = useState('')
+  const [printPayslips, setPrintPayslips] = useState([])
   const [paymentPayslipId, setPaymentPayslipId] = useState('')
   const [showSettingsModal, setShowSettingsModal] = useState(false)
   const [showPeriodsModal, setShowPeriodsModal] = useState(false)
@@ -60,6 +61,7 @@ export function PayrollPanel({ session }) {
   const editorPayslip = resolveScopedPayslip(selectedRun, editorPayslipId)
   const editorModel = editorPayslip || manualDraft
   const printModel = resolveScopedPayslip(selectedRun, activePayslipId)
+  const printQueue = printPayslips.length > 0 ? printPayslips : (printModel ? [printModel] : [])
   const currentRunLabel = selectedRun?.title || 'هنوز دوره‌ای انتخاب نشده است'
   const currentRunMeta = selectedRun?.periodKey ? `ماه ${selectedRun.periodKey}` : 'برای شروع، یک دوره را انتخاب یا ایجاد کنید.'
   const issuedPayslips = useMemo(() => (Array.isArray(selectedRun?.payslips) ? selectedRun.payslips.filter((item) => item.status === 'issued') : []), [selectedRun])
@@ -141,7 +143,6 @@ export function PayrollPanel({ session }) {
       <PayrollStageFrame
         stageNumber="1"
         title="انتخاب یا ایجاد دوره"
-        subtitle="ابتدا دوره فعال را مشخص کنید، سپس ادامه ساخت فیش و نهایی‌سازی در همین صفحه انجام می‌شود."
         actions={(
           <Button size="sm" variant="secondary" onClick={() => setShowPeriodsModal(true)}>
             {selectedRun ? 'تغییر یا ایجاد دوره' : 'انتخاب دوره'}
@@ -160,7 +161,7 @@ export function PayrollPanel({ session }) {
 
       {selectedRun && resolvedView === 'workflow' ? (
         <>
-          <PayrollStageFrame stageNumber="2" title="ورود و بازبینی اطلاعات" subtitle="ورود، اصلاح و کنترل فیش‌ها در یک مرحله انجام می‌شود." tone="blue">
+          <PayrollStageFrame stageNumber="2" title="ورود و بازبینی اطلاعات" tone="blue">
             <PayrollImportPanel
               busy={payroll.busyKey === 'import'}
               catalog={catalog}
@@ -183,6 +184,12 @@ export function PayrollPanel({ session }) {
               onPaperSizeChange={setPaperSize}
               onPrint={(payslip) => {
                 setActivePayslipId(payslip.id)
+                setPrintPayslips([])
+                setShowPrint(true)
+              }}
+              onPrintMany={(payslips) => {
+                setActivePayslipId('')
+                setPrintPayslips(payslips.map((item) => ({ ...item, runId: selectedRun?.id })))
                 setShowPrint(true)
               }}
               paperSize={paperSize}
@@ -227,6 +234,7 @@ export function PayrollPanel({ session }) {
           busyKey={payroll.busyKey}
           canManage={canManage}
           onCreateRun={handleCreateRun}
+          onDeleteRun={payroll.deleteRun}
           onSelectRun={handleSelectRun}
           runs={payroll.runs}
           selectedRun={selectedRun}
@@ -268,7 +276,7 @@ export function PayrollPanel({ session }) {
         />
       ) : null}
 
-      {showPrint && printModel ? <PayslipPrintView catalog={catalog} paperSize={paperSize} onClose={() => setShowPrint(false)} payslip={printModel} run={selectedRun} settings={payroll.settings} /> : null}
+      {showPrint && printQueue.length > 0 ? <PayslipPrintView catalog={catalog} paperSize={paperSize} onClose={() => { setShowPrint(false); setPrintPayslips([]) }} payslip={printQueue[0]} payslips={printQueue} run={selectedRun} settings={payroll.settings} /> : null}
     </div>
   )
 }
