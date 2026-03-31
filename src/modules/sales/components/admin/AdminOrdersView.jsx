@@ -1,6 +1,6 @@
-﻿import React from 'react';
+import React from 'react';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
-import { Button } from '@/components/shared/ui';
+import { Button, PaginationBar } from '@/components/shared/ui';
 import { PatternFilesModal } from '@/modules/sales/components/admin/PatternFilesModal';
 import { OrdersPaymentManagerModal } from '@/modules/sales/components/admin/orders-workspace/OrdersPaymentManagerModal';
 import { OrdersWorkspaceTable } from '@/modules/sales/components/admin/orders-workspace/OrdersWorkspaceTable';
@@ -16,6 +16,7 @@ export const AdminOrdersView = ({
   onLoadMoreOrders,
   catalog,
   profile,
+  onCreateOrder = null,
   onEditOrder,
 }) => {
   const paymentManager = useOrdersPaymentManager({ orders, setOrders, catalog });
@@ -36,10 +37,12 @@ export const AdminOrdersView = ({
         searchQuery={workflow.searchQuery}
         onSearchChange={workflow.setSearchQuery}
         tabCounts={workflow.tabCounts}
+        filteredCount={workflow.filteredOrders.length}
+        createAction={onCreateOrder ? <Button action="create" showActionIcon size="lg" onClick={onCreateOrder}>سفارش جدید</Button> : null}
       />
 
       <OrdersWorkspaceTable
-        filteredOrders={workflow.filteredOrders}
+        filteredOrders={workflow.paginatedOrders}
         expandedOrderId={workflow.expandedOrderId}
         onToggleOrderExpansion={workflow.toggleOrderExpansion}
         onOpenPaymentManager={paymentManager.openPaymentManager}
@@ -51,16 +54,22 @@ export const AdminOrdersView = ({
         onPrintFactoryOrder={workflow.printFactoryOrder}
         onPrintCustomerOrder={workflow.printCustomerOrder}
         catalog={catalog}
+        footer={(
+          <PaginationBar
+            page={workflow.page}
+            totalPages={workflow.totalPages}
+            totalCount={workflow.filteredOrders.length}
+            pageSize={workflow.pageSize}
+            pageSizeOptions={[10, 25, 50]}
+            onPageChange={workflow.setPage}
+            onPageSizeChange={workflow.setPageSize}
+          />
+        )}
       />
 
       {hasMoreOrders && (
         <div className="print-hide flex justify-center pb-4 pt-2">
-          <Button
-            onClick={workflow.handleLoadMoreOrders}
-            disabled={workflow.isLoadingMore}
-            variant="secondary"
-            size="lg"
-          >
+          <Button onClick={workflow.handleLoadMoreOrders} disabled={workflow.isLoadingMore} action="reload" showActionIcon variant="secondary" size="lg" loading={workflow.isLoadingMore}>
             {workflow.isLoadingMore ? 'در حال بارگذاری...' : 'بارگذاری سفارش‌های بیشتر'}
           </Button>
         </div>

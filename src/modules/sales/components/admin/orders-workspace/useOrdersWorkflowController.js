@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { normalizePayment } from '@/modules/sales/domain/invoice';
 import { salesApi } from '@/modules/sales/services/salesApi';
 import {
@@ -39,6 +39,8 @@ export const useOrdersWorkflowController = ({
   const [viewingOrderType, setViewingOrderType] = useState('factory');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [patternFilesContext, setPatternFilesContext] = useState(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const updateOrderStatus = async (id, status, expectedUpdatedAt = null) => {
     const previousOrder = orders.find((candidate) => candidate.id === id);
@@ -174,6 +176,21 @@ export const useOrdersWorkflowController = ({
     return matchesTab && matchesSearch;
   }), [orders, activeOrdersTab, searchQuery]);
 
+  const totalPages = Math.max(1, Math.ceil(filteredOrders.length / pageSize));
+
+  useEffect(() => {
+    setPage(1);
+  }, [activeOrdersTab, searchQuery, pageSize]);
+
+  useEffect(() => {
+    setPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
+
+  const paginatedOrders = useMemo(() => {
+    const startIndex = (page - 1) * pageSize;
+    return filteredOrders.slice(startIndex, startIndex + pageSize);
+  }, [filteredOrders, page, pageSize]);
+
   const tabCounts = useMemo(() => {
     const seed = { all: 0, pending: 0, processing: 0, delivered: 0, archived: 0 };
     return orders.reduce((acc, order) => {
@@ -198,7 +215,13 @@ export const useOrdersWorkflowController = ({
     patternFilesContext,
     setPatternFilesContext,
     filteredOrders,
+    paginatedOrders,
     tabCounts,
+    page,
+    pageSize,
+    totalPages,
+    setPage,
+    setPageSize,
     updateOrderWorkflowStage,
     handleArchiveOrder,
     deleteArchivedOrder,

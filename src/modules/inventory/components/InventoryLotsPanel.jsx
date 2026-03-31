@@ -1,5 +1,21 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button } from '@/components/shared/ui'
+import {
+  Badge,
+  Button,
+  DataTable,
+  DataTableActions,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  DataTableState,
+  FilterRow,
+  IconButton,
+  InlineAlert,
+  Select,
+  WorkspaceToolbar,
+} from '@/components/shared/ui'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const EMPTY_FORM = { id: null, productId: '', lotCode: '', expiryDate: '', notes: '' }
@@ -28,10 +44,7 @@ export const InventoryLotsPanel = ({ session }) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await inventoryApi.fetchV2Lots({
-        productId: productFilter || undefined,
-        includeInactive,
-      })
+      const res = await inventoryApi.fetchV2Lots({ productId: productFilter || undefined, includeInactive })
       setRows(Array.isArray(res?.lots) ? res.lots : [])
     } catch {
       setError('خطا در بارگذاری لات‌ها')
@@ -43,14 +56,11 @@ export const InventoryLotsPanel = ({ session }) => {
   useEffect(() => { void load() }, [load])
 
   const openCreate = () => { setFormError(null); setModal({ ...EMPTY_FORM, productId: productFilter }) }
-  const openEdit = (lot) => {
-    setFormError(null)
-    setModal({ id: lot.id, productId: lot.productId, lotCode: lot.lotCode, expiryDate: lot.expiryDate ?? '', notes: lot.notes })
-  }
+  const openEdit = (lot) => { setFormError(null); setModal({ id: lot.id, productId: lot.productId, lotCode: lot.lotCode, expiryDate: lot.expiryDate ?? '', notes: lot.notes }) }
   const closeModal = () => { setModal(null); setFormError(null) }
 
-  const handleSave = async (e) => {
-    e.preventDefault()
+  const handleSave = async (event) => {
+    event.preventDefault()
     setFormError(null)
     if (!modal.productId || !modal.lotCode.trim()) { setFormError('محصول و کد لات اجباری است.'); return }
     setSaving(true)
@@ -76,102 +86,98 @@ export const InventoryLotsPanel = ({ session }) => {
     }
   }
 
-  const productName = (id) => products.find((p) => String(p.id) === String(id))?.name ?? id
+  const productName = (id) => products.find((product) => String(product.id) === String(id))?.name ?? id
 
   return (
-    <div className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <select className="rounded border border-slate-300 px-2 py-1 text-sm" value={productFilter} onChange={(e) => setProductFilter(e.target.value)}>
-          <option value="">همه محصولات</option>
-          {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-        <label className="flex items-center gap-1 text-xs text-slate-600">
-          <input type="checkbox" checked={includeInactive} onChange={(e) => setIncludeInactive(e.target.checked)} />
-          نمایش غیرفعال
-        </label>
-        {canWrite && <Button size="sm" variant="primary" onClick={openCreate}>+ لات جدید</Button>}
-        <Button size="sm" variant="ghost" onClick={() => void load()}>بارگذاری مجدد</Button>
-      </div>
+    <div className="space-y-4" dir="rtl">
+      <WorkspaceToolbar
+        actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={openCreate}>لات جدید</Button> : null}
+        summary={<Badge tone="neutral">لات‌ها: {rows.length}</Badge>}
+      >
+        <FilterRow className="justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="sm:w-48">
+              <option value="">همه محصولات</option>
+              {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+            </Select>
+            <label className="flex items-center gap-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">
+              <input type="checkbox" checked={includeInactive} onChange={(event) => setIncludeInactive(event.target.checked)} />
+              نمایش غیرفعال
+            </label>
+          </div>
+          <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} disabled={loading} loading={loading} />
+        </FilterRow>
+      </WorkspaceToolbar>
 
-      {loading && <div className="py-6 text-center text-sm text-slate-400">در حال بارگذاری...</div>}
-      {error && <div className="py-4 text-center text-sm text-red-500">{error}</div>}
+      {error ? <InlineAlert tone="danger" title="خطا در بارگذاری لات‌ها">{error}</InlineAlert> : null}
 
-      {!loading && !error && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">کد لات</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">محصول</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">تاریخ انقضا</th>
-                <th className="border border-slate-200 px-3 py-2 text-center font-medium text-slate-600">وضعیت</th>
-                {canWrite && <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">اقدامات</th>}
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr><td colSpan={canWrite ? 5 : 4} className="py-8 text-center text-sm text-slate-400">لاتی یافت نشد</td></tr>
-              )}
-              {rows.map((lot) => (
-                <tr key={lot.id} className="hover:bg-slate-50">
-                  <td className="border border-slate-200 px-3 py-2 font-mono text-xs">{lot.lotCode}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-xs">{productName(lot.productId)}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-xs text-slate-500">{lot.expiryDate ?? '-'}</td>
-                  <td className="border border-slate-200 px-3 py-2 text-center">
-                    <span className={`rounded px-2 py-0.5 text-xs font-medium ${lot.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                      {lot.isActive ? 'فعال' : 'غیرفعال'}
-                    </span>
-                  </td>
-                  {canWrite && (
-                    <td className="border border-slate-200 px-3 py-2">
-                      <div className="flex gap-1">
-                        <Button size="xs" variant="secondary" onClick={() => openEdit(lot)}>ویرایش</Button>
-                        <Button size="xs" variant={lot.isActive ? 'danger' : 'secondary'} onClick={() => handleToggleActive(lot)}>
-                          {lot.isActive ? 'غیرفعال' : 'فعال'}
-                        </Button>
-                      </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+      <DataTable minWidthClass="min-w-[760px]">
+        <DataTableHead>
+          <tr>
+            <DataTableHeaderCell>کد لات</DataTableHeaderCell>
+            <DataTableHeaderCell>محصول</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">تاریخ انقضا</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
+            {canWrite ? <DataTableHeaderCell align="center">اقدامات</DataTableHeaderCell> : null}
+          </tr>
+        </DataTableHead>
+        <DataTableBody>
+          {loading ? (
+            <DataTableState colSpan={canWrite ? 5 : 4} state="loading" title="در حال بارگذاری..." />
+          ) : rows.length === 0 ? (
+            <DataTableState colSpan={canWrite ? 5 : 4} title="لاتی یافت نشد" />
+          ) : rows.map((lot) => (
+            <DataTableRow key={lot.id} tone={lot.isActive ? 'default' : 'muted'}>
+              <DataTableCell tone="emphasis" className="font-mono">{lot.lotCode}</DataTableCell>
+              <DataTableCell>{productName(lot.productId)}</DataTableCell>
+              <DataTableCell align="center">{lot.expiryDate ?? '-'}</DataTableCell>
+              <DataTableCell align="center"><Badge tone={lot.isActive ? 'success' : 'neutral'}>{lot.isActive ? 'فعال' : 'غیرفعال'}</Badge></DataTableCell>
+              {canWrite ? (
+                <DataTableCell align="center">
+                  <DataTableActions>
+                    <IconButton action="edit" label="ویرایش لات" tooltip="ویرایش لات" onClick={() => openEdit(lot)} />
+                    <IconButton action={lot.isActive ? 'delete' : 'restore'} label={lot.isActive ? 'غیرفعال کردن لات' : 'فعال کردن لات'} tooltip={lot.isActive ? 'غیرفعال کردن لات' : 'فعال کردن لات'} onClick={() => handleToggleActive(lot)} />
+                  </DataTableActions>
+                </DataTableCell>
+              ) : null}
+            </DataTableRow>
+          ))}
+        </DataTableBody>
+      </DataTable>
 
-      {modal && (
+      {modal ? (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" dir="rtl">
           <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
             <h2 className="mb-4 text-base font-bold text-slate-800">{modal.id ? 'ویرایش لات' : 'لات جدید'}</h2>
             <form onSubmit={handleSave} className="space-y-3">
-              {formError && <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>}
+              {formError ? <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div> : null}
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600">محصول <span className="text-red-500">*</span></label>
-                <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.productId} onChange={(e) => setModal((m) => ({ ...m, productId: e.target.value }))} required>
+                <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.productId} onChange={(event) => setModal((current) => ({ ...current, productId: event.target.value }))} required>
                   <option value="">انتخاب محصول</option>
-                  {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
                 </select>
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600">کد لات <span className="text-red-500">*</span></label>
-                <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm font-mono" value={modal.lotCode} onChange={(e) => setModal((m) => ({ ...m, lotCode: e.target.value }))} required />
+                <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm font-mono" value={modal.lotCode} onChange={(event) => setModal((current) => ({ ...current, lotCode: event.target.value }))} required />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600">تاریخ انقضا</label>
-                <input type="date" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.expiryDate} onChange={(e) => setModal((m) => ({ ...m, expiryDate: e.target.value }))} />
+                <input type="date" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.expiryDate} onChange={(event) => setModal((current) => ({ ...current, expiryDate: event.target.value }))} />
               </div>
               <div>
                 <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
-                <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(e) => setModal((m) => ({ ...m, notes: e.target.value }))} />
+                <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(event) => setModal((current) => ({ ...current, notes: event.target.value }))} />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button type="button" variant="ghost" onClick={closeModal}>انصراف</Button>
-                <Button type="submit" variant="primary" disabled={saving}>{saving ? 'در حال ذخیره...' : 'ذخیره'}</Button>
+                <Button type="submit" action="save" showActionIcon disabled={saving}>{saving ? 'در حال ذخیره...' : 'ذخیره'}</Button>
               </div>
             </form>
           </div>
         </div>
-      )}
+      ) : null}
     </div>
   )
 }

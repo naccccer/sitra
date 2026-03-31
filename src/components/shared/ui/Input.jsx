@@ -1,11 +1,27 @@
 import React, { forwardRef } from 'react';
 import { cn } from '@/components/shared/ui/cn';
 
-export const Input = forwardRef(({ className = '', ...props }, ref) => (
+const SIZE_CLASSNAMES = {
+  sm: 'h-9 px-3 text-xs',
+  md: 'h-10 px-3 text-sm',
+  lg: 'h-11 px-4 text-sm',
+};
+
+export const Input = forwardRef(({
+  className = '',
+  size = 'md',
+  invalid = false,
+  ...props
+}, ref) => (
   <input
     ref={ref}
+    aria-invalid={invalid || undefined}
     className={cn(
-      'focus-ring h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-bold text-slate-800 placeholder:text-slate-400',
+      'focus-ring w-full rounded-[var(--radius-md)] border bg-white font-bold text-[rgb(var(--ui-text))] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] transition duration-[var(--motion-fast)] placeholder:text-[rgb(var(--ui-text-muted))]',
+      invalid
+        ? 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))]/25'
+        : 'border-[rgb(var(--ui-border))] hover:border-[rgb(var(--ui-accent-border))]',
+      SIZE_CLASSNAMES[size] || SIZE_CLASSNAMES.md,
       className,
     )}
     {...props}

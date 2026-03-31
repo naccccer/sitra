@@ -1,32 +1,24 @@
 import React, { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown, ChevronLeft, LogOut, PlusCircle, X } from 'lucide-react'
+import { Tooltip } from '@/components/shared/ui'
 import { isModuleEnabled } from '@/kernel/moduleRegistry'
 import { getVisibleAccountingTabs } from '@/modules/accounting/navigation'
 import { useTabSettings } from '@/modules/accounting/hooks/useTabSettings'
 import { getVisibleInventoryTabs } from '@/modules/inventory/navigation'
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '@/utils/profile'
-import {
-  getNavSections,
-  getQueryTab,
-  navChildLinkClass,
-  navLinkClass,
-  pathMatches,
-  toNavTarget,
-} from '@/components/layout/sidebarNav'
+import { getNavSections, getQueryTab, navChildLinkClass, navLinkClass, pathMatches, toNavTarget } from '@/components/layout/sidebarNav'
 
-// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها | امنیت و دسترسی
+// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
 const EMPTY_PERMISSIONS = Object.freeze([])
+const getItemPrimaryTarget = (item) => {
+  if (!Array.isArray(item.children) || item.children.length === 0) return toNavTarget(item)
+  if (item.dynamicToFirstVisibleChild) return toNavTarget(item.children[0])
+  const firstTabbedChild = item.children.find((child) => child.to === item.to && child.tab)
+  return toNavTarget(firstTabbedChild || item)
+}
 
-export const Sidebar = ({
-  profile,
-  session,
-  onLogout = () => {},
-  isCollapsed = false,
-  isOpen = false,
-  onCloseMobile = () => {},
-  onNavigate = () => {},
-}) => {
+export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = false, isOpen = false, onCloseMobile = () => {}, onNavigate = () => {} }) => {
   const location = useLocation()
   const normalizedProfile = normalizeProfile(profile)
   const logoSrc = profileLogoSrc(normalizedProfile.logoPath)
@@ -38,10 +30,7 @@ export const Sidebar = ({
   const modules = Array.isArray(session?.modules) ? session.modules : []
   const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const { isVisible } = useTabSettings()
-
-  const inventoryTabs = getVisibleInventoryTabs(permissions)
-  const accountingTabs = getVisibleAccountingTabs(permissions, isVisible)
-  const navSections = getNavSections({ inventoryTabs, accountingTabs })
+  const isRailCollapsed = isCollapsed && !isOpen
 
   const isVisibleItem = (item) => {
     if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
@@ -50,31 +39,29 @@ export const Sidebar = ({
     return true
   }
 
-  const filterVisibleItems = (items = []) => (
-    items.reduce((result, item) => {
-      if (!isVisibleItem(item)) return result
-      if (!Array.isArray(item.children) || item.children.length === 0) {
-        result.push(item)
+  const visibleSections = getNavSections({
+    inventoryTabs: getVisibleInventoryTabs(permissions),
+    accountingTabs: getVisibleAccountingTabs(permissions, isVisible),
+  })
+    .map((section) => ({
+      ...section,
+      items: section.items.reduce((result, item) => {
+        if (!isVisibleItem(item)) return result
+        if (!Array.isArray(item.children) || item.children.length === 0) {
+          result.push(item)
+          return result
+        }
+        const visibleChildren = item.children.filter(isVisibleItem)
+        if (visibleChildren.length > 0) result.push({ ...item, children: visibleChildren })
         return result
-      }
-
-      const visibleChildren = item.children.filter(isVisibleItem)
-      if (visibleChildren.length === 0) return result
-
-      result.push({ ...item, children: visibleChildren })
-      return result
-    }, [])
-  )
-
-  const visibleSections = navSections
-    .map((section) => ({ ...section, items: filterVisibleItems(section.items) }))
+      }, []),
+    }))
     .filter((section) => section.items.length > 0)
 
   const defaultTabByPath = {}
   visibleSections.forEach((section) => {
     section.items.forEach((item) => {
-      if (!Array.isArray(item.children)) return
-      const firstTab = item.children.find((child) => child.to === item.to && child.tab)?.tab
+      const firstTab = item.children?.find((child) => child.to === item.to && child.tab)?.tab
       if (firstTab) defaultTabByPath[item.to] = firstTab
     })
   })
@@ -82,214 +69,146 @@ export const Sidebar = ({
   const isTargetActive = (item) => {
     if (!pathMatches(location.pathname, item.to)) return false
     if (!item.tab) return true
-
     const currentTab = getQueryTab(location.search)
-    if (currentTab) return currentTab === item.tab
-    return defaultTabByPath[item.to] === item.tab
+    return currentTab ? currentTab === item.tab : defaultTabByPath[item.to] === item.tab
   }
 
   const getSectionGroups = (section) => {
     if (section.id !== 'system') return [{ id: `${section.id}-default`, label: '', items: section.items }]
-
-    const groupDefs = [
-      { id: 'daily-config', label: 'تنظیمات روزمره' },
-      { id: 'owner-config', label: 'سطح مالک/پیشرفته' },
-    ]
-
-    const grouped = groupDefs
-      .map((group) => ({ ...group, items: section.items.filter((item) => item.group === group.id) }))
-      .filter((group) => group.items.length > 0)
-
+    const groupDefs = [{ id: 'daily-config', label: 'تنظیمات روزمره' }, { id: 'owner-config', label: 'سطح مالک/پیشرفته' }]
+    const grouped = groupDefs.map((group) => ({ ...group, items: section.items.filter((item) => item.group === group.id) })).filter((group) => group.items.length > 0)
     const ungrouped = section.items.filter((item) => !item.group)
     if (ungrouped.length > 0) {
-      if (grouped.length > 0) {
-        grouped[0] = { ...grouped[0], items: [...grouped[0].items, ...ungrouped] }
-      } else {
-        grouped.push({ id: 'fallback', label: '', items: ungrouped })
-      }
+      if (grouped.length > 0) grouped[0] = { ...grouped[0], items: [...grouped[0].items, ...ungrouped] }
+      else grouped.push({ id: 'fallback', label: '', items: ungrouped })
     }
-
     return grouped.length > 0 ? grouped : [{ id: 'system-fallback', label: '', items: section.items }]
   }
 
-  const accordionItems = visibleSections
-    .flatMap((section) => section.items)
-    .filter((item) => Array.isArray(item.children) && item.children.length > 0)
-
-  const matchedGroup = accordionItems.find((item) => (
-    isTargetActive(item) || item.children.some((child) => isTargetActive(child))
-  ))
+  const accordionItems = visibleSections.flatMap((section) => section.items).filter((item) => Array.isArray(item.children) && item.children.length > 0)
+  const matchedGroup = accordionItems.find((item) => isTargetActive(item) || item.children.some((child) => isTargetActive(child)))
   const activeGroupId = matchedGroup?.id || null
-
-  let openGroupId = null
-  if (manualGroupState.id) {
-    openGroupId = manualGroupState.collapsed ? null : manualGroupState.id
-  } else if (activeGroupId) {
-    openGroupId = activeGroupId
-  }
-
+  const openGroupId = isRailCollapsed ? null : manualGroupState.id ? (manualGroupState.collapsed ? null : manualGroupState.id) : activeGroupId
   const visualActiveGroupId = openGroupId || activeGroupId
-
-  const handleGroupToggle = (itemId) => {
-    setManualGroupState((prev) => {
-      if (prev.id === itemId) {
-        return { id: itemId, collapsed: !prev.collapsed }
-      }
-
-      return { id: itemId, collapsed: false }
-    })
-  }
-
   const canCreateOrders = Boolean(capabilities.canManageOrders) && isModuleEnabled(modules, 'sales')
+  const wrapWithTooltip = (node, content) => (isRailCollapsed ? <Tooltip content={content} side="left">{node}</Tooltip> : node)
+
+  const renderLeaf = (item, tone) => wrapWithTooltip(
+    <NavLink key={item.to} to={item.to} end={Boolean(item.end)} onClick={onNavigate} className={({ isActive }) => navLinkClass(isActive, isRailCollapsed, tone)}>
+      <item.icon size={17} />
+      <span className={isRailCollapsed ? 'sr-only' : 'text-start'}>{item.label}</span>
+    </NavLink>,
+    item.label,
+  )
+
+  const renderGroup = (item, tone, isActive) => {
+    if (isRailCollapsed) {
+      return wrapWithTooltip(
+        <NavLink key={item.id || item.to} to={getItemPrimaryTarget(item)} onClick={onNavigate} className={() => navLinkClass(isActive, true, tone)}>
+          <item.icon size={17} />
+          <span className="sr-only">{item.label}</span>
+        </NavLink>,
+        item.label,
+      )
+    }
+
+    const isGroupOpen = openGroupId === item.id
+    return (
+      <div key={item.id || item.to} className="space-y-1.5">
+        <button
+          type="button"
+          onClick={() => setManualGroupState((prev) => (prev.id === item.id ? { id: item.id, collapsed: !prev.collapsed } : { id: item.id, collapsed: false }))}
+          className={`${navLinkClass(isActive, false, tone)} w-full`}
+          aria-expanded={isGroupOpen}
+          aria-controls={`${item.id}-submenu`}
+        >
+          <item.icon size={17} />
+          <span className="flex-1 text-start">{item.label}</span>
+          {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
+        </button>
+        {isGroupOpen && (
+          <div id={`${item.id}-submenu`} className={`space-y-1 rounded-[var(--radius-lg)] border p-1.5 ${tone === 'owner' ? 'border-amber-200/80 bg-amber-50/90' : 'border-[rgb(var(--ui-border-soft))] bg-white/80'}`}>
+            {item.children.map((child) => (
+              <NavLink key={`${child.to}:${child.tab || ''}`} to={toNavTarget(child)} onClick={onNavigate} className={() => navChildLinkClass(isTargetActive(child), tone)}>
+                <span className="truncate">{child.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   return (
     <aside
-      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-64 shrink-0 flex-col overflow-hidden border-l border-slate-200/90 bg-white/95 px-3 py-3 shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:h-screen lg:translate-x-0 lg:shadow-none ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isCollapsed ? 'lg:w-20' : 'lg:w-60'}`}
+      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-[18.5rem] shrink-0 flex-col overflow-hidden border-l border-white/70 bg-white/92 px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl transition-all duration-[var(--motion-base)] lg:static lg:z-auto lg:h-full lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/80 ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isRailCollapsed ? 'lg:w-[5.75rem]' : 'lg:w-[18.5rem]'}`}
       dir="rtl"
     >
-      <button
-        type="button"
-        onClick={onCloseMobile}
-        title="بستن منو"
-        className="focus-ring mb-2 inline-flex h-9 w-9 items-center justify-center self-end rounded-xl bg-white text-slate-700 lg:hidden"
-      >
+      <button type="button" onClick={onCloseMobile} title="بستن منو" className="shell-mobile-dismiss focus-ring mb-2 inline-flex h-10 w-10 items-center justify-center self-end rounded-[var(--radius-lg)] text-slate-700 lg:hidden">
         <X size={16} />
       </button>
 
-      <div className={`mb-3 rounded-2xl bg-slate-900 text-white shadow-md ${isCollapsed ? 'p-2 lg:p-2' : 'px-2.5 py-2.5'}`}>
-        <div className={`flex items-center ${isCollapsed ? 'gap-2 lg:justify-center' : 'gap-2'}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/10 text-base font-black shadow-inner">
-            {showLogo ? (
-              <img
-                src={logoSrc}
-                alt={normalizedProfile.brandName}
-                onError={() => setFailedLogoSrc(logoSrc)}
-                className="h-full w-full object-cover"
-              />
-            ) : (
-              fallbackLetter
-            )}
+      {wrapWithTooltip(
+        <div className={`shell-brand-surface mb-3 rounded-[24px] ${isRailCollapsed ? 'p-2' : 'px-3 py-3'}`}>
+          <div className={`flex items-center ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
+            <div className="shell-brand-mark flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[18px] text-base font-black text-white">
+              {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className="h-full w-full object-cover" /> : fallbackLetter}
+            </div>
+            <div className={isRailCollapsed ? 'hidden' : ''}>
+              <div className="text-sm font-black text-[rgb(var(--ui-text))]">{normalizedProfile.brandName}</div>
+              <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
+            </div>
           </div>
-          <div className={isCollapsed ? 'lg:hidden' : ''}>
-            <div className="text-sm font-black">{normalizedProfile.brandName}</div>
-            <div className="text-[10px] text-slate-300">{normalizedProfile.panelSubtitle}</div>
-          </div>
-        </div>
-      </div>
+        </div>,
+        normalizedProfile.brandName,
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto pe-1">
-        <nav className="space-y-3">
+        <nav className="space-y-4">
           {visibleSections.map((section) => (
-            <div key={section.id} className="space-y-1.5">
-              <div className={`px-1 text-[10px] font-black text-slate-400 ${isCollapsed ? 'lg:hidden' : ''}`}>{section.label}</div>
-
+            <div key={section.id} className="space-y-2">
+              {!isRailCollapsed && <div className="px-1 text-[10px] font-black text-[rgb(var(--ui-text-muted))]">{section.label}</div>}
               {getSectionGroups(section).map((group, groupIndex, allGroups) => (
-                <div key={group.id} className="space-y-1.5">
-                  {section.id === 'system' && group.label && (
-                    <div className={`px-1 text-[10px] font-bold text-slate-500 ${isCollapsed ? 'lg:hidden' : ''}`}>{group.label}</div>
-                  )}
-
+                <div key={group.id} className="space-y-2">
+                  {!isRailCollapsed && section.id === 'system' && group.label && <div className="px-1 text-[10px] font-bold text-slate-500">{group.label}</div>}
                   <div className="space-y-1.5">
                     {group.items.map((item) => {
-                      const Icon = item.icon
-                      const hasChildren = Array.isArray(item.children) && item.children.length > 0
-                      const isGroupOpen = hasChildren && openGroupId === item.id
-                      const isGroupCurrentlyActive = hasChildren && visualActiveGroupId === item.id
-
-                      if (!hasChildren) {
-                        return (
-                          <NavLink
-                            key={item.to}
-                            to={item.to}
-                            end={Boolean(item.end)}
-                            onClick={onNavigate}
-                            className={({ isActive }) => navLinkClass(isActive, isCollapsed, item.id === 'owner' ? 'owner' : 'default')}
-                            title={item.label}
-                          >
-                            <Icon size={16} />
-                            <span className={`text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                          </NavLink>
-                        )
-                      }
-
-                      return (
-                        <div key={item.id || item.to} className="space-y-1">
-                          <button
-                            type="button"
-                            onClick={() => handleGroupToggle(item.id)}
-                            className={`${navLinkClass(
-                              isGroupCurrentlyActive,
-                              isCollapsed,
-                              item.id === 'owner' ? 'owner' : 'default',
-                            )} w-full`}
-                            title={item.label}
-                            aria-expanded={isGroupOpen}
-                            aria-controls={`${item.id}-submenu`}
-                          >
-                            <Icon size={16} />
-                            <span className={`flex-1 text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
-                            <span className={isCollapsed ? 'lg:hidden' : ''}>
-                              {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
-                            </span>
-                          </button>
-
-                          {isGroupOpen && (
-                            <div
-                              id={`${item.id}-submenu`}
-                              className={`space-y-1 rounded-xl p-1 pe-1.5 ring-1 ${item.id === 'owner' ? 'bg-amber-50/90 ring-amber-200/70' : 'bg-slate-100/80 ring-slate-200/70'} ${isCollapsed ? 'lg:hidden' : ''}`}
-                            >
-                              {item.children.map((child) => (
-                                <NavLink
-                                  key={`${child.to}:${child.tab || ''}`}
-                                  to={toNavTarget(child)}
-                                  onClick={onNavigate}
-                                  className={() => navChildLinkClass(isTargetActive(child), item.id === 'owner' ? 'owner' : 'default')}
-                                  title={child.label}
-                                >
-                                  <span className="truncate">{child.label}</span>
-                                </NavLink>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
+                      const tone = item.id === 'owner' ? 'owner' : 'default'
+                      const isActive = Array.isArray(item.children) && item.children.length > 0
+                        ? visualActiveGroupId === item.id
+                        : false
+                      if (!Array.isArray(item.children) || item.children.length === 0) return <React.Fragment key={item.to}>{renderLeaf(item, tone)}</React.Fragment>
+                      return renderGroup(item, tone, isActive)
                     })}
                   </div>
-
-                  {section.id === 'system' && groupIndex < allGroups.length - 1 && (
-                    <div className={`my-1 h-px bg-slate-200/80 ${isCollapsed ? 'lg:hidden' : ''}`} />
-                  )}
+                  {!isRailCollapsed && section.id === 'system' && groupIndex < allGroups.length - 1 && <div className="my-1 h-px bg-[rgb(var(--ui-border-soft))]" />}
                 </div>
               ))}
             </div>
           ))}
         </nav>
 
-        <div className="mt-3">
-          {canCreateOrders && (
-            <NavLink
-              to="/orders/new"
-              onClick={onNavigate}
-              title="ثبت سفارش جدید"
-              className={`focus-ring flex items-center rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-black text-white transition-colors hover:bg-emerald-500 ${isCollapsed ? 'lg:justify-center lg:px-2' : 'justify-center gap-1'}`}
-            >
-              <PlusCircle size={14} />
-              <span className={isCollapsed ? 'lg:hidden' : ''}>ثبت سفارش جدید</span>
-            </NavLink>
-          )}
-        </div>
+        {canCreateOrders && (
+          <div className="mt-3">
+            {wrapWithTooltip(
+              <NavLink to="/orders/new" onClick={onNavigate} className={`focus-ring flex min-h-11 items-center rounded-[var(--radius-lg)] border border-emerald-600 bg-emerald-600 text-xs font-black text-white transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-emerald-500 ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'justify-center gap-1.5 px-3'}`}>
+                <PlusCircle size={15} />
+                <span className={isRailCollapsed ? 'sr-only' : ''}>ثبت سفارش جدید</span>
+              </NavLink>,
+              'ثبت سفارش جدید',
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">
-        <button
-          type="button"
-          onClick={onLogout}
-          className={`focus-ring flex w-full items-center rounded-xl bg-rose-50 px-2.5 py-1.5 text-xs font-black text-rose-700 transition-colors hover:bg-rose-100 ${isCollapsed ? 'lg:justify-center lg:px-2' : 'gap-1.5'}`}
-          title="خروج"
-        >
-          <LogOut size={14} />
-          <span className={isCollapsed ? 'lg:hidden' : ''}>خروج</span>
-        </button>
+      <div className="mt-auto border-t border-[rgb(var(--ui-border-soft))] pt-3">
+        {wrapWithTooltip(
+          <button type="button" onClick={onLogout} className={`focus-ring flex min-h-11 w-full items-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] px-3 text-xs font-black text-[rgb(var(--ui-danger-text))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85 ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-1.5'}`}>
+            <LogOut size={15} />
+            <span className={isRailCollapsed ? 'sr-only' : ''}>خروج</span>
+          </button>,
+          'خروج',
+        )}
       </div>
     </aside>
   )

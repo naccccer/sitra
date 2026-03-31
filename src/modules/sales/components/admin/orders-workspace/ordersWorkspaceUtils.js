@@ -85,9 +85,9 @@ export const deriveFinancialSummary = (order = {}) => {
 };
 
 export const paymentStatusPill = (status) => {
-  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-100 text-emerald-700' };
+  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-50 text-emerald-800' };
   if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' };
-  return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
+  return { label: 'تسویه نشده', className: 'bg-[rgb(120,53,33)]/12 text-[rgb(120,53,33)]' };
 };
 
 export const ORDER_STAGE_OPTIONS = [

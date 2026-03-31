@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import { Button } from '@/components/shared/ui/Button';
 import { Card } from '@/components/shared/ui/Card';
+import { IconButton } from '@/components/shared/ui/IconButton';
 import { cn } from '@/components/shared/ui/cn';
 
 export const ModalShell = ({
@@ -13,28 +14,42 @@ export const ModalShell = ({
   footer = null,
   maxWidthClass = 'max-w-2xl',
   closeButtonMode = 'text',
+  eyebrow = '',
+  headerAction = null,
+  bodyClassName = '',
+  footerClassName = '',
+  overlayClassName = '',
+  contentClassName = '',
 }) => {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm print-hide">
-      <Card
-        className={cn('w-full overflow-hidden shadow-2xl', maxWidthClass)}
-        padding="none"
-      >
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
-          <div>
-            <h3 className="text-sm font-black text-slate-900">{title}</h3>
-            {description ? <p className="mt-1 text-xs font-bold text-slate-500">{description}</p> : null}
+    <div className={cn('fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm print-hide', overlayClassName)}>
+      <Card className={cn('w-full overflow-hidden shadow-[var(--shadow-overlay)]', maxWidthClass, contentClassName)} padding="none">
+        <div className="border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,246,238,0.9))] px-4 py-3">
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
+              <h3 className="text-sm font-black text-[rgb(var(--ui-text))]">{title}</h3>
+              {description ? <p className="mt-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              {headerAction}
+              {closeButtonMode === 'icon' ? (
+                <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
+                  <X size={16} />
+                </IconButton>
+              ) : (
+                <Button onClick={onClose} action="cancel" size="sm">بستن</Button>
+              )}
+            </div>
           </div>
-          <Button onClick={onClose} variant="ghost" size="sm" aria-label="بستن" title="بستن">
-            {closeButtonMode === 'icon' ? <X className="h-4 w-4" /> : 'بستن'}
-          </Button>
         </div>
 
-        <div className="max-h-[80vh] overflow-y-auto p-4">{children}</div>
+        <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>
 
-        {footer ? <div className="border-t border-slate-200 bg-white px-4 py-3">{footer}</div> : null}
+        {footer ? <div className={cn('border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null}
       </Card>
     </div>
   );

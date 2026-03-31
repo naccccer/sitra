@@ -13,28 +13,28 @@ import { isModuleEnabled } from '@/kernel/moduleRegistry'
 export const pathMatches = (pathname, to) => Boolean(to) && (pathname === to || pathname.startsWith(`${to}/`))
 
 export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
-  `focus-ring flex items-center gap-2 rounded-xl px-2.5 py-1.5 text-[13px] font-black transition-colors ${
-    isCollapsed ? 'lg:justify-center lg:px-2' : ''
+  `focus-ring flex items-center gap-2.5 rounded-[var(--radius-lg)] border text-[13px] font-black transition duration-[var(--motion-fast)] ${
+    isCollapsed ? 'min-h-11 px-3 py-2 lg:h-11 lg:w-11 lg:justify-center lg:px-0' : 'min-h-11 px-3 py-2'
   } ${
     tone === 'owner'
       ? isActive
-        ? 'bg-amber-400 text-slate-900 shadow-[0_8px_18px_rgba(251,191,36,0.26)]'
-        : 'bg-slate-950 text-amber-100 hover:bg-slate-900'
+        ? 'border-amber-300 bg-amber-400 text-slate-950 shadow-[0_10px_24px_rgba(251,191,36,0.28)]'
+        : 'border-transparent bg-slate-950/92 text-amber-100 hover:border-amber-300/30 hover:bg-slate-900'
       : isActive
-        ? 'bg-slate-900 text-white shadow-[0_6px_14px_rgba(15,23,42,0.24)]'
-        : 'bg-slate-50/60 text-slate-700 hover:bg-slate-100/70'
+        ? 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)]'
+        : 'border-transparent bg-white/50 text-slate-700 hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/40 hover:text-slate-900'
   }`
 )
 
 export const navChildLinkClass = (isActive, tone = 'default') => (
-  `focus-ring flex items-center rounded-lg px-2.5 py-1.5 text-[12px] font-bold transition-colors ${
+  `focus-ring flex min-h-9 items-center rounded-[var(--radius-md)] border px-2.5 py-1.5 text-[12px] font-bold transition duration-[var(--motion-fast)] ${
     tone === 'owner'
       ? isActive
-        ? 'bg-amber-100 text-slate-900 ring-1 ring-amber-200 shadow-[0_2px_8px_rgba(251,191,36,0.16)]'
-        : 'text-slate-800 hover:bg-amber-50/80'
+        ? 'border-amber-200 bg-amber-100 text-slate-900 shadow-[0_6px_16px_rgba(251,191,36,0.18)]'
+        : 'border-transparent text-slate-800 hover:border-amber-200/70 hover:bg-amber-50/85'
       : isActive
-        ? 'bg-white text-slate-900 ring-1 ring-slate-200 shadow-[0_2px_8px_rgba(15,23,42,0.08)]'
-        : 'text-slate-700 hover:bg-white/80'
+        ? 'border-[rgb(var(--ui-border))] bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
+        : 'border-transparent text-slate-700 hover:border-[rgb(var(--ui-border-soft))] hover:bg-white/85'
   }`
 )
 

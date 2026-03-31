@@ -14,6 +14,7 @@ export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders,
         onLoadMoreOrders={onLoadMoreOrders}
         catalog={catalog}
         profile={profile}
+        onCreateOrder={() => navigate('/orders/new')}
         onEditOrder={(order) => navigate(`/orders/${order.id}`)}
       />
     </div>

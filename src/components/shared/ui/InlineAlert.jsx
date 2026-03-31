@@ -2,21 +2,33 @@ import React from 'react';
 import { cn } from '@/components/shared/ui/cn';
 
 const TONE_CLASSNAMES = {
-  neutral: 'border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text-muted))]',
-  accent: 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]',
   info: 'border-[rgb(var(--ui-info-border))] bg-[rgb(var(--ui-info-bg))] text-[rgb(var(--ui-info-text))]',
   success: 'border-[rgb(var(--ui-success-border))] bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]',
   warning: 'border-[rgb(var(--ui-warning-border))] bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]',
   danger: 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]',
+  neutral: 'border-[rgb(var(--ui-border))] bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text-muted))]',
 };
 
-export const Badge = ({ className = '', tone = 'neutral', ...props }) => (
-  <span
+export const InlineAlert = ({
+  tone = 'neutral',
+  className = '',
+  children,
+  title = '',
+  actions = null,
+}) => (
+  <div
     className={cn(
-      'inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-black',
+      'rounded-[var(--radius-lg)] border px-4 py-3 text-xs font-black shadow-[var(--shadow-soft)]',
       TONE_CLASSNAMES[tone] || TONE_CLASSNAMES.neutral,
       className,
     )}
-    {...props}
-  />
+  >
+    <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+      <div>
+        {title ? <div className="mb-1 text-sm text-current">{title}</div> : null}
+        {children}
+      </div>
+      {actions ? <div className="shrink-0">{actions}</div> : null}
+    </div>
+  </div>
 );

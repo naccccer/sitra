@@ -1,7 +1,7 @@
 import React from 'react';
 import { Search } from 'lucide-react';
+import { Badge, FilterRow, Input, WorkspaceToolbar } from '@/components/shared/ui';
 import { toPN } from '@/utils/helpers';
-import { Badge, Card, Input } from '@/components/shared/ui';
 
 const TAB_OPTIONS = [
   { id: 'all', label: 'همه سفارش‌ها' },
@@ -17,19 +17,34 @@ export const OrdersWorkspaceToolbar = ({
   searchQuery,
   onSearchChange,
   tabCounts,
+  filteredCount = 0,
+  createAction = null,
 }) => (
-  <Card className="print-hide space-y-3" padding="md">
-    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-      <div className="flex w-full gap-1 overflow-x-auto rounded-lg bg-slate-100 p-1 hide-scrollbar md:w-auto">
+  <WorkspaceToolbar
+    className="print-hide"
+    actions={createAction}
+    summary={(
+      <>
+        <Badge tone="accent">نتیجه جاری: {toPN(filteredCount)}</Badge>
+        <Badge tone="neutral">کل فعال: {toPN(tabCounts.all)}</Badge>
+        <Badge tone="warning">در انتظار: {toPN(tabCounts.pending)}</Badge>
+        <Badge tone="info">در حال انجام: {toPN(tabCounts.processing)}</Badge>
+        <Badge tone="success">تحویل‌شده: {toPN(tabCounts.delivered)}</Badge>
+        <Badge tone="neutral">بایگانی: {toPN(tabCounts.archived)}</Badge>
+      </>
+    )}
+  >
+    <FilterRow className="justify-between gap-3">
+      <div className="flex w-full gap-1 overflow-x-auto rounded-[var(--radius-lg)] bg-[rgb(var(--ui-surface-muted))] p-1 hide-scrollbar md:w-auto">
         {TAB_OPTIONS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => onTabChange(tab.id)}
-            className={`focus-ring whitespace-nowrap rounded-md px-3 py-2 text-[11px] font-black transition-colors sm:text-xs ${
+            className={`focus-ring whitespace-nowrap rounded-[var(--radius-md)] px-2.5 py-1.5 text-[10px] font-semibold transition-colors sm:text-[11px] ${
               activeOrdersTab === tab.id
-                ? 'bg-white text-slate-900 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
+                ? 'bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]'
+                : 'text-[rgb(var(--ui-text-muted))] hover:text-[rgb(var(--ui-text))]'
             }`}
           >
             {tab.label}
@@ -38,23 +53,16 @@ export const OrdersWorkspaceToolbar = ({
       </div>
 
       <div className="relative w-full md:w-80">
-        <Search size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-slate-400" />
+        <Search size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--ui-text-muted))]" />
         <Input
           type="text"
           placeholder="جستجو کد، نام یا موبایل..."
           value={searchQuery}
           onChange={(event) => onSearchChange(event.target.value)}
-          className="bg-slate-50 pr-9"
+          size="sm"
+          className="bg-white/90 pr-9 text-[12px]"
         />
       </div>
-    </div>
-
-    <div className="flex flex-wrap items-center gap-2 text-xs">
-      <Badge tone="neutral">کل فعال: {toPN(tabCounts.all)}</Badge>
-      <Badge tone="warning">در انتظار: {toPN(tabCounts.pending)}</Badge>
-      <Badge tone="info">در حال انجام: {toPN(tabCounts.processing)}</Badge>
-      <Badge tone="success">تحویل‌شده: {toPN(tabCounts.delivered)}</Badge>
-      <Badge tone="neutral">بایگانی: {toPN(tabCounts.archived)}</Badge>
-    </div>
-  </Card>
+    </FilterRow>
+  </WorkspaceToolbar>
 );
