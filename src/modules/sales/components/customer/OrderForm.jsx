@@ -1,5 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Menu, Phone, User } from 'lucide-react';
+import { Button, StatusBanner, WorkspaceCard } from '@/components/shared/ui';
 import { SettingsModal } from '@/modules/sales/components/customer/SettingsModal';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
 import { CheckoutModal } from '@/modules/sales/components/customer/order-form/CheckoutModal';
@@ -77,52 +78,48 @@ export const OrderForm = ({
 
   return (
     <div className={`mx-auto max-w-6xl ${editingOrder ? 'space-y-3' : 'space-y-6'}`}>
-      {!editingOrder && !staffMode && (
-        <header className="print-hide mx-auto mb-6 flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white shadow-md">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black">S</div>
-            <div>
-              <h1 className="text-lg font-black tracking-tight">گلس دیزاین | Sitra</h1>
-              <p className="mt-0.5 text-[10px] font-bold text-slate-400">سیستم یکپارچه سفارش آنلاین</p>
-            </div>
-          </div>
-          <div className="relative">
-            <button onClick={() => setIsMenuOpen((previous) => !previous)} className="rounded-lg border border-slate-700 bg-slate-800 p-2 transition-colors hover:bg-slate-700">
-              <Menu size={20} />
-            </button>
-            {isMenuOpen && (
-              <div className="absolute left-0 top-12 z-50 w-48 overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-700 shadow-2xl">
-                <button onClick={() => { setIsMenuOpen(false); onGoToLogin(); }} className="flex w-full items-center gap-2 border-b border-slate-100 px-4 py-3.5 text-right text-xs font-bold hover:bg-slate-50">
-                  <User size={14} />
-                  ورود همکاران / پرسنل
-                </button>
-                <button className="w-full border-b border-slate-100 px-4 py-3 text-right text-xs font-bold text-slate-600 hover:bg-slate-50">درباره ما</button>
-                <button className="w-full border-b border-slate-100 px-4 py-3 text-right text-xs font-bold text-slate-600 hover:bg-slate-50">تماس با ما</button>
-                <button className="w-full px-4 py-3 text-right text-xs font-bold text-slate-600 hover:bg-slate-50">قوانین و مقررات</button>
+      {!editingOrder && !staffMode ? (
+        <WorkspaceCard className="print-hide" surface="accent" padding="md">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="surface-icon-chip h-11 w-11 text-lg font-black text-[rgb(var(--ui-primary))]">S</div>
+              <div>
+                <h1 className="text-lg font-black tracking-tight text-[rgb(var(--ui-text))]">گلس دیزاین | Sitra</h1>
+                <p className="mt-0.5 text-[10px] font-bold text-[rgb(var(--ui-text-muted))]">سیستم یکپارچه سفارش آنلاین</p>
               </div>
-            )}
-          </div>
-        </header>
-      )}
-
-      {editingOrder && (
-        <section className="print-hide rounded-xl border border-amber-300/80 bg-amber-50 px-3 py-2.5 shadow-sm">
-          <div className="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
-            <div className="min-w-0">
-              <span className="text-sm font-black text-amber-900">در حال ویرایش سفارش</span>
-              <span className="mt-0.5 block truncate text-[11px] font-bold text-amber-700">کد رهگیری: {editingOrder.orderCode} - مشتری: {editingOrder.customerName}</span>
             </div>
-            <button
-              onClick={onCancelEdit}
-              className="w-full rounded-lg bg-white px-3 py-2 text-xs font-black text-slate-700 shadow-sm hover:bg-slate-50 lg:w-auto"
-            >
-              انصراف از ویرایش
-            </button>
+            <div className="relative">
+              <Button onClick={() => setIsMenuOpen((previous) => !previous)} variant="secondary" size="icon" iconOnly title="منوی بیشتر">
+                <Menu size={18} />
+              </Button>
+              {isMenuOpen ? (
+                <div className="absolute left-0 top-12 z-50 w-52 overflow-hidden rounded-[var(--radius-xl)] border border-[rgba(var(--ui-border),0.92)] bg-[rgba(var(--ui-surface-elevated),0.98)] text-[rgb(var(--ui-text))] shadow-ui-raised">
+                  <button onClick={() => { setIsMenuOpen(false); onGoToLogin(); }} className="flex w-full items-center gap-2 border-b border-[rgba(var(--ui-border),0.72)] px-4 py-3.5 text-right text-xs font-bold hover:bg-[rgba(var(--ui-surface-muted),0.7)]">
+                    <User size={14} />
+                    ورود همکاران / پرسنل
+                  </button>
+                  <button className="w-full border-b border-[rgba(var(--ui-border),0.72)] px-4 py-3 text-right text-xs font-bold text-[rgb(var(--ui-text-muted))] hover:bg-[rgba(var(--ui-surface-muted),0.7)]">درباره ما</button>
+                  <button className="w-full border-b border-[rgba(var(--ui-border),0.72)] px-4 py-3 text-right text-xs font-bold text-[rgb(var(--ui-text-muted))] hover:bg-[rgba(var(--ui-surface-muted),0.7)]">تماس با ما</button>
+                  <button className="w-full px-4 py-3 text-right text-xs font-bold text-[rgb(var(--ui-text-muted))] hover:bg-[rgba(var(--ui-surface-muted),0.7)]">قوانین و مقررات</button>
+                </div>
+              ) : null}
+            </div>
           </div>
+        </WorkspaceCard>
+      ) : null}
 
-          <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
+      {editingOrder ? (
+        <div className="print-hide space-y-3">
+          <StatusBanner
+            tone="warning"
+            title="در حال ویرایش سفارش"
+            description={`کد رهگیری: ${editingOrder.orderCode} - مشتری: ${editingOrder.customerName}`}
+            action={<Button variant="secondary" onClick={onCancelEdit}>انصراف از ویرایش</Button>}
+          />
+
+          <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
             <label className="block">
-              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">
                 <User size={12} />
                 نام و نام خانوادگی / شرکت
               </span>
@@ -135,7 +132,7 @@ export const OrderForm = ({
               />
             </label>
             <label className="block">
-              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">
                 <Phone size={12} />
                 شماره موبایل
               </span>
@@ -149,8 +146,8 @@ export const OrderForm = ({
               />
             </label>
           </div>
-        </section>
-      )}
+        </div>
+      ) : null}
 
       <OrderConfigurationSection
         activeTab={activeTab}
@@ -191,7 +188,7 @@ export const OrderForm = ({
         onOpenCheckout={() => setIsCheckoutOpen(true)}
       />
 
-      {modalMode === 'settings' && (
+      {modalMode === 'settings' ? (
         <SettingsModal
           setModalMode={setModalMode}
           config={config}
@@ -199,7 +196,7 @@ export const OrderForm = ({
           catalog={catalog}
           dimensions={dimensions}
         />
-      )}
+      ) : null}
 
       <ManualItemModal
         isOpen={isStaffContext && modalMode === 'manualItem'}

@@ -1,4 +1,4 @@
-﻿import React from 'react';
+import React from 'react';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
 import { Button } from '@/components/shared/ui';
 import { PatternFilesModal } from '@/modules/sales/components/admin/PatternFilesModal';
@@ -36,6 +36,7 @@ export const AdminOrdersView = ({
         searchQuery={workflow.searchQuery}
         onSearchChange={workflow.setSearchQuery}
         tabCounts={workflow.tabCounts}
+        resultCount={workflow.filteredOrders.length}
       />
 
       <OrdersWorkspaceTable

@@ -7,14 +7,15 @@ export const EmptyState = ({
   description = '',
   className = '',
   action = null,
+  surface = 'quiet',
 }) => (
   <Card
     className={cn('text-center', className)}
-    tone="muted"
+    surface={surface}
     padding="lg"
   >
-    <h3 className="text-sm font-black text-slate-800">{title}</h3>
-    {description ? <p className="mt-1 text-xs font-bold text-slate-500">{description}</p> : null}
+    <h3 className="text-sm font-black text-[rgb(var(--ui-text))]">{title}</h3>
+    {description ? <p className="mt-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
     {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
   </Card>
 );

@@ -1,7 +1,13 @@
 import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { ClipboardList, Clock3, Factory, PackageCheck } from 'lucide-react';
-import { Badge, Card, EmptyState } from '@/components/shared/ui';
+import {
+  Badge,
+  EmptyState,
+  StatCard,
+  StatsStrip,
+  WorkspaceCard,
+} from '@/components/shared/ui';
 import { toPN } from '@/utils/helpers';
 
 const toSafeNumber = (value) => {
@@ -39,74 +45,89 @@ export const DashboardPage = ({ orders = [] }) => {
 
   return (
     <div className="space-y-4">
-      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Card padding="md">
-          <div className="mb-2 inline-flex rounded-lg bg-slate-100 p-2 text-slate-700"><ClipboardList size={16} /></div>
-          <div className="text-xs font-bold text-slate-500">سفارشات فعال</div>
-          <div className="mt-1 text-2xl font-black tabular-nums text-slate-900">{toPN(summary.activeCount)}</div>
-        </Card>
+      <StatsStrip>
+        <StatCard
+          tone="default"
+          icon={<ClipboardList size={16} />}
+          title="سفارشات فعال"
+          value={toPN(summary.activeCount)}
+          hint="سفارش‌های در جریان خارج از بایگانی"
+        />
+        <StatCard
+          tone="accent"
+          icon={<Clock3 size={16} />}
+          title="در انتظار"
+          value={toPN(summary.pending)}
+          hint="نیازمند پیگیری یا شروع"
+        />
+        <StatCard
+          tone="elevated"
+          icon={<Factory size={16} />}
+          title="در حال تولید"
+          value={toPN(summary.processing)}
+          hint="در مسیر آماده‌سازی و اجرا"
+        />
+        <StatCard
+          tone="inset"
+          icon={<PackageCheck size={16} />}
+          title="تحویل‌شده"
+          value={toPN(summary.delivered)}
+          hint="سفارش‌های تکمیل‌شده"
+        />
+      </StatsStrip>
 
-        <Card className="border-amber-200 bg-amber-50" padding="md">
-          <div className="mb-2 inline-flex rounded-lg bg-amber-100 p-2 text-amber-700"><Clock3 size={16} /></div>
-          <div className="text-xs font-bold text-amber-700">در انتظار</div>
-          <div className="mt-1 text-2xl font-black tabular-nums text-amber-900">{toPN(summary.pending)}</div>
-        </Card>
-
-        <Card className="border-blue-200 bg-blue-50" padding="md">
-          <div className="mb-2 inline-flex rounded-lg bg-blue-100 p-2 text-blue-700"><Factory size={16} /></div>
-          <div className="text-xs font-bold text-blue-700">در حال تولید</div>
-          <div className="mt-1 text-2xl font-black tabular-nums text-blue-900">{toPN(summary.processing)}</div>
-        </Card>
-
-        <Card className="border-emerald-200 bg-emerald-50" padding="md">
-          <div className="mb-2 inline-flex rounded-lg bg-emerald-100 p-2 text-emerald-700"><PackageCheck size={16} /></div>
-          <div className="text-xs font-bold text-emerald-700">تحویل‌شده</div>
-          <div className="mt-1 text-2xl font-black tabular-nums text-emerald-900">{toPN(summary.delivered)}</div>
-        </Card>
-      </section>
-
-      <section>
-        <Card className="overflow-hidden" padding="none">
-          <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-            <div className="text-sm font-black text-slate-800">آخرین سفارش‌ها</div>
-            <Badge tone="neutral">نمایش {toPN(summary.latest.length)} مورد</Badge>
-          </div>
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.5fr)_minmax(320px,0.9fr)]">
+        <WorkspaceCard
+          title="آخرین سفارش‌ها"
+          description="نمایش تازه‌ترین رکوردهای فعال برای مرور سریع وضعیت روز."
+          actions={<Badge emphasis="outline" tone="neutral">نمایش {toPN(summary.latest.length)} مورد</Badge>}
+        >
           {summary.latest.length === 0 ? (
-            <div className="p-4">
-              <EmptyState
-                title="سفارشی برای نمایش وجود ندارد"
-                description="پس از ثبت سفارش‌های جدید، آخرین موارد در این بخش نمایش داده می‌شود."
-              />
-            </div>
+            <EmptyState
+              title="سفارشی برای نمایش وجود ندارد"
+              description="پس از ثبت سفارش‌های جدید، آخرین موارد در این بخش نمایش داده می‌شود."
+            />
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-[rgba(var(--ui-border),0.7)]">
               {summary.latest.map((order) => (
                 <Link
                   key={order.id}
                   to={`/orders/${order.id}`}
-                  className="focus-ring flex items-center justify-between px-4 py-3 transition-colors hover:bg-slate-50"
+                  className="focus-ring flex items-center justify-between px-4 py-3 transition-colors hover:bg-[rgba(var(--ui-surface-muted),0.75)]"
                 >
                   <div>
-                    <div className="text-xs font-black text-slate-800">{order.customerName || 'بدون نام'}</div>
-                    <div className="text-[11px] font-bold text-slate-500">{order.orderCode || '-'} - {toPN(formatOrderDate(order.date))}</div>
+                    <div className="text-xs font-black text-[rgb(var(--ui-text))]">{order.customerName || 'بدون نام'}</div>
+                    <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">
+                      {order.orderCode || '-'} - {toPN(formatOrderDate(order.date))}
+                    </div>
                   </div>
-                  <div className="text-xs font-black tabular-nums text-slate-900">{toPN(toSafeNumber(order.total).toLocaleString())}</div>
+                  <div className="text-xs font-black tabular-nums text-[rgb(var(--ui-text))]">
+                    {toPN(toSafeNumber(order.total).toLocaleString())}
+                  </div>
                 </Link>
               ))}
             </div>
           )}
-        </Card>
-      </section>
+        </WorkspaceCard>
 
-      <section>
-        <Card padding="md">
-          <div className="text-xs font-bold text-slate-500">جمع مبالغ سفارشات فعال</div>
-          <div className="mt-1 text-lg font-black tabular-nums text-slate-900">
-            {toPN(summary.totalAmount.toLocaleString())}
-            <span className="mr-1 text-[10px] font-bold text-slate-500">تومان</span>
+        <WorkspaceCard
+          title="جمع مبالغ فعال"
+          description="برآورد سریع از ارزش سفارش‌های جاری خارج از بایگانی."
+          surface="accent"
+          padding="md"
+        >
+          <div className="space-y-3">
+            <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">جمع مبالغ سفارشات فعال</div>
+            <div className="text-2xl font-black tabular-nums text-[rgb(var(--ui-text))]">
+              {toPN(summary.totalAmount.toLocaleString())}
+              <span className="me-1 text-[10px] font-bold text-[rgb(var(--ui-text-muted))]">تومان</span>
+            </div>
+            <div className="rounded-[var(--radius-lg)] border border-[rgba(var(--ui-border),0.72)] bg-[rgba(var(--ui-surface-elevated),0.78)] px-3 py-2 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">
+              این عدد فقط سفارش‌های فعال را در نظر می‌گیرد و سفارش‌های بایگانی‌شده در آن لحاظ نشده‌اند.
+            </div>
           </div>
-        </Card>
-      </section>
+        </WorkspaceCard>
+      </div>
     </div>
   );
 };

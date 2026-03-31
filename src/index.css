@@ -23,19 +23,48 @@
 @config "../tailwind.config.js";
 @import "tailwindcss";
 
+@keyframes ui-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes ui-fade-soft {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 @layer base {
   :root {
-    --ui-bg: 248 250 252;
-    --ui-surface: 255 255 255;
-    --ui-surface-muted: 241 245 249;
-    --ui-border: 226 232 240;
-    --ui-text: 15 23 42;
-    --ui-text-muted: 100 116 139;
-    --ui-primary: 15 23 42;
+    --ui-bg: 250 250 249;
+    --ui-bg-soft: 246 246 244;
+    --ui-surface: 255 255 254;
+    --ui-surface-muted: 248 248 246;
+    --ui-surface-elevated: 255 255 255;
+    --ui-surface-glass: 255 255 255;
+    --ui-border: 223 227 235;
+    --ui-border-strong: 150 164 192;
+    --ui-text: 25 35 56;
+    --ui-text-muted: 88 102 128;
+    --ui-primary: 24 36 63;
+    --ui-primary-soft: 40 58 97;
+    --ui-accent: 123 39 61;
+    --ui-accent-soft: 173 88 109;
     --ui-primary-contrast: 255 255 255;
-    --ui-danger: 190 24 93;
-    --ui-success: 5 150 105;
-    --ui-focus: 59 130 246;
+    --ui-danger: 175 79 70;
+    --ui-success: 58 123 96;
+    --ui-warning: 181 126 47;
+    --ui-info: 71 97 145;
+    --ui-focus: 56 83 138;
 
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -43,33 +72,51 @@
     --space-4: 1rem;
     --space-5: 1.25rem;
     --space-6: 1.5rem;
+    --space-7: 1.75rem;
+    --space-8: 2rem;
 
-    --radius-sm: 0.625rem;
-    --radius-md: 0.875rem;
-    --radius-lg: 1rem;
-    --radius-xl: 1.25rem;
+    --radius-sm: 0.75rem;
+    --radius-md: 1rem;
+    --radius-lg: 1.25rem;
+    --radius-xl: 1.5rem;
+    --radius-2xl: 1.75rem;
 
-    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.08);
-    --shadow-surface: 0 10px 26px rgba(15, 23, 42, 0.08);
+    --shadow-soft: 0 10px 24px rgba(24, 36, 63, 0.06);
+    --shadow-surface: 0 18px 42px rgba(24, 36, 63, 0.1);
+    --shadow-raised: 0 28px 64px rgba(24, 36, 63, 0.14);
+    --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.82), inset 0 -1px 0 rgba(146, 160, 187, 0.12);
+    --shadow-neu-soft: 10px 10px 24px rgba(183, 191, 207, 0.24), -10px -10px 24px rgba(255, 255, 255, 0.92);
+    --glass-border: rgba(255, 255, 255, 0.62);
+    --glass-shadow: 0 18px 44px rgba(24, 36, 63, 0.14);
   }
 
-  html,
-  body,
-  #root {
-    min-height: 100%;
-  }
+  html, body, #root { min-height: 100%; }
 
   body {
     background-color: rgb(var(--ui-bg));
     color: rgb(var(--ui-text));
     font-family: 'Vazirmatn', sans-serif;
+    background-image:
+      radial-gradient(circle at top right, rgba(var(--ui-accent), 0.035), transparent 22%),
+      radial-gradient(circle at top left, rgba(var(--ui-primary), 0.045), transparent 22%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(249, 249, 247, 1));
+  }
+
+  ::selection {
+    background-color: rgba(var(--ui-accent), 0.18);
+    color: rgb(var(--ui-text));
   }
 }
 
 @layer components {
   .app-shell {
-    @apply min-h-screen bg-slate-50 text-slate-800;
-    background-image: radial-gradient(circle at top center, rgba(148, 163, 184, 0.12), transparent 55%);
+    @apply min-h-screen;
+    color: rgb(var(--ui-text));
+    background-color: rgb(var(--ui-bg));
+    background-image:
+      radial-gradient(circle at top center, rgba(var(--ui-accent), 0.04), transparent 24%),
+      radial-gradient(circle at 18% 12%, rgba(var(--ui-primary), 0.055), transparent 20%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(249, 249, 247, 1));
   }
 
   .app-content-wrap {
@@ -81,7 +128,54 @@
   }
 
   .surface-card {
-    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+    border: 1px solid rgb(var(--ui-border)); background: rgb(var(--ui-surface));
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-soft), var(--shadow-inset);
+  }
+
+  .surface-card-quiet {
+    border: 1px solid rgba(var(--ui-border), 0.82); background: rgba(var(--ui-surface-muted), 0.92);
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-inset);
+  }
+
+  .surface-card-elevated {
+    border: 1px solid rgba(var(--ui-border), 0.9); background: rgb(var(--ui-surface-elevated));
+    border-radius: var(--radius-2xl); box-shadow: var(--shadow-surface);
+  }
+
+  .surface-card-glass {
+    border: 1px solid var(--glass-border);
+    background: linear-gradient(180deg, rgba(var(--ui-surface-glass), 0.92), rgba(250, 250, 248, 0.84));
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--glass-shadow);
+  }
+
+  .surface-soft-inset {
+    border: 1px solid rgba(var(--ui-border), 0.72);
+    background: linear-gradient(180deg, rgba(var(--ui-surface-muted), 0.99), rgba(242, 245, 249, 0.95));
+    border-radius: var(--radius-lg); box-shadow: var(--shadow-neu-soft), var(--shadow-inset);
+  }
+
+  .surface-accent {
+    border: 1px solid rgba(var(--ui-primary), 0.1);
+    background: linear-gradient(135deg, rgba(var(--ui-primary), 0.06), rgba(var(--ui-accent), 0.07));
+    border-radius: var(--radius-xl); box-shadow: var(--shadow-soft);
+  }
+
+  .surface-icon-chip {
+    @apply inline-flex items-center justify-center;
+    width: 2.5rem; height: 2.5rem; border-radius: 9999px; border: 1px solid rgba(var(--ui-border), 0.72);
+    background: linear-gradient(180deg, rgba(var(--ui-surface-elevated), 0.98), rgba(236, 240, 246, 0.94));
+    box-shadow: var(--shadow-neu-soft);
+  }
+
+  .table-shell {
+    border: 1px solid rgba(var(--ui-primary), 0.08);
+    background: rgba(var(--ui-surface-elevated), 0.96);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-soft);
+    overflow: hidden;
   }
 }
 
@@ -96,12 +190,79 @@
   }
 
   .focus-ring {
-    @apply outline-none transition-[box-shadow,border-color];
+    @apply outline-none transition-[box-shadow,border-color,background-color];
     box-shadow: 0 0 0 0 rgba(var(--ui-focus), 0);
   }
 
   .focus-ring:focus-visible {
-    box-shadow: 0 0 0 3px rgba(var(--ui-focus), 0.35);
+    border-color: rgba(var(--ui-focus), 0.55);
+    box-shadow:
+      0 0 0 1px rgba(255, 252, 249, 0.96),
+      0 0 0 4px rgba(var(--ui-focus), 0.28);
+  }
+
+  .ui-icon-solid {
+    fill: currentColor;
+    stroke: currentColor;
+    stroke-width: 2.15;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  .ui-icon-xs {
+    width: 0.75rem;
+    height: 0.75rem;
+  }
+
+  .ui-icon-sm {
+    width: 0.875rem;
+    height: 0.875rem;
+  }
+
+  .ui-icon-md {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .ui-icon-lg {
+    width: 1.125rem;
+    height: 1.125rem;
+  }
+
+  .motion-enter {
+    animation: ui-fade-up 220ms ease-out both;
+  }
+
+  .motion-enter-soft {
+    animation: ui-fade-soft 180ms ease-out both;
+  }
+
+  .motion-disclosure {
+    animation: ui-fade-up 180ms ease-out both;
+  }
+
+  .text-ui-muted { color: rgb(var(--ui-text-muted)); }
+
+  .border-ui { border-color: rgb(var(--ui-border)); }
+
+  .bg-ui-surface { background-color: rgb(var(--ui-surface)); }
+
+  .bg-ui-muted { background-color: rgb(var(--ui-surface-muted)); }
+
+  .bg-ui-glass { background-color: rgba(var(--ui-surface-glass), 0.72); }
+
+  .shadow-ui-soft { box-shadow: var(--shadow-soft); }
+
+  .shadow-ui-surface { box-shadow: var(--shadow-surface); }
+
+  .shadow-ui-raised { box-shadow: var(--shadow-raised); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-enter,
+  .motion-enter-soft,
+  .motion-disclosure {
+    animation: none !important;
   }
 }
 
@@ -121,23 +282,11 @@
 
 @media print {
   @page { size: A4 portrait; margin: 10mm; }
-  body { 
-    -webkit-print-color-adjust: exact; 
-    print-color-adjust: exact; 
-    background-color: white !important; 
-  }
+  body { -webkit-print-color-adjust: exact; print-color-adjust: exact; background-color: white !important; }
   .print-hide { display: none !important; }
-  .printable-area { 
-    display: block !important; 
-    position: static !important;
-    left: auto; 
-    top: auto; 
-    width: 100%; 
-    max-height: none !important;
-    min-height: auto; 
-    overflow: visible !important;
-    background: white; 
-    z-index: auto;
+  .printable-area {
+    display: block !important; position: static !important; left: auto; top: auto; width: 100%;
+    max-height: none !important; min-height: auto; overflow: visible !important; background: white; z-index: auto;
   }
   .app-print-shell,
   .app-print-frame,
@@ -175,10 +324,7 @@
     padding-top: 1.5mm !important;
     padding-bottom: 1.5mm !important;
   }
-  .break-inside-avoid { 
-    break-inside: avoid; 
-    page-break-inside: avoid; 
-  }
+  .break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
   .print-page {
     display: block !important;
     width: 100% !important;

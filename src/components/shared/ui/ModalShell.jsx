@@ -17,15 +17,16 @@ export const ModalShell = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm print-hide">
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[rgba(54,43,32,0.34)] p-4 backdrop-blur-md print-hide">
       <Card
-        className={cn('w-full overflow-hidden shadow-2xl', maxWidthClass)}
+        className={cn('w-full overflow-hidden shadow-ui-raised', maxWidthClass)}
         padding="none"
+        surface="glass"
       >
-        <div className="flex items-start justify-between gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3">
+        <div className="flex items-start justify-between gap-3 border-b border-[rgba(var(--ui-border),0.8)] bg-[rgba(var(--ui-surface-elevated),0.72)] px-4 py-3">
           <div>
-            <h3 className="text-sm font-black text-slate-900">{title}</h3>
-            {description ? <p className="mt-1 text-xs font-bold text-slate-500">{description}</p> : null}
+            <h3 className="text-sm font-black text-[rgb(var(--ui-text))]">{title}</h3>
+            {description ? <p className="mt-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
           </div>
           <Button onClick={onClose} variant="ghost" size="sm" aria-label="بستن" title="بستن">
             {closeButtonMode === 'icon' ? <X className="h-4 w-4" /> : 'بستن'}
@@ -34,7 +35,7 @@ export const ModalShell = ({
 
         <div className="max-h-[80vh] overflow-y-auto p-4">{children}</div>
 
-        {footer ? <div className="border-t border-slate-200 bg-white px-4 py-3">{footer}</div> : null}
+        {footer ? <div className="border-t border-[rgba(var(--ui-border),0.8)] bg-[rgba(var(--ui-surface),0.92)] px-4 py-3">{footer}</div> : null}
       </Card>
     </div>
   );

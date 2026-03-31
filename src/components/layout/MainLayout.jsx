@@ -50,13 +50,13 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
 
   return (
     <div className="app-shell app-print-shell h-screen overflow-hidden">
-      <div className="app-content-wrap app-print-frame relative h-full">
+      <div className="app-content-wrap app-print-frame relative h-full gap-0 lg:gap-4 lg:px-4 lg:py-4">
         {isSidebarOpen && (
           <button
             type="button"
             aria-label="بستن منو"
             onClick={closeMobileSidebar}
-            className="fixed inset-0 z-30 bg-slate-900/30 lg:hidden"
+            className="fixed inset-0 z-30 bg-[rgba(54,43,32,0.22)] backdrop-blur-[2px] lg:hidden"
           />
         )}
 
@@ -72,8 +72,8 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
 
         <div className="app-print-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <Header session={session} onToggleSidebar={handleToggleSidebar} />
-          <main className="app-print-content flex-1 overflow-y-auto px-4 py-5 lg:px-6">
-            <div className="app-content-area">
+          <main className="app-print-content flex-1 overflow-y-auto px-4 pb-5 pt-4 lg:px-0 lg:pb-0 lg:pt-4">
+            <div className="app-content-area pb-2">
               {children || <Outlet />}
             </div>
           </main>

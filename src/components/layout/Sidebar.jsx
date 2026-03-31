@@ -14,8 +14,7 @@ import {
   pathMatches,
   toNavTarget,
 } from '@/components/layout/sidebarNav'
-
-// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها | امنیت و دسترسی
+// UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
 const EMPTY_PERMISSIONS = Object.freeze([])
 
 export const Sidebar = ({
@@ -38,7 +37,6 @@ export const Sidebar = ({
   const modules = Array.isArray(session?.modules) ? session.modules : []
   const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const { isVisible } = useTabSettings()
-
   const inventoryTabs = getVisibleInventoryTabs(permissions)
   const accountingTabs = getVisibleAccountingTabs(permissions, isVisible)
   const navSections = getNavSections({ inventoryTabs, accountingTabs })
@@ -60,7 +58,6 @@ export const Sidebar = ({
 
       const visibleChildren = item.children.filter(isVisibleItem)
       if (visibleChildren.length === 0) return result
-
       result.push({ ...item, children: visibleChildren })
       return result
     }, [])
@@ -144,21 +141,21 @@ export const Sidebar = ({
 
   return (
     <aside
-      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-64 shrink-0 flex-col overflow-hidden border-l border-slate-200/90 bg-white/95 px-3 py-3 shadow-xl transition-transform duration-200 lg:static lg:z-auto lg:h-screen lg:translate-x-0 lg:shadow-none ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isCollapsed ? 'lg:w-20' : 'lg:w-60'}`}
+      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-72 shrink-0 flex-col overflow-hidden border-l border-[rgba(var(--ui-primary),0.08)] bg-[rgba(var(--ui-surface-glass),0.86)] px-3 py-3 shadow-ui-raised backdrop-blur-xl transition-transform duration-200 lg:static lg:z-auto lg:h-[calc(100vh-2rem)] lg:translate-x-0 lg:rounded-[var(--radius-2xl)] lg:border lg:bg-[rgba(var(--ui-surface-elevated),0.82)] ${isOpen ? 'translate-x-0' : 'translate-x-full'} ${isCollapsed ? 'lg:w-24' : 'lg:w-72'}`}
       dir="rtl"
     >
       <button
         type="button"
         onClick={onCloseMobile}
         title="بستن منو"
-        className="focus-ring mb-2 inline-flex h-9 w-9 items-center justify-center self-end rounded-xl bg-white text-slate-700 lg:hidden"
+        className="focus-ring surface-icon-chip mb-2 self-end text-[rgb(var(--ui-text-muted))] lg:hidden"
       >
         <X size={16} />
       </button>
 
-      <div className={`mb-3 rounded-2xl bg-slate-900 text-white shadow-md ${isCollapsed ? 'p-2 lg:p-2' : 'px-2.5 py-2.5'}`}>
-        <div className={`flex items-center ${isCollapsed ? 'gap-2 lg:justify-center' : 'gap-2'}`}>
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-white/20 bg-white/10 text-base font-black shadow-inner">
+      <div className={`surface-accent mb-3 overflow-hidden border px-3 py-3 ${isCollapsed ? 'lg:px-2 lg:py-2.5' : ''}`}>
+        <div className={`flex items-center ${isCollapsed ? 'gap-2 lg:justify-center' : 'gap-3'}`}>
+          <div className="surface-icon-chip flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[var(--radius-lg)] text-base font-black text-[rgb(var(--ui-primary))]">
             {showLogo ? (
               <img
                 src={logoSrc}
@@ -171,8 +168,8 @@ export const Sidebar = ({
             )}
           </div>
           <div className={isCollapsed ? 'lg:hidden' : ''}>
-            <div className="text-sm font-black">{normalizedProfile.brandName}</div>
-            <div className="text-[10px] text-slate-300">{normalizedProfile.panelSubtitle}</div>
+            <div className="text-sm font-black text-[rgb(var(--ui-primary))]">{normalizedProfile.brandName}</div>
+            <div className="text-[10px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
           </div>
         </div>
       </div>
@@ -181,12 +178,14 @@ export const Sidebar = ({
         <nav className="space-y-3">
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-1.5">
-              <div className={`px-1 text-[10px] font-black text-slate-400 ${isCollapsed ? 'lg:hidden' : ''}`}>{section.label}</div>
+              <div className={`px-1 text-[10px] font-black uppercase tracking-[0.18em] text-[rgb(var(--ui-text-muted))] ${isCollapsed ? 'lg:hidden' : ''}`}>
+                {section.label}
+              </div>
 
               {getSectionGroups(section).map((group, groupIndex, allGroups) => (
                 <div key={group.id} className="space-y-1.5">
                   {section.id === 'system' && group.label && (
-                    <div className={`px-1 text-[10px] font-bold text-slate-500 ${isCollapsed ? 'lg:hidden' : ''}`}>{group.label}</div>
+                    <div className={`px-1 text-[10px] font-bold text-[rgb(var(--ui-text-muted))] ${isCollapsed ? 'lg:hidden' : ''}`}>{group.label}</div>
                   )}
 
                   <div className="space-y-1.5">
@@ -236,7 +235,11 @@ export const Sidebar = ({
                           {isGroupOpen && (
                             <div
                               id={`${item.id}-submenu`}
-                              className={`space-y-1 rounded-xl p-1 pe-1.5 ring-1 ${item.id === 'owner' ? 'bg-amber-50/90 ring-amber-200/70' : 'bg-slate-100/80 ring-slate-200/70'} ${isCollapsed ? 'lg:hidden' : ''}`}
+                              className={`space-y-1 rounded-[var(--radius-lg)] border p-1 pe-1.5 ${
+                                item.id === 'owner'
+                                  ? 'border-[rgba(var(--ui-accent),0.28)] bg-[rgba(var(--ui-accent),0.1)]'
+                                  : 'border-[rgba(var(--ui-primary),0.08)] bg-[rgba(var(--ui-primary),0.04)]'
+                              } ${isCollapsed ? 'lg:hidden' : ''}`}
                             >
                               {item.children.map((child) => (
                                 <NavLink
@@ -257,7 +260,7 @@ export const Sidebar = ({
                   </div>
 
                   {section.id === 'system' && groupIndex < allGroups.length - 1 && (
-                    <div className={`my-1 h-px bg-slate-200/80 ${isCollapsed ? 'lg:hidden' : ''}`} />
+                    <div className={`my-1 h-px bg-[rgba(var(--ui-border),0.75)] ${isCollapsed ? 'lg:hidden' : ''}`} />
                   )}
                 </div>
               ))}
@@ -271,7 +274,7 @@ export const Sidebar = ({
               to="/orders/new"
               onClick={onNavigate}
               title="ثبت سفارش جدید"
-              className={`focus-ring flex items-center rounded-xl bg-emerald-600 px-2.5 py-1.5 text-xs font-black text-white transition-colors hover:bg-emerald-500 ${isCollapsed ? 'lg:justify-center lg:px-2' : 'justify-center gap-1'}`}
+              className={`focus-ring flex items-center rounded-[var(--radius-lg)] border border-[rgba(var(--ui-primary),0.22)] bg-[linear-gradient(135deg,rgba(var(--ui-primary),0.94),rgba(var(--ui-primary-soft),0.94))] px-2.5 py-2 text-xs font-black text-[rgb(var(--ui-primary-contrast))] shadow-ui-soft transition-[filter,transform] hover:brightness-105 ${isCollapsed ? 'lg:justify-center lg:px-2' : 'justify-center gap-1.5'}`}
             >
               <PlusCircle size={14} />
               <span className={isCollapsed ? 'lg:hidden' : ''}>ثبت سفارش جدید</span>
@@ -280,11 +283,11 @@ export const Sidebar = ({
         </div>
       </div>
 
-      <div className="mt-auto space-y-2 border-t border-slate-200 pt-3">
+      <div className="mt-auto space-y-2 border-t border-[rgba(var(--ui-border),0.8)] pt-3">
         <button
           type="button"
           onClick={onLogout}
-          className={`focus-ring flex w-full items-center rounded-xl bg-rose-50 px-2.5 py-1.5 text-xs font-black text-rose-700 transition-colors hover:bg-rose-100 ${isCollapsed ? 'lg:justify-center lg:px-2' : 'gap-1.5'}`}
+          className={`focus-ring flex w-full items-center rounded-[var(--radius-lg)] border border-[rgba(var(--ui-danger),0.18)] bg-[rgba(var(--ui-danger),0.1)] px-2.5 py-2 text-xs font-black text-[rgb(var(--ui-danger))] transition-[background-color,border-color,color] hover:bg-[rgba(var(--ui-danger),0.16)] ${isCollapsed ? 'lg:justify-center lg:px-2' : 'gap-1.5'}`}
           title="خروج"
         >
           <LogOut size={14} />

@@ -1,6 +1,21 @@
-import { Archive, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react'
-import { Button, Card, EmptyState, Input, Select } from '@/components/shared/ui'
-import { formatAmount, PAGE_SIZE_OPTIONS, toPN } from '../utils/customersView'
+import { Archive, Pencil, RefreshCw, RotateCcw, Trash2 } from 'lucide-react';
+import {
+  Button,
+  EmptyState,
+  FilterToolbar,
+  Input,
+  LoadingState,
+  Select,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeaderCell,
+  TableRow,
+  TableShell,
+  WorkspaceCard,
+} from '@/components/shared/ui';
+import { formatAmount, PAGE_SIZE_OPTIONS, toPN } from '../utils/customersView';
 
 export const CustomersDirectoryPanel = ({
   archiveMode,
@@ -23,124 +38,142 @@ export const CustomersDirectoryPanel = ({
   totalCount,
   totalPages,
 }) => (
-  <Card padding="md" className="space-y-4">
-    <div className="flex items-center justify-between gap-3" dir="rtl">
-      <div className="flex items-center gap-1.5">
+  <WorkspaceCard
+    title="دایرکتوری مشتریان"
+    description="مدیریت متمرکز مشتریان، وضعیت سفارش‌ها و دسترسی سریع به جزئیات و بایگانی."
+    className="motion-enter space-y-4"
+    padding="md"
+    surface="default"
+    bodyClassName="space-y-4"
+  >
+    <FilterToolbar
+      className="!p-0"
+      surface="quiet"
+      actions={(
+        <div className="flex items-center gap-1.5">
+          <Button
+            size="icon"
+            variant={archiveMode ? 'secondary' : 'ghost'}
+            onClick={onArchiveModeToggle}
+            title={archiveMode ? 'بازگشت به لیست اصلی' : 'آرشیو'}
+            iconOnly
+          >
+            <Archive />
+          </Button>
+          <Button
+            size="icon"
+            variant="ghost"
+            onClick={onReload}
+            disabled={loading}
+            title="بازخوانی"
+            iconOnly
+          >
+            <RefreshCw className={loading ? 'animate-spin' : ''} />
+          </Button>
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جست‌وجو..."
+            surface="quiet"
+            className="!w-48"
+          />
+        </div>
+      )}
+    >
+      <div className="flex items-center gap-1.5" dir="rtl">
         {canWriteCustomers && !archiveMode ? (
           <Button size="sm" variant="success" onClick={onCreateCustomer}>
             + مشتری جدید
           </Button>
         ) : null}
       </div>
-      <div className="flex items-center gap-1.5">
-        <Button
-          size="icon"
-          variant={archiveMode ? 'secondary' : 'ghost'}
-          onClick={onArchiveModeToggle}
-          title={archiveMode ? 'بازگشت به لیست اصلی' : 'آرشیو'}
-        >
-          <Archive className="h-4 w-4" />
-        </Button>
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={onReload}
-          disabled={loading}
-          title="بازخوانی"
-        >
-          <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-        </Button>
-        <Input
-          value={query}
-          onChange={(event) => onQueryChange(event.target.value)}
-          placeholder="جست‌وجو..."
-          className="!w-48"
-        />
-      </div>
-    </div>
+    </FilterToolbar>
 
     {loading ? (
-      <EmptyState
+      <LoadingState
         title="در حال بارگذاری مشتریان"
         description="فهرست مشتریان در حال بازخوانی است."
-        className="border border-dashed border-slate-200"
+        surface="quiet"
       />
     ) : customers.length === 0 ? (
       <EmptyState
         title={archiveMode ? 'مشتری آرشیوشده‌ای وجود ندارد' : 'مشتری برای نمایش وجود ندارد'}
         description={archiveMode ? 'اگر رکوردی آرشیو شود، از این مسیر قابل بازیابی خواهد بود.' : 'جست‌وجو را تغییر بدهید یا یک مشتری جدید ثبت کنید.'}
-        className="border border-dashed border-slate-200"
+        className="border border-dashed border-[rgba(var(--ui-border),0.8)]"
         action={canWriteCustomers && !archiveMode ? <Button variant="success" onClick={onCreateCustomer}>ثبت مشتری</Button> : null}
       />
     ) : (
       <>
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-center text-xs">
-            <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
+        <TableShell>
+          <Table>
+            <TableHead>
               <tr>
-                <th className="px-3 py-2.5 text-center">کد مشتری</th>
-                <th className="px-3 py-2.5 text-start">نام</th>
-                <th className="px-3 py-2.5 text-center">تلفن پیش‌فرض</th>
-                <th className="px-3 py-2.5 text-center">سفارش فعال</th>
-                <th className="px-3 py-2.5 text-center">جمع فروش</th>
-                <th className="px-3 py-2.5 text-center">مانده</th>
-                <th className="px-3 py-2.5 text-center">عملیات</th>
+                <TableHeaderCell>کد مشتری</TableHeaderCell>
+                <TableHeaderCell align="start">نام</TableHeaderCell>
+                <TableHeaderCell>تلفن پیش‌فرض</TableHeaderCell>
+                <TableHeaderCell>سفارش فعال</TableHeaderCell>
+                <TableHeaderCell>جمع فروش</TableHeaderCell>
+                <TableHeaderCell>مانده</TableHeaderCell>
+                <TableHeaderCell>عملیات</TableHeaderCell>
               </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
+            </TableHead>
+            <TableBody>
               {customers.map((customer) => (
-                <tr
+                <TableRow
                   key={customer.id}
-                  className={`hover:bg-slate-50/70 transition-colors ${selectedCustomerId === customer.id ? 'bg-blue-50/40' : ''}`}
+                  interactive
+                  selected={selectedCustomerId === customer.id}
                 >
-                  <td className="px-3 py-2.5 font-mono font-black text-slate-900 text-center" dir="ltr">{customer.customerCode || '-'}</td>
-                  <td className="px-3 py-2.5 text-start">
+                  <TableCell className="font-mono font-black" numeric dir="ltr">
+                    {customer.customerCode || '-'}
+                  </TableCell>
+                  <TableCell align="start">
                     <button type="button" className="block w-full text-start" onClick={() => onOpenDetails(customer)}>
-                      <div className="truncate font-black text-slate-900">{customer.fullName || '-'}</div>
-                      {customer.companyName ? <div className="mt-0.5 truncate text-[11px] font-bold text-slate-500">{customer.companyName}</div> : null}
+                      <div className="truncate font-black text-[rgb(var(--ui-text))]">{customer.fullName || '-'}</div>
+                      {customer.companyName ? <div className="mt-0.5 truncate text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{customer.companyName}</div> : null}
                     </button>
-                  </td>
-                  <td className="px-3 py-2.5 text-center font-bold text-slate-700">
-                    <span className="flex w-full justify-center" dir="ltr">
-                      <span className="whitespace-nowrap text-center">{customer.defaultPhone || '-'}</span>
-                    </span>
-                  </td>
-                  <td className="px-3 py-2.5 text-center font-black text-slate-800">{toPN(customer.activeOrdersCount || 0)}</td>
-                  <td className="px-3 py-2.5 text-center font-black text-slate-900">{formatAmount(customer.totalAmount || 0)}</td>
-                  <td className="px-3 py-2.5 text-center font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</td>
-                  <td className="px-3 py-2.5">
+                  </TableCell>
+                  <TableCell tone="muted" dir="ltr">
+                    <span className="inline-flex justify-center whitespace-nowrap">{customer.defaultPhone || '-'}</span>
+                  </TableCell>
+                  <TableCell className="font-black">{toPN(customer.activeOrdersCount || 0)}</TableCell>
+                  <TableCell className="font-black">{formatAmount(customer.totalAmount || 0)}</TableCell>
+                  <TableCell tone="danger" className="font-black">{formatAmount(customer.dueAmount || 0)}</TableCell>
+                  <TableCell>
                     <div className="flex items-center justify-center gap-1">
-                      <Button size="icon" variant="ghost" onClick={() => onOpenDetails(customer)} title="جزئیات / ویرایش">
-                        <Pencil className="h-4 w-4" />
+                      <Button size="icon" variant="ghost" onClick={() => onOpenDetails(customer)} title="جزئیات / ویرایش" iconOnly>
+                        <Pencil />
                       </Button>
                       {canWriteCustomers ? (
                         customer.isActive ? (
-                          <Button size="icon" variant="danger" onClick={() => onDeleteCustomer(customer)} title="انتقال به آرشیو">
-                            <Trash2 className="h-4 w-4" />
+                          <Button size="icon" variant="danger" onClick={() => onDeleteCustomer(customer)} title="انتقال به آرشیو" iconOnly>
+                            <Trash2 />
                           </Button>
                         ) : (
-                          <Button size="icon" variant="ghost" onClick={() => onRestoreCustomer(customer)} title="بازیابی">
-                            <RotateCcw className="h-4 w-4" />
+                          <Button size="icon" variant="ghost" onClick={() => onRestoreCustomer(customer)} title="بازیابی" iconOnly>
+                            <RotateCcw />
                           </Button>
                         )
                       ) : null}
                     </div>
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </TableBody>
+          </Table>
+        </TableShell>
 
-        <div className="flex flex-col gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-xs font-bold text-slate-500">
+        <div className="surface-card-quiet motion-enter-soft flex flex-col gap-2 rounded-[var(--radius-xl)] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">
             صفحه {toPN(page)} از {toPN(totalPages)} - {toPN(totalCount)} نتیجه
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center gap-1">
-              <span className="text-[11px] font-bold text-slate-500">تعداد ردیف:</span>
+              <span className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">تعداد ردیف:</span>
               <Select
-                className="h-8 min-w-[110px] text-[11px]"
+                className="min-w-[110px]"
+                density="compact"
+                surface="quiet"
                 value={String(pageSize)}
                 onChange={(event) => onPageSizeChange(Number(event.target.value))}
               >
@@ -148,11 +181,11 @@ export const CustomersDirectoryPanel = ({
               </Select>
             </div>
             <Button variant="secondary" size="sm" disabled={page <= 1} onClick={() => onPageChange(Math.max(1, page - 1))}>قبلی</Button>
-            <span className="rounded-lg bg-slate-50 px-3 py-2 text-xs font-black text-slate-700">{toPN(page)}</span>
+            <span className="rounded-[var(--radius-md)] bg-[rgba(var(--ui-surface-elevated),0.96)] px-3 py-2 text-xs font-black text-[rgb(var(--ui-text))]">{toPN(page)}</span>
             <Button variant="secondary" size="sm" disabled={page >= totalPages} onClick={() => onPageChange(Math.min(totalPages, page + 1))}>بعدی</Button>
           </div>
         </div>
       </>
     )}
-  </Card>
-)
+  </WorkspaceCard>
+);

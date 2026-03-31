@@ -9,22 +9,32 @@ const PADDING_CLASSNAMES = {
 };
 
 const TONE_CLASSNAMES = {
-  default: 'border-slate-200 bg-white',
-  muted: 'border-slate-200 bg-slate-50/70',
-  inverse: 'border-slate-800 bg-slate-900 text-white',
+  default: 'surface-card',
+  muted: 'surface-card-quiet',
+  inverse: 'border-[rgba(var(--ui-text),0.92)] bg-[rgb(var(--ui-text))] text-[rgb(var(--ui-primary-contrast))] shadow-ui-surface',
+};
+
+const SURFACE_CLASSNAMES = {
+  default: 'surface-card',
+  quiet: 'surface-card-quiet',
+  elevated: 'surface-card-elevated',
+  glass: 'surface-card-glass',
+  inset: 'surface-soft-inset',
+  accent: 'surface-accent',
 };
 
 export const Card = ({
   className = '',
   padding = 'md',
   tone = 'default',
+  surface = '',
   ...props
 }) => (
   <div
     className={cn(
-      'rounded-2xl border shadow-sm',
+      'rounded-[var(--radius-xl)]',
       PADDING_CLASSNAMES[padding] || PADDING_CLASSNAMES.md,
-      TONE_CLASSNAMES[tone] || TONE_CLASSNAMES.default,
+      surface ? (SURFACE_CLASSNAMES[surface] || SURFACE_CLASSNAMES.default) : (TONE_CLASSNAMES[tone] || TONE_CLASSNAMES.default),
       className,
     )}
     {...props}
