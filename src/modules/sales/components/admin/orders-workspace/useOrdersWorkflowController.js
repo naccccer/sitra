@@ -36,6 +36,7 @@ export const useOrdersWorkflowController = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [expandedOrderId, setExpandedOrderId] = useState(null);
   const [viewingOrder, setViewingOrder] = useState(null);
+  const [viewingOrderType, setViewingOrderType] = useState('factory');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [patternFilesContext, setPatternFilesContext] = useState(null);
 
@@ -132,16 +133,26 @@ export const useOrdersWorkflowController = ({
     setPatternFilesContext({ orderCode: order?.orderCode || '', files });
   };
 
-  const printFactoryOrder = (order) => {
+  const printOrder = (order, type = 'factory') => {
     if (!order) return;
+    const resolvedType = type === 'customer' ? 'customer' : 'factory';
     setViewingOrder(order);
+    setViewingOrderType(resolvedType);
     setTimeout(() => {
       void printInvoiceWithOrderCode({
         orderCode: order.orderCode || '',
         items: order.items,
-        fallbackTitle: 'سفارش کارگاهی',
+        fallbackTitle: resolvedType === 'customer' ? 'Customer Invoice' : 'Factory Order',
       });
     }, 120);
+  };
+
+  const printFactoryOrder = (order) => {
+    printOrder(order, 'factory');
+  };
+
+  const printCustomerOrder = (order) => {
+    printOrder(order, 'customer');
   };
 
   const handleLoadMoreOrders = async () => {
@@ -181,6 +192,7 @@ export const useOrdersWorkflowController = ({
     setSearchQuery,
     expandedOrderId,
     viewingOrder,
+    viewingOrderType,
     setViewingOrder,
     isLoadingMore,
     patternFilesContext,
@@ -193,6 +205,7 @@ export const useOrdersWorkflowController = ({
     toggleOrderExpansion,
     openPatternFilesModal,
     printFactoryOrder,
+    printCustomerOrder,
     handleLoadMoreOrders,
     resolveOrderStageId,
   };

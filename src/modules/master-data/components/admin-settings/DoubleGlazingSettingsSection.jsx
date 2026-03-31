@@ -24,16 +24,14 @@ export const DoubleGlazingSettingsSection = ({ draft, setDraft }) => {
 
           <div className="space-y-2">
             {spacers.map((spacer, index) => (
-              <div key={spacer.id} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[36px_96px_84px_160px] sm:items-center sm:justify-center">
-                <button
-                  onClick={() => setDraft((previous) => ({ ...previous, connectors: { ...previous.connectors, spacers: (previous.connectors?.spacers || []).filter((item) => item.id !== spacer.id) } }))}
-                  className="justify-self-end rounded-md p-1 text-rose-500 hover:bg-rose-50 sm:justify-self-auto"
-                >
-                  <Trash2 size={14} />
-                </button>
-
-                <div className="rounded-lg border border-slate-200 bg-white">
-                  <PriceInput value={spacer.price} onChange={(value) => updateSpacer(index, { price: value })} />
+              <div key={spacer.id} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[minmax(0,1fr)_84px_96px_36px] sm:items-center">
+                <div className="min-w-0">
+                  <input
+                    type="text"
+                    value={spacer.title}
+                    onChange={(event) => updateSpacer(index, { title: event.target.value })}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-bold outline-none"
+                  />
                 </div>
 
                 <select
@@ -45,12 +43,16 @@ export const DoubleGlazingSettingsSection = ({ draft, setDraft }) => {
                   <option value="m_square">مساحت</option>
                 </select>
 
-                <input
-                  type="text"
-                  value={spacer.title}
-                  onChange={(event) => updateSpacer(index, { title: event.target.value })}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-bold outline-none"
-                />
+                <div className="rounded-lg border border-slate-200 bg-white">
+                  <PriceInput value={spacer.price} onChange={(value) => updateSpacer(index, { price: value })} />
+                </div>
+
+                <button
+                  onClick={() => setDraft((previous) => ({ ...previous, connectors: { ...previous.connectors, spacers: (previous.connectors?.spacers || []).filter((item) => item.id !== spacer.id) } }))}
+                  className="justify-self-end rounded-md p-1 text-rose-500 hover:bg-rose-50 sm:justify-self-auto"
+                >
+                  <Trash2 size={14} />
+                </button>
               </div>
             ))}
           </div>
@@ -104,4 +106,3 @@ export const DoubleGlazingSettingsSection = ({ draft, setDraft }) => {
     </div>
   );
 };
-

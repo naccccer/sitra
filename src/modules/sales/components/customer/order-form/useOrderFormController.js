@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+﻿import { useEffect, useMemo, useState } from 'react';
 import { usePricingCalculator } from '@/modules/sales/hooks/usePricingCalculator';
 import {
   buildCatalogPricingMeta,
@@ -9,58 +9,21 @@ import {
 } from '@/modules/sales/domain/invoice';
 import {
   createEmptyManualDraft,
-  findMatchingGlassByTitleAndProcess,
   normalizeLoadedItem,
   parseIntSafe,
   parseNumber,
 } from '@/modules/sales/components/customer/order-form/orderFormUtils';
+import {
+  buildCustomOrderItemPayload,
+  createCustomDraft,
+  normalizeCustomCatalogItems,
+  resolveCustomDraftState,
+} from '@/modules/sales/components/customer/order-form/customItemsDraft';
 import { createOrderFormHandlers } from '@/modules/sales/components/customer/order-form/orderFormHandlers';
 import { useOrderCustomerLinks } from '@/modules/sales/components/customer/order-form/useOrderCustomerLinks';
-
-const resolveCatalogDefaults = (catalog) => ({
-  glasses: Array.isArray(catalog?.glasses) ? catalog.glasses : [],
-  pvbLogic: Array.isArray(catalog?.pvbLogic) ? catalog.pvbLogic : [],
-  spacers: Array.isArray(catalog?.connectors?.spacers) ? catalog.connectors.spacers : [],
-  interlayers: Array.isArray(catalog?.connectors?.interlayers) ? catalog.connectors.interlayers : [],
-});
-
-const buildInitialConfig = (catalog) => {
-  const defaults = resolveCatalogDefaults(catalog);
-
-  const suggestInterlayer = (totalThick) => {
-    const rule = defaults.pvbLogic.find((item) => (
-      totalThick >= item.minTotalThickness && totalThick <= item.maxTotalThickness
-    ));
-    return rule ? rule.defaultInterlayerId : defaults.interlayers[0]?.id;
-  };
-
-  return {
-    operations: {},
-    pattern: { type: 'none', fileName: '' },
-    single: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-    laminate: {
-      glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-      interlayerId: suggestInterlayer(8),
-      glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-    },
-    double: {
-      spacerId: defaults.spacers[0]?.id,
-      pane1: {
-        isLaminated: false,
-        glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-        interlayerId: suggestInterlayer(8),
-        glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-      },
-      pane2: {
-        isLaminated: false,
-        glass1: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-        interlayerId: suggestInterlayer(8),
-        glass2: { glassId: defaults.glasses[0]?.id || '', thick: 4, isSekurit: false, hasEdge: false },
-      },
-    },
-  };
-};
-
+import { clearOrderCreateDraft, readOrderCreateDraft, writeOrderCreateDraft } from '@/modules/sales/components/customer/order-form/orderDraftStorage';
+import { buildInitialConfig, resolveCatalogDefaults } from '@/modules/sales/components/customer/order-form/orderFormConfigDefaults';
+import { buildManualErrors, createConfigLayerUpdater } from '@/modules/sales/components/customer/order-form/orderFormControllerHelpers';
 export const useOrderFormController = ({
   catalog,
   editingOrder,
@@ -68,27 +31,43 @@ export const useOrderFormController = ({
   setOrders,
   staffMode,
 }) => {
+  const [initialCreateDraft] = useState(() => (editingOrder ? null : readOrderCreateDraft()));
+
   const isStaffContext = staffMode || Boolean(editingOrder);
   const catalogDefaults = resolveCatalogDefaults(catalog);
   const billing = ensureBillingSettings(catalog);
+  const customItems = useMemo(
+    () => normalizeCustomCatalogItems(catalog).filter((item) => item.isActive),
+    [catalog],
+  );
 
-  const [activeTab, setActiveTab] = useState('double');
-  const [dimensions, setDimensions] = useState({ width: '100', height: '100', count: '1' });
+  const [activeTab, setActiveTab] = useState(() => String(initialCreateDraft?.activeTab || 'double'));
+  const [dimensions, setDimensions] = useState(() => initialCreateDraft?.dimensions || { width: '100', height: '100', count: '1' });
   const [modalMode, setModalMode] = useState(null);
   const [orderItems, setOrderItems] = useState(() => (
-    editingOrder && Array.isArray(editingOrder.items) ? editingOrder.items.map(normalizeLoadedItem) : []
+    editingOrder && Array.isArray(editingOrder.items)
+      ? editingOrder.items.map(normalizeLoadedItem)
+      : (Array.isArray(initialCreateDraft?.orderItems) ? initialCreateDraft.orderItems.map(normalizeLoadedItem) : [])
   ));
   const [editingItemId, setEditingItemId] = useState(null);
   const [editingItemType, setEditingItemType] = useState('catalog');
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [customerInfo, setCustomerInfo] = useState({
-    name: editingOrder ? editingOrder.customerName : '',
-    phone: editingOrder ? editingOrder.phone : '',
-  });
-  const [invoiceNotes, setInvoiceNotes] = useState(editingOrder?.invoiceNotes || '');
+  const [customerInfo, setCustomerInfo] = useState(() => ({
+    name: editingOrder ? editingOrder.customerName : String(initialCreateDraft?.customerInfo?.name || ''),
+    phone: editingOrder ? editingOrder.phone : String(initialCreateDraft?.customerInfo?.phone || ''),
+  }));
+  const [invoiceNotes, setInvoiceNotes] = useState(() => editingOrder?.invoiceNotes || String(initialCreateDraft?.invoiceNotes || ''));
   const [itemPricing, setItemPricing] = useState({ overrideUnitPrice: '', overrideReason: '', discountType: 'none', discountValue: '' });
   const [manualDraft, setManualDraft] = useState(createEmptyManualDraft);
   const [manualTouched, setManualTouched] = useState({});
+  const [customDraft, setCustomDraft] = useState(() => (
+    initialCreateDraft?.customDraft && typeof initialCreateDraft.customDraft === 'object'
+      ? {
+        itemId: String(initialCreateDraft.customDraft.itemId || ''),
+        unitPrice: String(initialCreateDraft.customDraft.unitPrice || ''),
+      }
+      : createCustomDraft(customItems)
+  ));
   const [invoiceAdjustments] = useState({
     discountType: editingOrder?.financials?.invoiceDiscountType || 'none',
     discountValue: String(editingOrder?.financials?.invoiceDiscountValue ?? ''),
@@ -96,71 +75,58 @@ export const useOrderFormController = ({
     taxRate: String(editingOrder?.financials?.taxRate ?? billing.taxRate),
   });
   const [payments, setPayments] = useState(() => (
-    editingOrder?.payments && Array.isArray(editingOrder.payments) ? editingOrder.payments.map(normalizePayment) : []
+    editingOrder?.payments && Array.isArray(editingOrder.payments)
+      ? editingOrder.payments.map(normalizePayment)
+      : (Array.isArray(initialCreateDraft?.payments) ? initialCreateDraft.payments.map(normalizePayment) : [])
   ));
-  const [config, setConfig] = useState(() => buildInitialConfig(catalog));
+  const [config, setConfig] = useState(() => initialCreateDraft?.config || buildInitialConfig(catalog));
 
   const customerLinks = useOrderCustomerLinks({
     isStaffContext,
     editingOrder,
+    initialSelection: initialCreateDraft?.customerLinks || null,
     customerInfo,
     setCustomerInfo,
   });
 
-  const suggestInterlayer = (totalThick) => {
-    const rule = catalogDefaults.pvbLogic.find((item) => (
-      totalThick >= item.minTotalThickness && totalThick <= item.maxTotalThickness
-    ));
-    return rule ? rule.defaultInterlayerId : catalogDefaults.interlayers[0]?.id;
-  };
+  const resolvedCustomDraft = useMemo(() => {
+    if (!customItems.length) return { itemId: '', unitPrice: '' };
+    const selected = customItems.find((item) => item.id === String(customDraft?.itemId || '')) || customItems[0];
+    return {
+      itemId: selected.id,
+      unitPrice: String(Math.max(0, parseIntSafe(customDraft?.unitPrice ?? selected.unitPrice, selected.unitPrice))),
+    };
+  }, [customDraft, customItems]);
+
+  useEffect(() => {
+    if (editingOrder) return;
+    writeOrderCreateDraft({
+      activeTab,
+      dimensions,
+      orderItems,
+      customerInfo,
+      invoiceNotes,
+      payments,
+      config,
+      customDraft: resolvedCustomDraft,
+      customerLinks: {
+        customerId: customerLinks.selectedCustomerId,
+        projectId: customerLinks.selectedProjectId,
+        projectContactId: customerLinks.selectedProjectContactId,
+      },
+    });
+  }, [activeTab, config, resolvedCustomDraft, customerInfo, customerLinks.selectedCustomerId, customerLinks.selectedProjectContactId, customerLinks.selectedProjectId, dimensions, editingOrder, invoiceNotes, orderItems, payments]);
 
   const handleDimensionChange = (event) => {
     setDimensions((previous) => ({ ...previous, [event.target.name]: event.target.value }));
   };
 
-  const updateConfigLayer = (assembly, paneKey, subField, value, innerField = null) => {
-    setConfig((previous) => {
-      const nextConfig = JSON.parse(JSON.stringify(previous));
-      if (innerField) nextConfig[assembly][paneKey][subField][innerField] = value;
-      else if (subField) nextConfig[assembly][paneKey][subField] = value;
-      else nextConfig[assembly][paneKey] = value;
-
-      const isSekuritToggle = innerField === 'isSekurit'
-        || subField === 'isSekurit'
-        || (assembly === 'single' && paneKey === 'isSekurit');
-      if (isSekuritToggle) {
-        let glassLayer = null;
-        if (assembly === 'single') glassLayer = nextConfig.single;
-        else if (assembly === 'laminate' && (paneKey === 'glass1' || paneKey === 'glass2')) glassLayer = nextConfig.laminate[paneKey];
-        else if (assembly === 'double' && (subField === 'glass1' || subField === 'glass2')) glassLayer = nextConfig.double[paneKey][subField];
-
-        if (glassLayer) {
-          const targetProcess = glassLayer.isSekurit ? 'sekurit' : 'raw';
-          const matchedGlass = findMatchingGlassByTitleAndProcess(glassLayer.glassId, targetProcess, catalog);
-          if (matchedGlass) glassLayer.glassId = matchedGlass.id;
-        }
-      }
-
-      if ((innerField === 'thick' || subField === 'thick') && (assembly === 'laminate' || (assembly === 'double' && nextConfig.double[paneKey].isLaminated))) {
-        if (assembly === 'laminate') {
-          const total = nextConfig.laminate.glass1.thick + nextConfig.laminate.glass2.thick;
-          nextConfig.laminate.interlayerId = suggestInterlayer(total);
-        }
-        if (assembly === 'double') {
-          const total = nextConfig.double[paneKey].glass1.thick + nextConfig.double[paneKey].glass2.thick;
-          nextConfig.double[paneKey].interlayerId = suggestInterlayer(total);
-        }
-      }
-      return nextConfig;
-    });
-  };
-
-  const { validationErrors, summaryErrors, unavailableLayers, pricingDetails } = usePricingCalculator(
-    dimensions,
-    activeTab,
-    config,
-    catalog,
+  const updateConfigLayer = useMemo(
+    () => createConfigLayerUpdater({ setConfig, catalogDefaults, catalog }),
+    [catalog, catalogDefaults, setConfig],
   );
+
+  const { validationErrors, summaryErrors, unavailableLayers, pricingDetails } = usePricingCalculator(dimensions, activeTab, config, catalog);
 
   const catalogPricingPreview = useMemo(() => buildCatalogPricingMeta({
     catalogUnitPrice: Math.max(0, parseIntSafe(pricingDetails.unitPrice, 0)),
@@ -171,6 +137,22 @@ export const useOrderFormController = ({
     discountType: itemPricing.discountType,
     discountValue: itemPricing.discountValue,
   }), [billing.priceFloorPercent, dimensions.count, itemPricing, pricingDetails.unitPrice]);
+
+  const customDraftState = useMemo(
+    () => resolveCustomDraftState({
+      customItems,
+      customDraft: resolvedCustomDraft,
+      dimensions,
+      config,
+      catalog,
+      billing,
+      itemPricing,
+      isStaffContext,
+    }),
+    [billing, catalog, config, customItems, dimensions, isStaffContext, itemPricing, resolvedCustomDraft],
+  );
+
+  const effectivePricingPreview = activeTab === 'custom' ? customDraftState.pricingMeta : catalogPricingPreview;
 
   const financials = useMemo(() => computeInvoiceFinancials({
     items: orderItems,
@@ -185,22 +167,14 @@ export const useOrderFormController = ({
   const manualUnitPriceRaw = parseNumber(manualDraft.unitPrice);
   const manualDiscountRaw = parseNumber(manualDraft.discountValue);
   const manualBaseAmount = Math.max(0, Math.round((manualQtyRaw ?? 0) * (manualUnitPriceRaw ?? 0)));
-  const manualErrors = useMemo(() => {
-    const next = {};
-    if (String(manualDraft.title || '').trim() === '') next.title = 'عنوان آیتم الزامی است.';
-    if (manualQtyRaw === null || manualQtyRaw < 1) next.qty = 'تعداد باید حداقل ۱ باشد.';
-    if (manualUnitPriceRaw === null || manualUnitPriceRaw <= 0) next.unitPrice = 'قیمت فی باید بیشتر از صفر باشد.';
-    if (manualDraft.discountType === 'percent') {
-      if (manualDiscountRaw === null) next.discountValue = 'درصد تخفیف را وارد کنید.';
-      else if (manualDiscountRaw < 0 || manualDiscountRaw > 100) next.discountValue = 'درصد تخفیف باید بین ۰ تا ۱۰۰ باشد.';
-    }
-    if (manualDraft.discountType === 'fixed') {
-      if (manualDiscountRaw === null) next.discountValue = 'مبلغ تخفیف را وارد کنید.';
-      else if (manualDiscountRaw < 0) next.discountValue = 'مبلغ تخفیف نمی‌تواند منفی باشد.';
-      else if (manualDiscountRaw > manualBaseAmount) next.discountValue = 'تخفیف ثابت نمی‌تواند بیشتر از مبلغ پایه باشد.';
-    }
-    return next;
-  }, [manualBaseAmount, manualDiscountRaw, manualDraft, manualQtyRaw, manualUnitPriceRaw]);
+  const manualErrors = useMemo(() => buildManualErrors({
+    manualBaseAmount,
+    manualDiscountRaw,
+    manualDraft,
+    manualQtyRaw,
+    manualUnitPriceRaw,
+  }), [manualBaseAmount, manualDiscountRaw, manualDraft, manualQtyRaw, manualUnitPriceRaw]);
+
   const manualPreviewPricing = useMemo(() => buildManualPricingMeta({
     qty: Math.max(1, parseIntSafe(manualDraft.qty, 1)),
     unitPrice: Math.max(0, parseIntSafe(manualDraft.unitPrice, 0)),
@@ -209,14 +183,22 @@ export const useOrderFormController = ({
   }), [manualDraft]);
 
   const manualCanSubmit = Object.keys(manualErrors).length === 0;
-  const canAddCatalogItem = pricingDetails.total > 0 && validationErrors.length === 0;
+  const canAddCatalogItem = activeTab === 'custom'
+    ? customDraftState.canAdd
+    : (pricingDetails.total > 0 && validationErrors.length === 0);
   const grandTotal = financials.grandTotal;
 
   const handlers = createOrderFormHandlers({
     activeTab,
     canAddCatalogItem,
-    catalogPricingPreview,
+    catalogPricingPreview: effectivePricingPreview,
     config,
+    customDraft: resolvedCustomDraft,
+    buildCustomOrderItemPayload,
+    customDraftState,
+    createCustomDraft,
+    customItems,
+    setCustomDraft,
     customerInfo,
     dimensions,
     editingItemId,
@@ -229,6 +211,7 @@ export const useOrderFormController = ({
     manualCanSubmit,
     manualDraft,
     onCancelEdit,
+    onClearCreateDraft: clearOrderCreateDraft,
     orderItems,
     payments,
     selectedCustomerId: customerLinks.selectedCustomerId,
@@ -278,9 +261,13 @@ export const useOrderFormController = ({
     manualErrors,
     manualPreviewPricing,
     manualCanSubmit,
-    summaryErrors,
-    unavailableLayers,
-    catalogPricingPreview,
+    customItems,
+    customDraft: resolvedCustomDraft,
+    setCustomDraft,
+    customDraftState,
+    summaryErrors: activeTab === 'custom' ? [] : summaryErrors,
+    unavailableLayers: activeTab === 'custom' ? {} : unavailableLayers,
+    catalogPricingPreview: effectivePricingPreview,
     financials,
     grandTotal,
     canAddCatalogItem,

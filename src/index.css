@@ -186,6 +186,21 @@
     box-sizing: border-box !important;
     overflow: visible !important;
   }
+  .invoice-main-page {
+    display: flex !important;
+    flex-direction: column !important;
+    min-height: 252mm !important;
+  }
+  .invoice-main-page .invoice-main-lower-stack {
+    margin-top: auto !important;
+  }
+  .invoice-main-page .invoice-financial-card {
+    font-size: 10px !important;
+  }
+  .invoice-main-page .invoice-financial-card .invoice-grand-total {
+    font-size: 15px !important;
+    line-height: 1.2 !important;
+  }
   .print-page-break {
     break-after: page !important;
     page-break-after: always !important;

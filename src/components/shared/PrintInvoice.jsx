@@ -3,6 +3,7 @@ import { toPN } from '../../utils/helpers';
 import { StructureDetails } from './StructureDetails';
 import { getPaymentMethodLabel, normalizePaymentMethod } from '../../utils/invoice';
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
+import { isCustomSquareMeterUnit } from '@/utils/customItemUnits';
 import { OperationChip, PatternPreview } from '@/components/shared/print-invoice/PatternPreview';
 
 const normalizePayment = (payment = {}, fallbackIndex = 0) => ({
@@ -26,6 +27,35 @@ const getPaymentStatusMeta = (status = '') => {
   if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-100 text-emerald-700' };
   if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' };
   return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
+};
+
+const toPositiveNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const normalizeByRoundStep = (value, roundStep = 1000) => {
+  const numeric = Math.max(0, Number(value) || 0);
+  const stepNumeric = Number(roundStep);
+  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
+  return Math.floor(numeric / step) * step;
+};
+
+const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
+  const itemType = String(item?.itemType || 'catalog');
+  if (itemType === 'manual') return null;
+  if (itemType === 'custom' && !isCustomSquareMeterUnit(item?.custom?.unitLabel || item?.config?.unitLabel)) return null;
+
+  const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
+  const widthCm = toPositiveNumber(item?.dimensions?.width);
+  const heightCm = toPositiveNumber(item?.dimensions?.height);
+  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  const rawArea = (widthCm * heightCm) / 10000;
+  const effectiveArea = Math.max(0.25, rawArea);
+  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
 };
 
 export const PrintInvoice = ({
@@ -123,7 +153,7 @@ export const PrintInvoice = ({
 
   return (
     <div className={rootClassName} dir="rtl" style={{ fontFamily: 'Vazirmatn' }}>
-      <section className={`print-page ${includeAppendix && appendixEntries.length > 0 ? 'print-page-break' : ''}`}>
+      <section className={`print-page invoice-main-page ${includeAppendix && appendixEntries.length > 0 ? 'print-page-break' : ''}`}>
       <div className="flex justify-between items-start border-b-[2px] border-slate-800 pb-3 mb-4">
         <div className="flex items-center gap-3">
           <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center text-white font-black text-xl overflow-hidden">
@@ -158,17 +188,20 @@ export const PrintInvoice = ({
             <th className="border border-slate-300 p-2 text-right">جزئیات فنی و پیکربندی</th>
             <th className="border border-slate-300 p-2 w-24 text-center">ابعاد (cm)</th>
             <th className="border border-slate-300 p-2 w-12 text-center">تعداد</th>
-            {!isFactory && <th className="border border-slate-300 p-2 w-28 text-center">فی (تومان)</th>}
+            {!isFactory && <th className="border border-slate-300 p-2 w-28 text-center">فی (مترمربع)</th>}
             {!isFactory && <th className="border border-slate-300 p-2 w-32 text-left">مبلغ کل (تومان)</th>}
           </tr>
         </thead>
         <tbody className="text-slate-800">
           {printableItems.map((item, i) => {
-            const isManual = (item?.itemType || 'catalog') === 'manual';
-            const width = isManual ? '-' : (item?.dimensions?.width ?? '-');
-            const height = isManual ? '-' : (item?.dimensions?.height ?? '-');
-            const count = isManual ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1) : (item?.dimensions?.count ?? 1);
-            const unitPrice = Math.max(0, Number(item?.unitPrice) || 0);
+            const itemType = String(item?.itemType || 'catalog');
+            const isManualLike = itemType === 'manual';
+            const width = isManualLike ? '-' : (item?.dimensions?.width ?? '-');
+            const height = isManualLike ? '-' : (item?.dimensions?.height ?? '-');
+            const count = itemType === 'manual'
+              ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1)
+              : (item?.dimensions?.count ?? 1);
+            const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep);
             const totalPrice = Math.max(0, Number(item?.totalPrice) || 0);
 
             return (
@@ -178,7 +211,11 @@ export const PrintInvoice = ({
                 <td className="border border-slate-300 p-2 align-top"><StructureDetails item={item} catalog={catalog} /></td>
                 <td className="border border-slate-300 p-2 font-bold tabular-nums text-center align-top" dir="ltr">{toPN(width)} × {toPN(height)}</td>
                 <td className="border border-slate-300 p-2 font-black tabular-nums text-center align-top">{toPN(count)}</td>
-                {!isFactory && <td className="border border-slate-300 p-2 font-bold text-slate-600 tabular-nums text-center align-top">{toPN(unitPrice.toLocaleString())}</td>}
+                {!isFactory && (
+                  <td className="border border-slate-300 p-2 font-bold text-slate-600 tabular-nums text-center align-top">
+                    {perSquareMeterPrice === null ? '-' : toPN(perSquareMeterPrice.toLocaleString())}
+                  </td>
+                )}
                 {!isFactory && <td className="border border-slate-300 p-2 font-black tabular-nums bg-slate-100 text-left align-top text-[13px]">{toPN(totalPrice.toLocaleString())}</td>}
               </tr>
             );
@@ -186,14 +223,15 @@ export const PrintInvoice = ({
         </tbody>
       </table>
 
+      <div className="invoice-main-lower-stack">
       {!isFactory && (
-        <div className="flex flex-col md:flex-row gap-3 justify-between items-stretch mb-4 break-inside-avoid">
+        <div className="flex flex-col gap-3 justify-between items-start md:flex-row md:items-end mb-4 break-inside-avoid">
           <div className="md:w-1/2 p-3 text-[10px] font-bold text-slate-500 space-y-1.5 border border-slate-200 rounded-xl bg-slate-50">
             <p className="text-slate-700">توضیحات و شرایط:</p>
             <ul className="list-disc list-inside space-y-1">
               <li>تمامی ابعاد به سانتی‌متر ثبت شده‌اند.</li>
               <li>اعتبار پیش‌فاکتور ۳ روز کاری است.</li>
-              <li>مبنای تسویه، مبالغ نهایی درج‌شده در همین نسخه است.</li>
+              <li>تمام مبالغ به تومانه.</li>
             </ul>
             {invoiceNotes && (
               <div className="mt-2 rounded-lg border border-slate-200 bg-white p-2 text-[10px] text-slate-700">
@@ -203,7 +241,7 @@ export const PrintInvoice = ({
             )}
           </div>
 
-          <div className="md:w-72 border border-slate-300 p-4 rounded-2xl bg-white text-slate-900">
+          <div className="invoice-financial-card md:w-72 border border-slate-300 p-4 rounded-2xl bg-white text-slate-900">
             <div className="mb-2">
               <span className={`inline-flex items-center rounded-full px-2 py-1 text-[10px] font-black ${paymentStatusMeta.className}`}>
                 {paymentStatusMeta.label}
@@ -217,7 +255,7 @@ export const PrintInvoice = ({
               <div className="flex justify-between"><span className="text-slate-600">مالیات:</span><span className="tabular-nums">{toPN(normalizedFinancials.taxAmount.toLocaleString())}</span></div>
             </div>
 
-            <div className="flex justify-between text-lg font-black tabular-nums items-center">
+            <div className="invoice-grand-total flex justify-between text-lg font-black tabular-nums items-center">
               <span className="text-slate-600 text-xs">جمع کل فاکتور:</span>
               <span>{toPN(normalizedFinancials.grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
             </div>
@@ -262,6 +300,7 @@ export const PrintInvoice = ({
         <span className="text-slate-300">|</span>
         <span className="text-slate-800">شماره تماس:</span>
         <span className="tabular-nums" dir="ltr">{normalizedProfile.phones}</span>
+      </div>
       </div>
       </section>
 

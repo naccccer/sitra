@@ -6,15 +6,16 @@ const toId = (value) => String(value || '')
 export const useOrderCustomerLinks = ({
   isStaffContext,
   editingOrder,
+  initialSelection = null,
   customerInfo,
   setCustomerInfo,
 }) => {
   const [customers, setCustomers] = useState([])
   const [projects, setProjects] = useState([])
   const [projectContacts, setProjectContacts] = useState([])
-  const [selectedCustomerId, setSelectedCustomerId] = useState(() => toId(editingOrder?.customerId))
-  const [selectedProjectId, setSelectedProjectId] = useState(() => toId(editingOrder?.projectId))
-  const [selectedProjectContactId, setSelectedProjectContactId] = useState(() => toId(editingOrder?.projectContactId))
+  const [selectedCustomerId, setSelectedCustomerId] = useState(() => toId(initialSelection?.customerId || editingOrder?.customerId))
+  const [selectedProjectId, setSelectedProjectId] = useState(() => toId(initialSelection?.projectId || editingOrder?.projectId))
+  const [selectedProjectContactId, setSelectedProjectContactId] = useState(() => toId(initialSelection?.projectContactId || editingOrder?.projectContactId))
 
   const refreshCustomers = useCallback(async () => {
     if (!isStaffContext) return

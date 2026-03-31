@@ -75,10 +75,10 @@ foreach ($allPerms as $perm) {
     test_assert_contains($perm, $matrix['admin'], "admin has {$perm}");
 }
 
-// Sales should not have catalog write
+// Sales should have catalog write
 test_assert(
-    !in_array('master_data.catalog.write', $matrix['sales'], true),
-    'sales role does not have master_data.catalog.write'
+    in_array('master_data.catalog.write', $matrix['sales'], true),
+    'sales role has master_data.catalog.write'
 );
 
 // Sales should have orders.read
@@ -190,9 +190,9 @@ test_assert_true(
     app_user_has_permission($salesUser, 'customers.read'),
     'sales user has customers.read'
 );
-test_assert_false(
+test_assert_true(
     app_user_has_permission($salesUser, 'master_data.catalog.write'),
-    'sales user does not have master_data.catalog.write'
+    'sales user has master_data.catalog.write'
 );
 test_assert_false(
     app_user_has_permission(null, 'sales.orders.read'),
@@ -245,7 +245,7 @@ $salesCaps = app_module_capabilities('sales');
 test_assert_true($salesCaps['canManageOrders'], 'sales canManageOrders');
 test_assert_true($salesCaps['canManageCustomers'], 'sales canManageCustomers');
 test_assert_true($salesCaps['canAccessInventory'], 'sales canAccessInventory');
-test_assert_false($salesCaps['canManageCatalog'], 'sales cannot manage catalog (no write)');
+test_assert_true($salesCaps['canManageCatalog'], 'sales can manage catalog');
 test_assert_false($salesCaps['canManageUsers'], 'sales cannot manage users');
 test_assert_false($salesCaps['canManageInventory'], 'sales cannot manage inventory');
 

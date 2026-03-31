@@ -1,19 +1,40 @@
-import React from 'react';
+﻿import React from 'react';
 import { Layers } from 'lucide-react';
+import { normalizeCustomUnitLabel } from '@/utils/customItemUnits';
 import { toPN } from '../../utils/helpers';
 
+const DEFAULT_UNIT_LABEL = '\u0639\u062f\u062f';
+
 export const StructureDetails = ({ item, catalog }) => {
-  if ((item?.itemType || 'catalog') === 'manual') {
+  const itemType = String(item?.itemType || 'catalog');
+
+  if (itemType === 'manual') {
     const manual = item?.manual || {};
     return (
       <div className="space-y-1">
         <div className="text-[11px] font-black text-amber-700">آیتم دستی</div>
         <div className="text-[10px] font-bold text-slate-600">
-          {toPN(manual.qty ?? item?.dimensions?.count ?? 1)} {manual.unitLabel || 'عدد'}
+          {toPN(manual.qty ?? item?.dimensions?.count ?? 1)} {manual.unitLabel || DEFAULT_UNIT_LABEL}
         </div>
         {manual.description && <div className="text-[10px] font-bold text-slate-500">{manual.description}</div>}
-        <div className="text-[10px] font-bold text-slate-500 flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2 text-[10px] font-bold text-slate-500">
           <span>{manual.taxable ? 'مشمول مالیات' : 'معاف از مالیات'}</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (itemType === 'custom' || item?.activeTab === 'custom') {
+    const custom = item?.custom || {};
+    const unitLabel = normalizeCustomUnitLabel(custom.unitLabel || item?.config?.unitLabel || DEFAULT_UNIT_LABEL);
+    return (
+      <div className="space-y-1">
+        <div className="text-[11px] font-black text-amber-700">آیتم سفارشی</div>
+        <div className="text-[10px] font-bold text-slate-600">
+          {toPN(item?.dimensions?.count ?? 1)} {unitLabel}
+        </div>
+        <div className="text-[10px] font-bold text-slate-500">
+          قیمت پایه: {toPN((Number(custom.baseUnitPrice || 0)).toLocaleString())} تومان
         </div>
       </div>
     );
@@ -35,34 +56,29 @@ export const StructureDetails = ({ item, catalog }) => {
     return `${glass?.title || 'فلوت'} ${toPN(thick)}mm`;
   };
 
-  const getSpacerLabel = (spacerId) => {
-    return catalog?.connectors?.spacers?.find((s) => s.id === spacerId)?.title || 'اسپیسر';
-  };
-
-  const getInterlayerLabel = (interlayerId) => {
-    return catalog?.connectors?.interlayers?.find((x) => x.id === interlayerId)?.title || 'PVB';
-  };
+  const getSpacerLabel = (spacerId) => catalog?.connectors?.spacers?.find((s) => s.id === spacerId)?.title || 'اسپیسر';
+  const getInterlayerLabel = (interlayerId) => catalog?.connectors?.interlayers?.find((x) => x.id === interlayerId)?.title || 'PVB';
 
   const renderGlassLayerRow = (marker, layer = {}) => (
     <div className="flex items-center gap-1 text-[11px]">
-      <span className="text-slate-400 font-black">{toPN(marker)}</span>
-      <span className={layer?.isSekurit ? 'text-rose-600 font-black' : 'text-slate-700 font-black'}>
+      <span className="font-black text-slate-400">{toPN(marker)}</span>
+      <span className={layer?.isSekurit ? 'font-black text-rose-600' : 'font-black text-slate-700'}>
         {getGlassLabel(layer)}
       </span>
-      {layer?.isSekurit && <span className="bg-rose-100 text-rose-700 px-1 rounded text-[8px] font-black mr-1">سکوریت</span>}
-      {layer?.hasEdge && <span className="bg-indigo-100 text-indigo-700 px-1 rounded text-[8px] font-black mr-1">ابزار</span>}
+      {layer?.isSekurit && <span className="mr-1 rounded bg-rose-100 px-1 text-[8px] font-black text-rose-700">سکوریت</span>}
+      {layer?.hasEdge && <span className="mr-1 rounded bg-indigo-100 px-1 text-[8px] font-black text-indigo-700">ابزار</span>}
     </div>
   );
 
   const renderLaminatedBlock = ({ prefix = '1', title = 'لمینت', config = {} }) => (
     <div className="space-y-1">
       <div className="flex items-center gap-1 text-[11px]">
-        <span className="text-slate-400 font-black">{toPN(`${prefix}-`)}</span>
-        <span className="text-slate-700 font-black">{title}</span>
+        <span className="font-black text-slate-400">{toPN(`${prefix}-`)}</span>
+        <span className="font-black text-slate-700">{title}</span>
       </div>
-      <div className="pr-4 space-y-1">
+      <div className="space-y-1 pr-4">
         {renderGlassLayerRow(`${prefix}.1-`, config?.glass1 || {})}
-        <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 py-0.5">
+        <div className="flex items-center gap-2 py-0.5 text-[10px] font-bold text-blue-500">
           <Layers size={10} className="opacity-50" />
           {getInterlayerLabel(config?.interlayerId)}
         </div>
@@ -91,29 +107,25 @@ export const StructureDetails = ({ item, catalog }) => {
 
       {item.activeTab === 'double' && (
         <>
-          {item?.config?.pane1?.isLaminated ? (
-            renderLaminatedBlock({ prefix: '1', title: 'جداره بیرونی (لمینت)', config: item.config.pane1 })
-          ) : (
-            renderGlassLayerRow('1-', item?.config?.pane1?.glass1 || {})
-          )}
+          {item?.config?.pane1?.isLaminated
+            ? renderLaminatedBlock({ prefix: '1', title: 'جداره بیرونی (لمینت)', config: item.config.pane1 })
+            : renderGlassLayerRow('1-', item?.config?.pane1?.glass1 || {})}
 
-          <div className="flex items-center gap-2 text-[10px] font-bold text-blue-500 py-0.5 pr-5">
+          <div className="flex items-center gap-2 py-0.5 pr-5 text-[10px] font-bold text-blue-500">
             <Layers size={10} className="opacity-50" />
             {getSpacerLabel(item?.config?.spacerId)}
           </div>
 
-          {item?.config?.pane2?.isLaminated ? (
-            renderLaminatedBlock({ prefix: '2', title: 'جداره داخلی (لمینت)', config: item.config.pane2 })
-          ) : (
-            renderGlassLayerRow('2-', item?.config?.pane2?.glass1 || {})
-          )}
+          {item?.config?.pane2?.isLaminated
+            ? renderLaminatedBlock({ prefix: '2', title: 'جداره داخلی (لمینت)', config: item.config.pane2 })
+            : renderGlassLayerRow('2-', item?.config?.pane2?.glass1 || {})}
         </>
       )}
 
       {item.activeTab === 'laminate' && renderLaminatedBlock({ prefix: '1', title: 'شیشه لمینت', config: item?.config || {} })}
 
       {hasServices && (
-        <div className="pt-1.5 mt-1.5 border-t border-slate-200/70 border-dashed text-amber-600/90 text-[10px] space-y-0.5 flex flex-wrap gap-2">
+        <div className="mt-1.5 flex flex-wrap gap-2 space-y-0.5 border-t border-dashed border-slate-200/70 pt-1.5 text-[10px] text-amber-600/90">
           {opsKeys.map((serviceId) => {
             const title = catalog?.operations?.find((o) => o.id === serviceId)?.title || 'خدمت';
             const qty = Number(ops[serviceId] || 0);

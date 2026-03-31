@@ -41,6 +41,10 @@ export function resolvePublicAssetUrl(path = '', fallbackFolder = '') {
   const raw = String(path || '').trim()
   if (!raw) return ''
   if (/^(https?:|data:|blob:)/i.test(raw)) return raw
+  if (/^\/?api\//i.test(raw.replace(/\\/g, '/'))) {
+    const apiPath = raw.startsWith('/') ? raw : `/${raw.replace(/^\/+/, '')}`
+    return resolveApiFileUrl(apiPath)
+  }
 
   const normalizedPath = raw
     .replace(/\\/g, '/')

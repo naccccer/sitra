@@ -13,4 +13,11 @@ export const masterDataApi = {
   async saveCatalog(catalog) {
     return api.saveCatalog(catalog)
   },
+  /**
+   * @param {File} file
+   * @returns {Promise<any>}
+   */
+  async uploadOperationIcon(file) {
+    return api.uploadMasterDataOperationIcon(file)
+  },
 }

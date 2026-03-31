@@ -88,13 +88,6 @@ export const Sidebar = ({
     return defaultTabByPath[item.to] === item.tab
   }
 
-  const resolveNavTarget = (item) => {
-    if (item.dynamicToFirstVisibleChild && Array.isArray(item.children) && item.children.length > 0) {
-      return toNavTarget(item.children[0])
-    }
-    return toNavTarget(item)
-  }
-
   const getSectionGroups = (section) => {
     if (section.id !== 'system') return [{ id: `${section.id}-default`, label: '', items: section.items }]
 
@@ -128,9 +121,23 @@ export const Sidebar = ({
   ))
   const activeGroupId = matchedGroup?.id || null
 
-  let openGroupId = manualGroupState.collapsed ? null : manualGroupState.id
-  if (activeGroupId) {
-    openGroupId = manualGroupState.collapsed && manualGroupState.id === activeGroupId ? null : activeGroupId
+  let openGroupId = null
+  if (manualGroupState.id) {
+    openGroupId = manualGroupState.collapsed ? null : manualGroupState.id
+  } else if (activeGroupId) {
+    openGroupId = activeGroupId
+  }
+
+  const visualActiveGroupId = openGroupId || activeGroupId
+
+  const handleGroupToggle = (itemId) => {
+    setManualGroupState((prev) => {
+      if (prev.id === itemId) {
+        return { id: itemId, collapsed: !prev.collapsed }
+      }
+
+      return { id: itemId, collapsed: false }
+    })
   }
 
   const canCreateOrders = Boolean(capabilities.canManageOrders) && isModuleEnabled(modules, 'sales')
@@ -187,6 +194,7 @@ export const Sidebar = ({
                       const Icon = item.icon
                       const hasChildren = Array.isArray(item.children) && item.children.length > 0
                       const isGroupOpen = hasChildren && openGroupId === item.id
+                      const isGroupCurrentlyActive = hasChildren && visualActiveGroupId === item.id
 
                       if (!hasChildren) {
                         return (
@@ -206,32 +214,30 @@ export const Sidebar = ({
 
                       return (
                         <div key={item.id || item.to} className="space-y-1">
-                          <NavLink
-                            to={resolveNavTarget(item)}
-                            onClick={() => {
-                              setManualGroupState(() => (
-                                openGroupId === item.id
-                                  ? { id: item.id, collapsed: true }
-                                  : { id: item.id, collapsed: false }
-                              ))
-                              onNavigate()
-                            }}
-                            className={() => navLinkClass(
-                              isTargetActive(item) || item.children.some((child) => isTargetActive(child)),
+                          <button
+                            type="button"
+                            onClick={() => handleGroupToggle(item.id)}
+                            className={`${navLinkClass(
+                              isGroupCurrentlyActive,
                               isCollapsed,
                               item.id === 'owner' ? 'owner' : 'default',
-                            )}
+                            )} w-full`}
                             title={item.label}
+                            aria-expanded={isGroupOpen}
+                            aria-controls={`${item.id}-submenu`}
                           >
                             <Icon size={16} />
                             <span className={`flex-1 text-start ${isCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
                             <span className={isCollapsed ? 'lg:hidden' : ''}>
                               {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
                             </span>
-                          </NavLink>
+                          </button>
 
                           {isGroupOpen && (
-                            <div className={`space-y-1 rounded-xl p-1 pe-1.5 ring-1 ${item.id === 'owner' ? 'bg-amber-50/90 ring-amber-200/70' : 'bg-slate-100/80 ring-slate-200/70'} ${isCollapsed ? 'lg:hidden' : ''}`}>
+                            <div
+                              id={`${item.id}-submenu`}
+                              className={`space-y-1 rounded-xl p-1 pe-1.5 ring-1 ${item.id === 'owner' ? 'bg-amber-50/90 ring-amber-200/70' : 'bg-slate-100/80 ring-slate-200/70'} ${isCollapsed ? 'lg:hidden' : ''}`}
+                            >
                               {item.children.map((child) => (
                                 <NavLink
                                   key={`${child.to}:${child.tab || ''}`}

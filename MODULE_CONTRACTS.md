@@ -48,11 +48,13 @@
 - Owner: `master-data`
 - Output:
   - `catalog: object | null`
+  - Catalog may include `customItems: array<{ id, title, unitLabel, unitPrice, isActive }>` for sales custom-order tab.
 
 ### `master_data.catalog_save.v1`
 - Owner: `master-data`
 - Input:
   - `catalog: object`
+  - Supports additive `catalog.customItems` payload for operator-defined custom order items.
 - Output:
   - `catalog: object`
 
@@ -67,6 +69,21 @@
   - `profile: object`
 - Output:
   - `profile: object`
+
+### `master_data.operation_icon_upload.v1`
+- Owner: `master-data`
+- Endpoint: `/api/master_data_operation_icon_upload.php`
+- Permission gates:
+  - `master_data.catalog.write`
+- Input (`POST multipart/form-data`):
+  - `iconFile: file` (required, `jpg|jpeg|png|webp|svg`, max 2MB)
+- Output:
+  - `success: boolean`
+  - `filePath: string`
+  - `originalName: string`
+  - `mimeType: string`
+  - `size: number`
+  - `maxSizeBytes: number`
 
 ## Sales Contracts
 
@@ -495,6 +512,7 @@
 - `/api/acc_payroll_import.php` -> accounting payroll import contracts
 - `/api/catalog.php` -> master-data catalog
 - `/api/profile.php` -> master-data profile
+- `/api/master_data_operation_icon_upload.php` -> master-data operation icon upload
 - `/api/users.php` -> users-access user contracts
 - `/api/role_permissions.php` -> users-access permission matrix
 - `/api/module_registry.php` -> kernel module registry

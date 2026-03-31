@@ -459,5 +459,32 @@ function app_read_catalog(PDO $pdo)
         'paymentMethods' => $paymentMethods,
     ];
 
+    $customItems = is_array($decoded['customItems'] ?? null) ? $decoded['customItems'] : [];
+    $normalizedCustomItems = [];
+    foreach ($customItems as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+        $id = trim((string)($item['id'] ?? ''));
+        $title = trim((string)($item['title'] ?? ''));
+        if ($id === '' || $title === '') {
+            continue;
+        }
+
+        $unitLabelRaw = trim((string)($item['unitLabel'] ?? ''));
+        $unitAliases = ['m_square' => 'm_square', 'm2' => 'm_square', 'm²' => 'm_square', 'متر مربع' => 'm_square', 'qty' => 'qty', 'count' => 'qty', 'عدد' => 'qty', 'm_length' => 'm_length', 'length' => 'm_length', 'متر طول' => 'm_length'];
+        $unitCode = $unitAliases[$unitLabelRaw] ?? ($unitAliases[strtolower($unitLabelRaw)] ?? 'm_square');
+        $unitLabel = $unitCode === 'qty' ? 'عدد' : ($unitCode === 'm_length' ? 'متر طول' : 'متر مربع');
+
+        $normalizedCustomItems[] = [
+            'id' => $id,
+            'title' => $title,
+            'unitLabel' => $unitLabel,
+            'unitPrice' => max(0, (int)($item['unitPrice'] ?? 0)),
+            'isActive' => array_key_exists('isActive', $item) ? (bool)$item['isActive'] : true,
+        ];
+    }
+    $decoded['customItems'] = $normalizedCustomItems;
+
     return $decoded;
 }

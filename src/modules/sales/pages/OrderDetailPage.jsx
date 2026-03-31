@@ -38,6 +38,7 @@ export const OrderDetailPage = ({ catalog, orders, setOrders, profile }) => {
         profile={profile}
         editingOrder={targetOrder}
         onCancelEdit={() => navigate('/orders')}
+        onGoToPricing={() => navigate('/master-data/pricing?tab=custom')}
         staffMode
       />
     </div>

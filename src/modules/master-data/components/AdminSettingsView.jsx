@@ -1,5 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Save } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
+import { CUSTOM_UNIT_LABEL_M_SQUARE, normalizeCustomUnitLabel } from '@/utils/customItemUnits';
 import { toPN } from '@/utils/helpers';
 import { ensureBillingSettings } from '@/utils/invoice';
 import { masterDataApi } from '../services/masterDataApi';
@@ -9,6 +11,7 @@ import { JumboFactorySettingsSection } from './admin-settings/JumboFactorySettin
 import { LaminateSettingsSection } from './admin-settings/LaminateSettingsSection';
 import { MatrixSettingsSection } from './admin-settings/MatrixSettingsSection';
 import { OperationsSettingsSection } from './admin-settings/OperationsSettingsSection';
+import { CustomItemsSettingsSection } from './admin-settings/CustomItemsSettingsSection';
 import { ToolsPatternSettingsSection } from './admin-settings/ToolsPatternSettingsSection';
 
 const DESTINATION_DRILLING_SERVICE_IDS = new Set(['op_hole1', 'op_hole2']);
@@ -50,11 +53,20 @@ const ensureCatalogDefaults = (source) => {
   next.billing = ensureBillingSettings(next);
   if (!Array.isArray(next.operations)) next.operations = [];
   next.operations = next.operations.filter((operation) => !isDestinationDrillingService(operation));
+  if (!Array.isArray(next.customItems)) next.customItems = [];
+  next.customItems = next.customItems.map((item) => ({
+    id: String(item?.id || ''),
+    title: String(item?.title || '').trim(),
+    unitLabel: normalizeCustomUnitLabel(item?.unitLabel || CUSTOM_UNIT_LABEL_M_SQUARE),
+    unitPrice: Math.max(0, Number(item?.unitPrice) || 0),
+    isActive: item?.isActive !== false,
+  })).filter((item) => item.id !== '' && item.title !== '');
 
   return next;
 };
 
 export const AdminSettingsView = ({ catalog, setCatalog }) => {
+  const location = useLocation();
   const [activeSettingsTab, setActiveSettingsTab] = useState('matrix');
   const [draft, setDraft] = useState(ensureCatalogDefaults(catalog));
   const [newThickness, setNewThickness] = useState('');
@@ -80,11 +92,21 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
     { id: 'matrix', label: 'ماتریس شیشه' },
     { id: 'laminate', label: 'لمینت', count: draft.connectors.interlayers.length },
     { id: 'double', label: 'دوجداره', count: draft.connectors.spacers.length },
+    { id: 'custom', label: 'سفارشی', count: draft.customItems.length },
     { id: 'tools', label: 'ابزار و الگو' },
     { id: 'billing', label: 'مالی و پرداخت' },
     { id: 'operations', label: 'خدمات و جاساز', count: draft.operations.length },
     { id: 'jumbo', label: 'جامبو و کارخانه' },
-  ]), [draft.connectors.interlayers.length, draft.connectors.spacers.length, draft.operations.length]);
+  ]), [draft.connectors.interlayers.length, draft.connectors.spacers.length, draft.customItems.length, draft.operations.length]);
+
+  useEffect(() => {
+    const query = new URLSearchParams(location.search || '');
+    const requestedTab = String(query.get('tab') || '').trim();
+    const availableTabs = new Set(settingsTabs.map((tab) => tab.id));
+    if (availableTabs.has(requestedTab)) {
+      setActiveSettingsTab(requestedTab);
+    }
+  }, [location.search, settingsTabs]);
 
   return (
     <div className="space-y-4 print-hide animate-in fade-in">
@@ -129,6 +151,7 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
         )}
         {activeSettingsTab === 'laminate' && <LaminateSettingsSection draft={draft} setDraft={setDraft} />}
         {activeSettingsTab === 'double' && <DoubleGlazingSettingsSection draft={draft} setDraft={setDraft} />}
+        {activeSettingsTab === 'custom' && <CustomItemsSettingsSection draft={draft} setDraft={setDraft} />}
         {activeSettingsTab === 'tools' && <ToolsPatternSettingsSection draft={draft} setDraft={setDraft} />}
         {activeSettingsTab === 'billing' && <BillingSettingsSection draft={draft} setDraft={setDraft} />}
         {activeSettingsTab === 'operations' && <OperationsSettingsSection draft={draft} setDraft={setDraft} />}
@@ -137,4 +160,3 @@ export const AdminSettingsView = ({ catalog, setCatalog }) => {
     </div>
   );
 };
-

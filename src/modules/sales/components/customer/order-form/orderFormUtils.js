@@ -1,7 +1,10 @@
-import {
+﻿import {
   buildCatalogPricingMeta,
   buildManualPricingMeta,
 } from '@/modules/sales/domain/invoice';
+import { normalizeCustomUnitLabel, resolveCustomUnitCode } from '@/utils/customItemUnits';
+
+const DEFAULT_UNIT_LABEL = '\u0639\u062f\u062f';
 
 export const normalizeGlassTitle = (title) => (title || '').toString().trim().toLowerCase();
 export const glassProcess = (glass) => glass?.process || 'raw';
@@ -32,7 +35,7 @@ export const parseNumber = (value) => {
 export const createEmptyManualDraft = () => ({
   title: '',
   qty: '1',
-  unitLabel: 'عدد',
+  unitLabel: DEFAULT_UNIT_LABEL,
   unitPrice: '',
   description: '',
   taxable: true,
@@ -40,18 +43,23 @@ export const createEmptyManualDraft = () => ({
   discountValue: '',
 });
 
+const resolveItemType = (item = {}) => {
+  if (item.itemType === 'manual') return 'manual';
+  if (item.itemType === 'custom') return 'custom';
+  return 'catalog';
+};
+
 export const normalizeLoadedItem = (item) => {
   if (!item || typeof item !== 'object') return item;
 
-  const itemType = item.itemType === 'manual' ? 'manual' : 'catalog';
+  const itemType = resolveItemType(item);
   const count = Math.max(1, parseIntSafe(item?.dimensions?.count ?? item?.manual?.qty ?? 1, 1));
   const unitPrice = Math.max(0, parseIntSafe(item?.unitPrice ?? 0, 0));
   const totalPrice = Math.max(0, parseIntSafe(item?.totalPrice ?? unitPrice * count, unitPrice * count));
   const pricingMeta = item?.pricingMeta && typeof item.pricingMeta === 'object'
     ? item.pricingMeta
-    : (itemType === 'manual'
-      ? buildManualPricingMeta({ qty: count, unitPrice, discountType: 'none', discountValue: 0 })
-      : buildCatalogPricingMeta({
+    : (itemType === 'catalog'
+      ? buildCatalogPricingMeta({
         catalogUnitPrice: unitPrice,
         count,
         floorPercent: 90,
@@ -59,7 +67,8 @@ export const normalizeLoadedItem = (item) => {
         overrideReason: '',
         discountType: 'none',
         discountValue: 0,
-      }));
+      })
+      : buildManualPricingMeta({ qty: count, unitPrice, discountType: 'none', discountValue: 0 }));
 
   return {
     ...item,
@@ -91,9 +100,18 @@ export const normalizeLoadedItem = (item) => {
     manual: itemType === 'manual'
       ? {
         qty: count,
-        unitLabel: String(item?.manual?.unitLabel || 'عدد'),
+        unitLabel: String(item?.manual?.unitLabel || DEFAULT_UNIT_LABEL),
         description: String(item?.manual?.description || ''),
         taxable: Boolean(item?.manual?.taxable ?? true),
+      }
+      : undefined,
+    custom: itemType === 'custom'
+      ? {
+        id: String(item?.custom?.id || item?.config?.customItemId || ''),
+        title: String(item?.custom?.title || item?.title || ''),
+        unitLabel: normalizeCustomUnitLabel(item?.custom?.unitLabel || item?.config?.unitLabel || DEFAULT_UNIT_LABEL),
+        unitCode: resolveCustomUnitCode(item?.custom?.unitLabel || item?.config?.unitLabel || DEFAULT_UNIT_LABEL),
+        baseUnitPrice: Math.max(0, parseIntSafe(item?.custom?.baseUnitPrice ?? unitPrice, 0)),
       }
       : undefined,
   };

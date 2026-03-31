@@ -49,6 +49,7 @@ export const AdminOrdersView = ({
         onDeleteArchivedOrder={workflow.deleteArchivedOrder}
         onOpenPatternFilesModal={workflow.openPatternFilesModal}
         onPrintFactoryOrder={workflow.printFactoryOrder}
+        onPrintCustomerOrder={workflow.printCustomerOrder}
         catalog={catalog}
       />
 
@@ -141,7 +142,7 @@ export const AdminOrdersView = ({
           financials={workflow.viewingOrder.financials}
           payments={workflow.viewingOrder.payments}
           invoiceNotes={workflow.viewingOrder.invoiceNotes}
-          type="factory"
+          type={workflow.viewingOrderType}
         />
       )}
 

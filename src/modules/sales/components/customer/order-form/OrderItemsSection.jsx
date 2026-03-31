@@ -1,7 +1,45 @@
-import React from 'react';
+﻿import React from 'react';
 import { CheckCircle2, Edit3, Plus, Printer, Trash2 } from 'lucide-react';
+import { isCustomSquareMeterUnit } from '@/utils/customItemUnits';
 import { toPN } from '@/utils/helpers';
 import { StructureDetails } from '@/components/shared/StructureDetails';
+
+const toPositiveNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const normalizeByRoundStep = (value, roundStep = 1000) => {
+  const numeric = Math.max(0, Number(value) || 0);
+  const stepNumeric = Number(roundStep);
+  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
+  return Math.floor(numeric / step) * step;
+};
+
+const isManualLike = (item = {}) => String(item?.itemType || 'catalog') === 'manual';
+
+const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
+  const itemType = String(item?.itemType || 'catalog');
+  if (itemType === 'manual') return null;
+  if (itemType === 'custom' && !isCustomSquareMeterUnit(item?.custom?.unitLabel || item?.config?.unitLabel)) return null;
+
+  const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
+  const widthCm = toPositiveNumber(item?.dimensions?.width);
+  const heightCm = toPositiveNumber(item?.dimensions?.height);
+  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  const rawArea = (widthCm * heightCm) / 10000;
+  const effectiveArea = Math.max(0.25, rawArea);
+  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
+};
+
+const mobileTypeLabel = (item = {}) => {
+  if (item?.itemType === 'manual') return 'آیتم دستی';
+  if (item?.itemType === 'custom') return 'آیتم سفارشی';
+  return `${toPN(item?.dimensions?.width)}×${toPN(item?.dimensions?.height)}`;
+};
 
 export const OrderItemsSection = ({
   orderItems,
@@ -47,33 +85,40 @@ export const OrderItemsSection = ({
                 <th className="border-l border-slate-200/50 p-2 font-bold">پیکربندی و خدمات</th>
                 <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">ابعاد (cm)</th>
                 <th className="w-12 border-l border-slate-200/50 p-2 text-center font-bold">تعداد</th>
-                <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">فی (تومان)</th>
+                <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">فی (مترمربع)</th>
                 <th className="w-28 border-l border-slate-200/50 p-2 pl-3 text-left font-bold">مبلغ کل</th>
                 <th className="w-16 p-2 text-center font-bold">عملیات</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {orderItems.map((item, index) => (
-                <tr key={item.id} className="transition-colors even:bg-slate-50/50 hover:bg-blue-50/20">
-                  <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-400">{toPN(index + 1)}</td>
-                  <td className="border-l border-slate-100 p-2">
-                    <span className={`whitespace-nowrap rounded-full border px-2 py-1 text-[10px] font-black shadow-sm ${item.itemType === 'manual' ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-700'}`}>
-                      {item.title}
-                    </span>
-                  </td>
-                  <td className="border-l border-slate-100 p-2"><StructureDetails item={item} catalog={catalog} /></td>
-                  <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-600" dir="ltr">{item.itemType === 'manual' ? '-' : `${toPN(item.dimensions.width)} × ${toPN(item.dimensions.height)}`}</td>
-                  <td className="border-l border-slate-100 p-2 text-center font-black tabular-nums text-slate-800">{toPN(item.dimensions.count)}</td>
-                  <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500">{toPN(item.unitPrice.toLocaleString())}</td>
-                  <td className="border-l border-slate-100 bg-blue-50/30 p-2 pl-3 text-left text-sm font-black tabular-nums text-slate-900">{toPN(item.totalPrice.toLocaleString())}</td>
-                  <td className="p-2 text-center">
-                    <div className="flex items-center justify-center gap-1.5">
-                      <button onClick={() => onEditItem(item)} className="rounded border border-slate-200 bg-white p-1 text-slate-400 shadow-sm transition-colors hover:text-amber-600"><Edit3 size={12} /></button>
-                      <button onClick={() => onRemoveItem(item.id)} className="rounded border border-slate-200 bg-white p-1 text-slate-400 shadow-sm transition-colors hover:text-red-600"><Trash2 size={12} /></button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {orderItems.map((item, index) => {
+                const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep);
+                const manualLike = isManualLike(item);
+
+                return (
+                  <tr key={item.id} className="transition-colors even:bg-slate-50/50 hover:bg-blue-50/20">
+                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-400">{toPN(index + 1)}</td>
+                    <td className="border-l border-slate-100 p-2">
+                      <span className={`whitespace-nowrap rounded-full border px-2 py-1 text-[10px] font-black shadow-sm ${manualLike ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-700'}`}>
+                        {item.title}
+                      </span>
+                    </td>
+                    <td className="border-l border-slate-100 p-2"><StructureDetails item={item} catalog={catalog} /></td>
+                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-600" dir="ltr">{manualLike ? '-' : `${toPN(item.dimensions.width)} × ${toPN(item.dimensions.height)}`}</td>
+                    <td className="border-l border-slate-100 p-2 text-center font-black tabular-nums text-slate-800">{toPN(item.itemType === 'manual' ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1) : (item?.dimensions?.count ?? 1))}</td>
+                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500">
+                      {perSquareMeterPrice === null ? '-' : toPN(perSquareMeterPrice.toLocaleString())}
+                    </td>
+                    <td className="border-l border-slate-100 bg-blue-50/30 p-2 pl-3 text-left text-sm font-black tabular-nums text-slate-900">{toPN(item.totalPrice.toLocaleString())}</td>
+                    <td className="p-2 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button onClick={() => onEditItem(item)} className="rounded border border-slate-200 bg-white p-1 text-slate-400 shadow-sm transition-colors hover:text-amber-600"><Edit3 size={12} /></button>
+                        <button onClick={() => onRemoveItem(item.id)} className="rounded border border-slate-200 bg-white p-1 text-slate-400 shadow-sm transition-colors hover:text-red-600"><Trash2 size={12} /></button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -87,7 +132,7 @@ export const OrderItemsSection = ({
                   <div className="text-[11px] font-black leading-tight text-slate-800">
                     {item.title}
                     <span className="tabular-nums text-[9px] font-bold tracking-wider text-slate-400">
-                      ({item.itemType === 'manual' ? 'آیتم دستی' : `${toPN(item.dimensions.width)}×${toPN(item.dimensions.height)}`} - {toPN(item.dimensions.count)}عدد)
+                      ({mobileTypeLabel(item)} - {toPN(item.dimensions.count)}عدد)
                     </span>
                   </div>
                   <div className="mt-1"><StructureDetails item={item} catalog={catalog} /></div>

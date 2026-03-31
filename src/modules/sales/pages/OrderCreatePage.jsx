@@ -17,6 +17,7 @@ export const OrderCreatePage = ({ catalog, setOrders, session, profile }) => {
         profile={profile}
         staffMode={isStaff}
         onGoToLogin={() => navigate('/login')}
+        onGoToPricing={() => navigate('/master-data/pricing?tab=custom')}
       />
     </div>
   );

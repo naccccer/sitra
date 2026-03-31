@@ -81,6 +81,7 @@ function app_default_role_permissions_matrix(): array
             'sales.orders.status',
             'customers.read',
             'master_data.catalog.read',
+            'master_data.catalog.write',
             'profile.read',
         ], app_inventory_v2_sales_default_permissions()),
     ];
@@ -104,6 +105,9 @@ function app_normalize_role_permissions_matrix($input): array
             if ($key !== '' && isset($knownPermissions[$key])) {
                 $rolePermissions[$key] = true;
             }
+        }
+        if ($role === 'sales') {
+            $rolePermissions['master_data.catalog.write'] = true;
         }
         $normalized[$role] = array_values(array_keys($rolePermissions));
     }

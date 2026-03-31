@@ -162,6 +162,14 @@ export function buildApiBusinessEndpoints(request) {
         body: formData,
       })
     },
+    async uploadMasterDataOperationIcon(file) {
+      const formData = new FormData()
+      formData.append('iconFile', file)
+      return request('/api/master_data_operation_icon_upload.php', {
+        method: 'POST',
+        body: formData,
+      })
+    },
     async uploadPatternFile(file) {
       const formData = new FormData()
       formData.append('patternFile', file)

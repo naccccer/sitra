@@ -22,6 +22,35 @@ import {
   resolveOrderStageId,
   toSafeAmount,
 } from '@/modules/sales/components/admin/orders-workspace/ordersWorkspaceUtils';
+import { isCustomSquareMeterUnit } from '@/utils/customItemUnits';
+const toPositiveNumber = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
+};
+
+const normalizeByRoundStep = (value, roundStep = 1000) => {
+  const numeric = Math.max(0, Number(value) || 0);
+  const stepNumeric = Number(roundStep);
+  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
+  return Math.floor(numeric / step) * step;
+};
+
+const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
+  const itemType = String(item?.itemType || 'catalog');
+  if (itemType === 'manual') return null;
+  if (itemType === 'custom' && !isCustomSquareMeterUnit(item?.custom?.unitLabel || item?.config?.unitLabel)) return null;
+
+  const piecePrice = toSafeAmount(item?.unitPrice);
+  const widthCm = toPositiveNumber(item?.dimensions?.width);
+  const heightCm = toPositiveNumber(item?.dimensions?.height);
+  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  const rawArea = (widthCm * heightCm) / 10000;
+  const effectiveArea = Math.max(0.25, rawArea);
+  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
+};
 
 export const OrdersWorkspaceTable = ({
   filteredOrders,
@@ -34,6 +63,7 @@ export const OrdersWorkspaceTable = ({
   onDeleteArchivedOrder,
   onOpenPatternFilesModal,
   onPrintFactoryOrder,
+  onPrintCustomerOrder,
   catalog,
 }) => (
   <Card className="print-hide overflow-hidden" padding="none">
@@ -167,6 +197,10 @@ export const OrdersWorkspaceTable = ({
                                 <Printer size={12} />
                                 چاپ نسخه کارگاهی
                               </Button>
+                              <Button onClick={() => onPrintCustomerOrder(order)} size="sm" variant="secondary">
+                                <Printer size={12} />
+                                چاپ نسخه مشتری
+                              </Button>
                             </div>
                           </div>
 
@@ -185,25 +219,29 @@ export const OrdersWorkspaceTable = ({
                                 <th className="border-l border-slate-200/50 p-2 font-bold">پیکربندی و خدمات</th>
                                 <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">ابعاد (cm)</th>
                                 <th className="w-16 border-l border-slate-200/50 p-2 text-center font-bold">تعداد</th>
-                                <th className="w-28 border-l border-slate-200/50 p-2 text-center font-bold">فی نهایی (تومان)</th>
+                                <th className="w-28 border-l border-slate-200/50 p-2 text-center font-bold">فی (مترمربع)</th>
                                 <th className="w-32 p-2 pl-4 text-left font-bold">مبلغ کل (تومان)</th>
                               </tr>
                             </thead>
                             <tbody className="divide-y divide-slate-100">
                               {Array.isArray(order.items) && order.items.map((item, itemIndex) => {
-                                const isManual = (item?.itemType || 'catalog') === 'manual';
-                                const widthText = isManual ? '-' : `${toPN(item?.dimensions?.width)} × ${toPN(item?.dimensions?.height)}`;
-                                const countText = isManual ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1) : (item?.dimensions?.count ?? 1);
+                                const itemType = String(item?.itemType || 'catalog');
+                                const isManualLike = itemType === 'manual';
+                                const widthText = isManualLike ? '-' : `${toPN(item?.dimensions?.width)} × ${toPN(item?.dimensions?.height)}`;
+                                const countText = itemType === 'manual' ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1) : (item?.dimensions?.count ?? 1);
+                                const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep);
                                 return (
                                   <tr key={item.id || `${itemIndex}`} className="even:bg-slate-50/50 hover:bg-blue-50/20">
                                     <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-400">{toPN(itemIndex + 1)}</td>
                                     <td className="border-l border-slate-100 p-2">
-                                      <span className={`whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-black shadow-sm ${isManual ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-700'}`}>{item.title}</span>
+                                      <span className={`whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-black shadow-sm ${isManualLike ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-slate-200 bg-white text-slate-700'}`}>{item.title}</span>
                                     </td>
                                     <td className="border-l border-slate-100 p-2"><StructureDetails item={item} catalog={catalog} /></td>
                                     <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-600" dir="ltr">{widthText}</td>
                                     <td className="p-2 text-center font-black tabular-nums text-slate-800">{toPN(countText)}</td>
-                                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500">{toPN(toSafeAmount(item?.unitPrice).toLocaleString())}</td>
+                                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500">
+                                      {perSquareMeterPrice === null ? '-' : toPN(perSquareMeterPrice.toLocaleString())}
+                                    </td>
                                     <td className="bg-blue-50/30 p-2 pl-4 text-left text-[13px] font-black tabular-nums text-slate-900">{toPN(toSafeAmount(item?.totalPrice).toLocaleString())}</td>
                                   </tr>
                                 );

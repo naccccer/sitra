@@ -32,7 +32,7 @@ This file describes the current repo shape. It is the source of truth for active
 | Module Registry (Owner) | `src/kernel/pages/SystemSettingsPage.jsx` | `api/modules/kernel` | `module_registry` | `GET|PATCH /api/module_registry.php` |
 | Audit Logs | `src/kernel/pages/AuditLogsPage.jsx` | `api/modules/kernel` | `audit_logs` | `GET /api/audit_logs.php` |
 | Auth | `src/components/auth/LoginView.jsx` | `api/modules/users_access` | `users` | `POST /api/login.php`, `POST /api/logout.php` |
-| Uploads | Sales + admin profile components | top-level upload endpoints | filesystem (`api/uploads/`) | `POST /api/upload.php`, `POST /api/upload_logo.php` |
+| Uploads | Sales + admin profile + master-data pricing components | top-level upload endpoints + `api/modules/master_data` | filesystem (`api/uploads/`) | `POST /api/upload.php`, `POST /api/upload_logo.php`, `POST /api/master_data_operation_icon_upload.php` |
 
 ## Canonical Edit Paths
 - Frontend business changes: `src/modules/<module>/*`

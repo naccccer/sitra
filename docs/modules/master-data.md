@@ -10,6 +10,7 @@
 ## Public Services
 - `catalog_get`
 - `catalog_save`
+- `operation_icon_upload`
 
 ## Data Ownership
 - Owns catalog-related records in `system_settings` and future dedicated tables.

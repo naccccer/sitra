@@ -1,12 +1,18 @@
-import { salesApi } from '@/modules/sales/services/salesApi';
-import { buildManualPricingMeta } from '@/modules/sales/domain/invoice';
+﻿import { buildManualPricingMeta } from '@/modules/sales/domain/invoice';
 import { createEmptyManualDraft, parseIntSafe } from '@/modules/sales/components/customer/order-form/orderFormUtils';
+import { submitOrderPayload } from '@/modules/sales/components/customer/order-form/orderFormSubmitter';
 
 export const createOrderFormHandlers = ({
   activeTab,
   canAddCatalogItem,
   catalogPricingPreview,
   config,
+  customDraft,
+  buildCustomOrderItemPayload,
+  customDraftState,
+  createCustomDraft,
+  customItems,
+  setCustomDraft,
   customerInfo,
   dimensions,
   editingItemId,
@@ -19,6 +25,7 @@ export const createOrderFormHandlers = ({
   manualCanSubmit,
   manualDraft,
   onCancelEdit,
+  onClearCreateDraft,
   orderItems,
   payments,
   selectedCustomerId,
@@ -47,8 +54,37 @@ export const createOrderFormHandlers = ({
     setManualDraft(createEmptyManualDraft());
   };
 
+  const resetCustomEditor = () => {
+    setEditingItemId(null);
+    setEditingItemType('catalog');
+    setCustomDraft(createCustomDraft(customItems));
+    setItemPricing({ overrideUnitPrice: '', overrideReason: '', discountType: 'none', discountValue: '' });
+    setConfig((previous) => ({ ...previous, operations: {}, pattern: { type: 'none', fileName: '' } }));
+  };
+
   const handleAddToCart = () => {
     if (!canAddCatalogItem) return;
+
+    if (activeTab === 'custom') {
+      const nextItem = buildCustomOrderItemPayload({
+        customDraft,
+        customDraftState,
+        dimensions,
+        config,
+        editingItemType,
+        editingItemId,
+      });
+
+      if (editingItemType === 'custom' && editingItemId) {
+        setOrderItems((previous) => previous.map((item) => (item.id === editingItemId ? nextItem : item)));
+      } else {
+        setOrderItems((previous) => [...previous, nextItem]);
+      }
+
+      resetCustomEditor();
+      return;
+    }
+
     const hasHoleMap = config.pattern?.type === 'hole_map'
       && Array.isArray(config.pattern?.holeMap?.holes)
       && config.pattern.holeMap.holes.length > 0;
@@ -144,6 +180,33 @@ export const createOrderFormHandlers = ({
       return;
     }
 
+    if (item?.itemType === 'custom' || item?.activeTab === 'custom') {
+      setActiveTab('custom');
+      setEditingItemId(item.id);
+      setEditingItemType('custom');
+      setDimensions({
+        width: String(item?.dimensions?.width ?? ''),
+        height: String(item?.dimensions?.height ?? ''),
+        count: String(item?.dimensions?.count ?? 1),
+      });
+      setConfig((previous) => ({
+        ...previous,
+        operations: item?.operations && typeof item.operations === 'object' ? item.operations : {},
+        pattern: item?.pattern && typeof item.pattern === 'object' ? item.pattern : { type: 'none', fileName: '' },
+      }));
+      setItemPricing({
+        overrideUnitPrice: item?.pricingMeta?.overrideUnitPrice ?? '',
+        overrideReason: '',
+        discountType: item?.pricingMeta?.itemDiscountType || 'none',
+        discountValue: String(item?.pricingMeta?.itemDiscountValue ?? ''),
+      });
+      setCustomDraft({
+        itemId: String(item?.custom?.id || item?.config?.customItemId || ''),
+        unitPrice: String(item?.custom?.baseUnitPrice ?? item?.pricingMeta?.catalogUnitPrice ?? item?.unitPrice ?? ''),
+      });
+      return;
+    }
+
     setActiveTab(item.activeTab);
     setDimensions(item.dimensions);
     setConfig((previous) => ({
@@ -169,6 +232,7 @@ export const createOrderFormHandlers = ({
     if (editingItemId !== itemId) return;
     setItemPricing({ overrideUnitPrice: '', overrideReason: '', discountType: 'none', discountValue: '' });
     resetManualEditor();
+    resetCustomEditor();
   };
 
   const handleManualFieldChange = (field, value) => {
@@ -180,77 +244,29 @@ export const createOrderFormHandlers = ({
     setCustomerInfo((previous) => ({ ...previous, [field]: value }));
   };
 
-  const submitOrderToServer = async () => {
-    const trimmedName = customerInfo.name.trim();
-    const trimmedPhone = customerInfo.phone.trim();
-    if (!trimmedName) return alert('لطفاً نام و نام خانوادگی را وارد کنید.');
-    if (trimmedName.length < 2) return alert('نام باید حداقل ۲ کاراکتر باشد.');
-    if (!trimmedPhone) return alert('لطفاً شماره تماس را وارد کنید.');
-    if (trimmedPhone.length < 5) return alert('شماره تماس معتبر نیست.');
-
-    try {
-      if (editingOrder) {
-        const updatePayload = {
-          id: Number(editingOrder.id),
-          customerName: trimmedName,
-          phone: trimmedPhone,
-          customerId: selectedCustomerId || editingOrder.customerId || null,
-          projectId: selectedProjectId || editingOrder.projectId || null,
-          projectContactId: selectedProjectContactId || editingOrder.projectContactId || null,
-          date: editingOrder.date,
-          total: grandTotal,
-          status: editingOrder.status || 'pending',
-          items: [...orderItems],
-          financials,
-          payments,
-          invoiceNotes,
-          expectedUpdatedAt: editingOrder?.updatedAt || null,
-        };
-        const response = await salesApi.updateOrder(updatePayload);
-        const updatedOrder = response?.order ?? { ...editingOrder, ...updatePayload };
-        setOrders((previous) => previous.map((order) => (order.id === editingOrder.id ? updatedOrder : order)));
-        alert(response?.queued ? 'ویرایش سفارش در صف آفلاین ثبت شد و بعد از اتصال همگام‌سازی می‌شود.' : 'سفارش با موفقیت ویرایش شد.');
-        onCancelEdit?.();
-        return;
-      }
-
-      const createPayload = {
-        customerName: trimmedName,
-        phone: trimmedPhone,
-        customerId: selectedCustomerId || null,
-        projectId: selectedProjectId || null,
-        projectContactId: selectedProjectContactId || null,
-        date: new Date().toLocaleDateString('fa-IR'),
-        total: isStaffContext
-          ? grandTotal
-          : orderItems.reduce((accumulator, item) => accumulator + Math.max(0, parseIntSafe(item.totalPrice, 0)), 0),
-        status: 'pending',
-        items: [...orderItems],
-      };
-      if (isStaffContext) {
-        createPayload.financials = financials;
-        createPayload.payments = payments;
-        createPayload.invoiceNotes = invoiceNotes;
-      }
-
-      const response = await salesApi.createOrder(createPayload);
-      const createdOrder = response?.order ?? { id: Date.now(), ...createPayload, orderCode: '' };
-      setOrders((previous) => [createdOrder, ...previous]);
-      alert(response?.queued
-        ? 'سفارش در صف آفلاین ذخیره شد و پس از اتصال به صورت خودکار ارسال می‌شود.'
-        : `سفارش ثبت شد. کد پیگیری: ${createdOrder.orderCode || '-'}`);
-
-      setOrderItems([]);
-      setPayments([]);
-      setInvoiceNotes('');
-      setIsCheckoutOpen(false);
-      setCustomerInfo({ name: '', phone: '' });
-      setEditingItemId(null);
-      setEditingItemType('catalog');
-    } catch (error) {
-      alert(error?.message || 'ثبت سفارش با خطا مواجه شد.');
-    }
-  };
+  const submitOrderToServer = () => submitOrderPayload({
+    customerInfo,
+    editingOrder,
+    financials,
+    grandTotal,
+    invoiceNotes,
+    isStaffContext,
+    onCancelEdit,
+    onClearCreateDraft,
+    orderItems,
+    payments,
+    selectedCustomerId,
+    selectedProjectContactId,
+    selectedProjectId,
+    setCustomerInfo,
+    setEditingItemId,
+    setEditingItemType,
+    setInvoiceNotes,
+    setIsCheckoutOpen,
+    setOrderItems,
+    setOrders,
+    setPayments,
+  });
 
   return {
     handleAddToCart,

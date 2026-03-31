@@ -91,22 +91,24 @@ export const LaminateSettingsSection = ({ draft, setDraft }) => {
 
           <div className="space-y-2">
             {interlayers.map((interlayer, index) => (
-              <div key={interlayer.id} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[36px_96px_178px] sm:items-center sm:justify-center">
+              <div key={interlayer.id} className="grid grid-cols-1 gap-2 rounded-xl border border-slate-200 bg-white p-2 sm:grid-cols-[minmax(0,1fr)_96px_36px] sm:items-center">
+                <div className="min-w-0">
+                  <input
+                    type="text"
+                    value={interlayer.title}
+                    onChange={(event) => updateInterlayer(index, { title: event.target.value })}
+                    className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-bold outline-none"
+                  />
+                </div>
+                <div className="rounded-lg border border-slate-200 bg-white">
+                  <PriceInput value={interlayer.price} onChange={(value) => updateInterlayer(index, { price: value })} />
+                </div>
                 <button
                   onClick={() => setDraft((previous) => ({ ...previous, connectors: { ...previous.connectors, interlayers: (previous.connectors?.interlayers || []).filter((item) => item.id !== interlayer.id) } }))}
                   className="justify-self-end rounded-md p-1 text-rose-500 hover:bg-rose-50 sm:justify-self-auto"
                 >
                   <Trash2 size={14} />
                 </button>
-                <div className="rounded-lg border border-slate-200 bg-white">
-                  <PriceInput value={interlayer.price} onChange={(value) => updateInterlayer(index, { price: value })} />
-                </div>
-                <input
-                  type="text"
-                  value={interlayer.title}
-                  onChange={(event) => updateInterlayer(index, { title: event.target.value })}
-                  className="h-9 w-full rounded-lg border border-slate-200 bg-slate-50 px-2 text-xs font-bold outline-none"
-                />
               </div>
             ))}
           </div>
@@ -161,4 +163,3 @@ export const LaminateSettingsSection = ({ draft, setDraft }) => {
     </div>
   );
 };
-

@@ -1,15 +1,72 @@
 export function buildApiCoreEndpoints(request) {
+  const resolveRole = (payload) => {
+    const candidates = [
+      payload?.role,
+      payload?.user?.role,
+      payload?.session?.role,
+      payload?.currentUser?.role,
+    ]
+    for (const candidate of candidates) {
+      const role = String(candidate || '').trim()
+      if (role !== '') return role
+    }
+    return ''
+  }
+
+  const resolveUsername = (payload) => {
+    const candidates = [
+      payload?.username,
+      payload?.user?.username,
+      payload?.session?.username,
+      payload?.currentUser?.username,
+    ]
+    for (const candidate of candidates) {
+      const username = String(candidate || '').trim()
+      if (username !== '') return username
+    }
+    return ''
+  }
+
   return {
     async login(username, password) {
       const data = await request('/api/login.php', {
         method: 'POST',
         body: JSON.stringify({ username, password }),
       })
-      const role = String(data?.role || '').trim()
-      if (!data || typeof data !== 'object' || role === '') {
+
+      if (!data || typeof data !== 'object') {
         throw new Error('Invalid login response. Please try again.')
       }
-      return data
+
+      if (data?.success === false) {
+        throw new Error(String(data?.error || 'Login failed. Please try again.'))
+      }
+
+      let role = resolveRole(data)
+      let normalizedUsername = resolveUsername(data)
+
+      if (role === '') {
+        try {
+          const cacheBuster = Date.now().toString(36)
+          const bootstrap = await request(`/api/bootstrap.php?_ts=${cacheBuster}`, { method: 'GET' })
+          role = resolveRole(bootstrap)
+          if (normalizedUsername === '') {
+            normalizedUsername = resolveUsername(bootstrap)
+          }
+        } catch {
+          // Keep the original login response validation as final guard.
+        }
+      }
+
+      if (role === '') {
+        throw new Error('Invalid login response. Please try again.')
+      }
+
+      return {
+        ...data,
+        role,
+        username: normalizedUsername || String(username || '').trim(),
+      }
     },
 
     async logout() {

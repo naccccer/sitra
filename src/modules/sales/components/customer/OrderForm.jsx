@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Menu, Phone, User } from 'lucide-react';
 import { SettingsModal } from '@/modules/sales/components/customer/SettingsModal';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
@@ -15,6 +15,7 @@ export const OrderForm = ({
   editingOrder = null,
   onCancelEdit,
   onGoToLogin,
+  onGoToPricing,
   staffMode = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -52,6 +53,10 @@ export const OrderForm = ({
     summaryErrors,
     unavailableLayers,
     catalogPricingPreview,
+    customItems,
+    customDraft,
+    setCustomDraft,
+    customDraftState,
     financials,
     grandTotal,
     canAddCatalogItem,
@@ -66,8 +71,9 @@ export const OrderForm = ({
     setOrders,
     staffMode,
   });
+
   const isEditingManualItem = Boolean(editingItemId && editingItemType === 'manual');
-  const isEditingCatalogItem = Boolean(editingItemId && editingItemType === 'catalog');
+  const isEditingConfigItem = Boolean(editingItemId && editingItemType !== 'manual');
 
   return (
     <div className={`mx-auto max-w-6xl ${editingOrder ? 'space-y-3' : 'space-y-6'}`}>
@@ -162,8 +168,13 @@ export const OrderForm = ({
         catalogPricingPreview={catalogPricingPreview}
         canAddCatalogItem={canAddCatalogItem}
         onAddCatalogItem={handleAddToCart}
-        isEditingCatalogItem={isEditingCatalogItem}
+        isEditingCatalogItem={isEditingConfigItem}
         onOpenSettingsModal={() => setModalMode('settings')}
+        customItems={customItems}
+        customDraft={customDraft}
+        setCustomDraft={setCustomDraft}
+        customDraftState={customDraftState}
+        onGoToCustomItems={onGoToPricing}
       />
 
       <OrderItemsSection
