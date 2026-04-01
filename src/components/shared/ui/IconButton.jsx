@@ -8,6 +8,7 @@ export const IconButton = forwardRef(({
   label = '',
   tooltip = '',
   tooltipSide = 'top',
+  size = 'icon',
   children = null,
   variant,
   title,
@@ -18,17 +19,18 @@ export const IconButton = forwardRef(({
   const resolvedLabel = label || preset?.label || tooltip;
   const resolvedTooltip = tooltip || resolvedLabel;
   const resolvedTitle = resolvedTooltip ? undefined : (title || resolvedLabel);
+  const iconSize = size === 'iconSm' ? 13 : 16;
 
   const button = (
     <Button
       ref={ref}
-      size="icon"
+      size={size}
       variant={variant || preset?.variant || 'secondary'}
       aria-label={resolvedLabel}
       title={resolvedTitle}
       {...props}
     >
-      {children || (ResolvedIcon ? <ResolvedIcon size={16} aria-hidden="true" /> : null)}
+      {children || (ResolvedIcon ? <ResolvedIcon size={iconSize} aria-hidden="true" /> : null)}
     </Button>
   );
 

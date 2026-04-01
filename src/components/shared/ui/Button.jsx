@@ -3,12 +3,12 @@ import { cn } from '@/components/shared/ui/cn';
 import { getActionPreset } from '@/components/shared/ui/actionPresets';
 
 const VARIANT_CLASSNAMES = {
-  primary: 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/95',
-  secondary: 'border-[rgb(var(--ui-border))] bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/45 hover:text-[rgb(var(--ui-primary))]',
+  primary: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/95',
+  secondary: 'border-transparent bg-[rgb(var(--ui-bg-accent))]/60 text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-bg-accent))]/74 hover:text-[rgb(var(--ui-primary))]',
   ghost: 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-[rgb(var(--ui-surface-muted))] hover:text-[rgb(var(--ui-text))]',
-  danger: 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85',
-  success: 'border-[rgb(var(--ui-success-border))] bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))] hover:-translate-y-px hover:bg-[rgb(var(--ui-success-bg))]/85',
-  accent: 'border-[rgb(var(--ui-accent-strong))] bg-[rgb(var(--ui-accent))] text-white shadow-[var(--shadow-accent)] hover:-translate-y-px hover:bg-[rgb(var(--ui-accent-strong))]',
+  danger: 'border-transparent bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85',
+  success: 'border-transparent bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-success-bg))]/85',
+  accent: 'border-transparent bg-[rgb(var(--ui-accent))] text-white shadow-[var(--shadow-accent)] hover:-translate-y-px hover:bg-[rgb(var(--ui-accent-strong))]',
 };
 
 const SIZE_CLASSNAMES = {
@@ -16,6 +16,7 @@ const SIZE_CLASSNAMES = {
   md: 'h-9 px-3 text-xs',
   lg: 'h-10 px-4 text-sm',
   icon: 'h-9 w-9 p-0',
+  iconSm: 'h-8 w-8 p-0',
 };
 
 export const Button = forwardRef(({
@@ -36,7 +37,7 @@ export const Button = forwardRef(({
   const resolvedVariant = variant || preset?.variant || 'secondary';
   const resolvedContent = children ?? preset?.label ?? null;
   const ResolvedLeadingIcon = LeadingIcon || (showActionIcon ? preset?.icon || null : null);
-  const iconSize = size === 'sm' ? 14 : 16;
+  const iconSize = size === 'sm' ? 14 : (size === 'iconSm' ? 14 : 16);
 
   return (
     <button

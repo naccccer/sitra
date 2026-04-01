@@ -102,15 +102,20 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
         />
 
         <div className="app-print-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
-          <Header
-            session={session}
-            onToggleSidebar={handleToggleSidebar}
-            isSidebarCollapsed={isSidebarCollapsed}
-            isSidebarOpen={isSidebarOpen}
-          />
-          <main className="app-print-content flex-1 overflow-y-auto px-4 pb-5 pt-2 lg:px-6 lg:pb-6">
-            <div className="app-content-area">
-              {children || <Outlet />}
+          <main
+            className="app-print-content flex-1 overflow-y-auto pb-5 pt-0 lg:pb-6"
+            style={{ scrollbarGutter: 'stable both-edges' }}
+          >
+            <Header
+              session={session}
+              onToggleSidebar={handleToggleSidebar}
+              isSidebarCollapsed={isSidebarCollapsed}
+              isSidebarOpen={isSidebarOpen}
+            />
+            <div className="px-4 lg:px-6">
+              <div className="app-shell-content">
+                {children || <Outlet />}
+              </div>
             </div>
           </main>
         </div>

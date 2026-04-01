@@ -9,10 +9,10 @@ const PADDING_CLASSNAMES = {
 };
 
 const TONE_CLASSNAMES = {
-  default: 'border-[rgb(var(--ui-border))] bg-[rgb(var(--ui-surface))] text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
-  muted: 'border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
-  inverse: 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-strong)]',
-  accent: 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-primary))] shadow-[var(--shadow-accent)]',
+  default: 'border-transparent bg-[rgb(var(--ui-surface-muted))]/42 text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
+  muted: 'border-transparent bg-[rgb(var(--ui-surface-muted))]/30 text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
+  inverse: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-strong)]',
+  accent: 'border-transparent bg-[rgb(var(--ui-accent-muted))]/26 text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)]',
   glass: 'border-white/70 bg-white/75 text-[rgb(var(--ui-text))] shadow-[var(--shadow-surface)] backdrop-blur-xl',
 };
 

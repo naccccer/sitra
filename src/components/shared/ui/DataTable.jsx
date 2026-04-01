@@ -14,7 +14,7 @@ const ROW_TONE_CLASSNAMES = {
 };
 
 export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', footer = null }) => (
-  <Card className={cn('overflow-hidden', className)} padding="none">
+  <Card className={cn('overflow-hidden bg-white', className)} padding="none">
     <div className="overflow-x-auto">
       <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
     </div>
@@ -23,7 +23,7 @@ export const DataTable = ({ children, className = '', minWidthClass = 'min-w-ful
 );
 
 export const DataTableHead = ({ children, className = '' }) => (
-  <thead className={cn('border-b border-[rgb(var(--ui-border-soft))]/14 bg-[rgb(var(--ui-surface-muted))] text-[12px] font-extrabold text-[rgb(var(--ui-text))]/72', className)}>{children}</thead>
+  <thead className={cn('border-b border-[rgb(var(--ui-border-soft))]/10 bg-[rgb(var(--ui-surface-muted))]/72 text-[12px] font-extrabold text-[rgb(var(--ui-text))]/72', className)}>{children}</thead>
 );
 
 export const DataTableBody = ({ children, className = '' }) => (
@@ -60,7 +60,7 @@ export const DataTableState = ({
   <tr>
     <td colSpan={colSpan} className="px-4 py-6">
       {state === 'loading' ? (
-        <div className="flex items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-dashed border-[rgb(var(--ui-border))] bg-[rgb(var(--ui-surface-muted))]/45 px-4 py-6 text-sm font-black text-[rgb(var(--ui-text-muted))]">
+        <div className="flex items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-dashed border-[rgb(var(--ui-border-soft))]/65 bg-[rgb(var(--ui-surface-muted))]/45 px-4 py-6 text-sm font-black text-[rgb(var(--ui-text-muted))]">
           <LoaderCircle size={18} className="animate-spin" />
           {title || 'در حال بارگذاری داده‌ها'}
         </div>

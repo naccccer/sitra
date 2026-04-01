@@ -36,8 +36,8 @@ export const Header = ({
   const menuTooltip = isSidebarOpen ? 'بستن منوی کناری' : isSidebarCollapsed ? 'گسترش نوار کناری' : 'تغییر حالت ناوبری'
 
   return (
-    <header className="print-hide sticky top-0 z-30 px-4 py-4 lg:px-6">
-      <div className="app-content-area">
+    <header className="print-hide sticky top-0 z-30 px-4 pb-4 pt-0 lg:px-6">
+      <div className="app-shell-content">
         <div className="surface-glass flex items-center justify-between gap-3 px-3 py-3 lg:px-4">
           <div className="min-w-0 flex items-center gap-3">
             <IconButton
@@ -51,10 +51,7 @@ export const Header = ({
               <Menu size={17} />
             </IconButton>
 
-            <div className="min-w-0">
-              <div className="section-kicker text-[10px]">{pageMeta.section}</div>
-              <h1 className="truncate text-sm font-black text-[rgb(var(--ui-text))] lg:text-base">{pageMeta.title}</h1>
-            </div>
+            <h1 className="truncate text-sm font-black text-[rgb(var(--ui-text))] lg:text-base">{pageMeta.title}</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -63,12 +60,6 @@ export const Header = ({
                 <ArrowRight size={14} />
                 بازگشت
               </Button>
-            )}
-
-            {displayJobTitle && (
-              <Badge className="hidden md:inline-flex" tone="neutral">
-                {displayJobTitle}
-              </Badge>
             )}
 
             <div className="shell-user-chip hidden items-center gap-2 rounded-[var(--radius-xl)] px-3 py-2 sm:flex">

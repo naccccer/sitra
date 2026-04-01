@@ -82,7 +82,6 @@ export const OrdersWorkspaceTable = ({
         <DataTableHeaderCell align="center" className="text-[12px]">موبایل</DataTableHeaderCell>
         <DataTableHeaderCell align="center" className="text-[12px]">تاریخ ثبت</DataTableHeaderCell>
         <DataTableHeaderCell align="center" className="text-[12px]">مبلغ کل</DataTableHeaderCell>
-        <DataTableHeaderCell align="center" className="text-[12px]"><Link2 size={11} className="mx-auto text-[rgb(var(--ui-text-muted))]" /></DataTableHeaderCell>
         <DataTableHeaderCell align="center" className="text-[12px]">وضعیت مالی</DataTableHeaderCell>
         <DataTableHeaderCell align="center" className="text-[12px]">وضعیت سفارش</DataTableHeaderCell>
         <DataTableHeaderCell align="center" className="text-[12px]">عملیات</DataTableHeaderCell>
@@ -91,7 +90,7 @@ export const OrdersWorkspaceTable = ({
 
     <DataTableBody>
       {filteredOrders.length === 0 ? (
-        <DataTableState colSpan={10} title="هیچ سفارشی یافت نشد." description="فیلترها را تغییر دهید یا سفارش جدیدی ثبت کنید." />
+        <DataTableState colSpan={9} title="هیچ سفارشی یافت نشد." description="فیلترها را تغییر دهید یا سفارش جدیدی ثبت کنید." />
       ) : (
         filteredOrders.map((order, index) => {
           const financialSummary = deriveFinancialSummary(order);
@@ -106,11 +105,14 @@ export const OrdersWorkspaceTable = ({
                 <DataTableCell align="center">{toPN(index + 1)}</DataTableCell>
                 <DataTableCell align="center" tone="emphasis" className="tracking-wider text-[rgb(var(--ui-accent-strong))]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
                 <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
-                  {order.customerName}
+                  <div className="flex items-center gap-2">
+                    <span className="truncate">{order.customerName}</span>
+                    <Link2 size={13} className={`shrink-0 ${hasCustomerLink ? 'text-[rgb(var(--ui-accent))]' : 'text-slate-300'}`} />
+                  </div>
                   <span className="mr-1 text-[9px] font-medium text-[rgb(var(--ui-text-muted))]">
                     ({toPN(Array.isArray(order.items) ? order.items.length : order.items)} قلم)
                   </span>
-                </DataTableCell>
+                  </DataTableCell>
                 <DataTableCell align="center">
                   <span className="inline-flex justify-center text-center font-semibold text-[rgb(var(--ui-text-muted))]" dir="ltr">{toPN(order.phone)}</span>
                 </DataTableCell>
@@ -119,12 +121,9 @@ export const OrdersWorkspaceTable = ({
                 </DataTableCell>
                 <DataTableCell align="center" tone="emphasis">{toPN(financialSummary.total.toLocaleString())}</DataTableCell>
                 <DataTableCell align="center">
-                  <Link2 size={14} className={`mx-auto ${hasCustomerLink ? 'text-[rgb(var(--ui-accent))]' : 'text-slate-300'}`} />
-                </DataTableCell>
-                <DataTableCell align="center">
                   <div className="flex items-center justify-center gap-1.5">
                     <Badge className={`rounded-full ${paymentPill.className}`} tone="neutral">{paymentPill.label}</Badge>
-                    <IconButton variant="secondary" label="مدیریت پرداخت" tooltip="مدیریت پرداخت" onClick={() => onOpenPaymentManager(order)}>
+                    <IconButton size="iconSm" variant="secondary" label="مدیریت پرداخت" tooltip="مدیریت پرداخت" className="text-[rgb(var(--ui-primary))]" onClick={() => onOpenPaymentManager(order)}>
                       <Cog size={14} />
                     </IconButton>
                   </div>
@@ -135,8 +134,8 @@ export const OrdersWorkspaceTable = ({
                         <Badge tone="neutral">بایگانی‌شده</Badge>
                       ) : (
                         <div className="relative min-w-[104px]">
-                          <div className={`pointer-events-none grid h-9 grid-cols-[18px_minmax(0,1fr)_18px] items-center rounded-[var(--radius-md)] border border-[rgb(var(--ui-border))] bg-white px-2 text-[10px] font-semibold shadow-[var(--shadow-soft)] ${orderStage.className}`}>
-                            <ChevronDown size={14} className="justify-self-start text-[rgb(var(--ui-text-muted))]" />
+                          <div className={`pointer-events-none grid h-9 grid-cols-[18px_minmax(0,1fr)_18px] items-center rounded-[var(--radius-md)] border border-transparent bg-[rgb(var(--ui-bg-accent))]/38 px-2 text-[10px] font-semibold shadow-none ${orderStage.className}`}>
+                            <ChevronDown size={14} className="justify-self-start text-[rgb(var(--ui-primary))]" />
                             <span className="block text-center">{orderStage.label}</span>
                             <span aria-hidden="true" />
                           </div>
@@ -156,16 +155,18 @@ export const OrdersWorkspaceTable = ({
                   <DataTableActions>
                     <IconButton
                       action="rowExpand"
+                      size="iconSm"
                       variant={expandedOrderId === order.id ? 'primary' : 'secondary'}
                       label="نمایش آیتم‌ها"
                       tooltip={expandedOrderId === order.id ? 'بستن جزئیات' : 'نمایش آیتم‌ها'}
+                      className="text-[rgb(var(--ui-primary))]"
                       onClick={() => onToggleOrderExpansion(order.id)}
                     />
                     {order.status !== 'archived' ? (
                       <>
-                        <IconButton action="edit" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="text-[rgb(var(--ui-accent-strong))]" onClick={() => onEditOrder(order)} />
-                        <IconButton action="archive" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="text-[rgb(var(--ui-danger-text))]" onClick={() => onArchiveOrder(order)}>
-                          <Archive size={16} />
+                        <IconButton action="edit" size="iconSm" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="text-[rgb(var(--ui-primary))]" onClick={() => onEditOrder(order)} />
+                        <IconButton action="archive" size="iconSm" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="text-[rgb(var(--ui-primary))]" onClick={() => onArchiveOrder(order)}>
+                          <Archive size={13} />
                         </IconButton>
                       </>
                     ) : (
@@ -180,7 +181,7 @@ export const OrdersWorkspaceTable = ({
 
               {expandedOrderId === order.id && (
                 <DataTableDetail
-                  colSpan={10}
+                  colSpan={9}
                   title="ریز اقلام سفارش"
                   description="جزئیات ساختار، خدمات و فایل‌های سفارش در این بخش متمرکز شده است."
                   actions={(
