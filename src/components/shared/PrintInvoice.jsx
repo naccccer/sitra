@@ -24,9 +24,9 @@ const normalizePayment = (payment = {}, fallbackIndex = 0) => ({
 });
 
 const getPaymentStatusMeta = (status = '') => {
-  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-100 text-emerald-700' };
-  if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' };
-  return { label: 'تسویه نشده', className: 'bg-rose-100 text-rose-700' };
+  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]' };
+  if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]' };
+  return { label: 'تسویه نشده', className: 'bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]' };
 };
 
 const toPositiveNumber = (value) => {

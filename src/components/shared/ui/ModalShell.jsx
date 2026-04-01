@@ -26,7 +26,7 @@ export const ModalShell = ({
   return (
     <div className={cn('fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm print-hide', overlayClassName)}>
       <Card className={cn('w-full overflow-hidden shadow-[var(--shadow-overlay)]', maxWidthClass, contentClassName)} padding="none">
-        <div className="border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(255,246,238,0.9))] px-4 py-3">
+        <div className="border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}

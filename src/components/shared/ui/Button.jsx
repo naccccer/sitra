@@ -4,7 +4,7 @@ import { getActionPreset } from '@/components/shared/ui/actionPresets';
 
 const VARIANT_CLASSNAMES = {
   primary: 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/95',
-  secondary: 'border-[rgb(var(--ui-border))] bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/35',
+  secondary: 'border-[rgb(var(--ui-border))] bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/45 hover:text-[rgb(var(--ui-primary))]',
   ghost: 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-[rgb(var(--ui-surface-muted))] hover:text-[rgb(var(--ui-text))]',
   danger: 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85',
   success: 'border-[rgb(var(--ui-success-border))] bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))] hover:-translate-y-px hover:bg-[rgb(var(--ui-success-bg))]/85',

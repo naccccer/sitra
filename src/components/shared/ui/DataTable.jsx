@@ -9,7 +9,7 @@ import { cn } from '@/components/shared/ui/cn';
 
 const ALIGN_CLASSNAMES = { start: 'text-start', center: 'text-center', end: 'text-end' };
 const ROW_TONE_CLASSNAMES = {
-  default: 'even:bg-[rgb(var(--ui-surface-muted))]/18 even:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.92),inset_0_-8px_16px_rgba(15,23,42,0.012)] hover:bg-[rgb(var(--ui-accent-muted))]/24',
+  default: 'even:bg-[rgb(var(--ui-surface-muted))]/22 even:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.94),inset_0_-8px_16px_rgba(15,23,42,0.015)] hover:bg-[rgb(var(--ui-accent-muted))]/34',
   muted: 'bg-[rgb(var(--ui-surface-muted))]/55 text-[rgb(var(--ui-text-muted))]',
 };
 
@@ -31,7 +31,7 @@ export const DataTableBody = ({ children, className = '' }) => (
 );
 
 export const DataTableRow = ({ children, className = '', selected = false, expanded = false, tone = 'default', ...props }) => (
-  <tr className={cn('shadow-[inset_0_-1px_0_rgba(120,113,108,0.08)] transition-colors last:shadow-none', ROW_TONE_CLASSNAMES[tone] || ROW_TONE_CLASSNAMES.default, selected ? 'bg-[rgb(var(--ui-info-bg))]/45' : '', expanded ? 'bg-[rgb(var(--ui-accent-muted))]/32' : '', className)} {...props}>{children}</tr>
+  <tr className={cn('shadow-[inset_0_-1px_0_rgba(88,99,124,0.12)] transition-colors last:shadow-none', ROW_TONE_CLASSNAMES[tone] || ROW_TONE_CLASSNAMES.default, selected ? 'bg-[rgb(var(--ui-info-bg))]/52' : '', expanded ? 'bg-[rgb(var(--ui-accent-muted))]/42' : '', className)} {...props}>{children}</tr>
 );
 
 export const DataTableHeaderCell = ({ children, className = '', align = 'start', ...props }) => (

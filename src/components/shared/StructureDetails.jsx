@@ -12,7 +12,7 @@ export const StructureDetails = ({ item, catalog }) => {
     const manual = item?.manual || {};
     return (
       <div className="space-y-1">
-        <div className="text-[11px] font-black text-amber-700">آیتم دستی</div>
+        <div className="text-[11px] font-black text-[rgb(var(--ui-accent-strong))]">آیتم دستی</div>
         <div className="text-[10px] font-bold text-slate-600">
           {toPN(manual.qty ?? item?.dimensions?.count ?? 1)} {manual.unitLabel || DEFAULT_UNIT_LABEL}
         </div>
@@ -29,7 +29,7 @@ export const StructureDetails = ({ item, catalog }) => {
     const unitLabel = normalizeCustomUnitLabel(custom.unitLabel || item?.config?.unitLabel || DEFAULT_UNIT_LABEL);
     return (
       <div className="space-y-1">
-        <div className="text-[11px] font-black text-amber-700">آیتم سفارشی</div>
+        <div className="text-[11px] font-black text-[rgb(var(--ui-accent-strong))]">آیتم سفارشی</div>
         <div className="text-[10px] font-bold text-slate-600">
           {toPN(item?.dimensions?.count ?? 1)} {unitLabel}
         </div>
@@ -66,7 +66,7 @@ export const StructureDetails = ({ item, catalog }) => {
         {getGlassLabel(layer)}
       </span>
       {layer?.isSekurit && <span className="mr-1 rounded bg-rose-100 px-1 text-[8px] font-black text-rose-700">سکوریت</span>}
-      {layer?.hasEdge && <span className="mr-1 rounded bg-indigo-100 px-1 text-[8px] font-black text-indigo-700">ابزار</span>}
+      {layer?.hasEdge && <span className="mr-1 rounded bg-[rgb(var(--ui-accent-muted))] px-1 text-[8px] font-black text-[rgb(var(--ui-accent-strong))]">ابزار</span>}
     </div>
   );
 
@@ -125,7 +125,7 @@ export const StructureDetails = ({ item, catalog }) => {
       {item.activeTab === 'laminate' && renderLaminatedBlock({ prefix: '1', title: 'شیشه لمینت', config: item?.config || {} })}
 
       {hasServices && (
-        <div className="mt-1.5 flex flex-wrap gap-2 space-y-0.5 border-t border-dashed border-slate-200/70 pt-1.5 text-[10px] text-amber-600/90">
+        <div className="mt-1.5 flex flex-wrap gap-2 space-y-0.5 border-t border-dashed border-slate-200/70 pt-1.5 text-[10px] text-[rgb(var(--ui-accent-strong))]/90">
           {opsKeys.map((serviceId) => {
             const title = catalog?.operations?.find((o) => o.id === serviceId)?.title || 'خدمت';
             const qty = Number(ops[serviceId] || 0);

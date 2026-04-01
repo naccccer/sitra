@@ -104,7 +104,7 @@ export const OrdersWorkspaceTable = ({
             <React.Fragment key={order.id}>
               <DataTableRow selected={expandedOrderId === order.id} tone={order.status === 'archived' ? 'muted' : 'default'} className={order.status === 'archived' ? 'opacity-75' : ''}>
                 <DataTableCell align="center">{toPN(index + 1)}</DataTableCell>
-                <DataTableCell align="center" tone="emphasis" className="tracking-wider text-sky-700" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
+                <DataTableCell align="center" tone="emphasis" className="tracking-wider text-[rgb(var(--ui-accent-strong))]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
                 <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
                   {order.customerName}
                   <span className="mr-1 text-[9px] font-medium text-[rgb(var(--ui-text-muted))]">
@@ -119,7 +119,7 @@ export const OrdersWorkspaceTable = ({
                 </DataTableCell>
                 <DataTableCell align="center" tone="emphasis">{toPN(financialSummary.total.toLocaleString())}</DataTableCell>
                 <DataTableCell align="center">
-                  <Link2 size={14} className={`mx-auto ${hasCustomerLink ? 'text-emerald-600' : 'text-slate-300'}`} />
+                  <Link2 size={14} className={`mx-auto ${hasCustomerLink ? 'text-[rgb(var(--ui-accent))]' : 'text-slate-300'}`} />
                 </DataTableCell>
                 <DataTableCell align="center">
                   <div className="flex items-center justify-center gap-1.5">
@@ -163,8 +163,8 @@ export const OrdersWorkspaceTable = ({
                     />
                     {order.status !== 'archived' ? (
                       <>
-                        <IconButton action="edit" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="text-amber-700" onClick={() => onEditOrder(order)} />
-                        <IconButton action="archive" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="text-rose-700" onClick={() => onArchiveOrder(order)}>
+                        <IconButton action="edit" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="text-[rgb(var(--ui-accent-strong))]" onClick={() => onEditOrder(order)} />
+                        <IconButton action="archive" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="text-[rgb(var(--ui-danger-text))]" onClick={() => onArchiveOrder(order)}>
                           <Archive size={16} />
                         </IconButton>
                       </>
@@ -220,10 +220,10 @@ export const OrdersWorkspaceTable = ({
                           const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep);
 
                           return (
-                            <tr key={item.id || `${itemIndex}`} className="transition-colors even:bg-[rgb(var(--ui-surface-muted))]/38 hover:bg-[rgb(var(--ui-info-bg))]/32">
+                            <tr key={item.id || `${itemIndex}`} className="transition-colors even:bg-[rgb(var(--ui-surface-muted))]/38 hover:bg-[rgb(var(--ui-accent-muted))]/26">
                               <td className="px-2 py-2 text-center font-bold text-[rgb(var(--ui-text-muted))]">{toPN(itemIndex + 1)}</td>
                               <td className="px-2 py-2">
-                                <span className={`whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-semibold shadow-[var(--shadow-soft)] ${isManualLike ? 'border-amber-200 bg-amber-50 text-amber-700' : 'border-[rgb(var(--ui-border))] bg-white text-[rgb(var(--ui-text))]'}`}>{item.title}</span>
+                                <span className={`whitespace-nowrap rounded-full border px-3 py-1 text-[9px] font-semibold shadow-[var(--shadow-soft)] ${isManualLike ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' : 'border-[rgb(var(--ui-border))] bg-white text-[rgb(var(--ui-text))]'}`}>{item.title}</span>
                               </td>
                               <td className="px-2 py-2"><StructureDetails item={item} catalog={catalog} /></td>
                               <td className="px-2 py-2 text-center font-medium text-[rgb(var(--ui-text-muted))]" dir="ltr">{widthText}</td>
@@ -231,7 +231,7 @@ export const OrdersWorkspaceTable = ({
                               <td className="px-2 py-2 text-center font-medium text-[rgb(var(--ui-text-muted))]">
                                 {perSquareMeterPrice === null ? '-' : toPN(perSquareMeterPrice.toLocaleString())}
                               </td>
-                              <td className="bg-[rgb(var(--ui-info-bg))]/38 px-2 py-2 text-left font-semibold text-[rgb(var(--ui-text))]">{toPN(toSafeAmount(item?.totalPrice).toLocaleString())}</td>
+                              <td className="bg-[rgb(var(--ui-accent-muted))]/32 px-2 py-2 text-left font-semibold text-[rgb(var(--ui-text))]">{toPN(toSafeAmount(item?.totalPrice).toLocaleString())}</td>
                             </tr>
                           );
                         })}

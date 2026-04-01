@@ -127,7 +127,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
         </button>
         {isGroupOpen && (
-          <div id={`${item.id}-submenu`} className={`space-y-1 rounded-[var(--radius-lg)] border p-1.5 ${tone === 'owner' ? 'border-amber-200/80 bg-amber-50/90' : 'border-[rgb(var(--ui-border-soft))] bg-white/80'}`}>
+          <div id={`${item.id}-submenu`} className={`space-y-1 rounded-[var(--radius-lg)] border p-1.5 ${tone === 'owner' ? 'border-[rgb(var(--ui-accent-border))]/80 bg-[rgb(var(--ui-accent-muted))]/90' : 'border-[rgb(var(--ui-border-soft))] bg-white/80'}`}>
             {item.children.map((child) => (
               <NavLink key={`${child.to}:${child.tab || ''}`} to={toNavTarget(child)} onClick={onNavigate} className={() => navChildLinkClass(isTargetActive(child), tone)}>
                 <span className="truncate">{child.label}</span>
@@ -191,7 +191,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         {canCreateOrders && (
           <div className="mt-3">
             {wrapWithTooltip(
-              <NavLink to="/orders/new" onClick={onNavigate} className={`focus-ring flex min-h-11 items-center rounded-[var(--radius-lg)] border border-emerald-600 bg-emerald-600 text-xs font-black text-white transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-emerald-500 ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'justify-center gap-1.5 px-3'}`}>
+              <NavLink to="/orders/new" onClick={onNavigate} className={`focus-ring flex min-h-11 items-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-accent-strong))] bg-[rgb(var(--ui-accent))] text-xs font-black text-white transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-[rgb(var(--ui-accent-strong))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'justify-center gap-1.5 px-3'}`}>
                 <PlusCircle size={15} />
                 <span className={isRailCollapsed ? 'sr-only' : ''}>ثبت سفارش جدید</span>
               </NavLink>,

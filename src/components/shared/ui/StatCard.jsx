@@ -26,7 +26,7 @@ export const StatCard = ({
         <div className="text-2xl font-black tracking-tight text-[rgb(var(--ui-text))]">{value}</div>
       </div>
       {Icon ? (
-        <div className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-border-soft))] bg-white/80 text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)]">
+        <div className="inline-flex h-11 w-11 items-center justify-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-accent-muted))]/45 text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)]">
           <Icon size={18} />
         </div>
       ) : null}

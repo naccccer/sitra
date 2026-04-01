@@ -18,10 +18,10 @@ export const Select = forwardRef(({
     ref={ref}
     aria-invalid={invalid || undefined}
     className={cn(
-      'focus-ring w-full rounded-[var(--radius-md)] border bg-white font-bold text-[rgb(var(--ui-text))] shadow-[inset_0_1px_0_rgba(255,255,255,0.85)] transition duration-[var(--motion-fast)]',
+      'focus-ring w-full rounded-[var(--radius-md)] border bg-white font-bold text-[rgb(var(--ui-text))] shadow-[inset_0_1px_0_rgba(255,255,255,0.9)] transition duration-[var(--motion-fast)]',
       invalid
         ? 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))]/25'
-        : 'border-[rgb(var(--ui-border))] hover:border-[rgb(var(--ui-accent-border))]',
+        : 'border-[rgb(var(--ui-border))] hover:border-[rgb(var(--ui-accent-border))] focus:bg-[rgb(var(--ui-accent-muted))]/18',
       SIZE_CLASSNAMES[size] || SIZE_CLASSNAMES.md,
       className,
     )}

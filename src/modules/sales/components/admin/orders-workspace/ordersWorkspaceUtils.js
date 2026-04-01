@@ -1,4 +1,4 @@
-import { resolveApiFileUrl } from '@/utils/url';
+﻿import { resolveApiFileUrl } from '@/utils/url';
 import { computeInvoiceFinancials, ensureBillingSettings, PAYMENT_METHOD_OPTIONS } from '@/modules/sales/domain/invoice';
 
 const PRINTABLE_MIME_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
@@ -61,7 +61,7 @@ export const defaultPaymentMethod = PAYMENT_METHOD_OPTIONS[0]?.value || 'cash';
 
 export const PAYMENT_MANAGER_TABS = [
   { id: 'create', label: 'ثبت پرداخت' },
-  { id: 'list', label: 'پرداخت‌های ثبت‌شده' },
+  { id: 'list', label: 'پرداخت\u200cهای ثبت\u200cشده' },
   { id: 'discount', label: 'تخفیف' },
   { id: 'tax', label: 'مالیات' },
 ];
@@ -85,17 +85,17 @@ export const deriveFinancialSummary = (order = {}) => {
 };
 
 export const paymentStatusPill = (status) => {
-  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-emerald-50 text-emerald-800' };
-  if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-amber-100 text-amber-700' };
-  return { label: 'تسویه نشده', className: 'bg-[rgb(120,53,33)]/12 text-[rgb(120,53,33)]' };
+  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]' };
+  if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]' };
+  return { label: 'تسویه نشده', className: 'bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]' };
 };
 
 export const ORDER_STAGE_OPTIONS = [
-  { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-slate-100 text-slate-700' },
-  { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-amber-100 text-amber-700' },
-  { id: 'in_progress', label: 'در حال انجام', status: 'processing', className: 'bg-blue-100 text-blue-700' },
-  { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-indigo-100 text-indigo-700' },
-  { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-emerald-100 text-emerald-700' },
+  { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text-muted))]' },
+  { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]' },
+  { id: 'in_progress', label: 'در حال انجام', status: 'processing', className: 'bg-[rgb(var(--ui-info-bg))] text-[rgb(var(--ui-info-text))]' },
+  { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' },
+  { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]' },
 ];
 
 export const ORDER_STAGE_MAP = ORDER_STAGE_OPTIONS.reduce((acc, option) => {
@@ -142,3 +142,4 @@ export const buildFinancialsForOrder = (order = {}, payments = [], invoiceDraft 
     payments,
   });
 };
+
