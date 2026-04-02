@@ -79,7 +79,7 @@ These are the default way to work. Follow them unless there is a documented reas
 
 ## Temporary and Migration Rules
 - Treat phase/runbook files as temporary implementation guidance, not architecture authority.
-- `docs/ROADMAP.md`, `docs/refactor-execution-plan.md`, and module roadmap files may describe phased work; they must not silently override `ARCHITECTURE.md` or `MODULE_CONTRACTS.md`.
+- `docs/ROADMAP.md` and temporary runbook files may describe phased work; they must not silently override `ARCHITECTURE.md` or `MODULE_CONTRACTS.md`.
 - If a temporary migration rule becomes permanent, move it into the authoritative docs and remove the temporary-only wording.
 
 ## Stale or Conflicting Rules
