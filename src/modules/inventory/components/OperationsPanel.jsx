@@ -1,5 +1,24 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card } from '@/components/shared/ui'
+import {
+  Badge,
+  Button,
+  DataTable,
+  DataTableActions,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  DataTableState,
+  FilterRow,
+  IconButton,
+  InlineAlert,
+  Input,
+  PaginationBar,
+  Select,
+  WorkspaceToolbar,
+} from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const STATUS_MAP = {
@@ -21,6 +40,13 @@ const TYPE_LABELS = {
   count: 'شمارش',
 }
 
+const PAGE_SIZE = 20
+const PAGE_SIZE_OPTIONS = [20]
+const formatDateToken = (value) => {
+  const raw = String(value ?? '').trim()
+  return raw ? toPN(raw.replaceAll('-', '/')) : '-'
+}
+
 export const OperationsPanel = ({ operationType, session, onNew }) => {
   const [rows, setRows] = useState([])
   const [total, setTotal] = useState(0)
@@ -33,7 +59,6 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
 
   const role = session?.user?.role || session?.role
   const isManager = role === 'admin' || role === 'manager'
-  const pageSize = 20
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -44,7 +69,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
         status: statusFilter,
         q,
         page,
-        pageSize,
+        pageSize: PAGE_SIZE,
       })
       setRows(Array.isArray(response?.operations) ? response.operations : [])
       setTotal(Number(response?.total) || 0)
@@ -87,112 +112,115 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
     return actions
   }
 
-  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
-    <Card padding="md" className="space-y-3">
-      <div className="flex flex-wrap items-center gap-2">
-        <input
-          type="text"
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          placeholder="جستجو در شماره عملیات یا کد مرجع"
-          value={q}
-          onChange={(event) => {
-            setQ(event.target.value)
-            setPage(1)
-          }}
-          dir="rtl"
-        />
-        <select
-          className="rounded border border-slate-300 px-2 py-1 text-sm"
-          value={statusFilter}
-          onChange={(event) => {
-            setStatusFilter(event.target.value)
-            setPage(1)
-          }}
-        >
-          <option value="">همه وضعیت ها</option>
-          {Object.entries(STATUS_MAP).map(([value, status]) => (
-            <option key={value} value={value}>{status.label}</option>
-          ))}
-        </select>
-        <Button size="sm" variant="primary" onClick={onNew}>+ عملیات جدید</Button>
-        <Button size="sm" variant="ghost" onClick={() => void load()}>بارگذاری مجدد</Button>
-      </div>
-
-      {loading && <div className="py-6 text-center text-sm text-slate-400">در حال بارگذاری...</div>}
-      {error && <div className="py-4 text-center text-sm text-red-500">{error}</div>}
-
-      {!loading && !error && (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-sm">
-            <thead>
-              <tr className="bg-slate-50">
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">شماره عملیات</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">نوع</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">انبار مبدا</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">انبار مقصد</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">کد مرجع</th>
-                <th className="border border-slate-200 px-3 py-2 text-center font-medium text-slate-600">وضعیت</th>
-                <th className="border border-slate-200 px-3 py-2 text-center font-medium text-slate-600">تعداد خطوط</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">تاریخ</th>
-                <th className="border border-slate-200 px-3 py-2 text-start font-medium text-slate-600">اقدامات</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.length === 0 && (
-                <tr>
-                  <td colSpan={9} className="py-8 text-center text-sm text-slate-400">رکوردی یافت نشد</td>
-                </tr>
-              )}
-              {rows.map((operation) => {
-                const status = STATUS_MAP[operation.status] ?? STATUS_MAP.draft
-                const actions = getActions(operation)
-                return (
-                  <tr key={operation.id} className="hover:bg-slate-50">
-                    <td className="border border-slate-200 px-3 py-2 font-mono text-xs">{operation.operationNo}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-xs">{TYPE_LABELS[operation.operationType] ?? operation.operationType}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-xs">{operation.sourceWarehouseName || '-'}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-xs">{operation.targetWarehouseName || '-'}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-xs text-slate-500">{operation.referenceCode || '-'}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-center">
-                      <span className={`rounded px-2 py-0.5 text-xs font-medium ${status.cls}`}>{status.label}</span>
-                    </td>
-                    <td className="border border-slate-200 px-3 py-2 text-center text-xs">{operation.lineCount}</td>
-                    <td className="border border-slate-200 px-3 py-2 text-xs text-slate-500">{operation.createdAt}</td>
-                    <td className="border border-slate-200 px-3 py-2">
-                      <div className="flex flex-wrap gap-1">
-                        {actions.map((actionItem) => (
-                          <Button
-                            key={actionItem.action}
-                            size="xs"
-                            variant={actionItem.variant}
-                            disabled={acting === operation.id}
-                            onClick={() => void handleAction(operation.id, actionItem.action)}
-                          >
-                            {actionItem.label}
-                          </Button>
-                        ))}
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-slate-500">{total} رکورد</span>
-          <div className="flex items-center gap-1">
-            <Button size="xs" variant="ghost" disabled={page <= 1} onClick={() => setPage((prev) => prev - 1)}>قبلی</Button>
-            <span className="px-2 py-1 text-slate-600">{page} / {totalPages}</span>
-            <Button size="xs" variant="ghost" disabled={page >= totalPages} onClick={() => setPage((prev) => prev + 1)}>بعدی</Button>
+    <div className="space-y-4" dir="rtl">
+      <WorkspaceToolbar
+        actions={<Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>}
+        summary={<Badge tone="neutral">نتیجه: {toPN(total)}</Badge>}
+      >
+        <FilterRow className="justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-2">
+            <Input
+              value={q}
+              onChange={(event) => {
+                setQ(event.target.value)
+                setPage(1)
+              }}
+              placeholder="جستجو در شماره عملیات یا کد مرجع"
+              size="sm"
+              className="sm:w-64"
+            />
+            <Select
+              value={statusFilter}
+              onChange={(event) => {
+                setStatusFilter(event.target.value)
+                setPage(1)
+              }}
+              size="sm"
+              className="sm:w-44"
+            >
+              <option value="">همه وضعیت ها</option>
+              {Object.entries(STATUS_MAP).map(([value, status]) => (
+                <option key={value} value={value}>{status.label}</option>
+              ))}
+            </Select>
           </div>
-        </div>
-      )}
-    </Card>
+          <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
+        </FilterRow>
+      </WorkspaceToolbar>
+
+      {error ? <InlineAlert tone="danger" title="خطا در بارگذاری عملیات">{error}</InlineAlert> : null}
+
+      <DataTable
+        minWidthClass="min-w-[1120px]"
+        footer={rows.length > 0 ? (
+          <PaginationBar
+            page={page}
+            totalPages={totalPages}
+            totalCount={total}
+            pageSize={PAGE_SIZE}
+            pageSizeOptions={PAGE_SIZE_OPTIONS}
+            onPageChange={setPage}
+            onPageSizeChange={() => {}}
+          />
+        ) : null}
+      >
+        <DataTableHead>
+          <tr>
+            <DataTableHeaderCell>شماره عملیات</DataTableHeaderCell>
+            <DataTableHeaderCell>نوع</DataTableHeaderCell>
+            <DataTableHeaderCell>انبار مبدا</DataTableHeaderCell>
+            <DataTableHeaderCell>انبار مقصد</DataTableHeaderCell>
+            <DataTableHeaderCell>کد مرجع</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">تعداد خطوط</DataTableHeaderCell>
+            <DataTableHeaderCell>تاریخ</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">اقدامات</DataTableHeaderCell>
+          </tr>
+        </DataTableHead>
+        <DataTableBody>
+          {loading ? (
+            <DataTableState colSpan={9} state="loading" title="در حال بارگذاری عملیات" />
+          ) : rows.length === 0 ? (
+            <DataTableState colSpan={9} title="رکوردی یافت نشد" />
+          ) : rows.map((operation) => {
+            const status = STATUS_MAP[operation.status] ?? STATUS_MAP.draft
+            const actions = getActions(operation)
+            return (
+              <DataTableRow key={operation.id}>
+                <DataTableCell tone="emphasis" className="font-mono tabular-nums" dir="ltr">{toPN(operation.operationNo || '-')}</DataTableCell>
+                <DataTableCell>{TYPE_LABELS[operation.operationType] ?? operation.operationType}</DataTableCell>
+                <DataTableCell>{operation.sourceWarehouseName || '-'}</DataTableCell>
+                <DataTableCell>{operation.targetWarehouseName || '-'}</DataTableCell>
+                <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{toPN(operation.referenceCode || '-')}</DataTableCell>
+                <DataTableCell align="center">
+                  <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-black ${status.cls}`}>{status.label}</span>
+                </DataTableCell>
+                <DataTableCell align="center" className="tabular-nums">{toPN(operation.lineCount || 0)}</DataTableCell>
+                <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{formatDateToken(operation.createdAt)}</DataTableCell>
+                <DataTableCell align="center">
+                  <DataTableActions>
+                    {actions.map((actionItem) => (
+                      <Button
+                        key={actionItem.action}
+                        size="xs"
+                        variant={actionItem.variant}
+                        surface="table"
+                        disabled={acting === operation.id}
+                        onClick={() => void handleAction(operation.id, actionItem.action)}
+                      >
+                        {actionItem.label}
+                      </Button>
+                    ))}
+                  </DataTableActions>
+                </DataTableCell>
+              </DataTableRow>
+            )
+          })}
+        </DataTableBody>
+      </DataTable>
+    </div>
   )
 }

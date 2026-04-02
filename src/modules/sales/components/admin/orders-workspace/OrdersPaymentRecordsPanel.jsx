@@ -5,7 +5,19 @@ import { PriceInput } from '@/components/shared/PriceInput';
 import { resolveApiFileUrl } from '@/utils/url';
 import { getPaymentMethodLabel, PAYMENT_METHOD_OPTIONS } from '@/modules/sales/domain/invoice';
 import { formatPersianDate } from '@/modules/sales/components/admin/orders-workspace/ordersWorkspaceUtils';
-import { Button, Input, Select } from '@/components/shared/ui';
+import {
+  Button,
+  DataTable,
+  DataTableActions,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  DataTableState,
+  Input,
+  Select,
+} from '@/components/shared/ui';
 
 export const OrdersPaymentRecordsPanel = ({
   activeTab,
@@ -108,83 +120,85 @@ export const OrdersPaymentRecordsPanel = ({
 
       {activeTab === 'list' && (
         payments.length === 0 ? (
-          <div className="rounded-lg border border-dashed border-slate-300 bg-white p-3 text-xs font-bold text-slate-500">هنوز پرداختی ثبت نشده است.</div>
+          <DataTable minWidthClass="min-w-[860px]">
+            <DataTableBody>
+              <DataTableState colSpan={6} title="هنوز پرداختی ثبت نشده است." />
+            </DataTableBody>
+          </DataTable>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[860px] text-xs">
-              <thead className="border-y border-slate-200 bg-white text-slate-500">
-                <tr>
-                  <th className="p-2 text-right font-black">تاریخ</th>
-                  <th className="p-2 text-right font-black">روش</th>
-                  <th className="p-2 text-right font-black">یادداشت</th>
-                  <th className="p-2 text-right font-black">رسید</th>
-                  <th className="p-2 text-left font-black">مبلغ</th>
-                  <th className="p-2 text-center font-black">عملیات</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {payments.map((payment) => {
-                  const rowDraft = orderEditDrafts[payment.id];
-                  const isEditing = Boolean(rowDraft);
-                  const rowAmountValid = Number(rowDraft?.amount) > 0;
-                  return (
-                    <tr key={payment.id}>
-                      <td className="p-2">{isEditing ? <Input type="text" value={rowDraft.date || ''} onChange={(event) => onEditFieldChange(payment.id, 'date', event.target.value)} className="h-8 !rounded-[16px] text-[11px]" /> : <span className="font-bold text-slate-700">{formatPersianDate(payment.date)}</span>}</td>
-                      <td className="p-2">{isEditing ? <Select value={rowDraft.method || defaultPaymentMethod} onChange={(event) => onEditFieldChange(payment.id, 'method', event.target.value)} className="h-8 !rounded-[16px] text-[11px]">{PAYMENT_METHOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select> : <span className="font-bold text-slate-700">{getPaymentMethodLabel(payment.method)}</span>}</td>
-                      <td className="p-2">{isEditing ? <Input type="text" value={rowDraft.note || ''} onChange={(event) => onEditFieldChange(payment.id, 'note', event.target.value)} className="h-8 !rounded-[16px] text-[11px]" /> : <span className="font-bold text-slate-500">{payment.note || '-'}</span>}</td>
-                      <td className="p-2">
-                        {isEditing ? (
-                          <div className="flex items-center gap-1.5">
-                            <label htmlFor={`edit-receipt-${order.id}-${payment.id}`} className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-[16px] border border-slate-200 bg-slate-100 px-2 text-[10px] font-black text-slate-700">
-                              <Upload size={11} />
-                              {uploadingReceiptKey === `edit:${order.id}:${payment.id}` ? 'در حال آپلود...' : 'آپلود'}
-                            </label>
-                            <input
-                              id={`edit-receipt-${order.id}-${payment.id}`}
-                              type="file"
-                              accept="application/pdf,image/jpeg,image/png"
-                              className="hidden"
-                              onChange={(event) => {
-                                const file = event.target.files?.[0];
-                                if (!file) return;
-                                onUploadEditedReceipt(payment.id, file);
-                                event.target.value = '';
-                              }}
-                            />
-                            {rowDraft.receipt?.filePath && <Button onClick={() => onEditFieldChange(payment.id, 'receipt', null)} size="sm" variant="danger">حذف</Button>}
-                          </div>
-                        ) : payment.receipt?.filePath ? (
-                          <a href={resolveApiFileUrl(payment.receipt.filePath)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-black text-blue-700 hover:text-blue-800">
-                            <Link2 size={12} />
-                            {payment.receipt.originalName || 'مشاهده'}
-                          </a>
-                        ) : <span className="font-bold text-slate-400">-</span>}
-                      </td>
-                      <td className="p-2 text-left font-black tabular-nums text-slate-900">{isEditing ? <div className="h-8 w-24 rounded-[16px] border border-slate-200 bg-white"><PriceInput value={rowDraft.amount ?? ''} onChange={(value) => onEditFieldChange(payment.id, 'amount', value)} placeholder="0" /></div> : toPN(payment.amount.toLocaleString())}</td>
-                      <td className="p-2">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {isEditing ? (
-                            <>
-                              <Button onClick={() => onSaveEdit(payment.id)} disabled={!rowAmountValid} size="sm" variant="success">ذخیره</Button>
-                              <Button onClick={() => onCancelEdit(payment.id)} size="sm" variant="secondary">انصراف</Button>
-                            </>
-                          ) : (
-                            <>
-                              <Button onClick={() => onBeginEdit(payment)} size="sm" variant="secondary">ویرایش</Button>
-                              <Button onClick={() => onRemovePayment(payment.id)} size="sm" variant="danger">
-                                <Trash2 size={11} />
-                                حذف
-                              </Button>
-                            </>
-                          )}
+          <DataTable minWidthClass="min-w-[860px]">
+            <DataTableHead>
+              <tr>
+                <DataTableHeaderCell>تاریخ</DataTableHeaderCell>
+                <DataTableHeaderCell>روش</DataTableHeaderCell>
+                <DataTableHeaderCell>یادداشت</DataTableHeaderCell>
+                <DataTableHeaderCell>رسید</DataTableHeaderCell>
+                <DataTableHeaderCell align="center">مبلغ</DataTableHeaderCell>
+                <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell>
+              </tr>
+            </DataTableHead>
+            <DataTableBody>
+              {payments.map((payment) => {
+                const rowDraft = orderEditDrafts[payment.id];
+                const isEditing = Boolean(rowDraft);
+                const rowAmountValid = Number(rowDraft?.amount) > 0;
+                return (
+                  <DataTableRow key={payment.id}>
+                    <DataTableCell>{isEditing ? <Input type="text" value={rowDraft.date || ''} onChange={(event) => onEditFieldChange(payment.id, 'date', event.target.value)} className="h-8 !rounded-[16px] text-[11px]" /> : <span className="font-bold text-slate-700">{formatPersianDate(payment.date)}</span>}</DataTableCell>
+                    <DataTableCell>{isEditing ? <Select value={rowDraft.method || defaultPaymentMethod} onChange={(event) => onEditFieldChange(payment.id, 'method', event.target.value)} className="h-8 !rounded-[16px] text-[11px]">{PAYMENT_METHOD_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</Select> : <span className="font-bold text-slate-700">{getPaymentMethodLabel(payment.method)}</span>}</DataTableCell>
+                    <DataTableCell>{isEditing ? <Input type="text" value={rowDraft.note || ''} onChange={(event) => onEditFieldChange(payment.id, 'note', event.target.value)} className="h-8 !rounded-[16px] text-[11px]" /> : <span className="font-bold text-slate-500">{payment.note || '-'}</span>}</DataTableCell>
+                    <DataTableCell>
+                      {isEditing ? (
+                        <div className="flex items-center gap-1.5">
+                          <label htmlFor={`edit-receipt-${order.id}-${payment.id}`} className="inline-flex h-8 cursor-pointer items-center gap-1 rounded-[16px] border border-slate-200 bg-slate-100 px-2 text-[10px] font-black text-slate-700">
+                            <Upload size={11} />
+                            {uploadingReceiptKey === `edit:${order.id}:${payment.id}` ? 'در حال آپلود...' : 'آپلود'}
+                          </label>
+                          <input
+                            id={`edit-receipt-${order.id}-${payment.id}`}
+                            type="file"
+                            accept="application/pdf,image/jpeg,image/png"
+                            className="hidden"
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (!file) return;
+                              onUploadEditedReceipt(payment.id, file);
+                              event.target.value = '';
+                            }}
+                          />
+                          {rowDraft.receipt?.filePath ? <Button onClick={() => onEditFieldChange(payment.id, 'receipt', null)} size="sm" variant="danger" surface="table">حذف</Button> : null}
                         </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      ) : payment.receipt?.filePath ? (
+                        <a href={resolveApiFileUrl(payment.receipt.filePath)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 font-black text-blue-700 hover:text-blue-800">
+                          <Link2 size={12} />
+                          {payment.receipt.originalName || 'مشاهده'}
+                        </a>
+                      ) : <span className="font-bold text-slate-400">-</span>}
+                    </DataTableCell>
+                    <DataTableCell align="center" className="tabular-nums text-slate-900" dir="ltr">{isEditing ? <div className="mx-auto h-8 w-24 rounded-[16px] border border-slate-200 bg-white"><PriceInput value={rowDraft.amount ?? ''} onChange={(value) => onEditFieldChange(payment.id, 'amount', value)} placeholder="0" /></div> : toPN(payment.amount.toLocaleString())}</DataTableCell>
+                    <DataTableCell align="center">
+                      <DataTableActions>
+                        {isEditing ? (
+                          <>
+                            <Button onClick={() => onSaveEdit(payment.id)} disabled={!rowAmountValid} size="sm" variant="success" surface="table">ذخیره</Button>
+                            <Button onClick={() => onCancelEdit(payment.id)} size="sm" variant="secondary" surface="table">انصراف</Button>
+                          </>
+                        ) : (
+                          <>
+                            <Button onClick={() => onBeginEdit(payment)} size="sm" variant="secondary" surface="table">ویرایش</Button>
+                            <Button onClick={() => onRemovePayment(payment.id)} size="sm" variant="danger" surface="table">
+                              <Trash2 size={11} />
+                              حذف
+                            </Button>
+                          </>
+                        )}
+                      </DataTableActions>
+                    </DataTableCell>
+                  </DataTableRow>
+                );
+              })}
+            </DataTableBody>
+          </DataTable>
         )
       )}
     </div>

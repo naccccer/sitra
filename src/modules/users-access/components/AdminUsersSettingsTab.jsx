@@ -1,4 +1,5 @@
 import React from 'react';
+import { InlineAlert } from '@/components/shared/ui';
 import { useAdminUsersSettings } from '../hooks/useAdminUsersSettings';
 import { CreateUserForm } from './CreateUserForm';
 import { RolePermissionsMatrix } from './RolePermissionsMatrix';
@@ -47,12 +48,8 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
         onSubmit={handleCreateUser}
       />
 
-      {errorMsg && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 text-rose-700 text-xs font-black px-3 py-2">{errorMsg}</div>
-      )}
-      {successMsg && (
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-black px-3 py-2">{successMsg}</div>
-      )}
+      {errorMsg ? <InlineAlert tone="danger" title="خطا">{errorMsg}</InlineAlert> : null}
+      {successMsg ? <InlineAlert tone="success" title="انجام شد">{successMsg}</InlineAlert> : null}
 
       <RolePermissionsMatrix
         isLoading={isLoading}

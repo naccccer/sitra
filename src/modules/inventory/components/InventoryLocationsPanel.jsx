@@ -16,6 +16,7 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const USAGE_LABELS = {
@@ -103,7 +104,7 @@ export const InventoryLocationsPanel = ({ session }) => {
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
         actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={openCreate}>مکان جدید</Button> : null}
-        summary={<Badge tone="neutral">مکان‌ها: {rows.length}</Badge>}
+        summary={<Badge tone="neutral">مکان‌ها: {toPN(rows.length)}</Badge>}
       >
         <FilterRow className="justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -141,7 +142,7 @@ export const InventoryLocationsPanel = ({ session }) => {
           ) : rows.map((location) => (
             <DataTableRow key={location.id} tone={location.isActive ? 'default' : 'muted'}>
               <DataTableCell tone="emphasis">{location.name}</DataTableCell>
-              <DataTableCell className="font-mono">{location.locationKey}</DataTableCell>
+              <DataTableCell className="font-mono tabular-nums" dir="ltr">{location.locationKey}</DataTableCell>
               <DataTableCell>{warehouseName(location.warehouseId)}</DataTableCell>
               <DataTableCell align="center">{USAGE_LABELS[location.usageType] ?? location.usageType}</DataTableCell>
               <DataTableCell align="center"><Badge tone={location.isActive ? 'success' : 'neutral'}>{location.isActive ? 'فعال' : 'غیرفعال'}</Badge></DataTableCell>

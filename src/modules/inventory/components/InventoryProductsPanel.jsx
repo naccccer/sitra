@@ -17,6 +17,7 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const TYPE_LABELS = {
@@ -133,7 +134,7 @@ export const InventoryProductsPanel = ({ session }) => {
         actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={openCreate}>محصول جدید</Button> : null}
         summary={(
           <>
-            <Badge tone="neutral">محصولات: {rows.length}</Badge>
+            <Badge tone="neutral">محصولات: {toPN(rows.length)}</Badge>
             {typeFilter ? <Badge tone="accent">فیلتر نوع فعال است</Badge> : null}
           </>
         )}
@@ -177,7 +178,7 @@ export const InventoryProductsPanel = ({ session }) => {
           ) : rows.map((product) => (
             <DataTableRow key={product.id} tone={product.isActive ? 'default' : 'muted'}>
               <DataTableCell tone="emphasis">{product.name}</DataTableCell>
-              <DataTableCell className="font-mono">{product.productCode || '-'}</DataTableCell>
+              <DataTableCell className="font-mono tabular-nums" dir="ltr">{product.productCode || '-'}</DataTableCell>
               <DataTableCell align="center">{TYPE_LABELS[product.productType] ?? product.productType}</DataTableCell>
               <DataTableCell align="center">{product.uom}</DataTableCell>
               <DataTableCell align="center"><Badge tone={product.isActive ? 'success' : 'neutral'}>{product.isActive ? 'فعال' : 'غیرفعال'}</Badge></DataTableCell>

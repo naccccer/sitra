@@ -17,6 +17,7 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { formatDateTime, roleBadgeClass, roleLabel } from '../hooks/useAdminUsersSettings'
 
 export const UsersListTable = ({
@@ -34,7 +35,7 @@ export const UsersListTable = ({
   onToggleActive,
 }) => (
   <div className="space-y-3" dir="rtl">
-    <WorkspaceToolbar summary={<Badge tone="neutral">تعداد: {users.length}</Badge>}>
+    <WorkspaceToolbar summary={<Badge tone="neutral">تعداد: {toPN(users.length)}</Badge>}>
       <FilterRow>
         <div>
           <div className="text-sm font-black text-[rgb(var(--ui-text))]">لیست کاربران</div>
@@ -78,7 +79,7 @@ export const UsersListTable = ({
                     dir="ltr"
                   />
                 ) : (
-                  <span className="font-black text-[rgb(var(--ui-text))]">{user.username}</span>
+                  <span className="font-black tabular-nums text-[rgb(var(--ui-text))]" dir="ltr">{user.username}</span>
                 )}
               </DataTableCell>
               <DataTableCell tone="emphasis">
@@ -127,8 +128,8 @@ export const UsersListTable = ({
               <DataTableCell align="center">
                 <Badge tone={user.isActive ? 'success' : 'danger'}>{user.isActive ? 'فعال' : 'غیرفعال'}</Badge>
               </DataTableCell>
-              <DataTableCell align="center">{formatDateTime(user.createdAt)}</DataTableCell>
-              <DataTableCell align="center">{formatDateTime(user.updatedAt)}</DataTableCell>
+              <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatDateTime(user.createdAt)}</DataTableCell>
+              <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatDateTime(user.updatedAt)}</DataTableCell>
               <DataTableCell align="center">
                 {isEditing ? (
                   <div className="flex flex-wrap items-center justify-center gap-2">

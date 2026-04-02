@@ -16,3 +16,4 @@
 ## Interaction Rules
 - HR remains the source of truth for employee identity and activation state.
 - Accounting payroll integrations must treat HR as the owner of employee records.
+- HR directory/documents admin list surfaces should use shared workspace/table primitives, Persian numeral formatting for visible numeric values, and explicit `dir="ltr"` only for mixed-direction scan fields.

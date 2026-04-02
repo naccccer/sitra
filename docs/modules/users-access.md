@@ -22,3 +22,4 @@
 - User mutation operations must be audited.
 - `admin` role is Owner-only governance scope (System Owner/Support), not factory operations.
 - Non-owner actors cannot assign, demote, or deactivate `admin` users.
+- Users list/admin table surfaces should use shared workspace/table primitives and keep numeric/date scan consistency via Persian numerals plus explicit `dir="ltr"` only on mixed-direction fields (e.g., usernames and timestamps).

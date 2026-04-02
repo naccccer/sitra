@@ -18,4 +18,4 @@
 ## Interaction Rules
 - Other modules consume catalog via contract, not direct table reads.
 - All writes go through master-data services.
-
+- Dense matrix/custom-item settings grids should keep shared table/toolbar primitives and orders-aligned numeric scan quality (`toPN` + `tabular-nums` where values are compared).

@@ -19,3 +19,4 @@
 ## Interaction Rules
 - Direct cross-module table access is forbidden.
 - Compatibility adapters may expose HR-backed employee data, but ownership remains with HR.
+- Accounting admin tables/settings grids should use shared workspace/table primitives, with Persian numeral rendering for user-facing numeric values and explicit `dir="ltr"` only for mixed-direction scan fields (codes/dates/identifiers).

@@ -15,6 +15,7 @@ import {
   InlineAlert,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const EMPTY_FORM = { id: null, warehouseKey: '', name: '', notes: '' }
@@ -80,7 +81,7 @@ export const InventoryWarehousesPanel = ({ session }) => {
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
         actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={openCreate}>انبار جدید</Button> : null}
-        summary={<Badge tone="neutral">انبارها: {rows.length}</Badge>}
+        summary={<Badge tone="neutral">انبارها: {toPN(rows.length)}</Badge>}
       >
         <FilterRow className="justify-between gap-3">
           <label className="flex items-center gap-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">
@@ -111,7 +112,7 @@ export const InventoryWarehousesPanel = ({ session }) => {
           ) : rows.map((warehouse) => (
             <DataTableRow key={warehouse.id} tone={warehouse.isActive ? 'default' : 'muted'}>
               <DataTableCell tone="emphasis">{warehouse.name}</DataTableCell>
-              <DataTableCell className="font-mono">{warehouse.warehouseKey}</DataTableCell>
+              <DataTableCell className="font-mono tabular-nums" dir="ltr">{warehouse.warehouseKey}</DataTableCell>
               <DataTableCell>{warehouse.notes || '-'}</DataTableCell>
               <DataTableCell align="center"><Badge tone={warehouse.isActive ? 'success' : 'neutral'}>{warehouse.isActive ? 'فعال' : 'غیرفعال'}</Badge></DataTableCell>
               {canWrite ? (
