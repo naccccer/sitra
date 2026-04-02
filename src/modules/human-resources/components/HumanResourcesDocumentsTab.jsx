@@ -1,13 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileText, Trash2, Upload } from 'lucide-react'
-import { Button, Card, EmptyState, Input } from '@/components/shared/ui'
+import {
+  Button,
+  Card,
+  DataTable,
+  DataTableActions,
+  DataTableBody,
+  DataTableCell,
+  DataTableHead,
+  DataTableHeaderCell,
+  DataTableRow,
+  EmptyState,
+  InlineAlert,
+  Input,
+} from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { humanResourcesApi } from '../services/humanResourcesApi'
 
 function formatFileSize(bytes) {
   if (!bytes || bytes <= 0) return '-'
-  if (bytes < 1024) return `${bytes} B`
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`
-  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`
+  if (bytes < 1024) return `${toPN(bytes)} B`
+  if (bytes < 1024 * 1024) return `${toPN((bytes / 1024).toFixed(1))} KB`
+  return `${toPN((bytes / (1024 * 1024)).toFixed(1))} MB`
 }
 
 export function HumanResourcesDocumentsTab({
@@ -99,11 +113,7 @@ export function HumanResourcesDocumentsTab({
 
   return (
     <Card padding="md" className="space-y-4">
-      {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-black text-rose-700">
-          {error}
-        </div>
-      ) : null}
+      {error ? <InlineAlert tone="danger" title="خطا">{error}</InlineAlert> : null}
 
       {canWriteEmployees ? (
         <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4 space-y-3">
@@ -140,37 +150,37 @@ export function HumanResourcesDocumentsTab({
       ) : null}
 
       {hasPending ? (
-        <div className="overflow-hidden rounded-2xl border border-amber-200">
-          <table className="w-full text-center text-xs">
-            <thead className="bg-amber-50 text-[11px] font-black text-amber-600">
-              <tr>
-                <th className="px-3 py-2.5 text-right">عنوان</th>
-                <th className="px-3 py-2.5">نام فایل</th>
-                <th className="px-3 py-2.5">حجم</th>
-                <th className="px-3 py-2.5">عملیات</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-amber-100 bg-white">
-              {pendingDocuments.map((doc, index) => (
-                <tr key={`pending-${index}`} className="hover:bg-amber-50/50 transition-colors">
-                  <td className="px-3 py-2.5 text-right font-black text-slate-900">
-                    <div className="flex items-center gap-1.5">
-                      <FileText className="h-4 w-4 shrink-0 text-amber-400" />
-                      {doc.title}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5 font-bold text-slate-600">{doc.file.name}</td>
-                  <td className="px-3 py-2.5 font-bold text-slate-500">{formatFileSize(doc.file.size)}</td>
-                  <td className="px-3 py-2.5">
-                    <Button size="icon" variant="danger" onClick={() => handleRemovePending(index)} title="حذف">
+        <DataTable minWidthClass="min-w-[620px]" className="border-amber-200">
+          <DataTableHead className="bg-amber-50 text-amber-600">
+            <tr>
+              <DataTableHeaderCell>عنوان</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">نام فایل</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">حجم</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell>
+            </tr>
+          </DataTableHead>
+          <DataTableBody>
+            {pendingDocuments.map((doc, index) => (
+              <DataTableRow key={`pending-${index}`}>
+                <DataTableCell tone="emphasis">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 shrink-0 text-amber-400" />
+                    {doc.title}
+                  </div>
+                </DataTableCell>
+                <DataTableCell align="center">{doc.file.name}</DataTableCell>
+                <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatFileSize(doc.file.size)}</DataTableCell>
+                <DataTableCell align="center">
+                  <DataTableActions>
+                    <Button size="icon" variant="danger" surface="table" onClick={() => handleRemovePending(index)} title="حذف">
                       <Trash2 className="h-4 w-4" />
                     </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                  </DataTableActions>
+                </DataTableCell>
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       ) : null}
 
       {loading ? (
@@ -180,49 +190,50 @@ export function HumanResourcesDocumentsTab({
           className="border border-dashed border-slate-200"
         />
       ) : allItems.length > 0 ? (
-        <div className="overflow-hidden rounded-2xl border border-slate-200">
-          <table className="w-full text-center text-xs">
-            <thead className="bg-slate-50 text-[11px] font-black text-slate-500">
-              <tr>
-                <th className="px-3 py-2.5 text-right">عنوان</th>
-                <th className="px-3 py-2.5">نام فایل</th>
-                <th className="px-3 py-2.5">حجم</th>
-                {canWriteEmployees ? <th className="px-3 py-2.5">عملیات</th> : null}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 bg-white">
-              {allItems.map((doc) => (
-                <tr key={doc.id} className="hover:bg-slate-50/70 transition-colors">
-                  <td className="px-3 py-2.5 text-right font-black text-slate-900">
-                    <div className="flex items-center gap-1.5">
-                      <FileText className="h-4 w-4 shrink-0 text-slate-400" />
-                      {doc.title}
-                    </div>
-                  </td>
-                  <td className="px-3 py-2.5 font-bold text-slate-600">
-                    <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                      {doc.originalName}
-                    </a>
-                  </td>
-                  <td className="px-3 py-2.5 font-bold text-slate-500">{formatFileSize(doc.fileSize)}</td>
-                  {canWriteEmployees ? (
-                    <td className="px-3 py-2.5">
+        <DataTable minWidthClass="min-w-[620px]">
+          <DataTableHead>
+            <tr>
+              <DataTableHeaderCell>عنوان</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">نام فایل</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">حجم</DataTableHeaderCell>
+              {canWriteEmployees ? <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell> : null}
+            </tr>
+          </DataTableHead>
+          <DataTableBody>
+            {allItems.map((doc) => (
+              <DataTableRow key={doc.id}>
+                <DataTableCell tone="emphasis">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="h-4 w-4 shrink-0 text-slate-400" />
+                    {doc.title}
+                  </div>
+                </DataTableCell>
+                <DataTableCell align="center">
+                  <a href={doc.filePath} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                    {doc.originalName}
+                  </a>
+                </DataTableCell>
+                <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatFileSize(doc.fileSize)}</DataTableCell>
+                {canWriteEmployees ? (
+                  <DataTableCell align="center">
+                    <DataTableActions>
                       <Button
                         size="icon"
                         variant="danger"
+                        surface="table"
                         onClick={() => handleDelete(doc.id)}
                         disabled={deletingId === doc.id}
                         title="حذف مدرک"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
-                    </td>
-                  ) : null}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+                    </DataTableActions>
+                  </DataTableCell>
+                ) : null}
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
       ) : isEmpty ? (
         <EmptyState
           title="مدرکی ثبت نشده است"

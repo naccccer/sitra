@@ -727,3 +727,157 @@
   - the orders workspace validates those shared APIs without reopening the locked visual reference
   - `npm run verify:safe` passes for the shared primitive changes and required roadmap updates
   - Phase 3 remains scoped to numeric rendering, typography hierarchy, tabular-number usage, and RTL/LTR consistency only
+### Phase 3 - Numeric And Typography Consistency
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `src/modules/users-access/components/UsersListTable.jsx`
+  - `src/modules/inventory/components/InventoryProductsPanel.jsx`
+  - `src/modules/inventory/components/InventoryWarehousesPanel.jsx`
+  - `src/modules/inventory/components/InventoryLocationsPanel.jsx`
+  - `src/modules/inventory/components/InventoryLotsPanel.jsx`
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - workspace summary counters now render with Persian numerals (`toPN`) on the touched users-access and inventory list/admin surfaces
+  - identifier/date cells that require mixed-direction scanning now keep explicit `dir=\"ltr\"` while preserving RTL workspace boundaries
+  - code/date identifier cells now use `tabular-nums` for consistent scan rhythm across dense tables
+  - typography hierarchy stayed within existing orders-aligned table emphasis instead of introducing new scales or layout changes
+- Deferred items:
+  - no layout redesign was performed in this phase
+  - remaining module waves (customers/users-access full table migration, inventory/HR, accounting/master-data) stay scoped to later phases
+  - no shared primitive or backend contract changes were introduced in this phase
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+- Next phase entry criteria:
+  - Phase 3 numeric and mixed-direction consistency updates are complete and verified with `npm run verify:fast`
+  - Phase 4 stays limited to customers and users-access table/workspace migration surfaces listed in this roadmap
+  - Phase 4 records any new exceptions/deferred items while preserving the locked orders-derived standards
+  - no Phase 4 work starts until a new session explicitly begins that phase
+### Phase 4 - Customers + Users Access
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `src/modules/customers/components/CustomersDirectoryPanel.jsx`
+  - `src/modules/users-access/components/UsersListTable.jsx`
+  - `src/modules/users-access/components/CreateUserForm.jsx`
+  - `src/modules/users-access/components/AdminUsersSettingsTab.jsx`
+  - `docs/modules/customers.md`
+  - `docs/modules/users-access.md`
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - customers and users-access admin list surfaces now use orders-aligned shared workspace/table/form primitives without sales-private imports
+  - numeric rendering and scan rhythm were aligned in table-adjacent cells using Persian numerals and tabular-number treatment where values are compared row-to-row
+  - explicit `dir=\"ltr\"` was kept only on mixed-direction scan fields (customer codes/phones, usernames, timestamps) while preserving RTL workspace boundaries
+  - users-access admin notices now use shared inline alert semantics for consistent state language
+- Deferred items:
+  - no changes were made to customers/users-access non-table custom flows outside this phase scope
+  - no pagination model changes were introduced for users-access because current backend list contract remains non-paginated
+  - no Phase 5 inventory/human-resources rollout work was started
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+  - `docs/modules/customers.md`
+  - `docs/modules/users-access.md`
+- Next phase entry criteria:
+  - Phase 4 customers/users-access table/admin migrations are verified with `npm run verify:fast`
+  - Phase 5 remains limited to inventory and human-resources surfaces listed in this roadmap, including toolbar/table/badge/pagination/state alignment
+  - Phase 5 records approved exceptions for domain-specific density/workflow needs without breaking locked orders-derived standards
+  - no Phase 5 work begins until a new session explicitly starts that phase
+### Phase 5 - Inventory + Human Resources
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `src/modules/inventory/components/OperationsPanel.jsx`
+  - `src/modules/human-resources/components/HumanResourcesDocumentsTab.jsx`
+  - `src/modules/human-resources/components/HumanResourcesDirectoryPanel.jsx`
+  - `docs/modules/human-resources.md`
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - inventory operations workspace migrated to shared orders-aligned toolbar/table/pagination/state primitives while preserving existing operation action semantics
+  - HR documents list surfaces migrated from ad hoc HTML tables to shared data-table primitives with consistent action clusters and state handling
+  - numeric/token scan consistency improved through Persian numerals plus `tabular-nums` and explicit `dir=\"ltr\"` only on mixed-direction fields
+  - shared inline alert language now covers HR document load/upload/delete errors
+- Deferred items:
+  - inventory replenishment/reports custom surfaces remain outside this phase and continue as documented exceptions
+  - HR import modal table surface remains deferred for later rollout waves
+  - no Phase 6 accounting/master-data rollout work was started
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+  - `docs/modules/human-resources.md`
+- Next phase entry criteria:
+  - Phase 5 inventory/HR changes are verified with `npm run verify:fast`
+  - Phase 6 remains limited to accounting and master-data surfaces listed in this roadmap
+  - Phase 6 documents domain-specific exceptions without breaking locked orders-derived standards or module ownership boundaries
+  - no Phase 6 work begins until a new session explicitly starts that phase
+### Phase 6 - Accounting + Master Data
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `src/modules/accounting/components/vouchers/VouchersPanel.jsx`
+  - `src/modules/master-data/components/admin-settings/MatrixSettingsSection.jsx`
+  - `docs/modules/accounting.md`
+  - `docs/modules/master-data.md`
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - accounting vouchers list migrated to shared orders-aligned workspace/table/pagination/state primitives with compact table action clusters
+  - master-data matrix workspace now exposes denser grid context through shared toolbar summary badges while preserving existing matrix-edit workflow
+  - numeric scan quality on touched accounting/master-data surfaces uses Persian numerals and `tabular-nums` where row/column comparison is primary
+  - explicit `dir=\"ltr\"` remains constrained to mixed-direction scan fields (voucher numbers and dates) without breaking RTL workspace boundaries
+- Deferred items:
+  - accounting report/payroll print-heavy surfaces remain outside this phase and continue as documented density exceptions
+  - master-data non-matrix settings editors remain module-specific and were not redesigned in this phase
+  - no Phase 7 final consistency sweep work was started
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+  - `docs/modules/accounting.md`
+  - `docs/modules/master-data.md`
+- Next phase entry criteria:
+  - Phase 6 accounting/master-data updates are verified with `npm run verify:fast`
+  - Phase 7 remains limited to final cross-module consistency sweep, exception confirmation, and completion documentation
+  - Phase 7 validates no forbidden cross-module UI imports and confirms approved exceptions are documented
+  - no Phase 7 work begins until a new session explicitly starts that phase
+### Phase 7 - Remaining Sales Non-Orders Surfaces
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `src/modules/sales/components/admin/PatternFilesModal.jsx`
+  - `src/modules/sales/components/admin/orders-workspace/OrdersPaymentRecordsPanel.jsx`
+  - `docs/modules/sales.md`
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - supporting sales admin surfaces now use shared orders-aligned primitives for card/shell/table/state/action language without redefining the canonical orders workspace
+  - payment-record list handling now uses shared `DataTable` family with consistent action clustering and inline row edit behavior
+  - mixed-direction scan fields keep explicit `dir=\"ltr\"` and `tabular-nums` where needed while preserving RTL workspace boundaries
+  - pattern-files modal keeps print-hide safety and now uses shared primitive semantics for empty/info/action states
+- Deferred items:
+  - customer order-create/detail flows remain intentionally outside this phase scope
+  - print-invoice rendering components remain unchanged to avoid print-regression risk
+  - no Phase 8 consistency-sweep work was started
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+  - `docs/modules/sales.md`
+- Next phase entry criteria:
+  - Phase 7 sales non-orders updates are verified with `npm run verify:fast`
+  - Phase 8 remains limited to consistency sweep + exception closure + final documentation updates
+  - Phase 8 confirms no forbidden cross-module UI imports and records approved exceptions as closed
+  - no Phase 8 work begins until a new session explicitly starts that phase
+### Phase 8 - Consistency Sweep And Documentation Closure
+- Date: 2026-04-02
+- Status: done
+- Files changed:
+  - `docs/apply_new_UI_roadmap.md`
+- Standards adopted:
+  - closure verification now treats shared orders-derived primitives as the default family for active admin list/workspace surfaces
+  - final sweep explicitly checks for forbidden cross-module private UI imports before rollout closure
+  - remaining non-shared table surfaces are now tracked as approved exceptions with rationale instead of silent drift
+- Deferred items / approved exceptions:
+  - print-heavy accounting and sales print-rendering surfaces (`PayslipPrintView`, invoice/print templates) remain exception surfaces for print stability
+  - dense domain report/review/import tables in accounting remain exception surfaces until a dedicated reporting/print-safe refactor wave
+  - inventory replenishment/reports and HR import modal tables remain exception surfaces due workflow-specific density and planner behavior
+  - sales customer order-create/detail flows remain explicitly out of scope for this admin-workspace rollout family
+  - users-access permissions matrix remains a matrix-specific exception surface (non-row-list interaction model)
+- Docs updated:
+  - `docs/apply_new_UI_roadmap.md`
+- Next phase entry criteria:
+  - rollout is closed; future UI work starts from this roadmap + approved exception list
+  - new work must preserve module ownership boundaries and avoid cross-module private UI imports
+  - any exception removal/refactor must document print-safety and workflow-risk impact before merge

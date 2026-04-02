@@ -119,7 +119,7 @@ export function HumanResourcesDirectoryPanel({
             />
           ) : employees.map((employee) => (
             <DataTableRow key={employee.id || employee.employeeCode} tone={employee.isActive === false ? 'muted' : 'default'}>
-              <DataTableCell align="center" tone="emphasis">{toPN(employee.employeeCode || '-')}</DataTableCell>
+              <DataTableCell align="center" tone="emphasis" className="tabular-nums" dir="ltr">{toPN(employee.employeeCode || '-')}</DataTableCell>
               <DataTableCell tone="emphasis">{displayName(employee)}</DataTableCell>
               <DataTableCell align="center">{employee.department || '-'}</DataTableCell>
               <DataTableCell align="center">{employee.jobTitle || '-'}</DataTableCell>

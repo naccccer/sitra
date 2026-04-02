@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react'
 import { Download, Plus, Trash2, Upload, X } from 'lucide-react'
 import {
+  Badge,
   Button,
   DataTable,
   DataTableBody,
@@ -109,7 +110,13 @@ export const MatrixSettingsSection = ({
   return (
     <div className="space-y-4">
       <WorkspaceToolbar
-        summary={<span className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">ورودی: CSV / Excel | خروجی: Excel</span>}
+        summary={(
+          <>
+            <Badge tone="neutral">ردیف: {toPN(draft.glasses.length)}</Badge>
+            <Badge tone="neutral">ضخامت: {toPN(draft.thicknesses.length)}</Badge>
+            <span className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">ورودی: CSV / Excel | خروجی: Excel</span>
+          </>
+        )}
         actions={(
           <>
             <Button size="sm" variant="success" onClick={handleExportExcel} leadingIcon={Download}>خروجی Excel</Button>
@@ -187,7 +194,7 @@ export const MatrixSettingsSection = ({
             <DataTableState colSpan={draft.thicknesses.length + 5} title="ردیفی برای ماتریس ثبت نشده است." />
           ) : draft.glasses.map((row, index) => (
             <DataTableRow key={row.id}>
-              <DataTableCell align="center" tone="emphasis">{toPN(index + 1)}</DataTableCell>
+              <DataTableCell align="center" tone="emphasis" className="tabular-nums">{toPN(index + 1)}</DataTableCell>
               <DataTableCell align="center">
                 <input
                   type="text"

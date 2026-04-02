@@ -102,7 +102,9 @@ export const CustomersDirectoryPanel = ({
           />
         ) : customers.map((customer) => (
           <DataTableRow key={customer.id} selected={selectedCustomerId === customer.id} tone={customer.isActive ? 'default' : 'muted'}>
-            <DataTableCell align="center" tone="emphasis" className="font-mono tracking-wider text-sky-700" dir="ltr">{customer.customerCode || '-'}</DataTableCell>
+            <DataTableCell align="center" tone="emphasis" className="font-mono tabular-nums tracking-wider text-sky-700" dir="ltr">
+              {toPN(customer.customerCode || '-')}
+            </DataTableCell>
             <DataTableCell>
               <button type="button" className="block w-full text-start" onClick={() => onOpenDetails(customer)}>
                 <div className="truncate text-[rgb(var(--ui-text))]">{customer.fullName || '-'}</div>
@@ -110,11 +112,11 @@ export const CustomersDirectoryPanel = ({
               </button>
             </DataTableCell>
             <DataTableCell align="center">
-              <span className="inline-flex justify-center text-center font-semibold" dir="ltr">{customer.defaultPhone || '-'}</span>
+              <span className="inline-flex justify-center text-center font-semibold tabular-nums" dir="ltr">{toPN(customer.defaultPhone || '-')}</span>
             </DataTableCell>
-            <DataTableCell align="center" tone="emphasis">{toPN(customer.activeOrdersCount || 0)}</DataTableCell>
-            <DataTableCell align="center" tone="emphasis">{formatAmount(customer.totalAmount || 0)}</DataTableCell>
-            <DataTableCell align="center" className="font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</DataTableCell>
+            <DataTableCell align="center" tone="emphasis" className="tabular-nums">{toPN(customer.activeOrdersCount || 0)}</DataTableCell>
+            <DataTableCell align="center" tone="emphasis" className="tabular-nums">{formatAmount(customer.totalAmount || 0)}</DataTableCell>
+            <DataTableCell align="center" className="tabular-nums font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</DataTableCell>
             <DataTableCell align="center">
               <DataTableActions>
                 <IconButton action="openDetails" label="جزئیات مشتری" tooltip="جزئیات مشتری" onClick={() => onOpenDetails(customer)} />

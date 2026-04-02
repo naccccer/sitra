@@ -21,3 +21,4 @@
 
 ## Interaction Rules
 - Sales owns order lifecycle and does not depend on removed operational domains.
+- Non-orders admin/support sales surfaces should stay aligned to the locked orders-derived shared primitives, preserve print-safety boundaries (`print-hide`/adjacent print flows), and keep customer order-create/detail flows outside this rollout unless explicitly scoped.

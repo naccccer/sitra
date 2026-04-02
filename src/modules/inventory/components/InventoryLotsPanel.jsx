@@ -16,9 +16,15 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const EMPTY_FORM = { id: null, productId: '', lotCode: '', expiryDate: '', notes: '' }
+const formatExpiryDate = (value) => {
+  const raw = String(value ?? '').trim()
+  if (!raw) return '-'
+  return toPN(raw.replaceAll('-', '/'))
+}
 
 export const InventoryLotsPanel = ({ session }) => {
   const permissions = Array.isArray(session?.permissions) ? session.permissions : []
@@ -92,7 +98,7 @@ export const InventoryLotsPanel = ({ session }) => {
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
         actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={openCreate}>لات جدید</Button> : null}
-        summary={<Badge tone="neutral">لات‌ها: {rows.length}</Badge>}
+        summary={<Badge tone="neutral">لات‌ها: {toPN(rows.length)}</Badge>}
       >
         <FilterRow className="justify-between gap-3">
           <div className="flex flex-wrap items-center gap-2">
@@ -128,9 +134,9 @@ export const InventoryLotsPanel = ({ session }) => {
             <DataTableState colSpan={canWrite ? 5 : 4} title="لاتی یافت نشد" />
           ) : rows.map((lot) => (
             <DataTableRow key={lot.id} tone={lot.isActive ? 'default' : 'muted'}>
-              <DataTableCell tone="emphasis" className="font-mono">{lot.lotCode}</DataTableCell>
+              <DataTableCell tone="emphasis" className="font-mono tabular-nums" dir="ltr">{lot.lotCode}</DataTableCell>
               <DataTableCell>{productName(lot.productId)}</DataTableCell>
-              <DataTableCell align="center">{lot.expiryDate ?? '-'}</DataTableCell>
+              <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatExpiryDate(lot.expiryDate)}</DataTableCell>
               <DataTableCell align="center"><Badge tone={lot.isActive ? 'success' : 'neutral'}>{lot.isActive ? 'فعال' : 'غیرفعال'}</Badge></DataTableCell>
               {canWrite ? (
                 <DataTableCell align="center">
