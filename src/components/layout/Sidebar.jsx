@@ -210,7 +210,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
               {getSectionGroups(section).map((group) => (
                 <div key={group.id} className="space-y-1.5">
                   {group.items.map((item) => {
-                    const tone = item.id === 'owner' ? 'owner' : 'default'
+                    const tone = 'default'
                     const isActive = Array.isArray(item.children) && item.children.length > 0
                       ? visualActiveGroupId === item.id
                       : false

@@ -1,17 +1,17 @@
 import React, { useMemo } from 'react'
 import { ArrowRight, Menu, User } from 'lucide-react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { Badge, Button, IconButton } from '@/components/shared/ui'
+import { Button, IconButton } from '@/components/shared/ui'
 import { identityDisplayJobTitle, identityDisplayName } from '@/utils/userIdentity'
 
-// UI copy anchors: خروج
+// UI copy anchors: داشبورد | خروج
 const getPageMeta = (pathname) => {
   if (pathname === '/owner' || pathname.startsWith('/owner/')) return { section: 'پیکربندی پیشرفته', title: 'اتاق فرمان ERP' }
-  if (pathname === '/management' || pathname.startsWith('/management/')) return { section: 'امنیت و دسترسی', title: 'ممیزی فعالیت‌ها' }
-  if (pathname === '/master-data/pricing') return { section: 'اطلاعات پایه', title: 'قیمت‌گذاری' }
-  if (pathname === '/master-data/profile') return { section: 'اطلاعات پایه', title: 'پروفایل کسب‌وکار' }
+  if (pathname === '/management' || pathname.startsWith('/management/')) return { section: 'امنیت و دسترسی', title: 'ممیزی فعالیت ها' }
+  if (pathname === '/master-data/pricing') return { section: 'اطلاعات پایه', title: 'قیمت گذاری' }
+  if (pathname === '/master-data/profile') return { section: 'اطلاعات پایه', title: 'پروفایل کسب و کار' }
   if (pathname === '/master-data' || pathname.startsWith('/master-data/')) return { section: 'پیکربندی', title: 'اطلاعات پایه' }
-  if (pathname === '/') return { section: 'عملیات روزانه', title: 'داشبورد' }
+  if (pathname === '/') return { section: 'عملیات روزانه', title: 'خانه' }
   if (pathname.startsWith('/orders/') && pathname !== '/orders/new') return { section: 'عملیات روزانه', title: 'ویرایش سفارش' }
   if (pathname === '/orders') return { section: 'عملیات روزانه', title: 'مدیریت سفارشات' }
   if (pathname === '/orders/new') return { section: 'عملیات روزانه', title: 'ثبت سفارش جدید' }

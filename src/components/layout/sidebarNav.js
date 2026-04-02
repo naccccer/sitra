@@ -44,7 +44,7 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
     id: 'daily',
     label: 'عملیات روزانه',
     items: [
-      { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
+      { to: '/', label: 'خانه', icon: LayoutDashboard, end: true },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
       { to: '/customers', label: 'مشتریان', icon: ContactRound, capability: 'canManageCustomers', moduleId: 'customers' },
       { to: '/human-resources', label: 'منابع انسانی', icon: UsersRound, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
@@ -83,8 +83,8 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
           && Boolean(capabilities.canManageCatalog || capabilities.canManageProfile)
         ),
         children: [
-          { to: '/master-data/pricing', label: 'قیمت‌گذاری', capability: 'canManageCatalog', moduleId: 'master-data' },
-          { to: '/master-data/profile', label: 'پروفایل کسب‌وکار', capability: 'canManageProfile', moduleId: 'master-data' },
+          { to: '/master-data/pricing', label: 'قیمت گذاری', capability: 'canManageCatalog', moduleId: 'master-data' },
+          { to: '/master-data/profile', label: 'پروفایل کسب و کار', capability: 'canManageProfile', moduleId: 'master-data' },
         ],
       },
       {
@@ -95,7 +95,7 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
         group: 'daily-config',
         dynamicToFirstVisibleChild: true,
         children: [
-          { to: '/management/audit', label: 'ممیزی فعالیت‌ها', capability: 'canViewAuditLogs' },
+          { to: '/management/audit', label: 'ممیزی فعالیت ها', capability: 'canViewAuditLogs' },
           { to: '/users-access', label: 'کاربران و دسترسی', capability: 'canManageUsers', moduleId: 'users-access' },
         ],
       },
@@ -107,7 +107,7 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
         group: 'owner-config',
         capability: 'canManageSystemSettings',
         children: [
-          { to: '/owner/modules', label: 'کنترل ماژول‌ها', capability: 'canManageSystemSettings' },
+          { to: '/owner/modules', label: 'کنترل ماژول ها', capability: 'canManageSystemSettings' },
         ],
       },
     ],

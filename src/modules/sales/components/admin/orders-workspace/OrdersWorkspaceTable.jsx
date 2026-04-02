@@ -103,7 +103,7 @@ export const OrdersWorkspaceTable = ({
             <React.Fragment key={order.id}>
               <DataTableRow selected={expandedOrderId === order.id} tone={order.status === 'archived' ? 'muted' : 'default'} className={order.status === 'archived' ? 'opacity-75' : ''}>
                 <DataTableCell align="center">{toPN(index + 1)}</DataTableCell>
-                <DataTableCell align="center" tone="emphasis" className="tracking-wider text-[rgb(10,22,52)]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
+                <DataTableCell align="center" tone="emphasis" className="font-semibold tracking-wider !text-[rgb(28,63,138)]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
                 <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
                   <div className="flex items-center gap-2">
                     <span className="truncate">{order.customerName}</span>
