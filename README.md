@@ -72,4 +72,3 @@ Inactive scaffolds:
 - `docs/naming-conventions.md`
 - `docs/api-contracts-index.md`
 - `docs/golden-paths.md`
-- `docs/api-usage.md`
