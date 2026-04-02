@@ -20,10 +20,23 @@ const SIZE_CLASSNAMES = {
   iconSm: 'h-8 w-8 p-0',
 };
 
+const SURFACE_CLASSNAMES = {
+  default: '',
+  table:
+    'border-white/70 bg-white text-[rgb(var(--ui-primary))] shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:bg-white hover:text-[rgb(var(--ui-primary))]',
+};
+
+const SELECTED_SURFACE_CLASSNAMES = {
+  table:
+    'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))]/72 text-[rgb(var(--ui-primary))] shadow-[0_8px_20px_rgba(18,33,74,0.12)]',
+};
+
 export const Button = forwardRef(({
   action = '',
   className = '',
   variant,
+  surface = 'default',
+  selected = false,
   size = 'md',
   type = 'button',
   leadingIcon: LeadingIcon = null,
@@ -49,6 +62,8 @@ export const Button = forwardRef(({
         'focus-ring inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border font-black transition duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-50',
         VARIANT_CLASSNAMES[resolvedVariant] || VARIANT_CLASSNAMES.secondary,
         SIZE_CLASSNAMES[size] || SIZE_CLASSNAMES.md,
+        SURFACE_CLASSNAMES[surface] || SURFACE_CLASSNAMES.default,
+        selected ? SELECTED_SURFACE_CLASSNAMES[surface] || '' : '',
         className,
       )}
       {...props}

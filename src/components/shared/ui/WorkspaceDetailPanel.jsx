@@ -5,6 +5,7 @@ export const WorkspaceDetailPanel = ({
   title = '',
   description = '',
   actions = null,
+  summary = null,
   children,
   className = '',
 }) => (
@@ -18,6 +19,7 @@ export const WorkspaceDetailPanel = ({
         {actions ? <div className="shrink-0">{actions}</div> : null}
       </div>
     ) : null}
+    {summary ? <div className="mb-3 flex flex-wrap gap-2 border-b border-[rgb(var(--ui-border-soft))] pb-3">{summary}</div> : null}
     {children}
   </div>
 );

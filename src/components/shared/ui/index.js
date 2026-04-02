@@ -24,6 +24,7 @@ export { PaginationBar } from '@/components/shared/ui/PaginationBar';
 export { SectionHeader } from '@/components/shared/ui/SectionHeader';
 export { SegmentedTabs } from '@/components/shared/ui/SegmentedTabs';
 export { Select } from '@/components/shared/ui/Select';
+export { SelectPill } from '@/components/shared/ui/SelectPill';
 export { StatCard } from '@/components/shared/ui/StatCard';
 export { Tooltip } from '@/components/shared/ui/Tooltip';
 export { WorkspaceDetailPanel } from '@/components/shared/ui/WorkspaceDetailPanel';

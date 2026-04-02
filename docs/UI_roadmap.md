@@ -1,39 +1,45 @@
-# UI Roadmap For Sitra ERP
+﻿# UI Roadmap For Sitra ERP
 
 ## Summary
-- هدف این roadmap ساخت یک UI system منسجم، مینیمال، سفیدمحور، آیکون‌محور و حرفه‌ای برای کل اپ است؛ با اولویت صریح روی readability، سرعت کار، و utility.
-- اجرای roadmap فقط در لایه‌ی frontend/shared UI انجام می‌شود و هیچ تغییری در معماری modular monolith، قراردادهای backend، یا مرزهای ماژولی ایجاد نمی‌کند.
-- ترتیب rollout: `foundation -> shell -> shared patterns -> daily ops -> data modules -> auth/polish`.
-- جهت بصری نهایی: `bold minimal` با base سفید، charcoal، accent گرم، radius نرم، motion حداقلی، و تاکید بر consistency و function.
-- هر فاز باید مستقل، کوچک، قابل verify و قابل توقف باشد.
+- Ù‡Ø¯Ù Ø§ÛŒÙ† roadmap Ø³Ø§Ø®Øª ÛŒÚ© UI system Ù…Ù†Ø³Ø¬Ù…ØŒ Ù…ÛŒÙ†ÛŒÙ…Ø§Ù„ØŒ Ø³ÙÛŒØ¯Ù…Ø­ÙˆØ±ØŒ Ø¢ÛŒÚ©ÙˆÙ†â€ŒÙ…Ø­ÙˆØ± Ùˆ Ø­Ø±ÙÙ‡â€ŒØ§ÛŒ Ø¨Ø±Ø§ÛŒ Ú©Ù„ Ø§Ù¾ Ø§Ø³ØªØ› Ø¨Ø§ Ø§ÙˆÙ„ÙˆÛŒØª ØµØ±ÛŒØ­ Ø±ÙˆÛŒ readabilityØŒ Ø³Ø±Ø¹Øª Ú©Ø§Ø±ØŒ Ùˆ utility.
+- Ø§Ø¬Ø±Ø§ÛŒ roadmap ÙÙ‚Ø· Ø¯Ø± Ù„Ø§ÛŒÙ‡â€ŒÛŒ frontend/shared UI Ø§Ù†Ø¬Ø§Ù… Ù…ÛŒâ€ŒØ´ÙˆØ¯ Ùˆ Ù‡ÛŒÚ† ØªØºÛŒÛŒØ±ÛŒ Ø¯Ø± Ù…Ø¹Ù…Ø§Ø±ÛŒ modular monolithØŒ Ù‚Ø±Ø§Ø±Ø¯Ø§Ø¯Ù‡Ø§ÛŒ backendØŒ ÛŒØ§ Ù…Ø±Ø²Ù‡Ø§ÛŒ Ù…Ø§Ú˜ÙˆÙ„ÛŒ Ø§ÛŒØ¬Ø§Ø¯ Ù†Ù…ÛŒâ€ŒÚ©Ù†Ø¯.
+- ØªØ±ØªÛŒØ¨ rollout: `foundation -> shell -> shared patterns -> daily ops -> data modules -> auth/polish`.
+- Ø¬Ù‡Øª Ø¨ØµØ±ÛŒ Ù†Ù‡Ø§ÛŒÛŒ: `bold minimal` Ø¨Ø§ base Ø³ÙÛŒØ¯ØŒ charcoalØŒ accent Ú¯Ø±Ù…ØŒ radius Ù†Ø±Ù…ØŒ motion Ø­Ø¯Ø§Ù‚Ù„ÛŒØŒ Ùˆ ØªØ§Ú©ÛŒØ¯ Ø¨Ø± consistency Ùˆ function.
+- Ù‡Ø± ÙØ§Ø² Ø¨Ø§ÛŒØ¯ Ù…Ø³ØªÙ‚Ù„ØŒ Ú©ÙˆÚ†Ú©ØŒ Ù‚Ø§Ø¨Ù„ verify Ùˆ Ù‚Ø§Ø¨Ù„ ØªÙˆÙ‚Ù Ø¨Ø§Ø´Ø¯.
 
 ## Global UI Rules
-- همه‌ی actionهای پرتکرار باید در کل اپ یک زبان مشترک داشته باشند.
-- actionهای `create`, `edit`, `delete`, `archive`, `restore`, `print`, `save`, `cancel`, `reload`, `filter` و `open details` باید فقط از shared variants و shared icon/action patterns استفاده کنند.
-- actionهای destructive در همه‌جا باید tone، icon treatment، hover state و confirmation behavior هم‌خانواده داشته باشند.
-- همه‌ی tableها باید یک visual system مشترک داشته باشند.
-- table header، row spacing، selected row، hover state، status cell، action cell، empty state، loading state و pagination باید pattern مشترک داشته باشند.
-- هیچ ماژولی مجاز نیست style table یا action pattern اختصاصی جدید بسازد، مگر نیاز domain-specific آن صریح ثبت و مستند شود.
-- badgeها، status pills، toolbarها، filter rowها، drawer/modal headerها و section headerها باید shared و تکرارپذیر باشند.
-- glass/gradient فقط در shell، login و highlight surfaces مجاز است؛ نه در data tables و نه در فرم‌های data-heavy.
-- print و invoice surfaces از redesign عمومی نباید آسیب ببینند.
+- The admin orders workspace (`src/modules/sales/components/admin/AdminOrdersView.jsx`, `src/modules/sales/components/admin/orders-workspace/OrdersWorkspaceToolbar.jsx`, `src/modules/sales/components/admin/orders-workspace/OrdersWorkspaceTable.jsx`) is the canonical reference for shared workspace and table behavior.
+- The approved shared primitive set for rollout is limited to the orders-used workspace/table/button patterns: `Button`, `Input`, `Select`, `Badge`, `IconButton`, `PaginationBar`, `WorkspaceToolbar`, `FilterRow`, `SegmentedTabs`, `DataTable`, `DataTableHead`, `DataTableBody`, `DataTableRow`, `DataTableCell`, `DataTableHeaderCell`, `DataTableActions`, `DataTableDetail`, and `DataTableState`.
+- Any new shared workspace or table behavior must either fit that set or be documented as a specific gap before it is adopted broadly.
+- Shared table-row controls should use the neutral table action surface (`surface="table"`) instead of repeating local white-control overrides inside module tables.
+- Inline pill-style status editors should use the shared `SelectPill` primitive so orders-style editable state controls stay reusable and module-agnostic.
+- Shared detail rows may expose a summary slot before nested content, and shared pagination may expose a continuation slot when a workspace needs footer paging plus load-more behavior.
+- Ù‡Ù…Ù‡â€ŒÛŒ actionÙ‡Ø§ÛŒ Ù¾Ø±ØªÚ©Ø±Ø§Ø± Ø¨Ø§ÛŒØ¯ Ø¯Ø± Ú©Ù„ Ø§Ù¾ ÛŒÚ© Ø²Ø¨Ø§Ù† Ù…Ø´ØªØ±Ú© Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ù†Ø¯.
+- actionÙ‡Ø§ÛŒ `create`, `edit`, `delete`, `archive`, `restore`, `print`, `save`, `cancel`, `reload`, `filter` Ùˆ `open details` Ø¨Ø§ÛŒØ¯ ÙÙ‚Ø· Ø§Ø² shared variants Ùˆ shared icon/action patterns Ø§Ø³ØªÙØ§Ø¯Ù‡ Ú©Ù†Ù†Ø¯.
+- actionÙ‡Ø§ÛŒ destructive Ø¯Ø± Ù‡Ù…Ù‡â€ŒØ¬Ø§ Ø¨Ø§ÛŒØ¯ toneØŒ icon treatmentØŒ hover state Ùˆ confirmation behavior Ù‡Ù…â€ŒØ®Ø§Ù†ÙˆØ§Ø¯Ù‡ Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ù†Ø¯.
+- Ù‡Ù…Ù‡â€ŒÛŒ tableÙ‡Ø§ Ø¨Ø§ÛŒØ¯ ÛŒÚ© visual system Ù…Ø´ØªØ±Ú© Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ù†Ø¯.
+- table headerØŒ row spacingØŒ selected rowØŒ hover stateØŒ status cellØŒ action cellØŒ empty stateØŒ loading state Ùˆ pagination Ø¨Ø§ÛŒØ¯ pattern Ù…Ø´ØªØ±Ú© Ø¯Ø§Ø´ØªÙ‡ Ø¨Ø§Ø´Ù†Ø¯.
+- Ù‡ÛŒÚ† Ù…Ø§Ú˜ÙˆÙ„ÛŒ Ù…Ø¬Ø§Ø² Ù†ÛŒØ³Øª style table ÛŒØ§ action pattern Ø§Ø®ØªØµØ§ØµÛŒ Ø¬Ø¯ÛŒØ¯ Ø¨Ø³Ø§Ø²Ø¯ØŒ Ù…Ú¯Ø± Ù†ÛŒØ§Ø² domain-specific Ø¢Ù† ØµØ±ÛŒØ­ Ø«Ø¨Øª Ùˆ Ù…Ø³ØªÙ†Ø¯ Ø´ÙˆØ¯.
+- badgeÙ‡Ø§ØŒ status pillsØŒ toolbarÙ‡Ø§ØŒ filter rowÙ‡Ø§ØŒ drawer/modal headerÙ‡Ø§ Ùˆ section headerÙ‡Ø§ Ø¨Ø§ÛŒØ¯ shared Ùˆ ØªÚ©Ø±Ø§Ø±Ù¾Ø°ÛŒØ± Ø¨Ø§Ø´Ù†Ø¯.
+- glass/gradient ÙÙ‚Ø· Ø¯Ø± shellØŒ login Ùˆ highlight surfaces Ù…Ø¬Ø§Ø² Ø§Ø³ØªØ› Ù†Ù‡ Ø¯Ø± data tables Ùˆ Ù†Ù‡ Ø¯Ø± ÙØ±Ù…â€ŒÙ‡Ø§ÛŒ data-heavy.
+- print Ùˆ invoice surfaces Ø§Ø² redesign Ø¹Ù…ÙˆÙ…ÛŒ Ù†Ø¨Ø§ÛŒØ¯ Ø¢Ø³ÛŒØ¨ Ø¨Ø¨ÛŒÙ†Ù†Ø¯.
 
 ## Phases
 
 ### Phase 0 - UI Audit Baseline
-- ثبت baseline از shell، dashboard، orders، customers، inventory، accounting، login، modalها و tableها.
-- شناسایی component debt، style drift، one-off patternها و visual inconsistencyها.
-- ثبت مواردی که الان بین ماژول‌ها یکسان نیستند:
+- Ø«Ø¨Øª baseline Ø§Ø² shellØŒ dashboardØŒ ordersØŒ customersØŒ inventoryØŒ accountingØŒ loginØŒ modalÙ‡Ø§ Ùˆ tableÙ‡Ø§.
+- Ø´Ù†Ø§Ø³Ø§ÛŒÛŒ component debtØŒ style driftØŒ one-off patternÙ‡Ø§ Ùˆ visual inconsistencyÙ‡Ø§.
+- Ø«Ø¨Øª Ù…ÙˆØ§Ø±Ø¯ÛŒ Ú©Ù‡ Ø§Ù„Ø§Ù† Ø¨ÛŒÙ† Ù…Ø§Ú˜ÙˆÙ„â€ŒÙ‡Ø§ ÛŒÚ©Ø³Ø§Ù† Ù†ÛŒØ³ØªÙ†Ø¯:
   - action buttons
   - status badges
   - data tables
   - filters/toolbars
   - modal headers/footers
   - empty/loading/error states
-- تعیین migration order برای shared primitives.
+- ØªØ¹ÛŒÛŒÙ† migration order Ø¨Ø±Ø§ÛŒ shared primitives.
 
 ### Phase 1 - Visual Foundation
-- تعریف design tokens در `src/index.css` برای:
+- ØªØ¹Ø±ÛŒÙ design tokens Ø¯Ø± `src/index.css` Ø¨Ø±Ø§ÛŒ:
   - color
   - surface
   - semantic state
@@ -42,31 +48,31 @@
   - radius
   - focus ring
   - motion
-- تثبیت visual language سفیدمحور با accent گرم و usage محدود برای highlight surfaces.
-- تعریف base utility classes برای surface، section hierarchy و workspace polish.
+- ØªØ«Ø¨ÛŒØª visual language Ø³ÙÛŒØ¯Ù…Ø­ÙˆØ± Ø¨Ø§ accent Ú¯Ø±Ù… Ùˆ usage Ù…Ø­Ø¯ÙˆØ¯ Ø¨Ø±Ø§ÛŒ highlight surfaces.
+- ØªØ¹Ø±ÛŒÙ base utility classes Ø¨Ø±Ø§ÛŒ surfaceØŒ section hierarchy Ùˆ workspace polish.
 
 ### Phase 2 - App Shell
-- بازطراحی `app-shell`, `Header`, `Sidebar` و رفتار navigation با الگوی `Hybrid Rail`.
-- اضافه‌کردن tooltip برای حالت‌های icon-only.
-- یکدست‌سازی stateهای hover, active, focus و mobile drawer.
-- تعریف shell behavior به‌عنوان الگوی مرجع برای ماژول‌های آینده.
+- Ø¨Ø§Ø²Ø·Ø±Ø§Ø­ÛŒ `app-shell`, `Header`, `Sidebar` Ùˆ Ø±ÙØªØ§Ø± navigation Ø¨Ø§ Ø§Ù„Ú¯ÙˆÛŒ `Hybrid Rail`.
+- Ø§Ø¶Ø§ÙÙ‡â€ŒÚ©Ø±Ø¯Ù† tooltip Ø¨Ø±Ø§ÛŒ Ø­Ø§Ù„Øªâ€ŒÙ‡Ø§ÛŒ icon-only.
+- ÛŒÚ©Ø¯Ø³Øªâ€ŒØ³Ø§Ø²ÛŒ stateÙ‡Ø§ÛŒ hover, active, focus Ùˆ mobile drawer.
+- ØªØ¹Ø±ÛŒÙ shell behavior Ø¨Ù‡â€ŒØ¹Ù†ÙˆØ§Ù† Ø§Ù„Ú¯ÙˆÛŒ Ù…Ø±Ø¬Ø¹ Ø¨Ø±Ø§ÛŒ Ù…Ø§Ú˜ÙˆÙ„â€ŒÙ‡Ø§ÛŒ Ø¢ÛŒÙ†Ø¯Ù‡.
 
 ### Phase 3 - Shared UI Primitives
-- استانداردسازی `Button`, `Input`, `Select`, `Card`, `Badge`, `ModalShell`, `EmptyState`.
-- افزودن primitives جدید:
+- Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯Ø³Ø§Ø²ÛŒ `Button`, `Input`, `Select`, `Card`, `Badge`, `ModalShell`, `EmptyState`.
+- Ø§ÙØ²ÙˆØ¯Ù† primitives Ø¬Ø¯ÛŒØ¯:
   - `Tooltip`
   - `IconButton`
   - `SectionHeader`
   - `InlineAlert`
   - `StatCard`
-- تعریف variantهای صریح برای actionها:
+- ØªØ¹Ø±ÛŒÙ variantÙ‡Ø§ÛŒ ØµØ±ÛŒØ­ Ø¨Ø±Ø§ÛŒ actionÙ‡Ø§:
   - primary
   - secondary
   - ghost
   - success
   - danger
   - accent
-- تعریف action mapping ثابت برای use caseهای پرتکرار:
+- ØªØ¹Ø±ÛŒÙ action mapping Ø«Ø§Ø¨Øª Ø¨Ø±Ø§ÛŒ use caseÙ‡Ø§ÛŒ Ù¾Ø±ØªÚ©Ø±Ø§Ø±:
   - edit
   - delete
   - archive
@@ -74,10 +80,10 @@
   - print
   - refresh
   - row expand
-- اجبار تدریجی صفحات جدید به استفاده از shared primitives.
+- Ø§Ø¬Ø¨Ø§Ø± ØªØ¯Ø±ÛŒØ¬ÛŒ ØµÙØ­Ø§Øª Ø¬Ø¯ÛŒØ¯ Ø¨Ù‡ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ø§Ø² shared primitives.
 
 ### Phase 4 - Data Workspace Patterns
-- ساخت الگوهای مشترک برای:
+- Ø³Ø§Ø®Øª Ø§Ù„Ú¯ÙˆÙ‡Ø§ÛŒ Ù…Ø´ØªØ±Ú© Ø¨Ø±Ø§ÛŒ:
   - page header
   - action toolbar
   - filter row
@@ -86,59 +92,59 @@
   - empty/loading/error states
   - modal/drawer content
   - pagination
-- تعریف `one table family` برای کل اپ:
+- ØªØ¹Ø±ÛŒÙ `one table family` Ø¨Ø±Ø§ÛŒ Ú©Ù„ Ø§Ù¾:
   - head styling
   - row density
   - zebra/hover/select logic
   - action column pattern
   - status column pattern
   - detail expansion container
-- کاهش style duplication در صفحات data-heavy.
+- Ú©Ø§Ù‡Ø´ style duplication Ø¯Ø± ØµÙØ­Ø§Øª data-heavy.
 
 ### Phase 5 - Daily Ops Rollout
-- rollout روی `Dashboard` و `Sales Orders`.
-- یکدست‌سازی stat cards، summary panels، toolbarها، tableها، badgeها و action clusters.
-- orders page باید به‌عنوان مرجع استاندارد table/action workspace برای rollout بعدی استفاده شود.
+- rollout Ø±ÙˆÛŒ `Dashboard` Ùˆ `Sales Orders`.
+- ÛŒÚ©Ø¯Ø³Øªâ€ŒØ³Ø§Ø²ÛŒ stat cardsØŒ summary panelsØŒ toolbarÙ‡Ø§ØŒ tableÙ‡Ø§ØŒ badgeÙ‡Ø§ Ùˆ action clusters.
+- orders page Ø¨Ø§ÛŒØ¯ Ø¨Ù‡â€ŒØ¹Ù†ÙˆØ§Ù† Ù…Ø±Ø¬Ø¹ Ø§Ø³ØªØ§Ù†Ø¯Ø§Ø±Ø¯ table/action workspace Ø¨Ø±Ø§ÛŒ rollout Ø¨Ø¹Ø¯ÛŒ Ø§Ø³ØªÙØ§Ø¯Ù‡ Ø´ÙˆØ¯.
 
 ### Phase 6 - Module Rollout
-- rollout مرحله‌ای روی:
+- rollout Ù…Ø±Ø­Ù„Ù‡â€ŒØ§ÛŒ Ø±ÙˆÛŒ:
   - `customers`
   - `inventory`
   - `accounting`
   - `human-resources`
   - `users-access`
   - `master-data`
-- استفاده از primitives و patternهای مشترک به‌جای style logic پراکنده.
-- در هر ماژول باید actionها و tableها به family مشترک migrate شوند، نه فقط palette و spacing.
+- Ø§Ø³ØªÙØ§Ø¯Ù‡ Ø§Ø² primitives Ùˆ patternÙ‡Ø§ÛŒ Ù…Ø´ØªØ±Ú© Ø¨Ù‡â€ŒØ¬Ø§ÛŒ style logic Ù¾Ø±Ø§Ú©Ù†Ø¯Ù‡.
+- Ø¯Ø± Ù‡Ø± Ù…Ø§Ú˜ÙˆÙ„ Ø¨Ø§ÛŒØ¯ actionÙ‡Ø§ Ùˆ tableÙ‡Ø§ Ø¨Ù‡ family Ù…Ø´ØªØ±Ú© migrate Ø´ÙˆÙ†Ø¯ØŒ Ù†Ù‡ ÙÙ‚Ø· palette Ùˆ spacing.
 
 ### Phase 7 - Auth And Brand Polish
-- بازطراحی `LoginView` و entry surfaces با همان visual language.
-- استفاده‌ی کنترل‌شده از gradient/glow فقط برای حس premium و نه برای شلوغی.
-- login باید با shell هم‌خانواده باشد، نه یک UI جدا.
+- Ø¨Ø§Ø²Ø·Ø±Ø§Ø­ÛŒ `LoginView` Ùˆ entry surfaces Ø¨Ø§ Ù‡Ù…Ø§Ù† visual language.
+- Ø§Ø³ØªÙØ§Ø¯Ù‡â€ŒÛŒ Ú©Ù†ØªØ±Ù„â€ŒØ´Ø¯Ù‡ Ø§Ø² gradient/glow ÙÙ‚Ø· Ø¨Ø±Ø§ÛŒ Ø­Ø³ premium Ùˆ Ù†Ù‡ Ø¨Ø±Ø§ÛŒ Ø´Ù„ÙˆØºÛŒ.
+- login Ø¨Ø§ÛŒØ¯ Ø¨Ø§ shell Ù‡Ù…â€ŒØ®Ø§Ù†ÙˆØ§Ø¯Ù‡ Ø¨Ø§Ø´Ø¯ØŒ Ù†Ù‡ ÛŒÚ© UI Ø¬Ø¯Ø§.
 
 ### Phase 8 - Final Consistency Pass
-- حذف style duplication و کلاس‌های ad-hoc.
-- ثبت guardrailهای اجرایی برای featureهای آینده.
-- بررسی نهایی RTL، keyboard usability و print safety.
-- بررسی نهایی consistency برای:
+- Ø­Ø°Ù style duplication Ùˆ Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ÛŒ ad-hoc.
+- Ø«Ø¨Øª guardrailÙ‡Ø§ÛŒ Ø§Ø¬Ø±Ø§ÛŒÛŒ Ø¨Ø±Ø§ÛŒ featureÙ‡Ø§ÛŒ Ø¢ÛŒÙ†Ø¯Ù‡.
+- Ø¨Ø±Ø±Ø³ÛŒ Ù†Ù‡Ø§ÛŒÛŒ RTLØŒ keyboard usability Ùˆ print safety.
+- Ø¨Ø±Ø±Ø³ÛŒ Ù†Ù‡Ø§ÛŒÛŒ consistency Ø¨Ø±Ø§ÛŒ:
   - action system
   - table system
   - shared status language
   - page hierarchy
 
 ## Phase Completion Rule
-- در پایان هر فاز، اجرای آن فاز باید متوقف شود.
-- بعد از پایان هر فاز، همین فایل `docs/UI_roadmap.md` باید update شود.
-- update هر فاز باید حداقل شامل این موارد باشد:
-  - فاز کامل‌شده
-  - تاریخ تکمیل
-  - فایل‌های اصلی تغییرکرده
-  - الگوهای جدید تثبیت‌شده
-  - اگر چیزی defer شده، دلیل defer
-- فاز بعدی فقط بعد از ثبت این update در roadmap شروع می‌شود.
+- Ø¯Ø± Ù¾Ø§ÛŒØ§Ù† Ù‡Ø± ÙØ§Ø²ØŒ Ø§Ø¬Ø±Ø§ÛŒ Ø¢Ù† ÙØ§Ø² Ø¨Ø§ÛŒØ¯ Ù…ØªÙˆÙ‚Ù Ø´ÙˆØ¯.
+- Ø¨Ø¹Ø¯ Ø§Ø² Ù¾Ø§ÛŒØ§Ù† Ù‡Ø± ÙØ§Ø²ØŒ Ù‡Ù…ÛŒÙ† ÙØ§ÛŒÙ„ `docs/UI_roadmap.md` Ø¨Ø§ÛŒØ¯ update Ø´ÙˆØ¯.
+- update Ù‡Ø± ÙØ§Ø² Ø¨Ø§ÛŒØ¯ Ø­Ø¯Ø§Ù‚Ù„ Ø´Ø§Ù…Ù„ Ø§ÛŒÙ† Ù…ÙˆØ§Ø±Ø¯ Ø¨Ø§Ø´Ø¯:
+  - ÙØ§Ø² Ú©Ø§Ù…Ù„â€ŒØ´Ø¯Ù‡
+  - ØªØ§Ø±ÛŒØ® ØªÚ©Ù…ÛŒÙ„
+  - ÙØ§ÛŒÙ„â€ŒÙ‡Ø§ÛŒ Ø§ØµÙ„ÛŒ ØªØºÛŒÛŒØ±Ú©Ø±Ø¯Ù‡
+  - Ø§Ù„Ú¯ÙˆÙ‡Ø§ÛŒ Ø¬Ø¯ÛŒØ¯ ØªØ«Ø¨ÛŒØªâ€ŒØ´Ø¯Ù‡
+  - Ø§Ú¯Ø± Ú†ÛŒØ²ÛŒ defer Ø´Ø¯Ù‡ØŒ Ø¯Ù„ÛŒÙ„ defer
+- ÙØ§Ø² Ø¨Ø¹Ø¯ÛŒ ÙÙ‚Ø· Ø¨Ø¹Ø¯ Ø§Ø² Ø«Ø¨Øª Ø§ÛŒÙ† update Ø¯Ø± roadmap Ø´Ø±ÙˆØ¹ Ù…ÛŒâ€ŒØ´ÙˆØ¯.
 
 ## Tracking Template
-در پایان هر فاز، یک entry با این فرمت به roadmap اضافه شود:
+Ø¯Ø± Ù¾Ø§ÛŒØ§Ù† Ù‡Ø± ÙØ§Ø²ØŒ ÛŒÚ© entry Ø¨Ø§ Ø§ÛŒÙ† ÙØ±Ù…Øª Ø¨Ù‡ roadmap Ø§Ø¶Ø§ÙÙ‡ Ø´ÙˆØ¯:
 
 ```md
 ## Phase Log
@@ -325,27 +331,27 @@
 ```
 
 ## Implementation Notes
-- هیچ تغییر public API، schema، endpoint یا contract لازم نیست.
-- مسیرهای اصلی اجرا:
+- Ù‡ÛŒÚ† ØªØºÛŒÛŒØ± public APIØŒ schemaØŒ endpoint ÛŒØ§ contract Ù„Ø§Ø²Ù… Ù†ÛŒØ³Øª.
+- Ù…Ø³ÛŒØ±Ù‡Ø§ÛŒ Ø§ØµÙ„ÛŒ Ø§Ø¬Ø±Ø§:
   - `src/index.css`
   - `src/components/layout/*`
   - `src/components/shared/ui/*`
-  - صفحات مرجع ماژول‌ها
-- tableها، فرم‌ها و modalها باید compact، خوانا، RTL-safe و keyboard-friendly بمانند.
-- rollout هر فاز باید از shared layer به pages برود، نه برعکس.
-- اگر در یک فاز لازم شد چیزی reusable ساخته شود، باید در shared layer بنشیند، نه در یک ماژول خاص.
-- guardrail نهایی برای ادامه توسعه:
-  - shell، auth و workspace surfaces فقط از کلاس‌ها و primitives مشترک استفاده کنند، نه class stackهای تکراری و موضعی
-  - highlight gradient/glow فقط روی shell و auth entry بماند و به tableها یا فرم‌های data-heavy نشت نکند
-  - print/invoice surfaces باید از passهای visual عمومی جدا بمانند مگر تغییر print-specific صریح لازم باشد
+  - ØµÙØ­Ø§Øª Ù…Ø±Ø¬Ø¹ Ù…Ø§Ú˜ÙˆÙ„â€ŒÙ‡Ø§
+- tableÙ‡Ø§ØŒ ÙØ±Ù…â€ŒÙ‡Ø§ Ùˆ modalÙ‡Ø§ Ø¨Ø§ÛŒØ¯ compactØŒ Ø®ÙˆØ§Ù†Ø§ØŒ RTL-safe Ùˆ keyboard-friendly Ø¨Ù…Ø§Ù†Ù†Ø¯.
+- rollout Ù‡Ø± ÙØ§Ø² Ø¨Ø§ÛŒØ¯ Ø§Ø² shared layer Ø¨Ù‡ pages Ø¨Ø±ÙˆØ¯ØŒ Ù†Ù‡ Ø¨Ø±Ø¹Ú©Ø³.
+- Ø§Ú¯Ø± Ø¯Ø± ÛŒÚ© ÙØ§Ø² Ù„Ø§Ø²Ù… Ø´Ø¯ Ú†ÛŒØ²ÛŒ reusable Ø³Ø§Ø®ØªÙ‡ Ø´ÙˆØ¯ØŒ Ø¨Ø§ÛŒØ¯ Ø¯Ø± shared layer Ø¨Ù†Ø´ÛŒÙ†Ø¯ØŒ Ù†Ù‡ Ø¯Ø± ÛŒÚ© Ù…Ø§Ú˜ÙˆÙ„ Ø®Ø§Øµ.
+- guardrail Ù†Ù‡Ø§ÛŒÛŒ Ø¨Ø±Ø§ÛŒ Ø§Ø¯Ø§Ù…Ù‡ ØªÙˆØ³Ø¹Ù‡:
+  - shellØŒ auth Ùˆ workspace surfaces ÙÙ‚Ø· Ø§Ø² Ú©Ù„Ø§Ø³â€ŒÙ‡Ø§ Ùˆ primitives Ù…Ø´ØªØ±Ú© Ø§Ø³ØªÙØ§Ø¯Ù‡ Ú©Ù†Ù†Ø¯ØŒ Ù†Ù‡ class stackÙ‡Ø§ÛŒ ØªÚ©Ø±Ø§Ø±ÛŒ Ùˆ Ù…ÙˆØ¶Ø¹ÛŒ
+  - highlight gradient/glow ÙÙ‚Ø· Ø±ÙˆÛŒ shell Ùˆ auth entry Ø¨Ù…Ø§Ù†Ø¯ Ùˆ Ø¨Ù‡ tableÙ‡Ø§ ÛŒØ§ ÙØ±Ù…â€ŒÙ‡Ø§ÛŒ data-heavy Ù†Ø´Øª Ù†Ú©Ù†Ø¯
+  - print/invoice surfaces Ø¨Ø§ÛŒØ¯ Ø§Ø² passÙ‡Ø§ÛŒ visual Ø¹Ù…ÙˆÙ…ÛŒ Ø¬Ø¯Ø§ Ø¨Ù…Ø§Ù†Ù†Ø¯ Ù…Ú¯Ø± ØªØºÛŒÛŒØ± print-specific ØµØ±ÛŒØ­ Ù„Ø§Ø²Ù… Ø¨Ø§Ø´Ø¯
 
 ## Validation
-- برای هر phase screenshot comparison روی desktop و mobile گرفته شود.
-- RTL در sidebar، header، tableها، filter bar، form fieldها و modalها smoke-test شود.
-- hover, active, focus-visible, disabled, loading, empty, error, success states برای primitives بررسی شوند.
-- sidebar در سه حالت expanded, collapsed و mobile drawer تست شود.
-- regression روی print و invoice preview انجام شود.
-- برای phaseهای frontend-focused از `npm run verify:fast` استفاده شود.
+- Ø¨Ø±Ø§ÛŒ Ù‡Ø± phase screenshot comparison Ø±ÙˆÛŒ desktop Ùˆ mobile Ú¯Ø±ÙØªÙ‡ Ø´ÙˆØ¯.
+- RTL Ø¯Ø± sidebarØŒ headerØŒ tableÙ‡Ø§ØŒ filter barØŒ form fieldÙ‡Ø§ Ùˆ modalÙ‡Ø§ smoke-test Ø´ÙˆØ¯.
+- hover, active, focus-visible, disabled, loading, empty, error, success states Ø¨Ø±Ø§ÛŒ primitives Ø¨Ø±Ø±Ø³ÛŒ Ø´ÙˆÙ†Ø¯.
+- sidebar Ø¯Ø± Ø³Ù‡ Ø­Ø§Ù„Øª expanded, collapsed Ùˆ mobile drawer ØªØ³Øª Ø´ÙˆØ¯.
+- regression Ø±ÙˆÛŒ print Ùˆ invoice preview Ø§Ù†Ø¬Ø§Ù… Ø´ÙˆØ¯.
+- Ø¨Ø±Ø§ÛŒ phaseÙ‡Ø§ÛŒ frontend-focused Ø§Ø² `npm run verify:fast` Ø§Ø³ØªÙØ§Ø¯Ù‡ Ø´ÙˆØ¯.
 
 ## Current Status
 - Current phase: `Completed`

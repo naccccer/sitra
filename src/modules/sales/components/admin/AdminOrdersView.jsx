@@ -36,7 +36,13 @@ export const AdminOrdersView = ({
         onTabChange={workflow.setActiveOrdersTab}
         searchQuery={workflow.searchQuery}
         onSearchChange={workflow.setSearchQuery}
-        createAction={onCreateOrder ? <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>سفارش جدید</Button> : null}
+        createAction={
+          onCreateOrder ? (
+            <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>
+              سفارش جدید
+            </Button>
+          ) : null
+        }
       />
 
       <OrdersWorkspaceTable
@@ -61,17 +67,24 @@ export const AdminOrdersView = ({
             pageSizeOptions={[10, 25, 50]}
             onPageChange={workflow.setPage}
             onPageSizeChange={workflow.setPageSize}
+            continuation={
+              hasMoreOrders ? (
+                <Button
+                  onClick={workflow.handleLoadMoreOrders}
+                  disabled={workflow.isLoadingMore}
+                  action="reload"
+                  showActionIcon
+                  variant="secondary"
+                  size="lg"
+                  loading={workflow.isLoadingMore}
+                >
+                  {workflow.isLoadingMore ? 'در حال بارگذاری...' : 'بارگذاری سفارش‌های بیشتر'}
+                </Button>
+              ) : null
+            }
           />
         )}
       />
-
-      {hasMoreOrders && (
-        <div className="print-hide flex justify-center pb-4 pt-2">
-          <Button onClick={workflow.handleLoadMoreOrders} disabled={workflow.isLoadingMore} action="reload" showActionIcon variant="secondary" size="lg" loading={workflow.isLoadingMore}>
-            {workflow.isLoadingMore ? 'در حال بارگذاری...' : 'بارگذاری سفارش‌های بیشتر'}
-          </Button>
-        </div>
-      )}
 
       <OrdersPaymentManagerModal
         order={paymentManager.paymentManagerOrder}
@@ -137,7 +150,7 @@ export const AdminOrdersView = ({
         }}
       />
 
-      {workflow.viewingOrder && (
+      {workflow.viewingOrder ? (
         <PrintInvoice
           items={workflow.viewingOrder.items}
           catalog={catalog}
@@ -151,7 +164,7 @@ export const AdminOrdersView = ({
           invoiceNotes={workflow.viewingOrder.invoiceNotes}
           type={workflow.viewingOrderType}
         />
-      )}
+      ) : null}
 
       <PatternFilesModal
         isOpen={Boolean(workflow.patternFilesContext)}

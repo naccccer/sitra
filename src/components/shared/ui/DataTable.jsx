@@ -84,10 +84,10 @@ export const DataTableState = ({
   </tr>
 );
 
-export const DataTableDetail = ({ colSpan = 1, children, className = '', title = '', description = '', actions = null }) => (
+export const DataTableDetail = ({ colSpan = 1, children, className = '', title = '', description = '', actions = null, summary = null }) => (
   <tr>
     <td colSpan={colSpan} className="p-3">
-      <WorkspaceDetailPanel title={title} description={description} actions={actions} className={className}>
+      <WorkspaceDetailPanel title={title} description={description} actions={actions} summary={summary} className={className}>
         {children}
       </WorkspaceDetailPanel>
     </td>
