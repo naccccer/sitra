@@ -58,18 +58,19 @@ function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, 
 {
     $stmt = $pdo->prepare(
         'INSERT INTO order_financials
-            (order_id, sub_total, item_discount_total,
+            (order_id, sub_total, item_discount_total, order_stage,
              invoice_discount_type, invoice_discount_value, invoice_discount_amount,
              tax_enabled, tax_rate, tax_amount,
              grand_total, invoice_notes)
          VALUES
-            (:order_id, :sub_total, :item_discount_total,
+            (:order_id, :sub_total, :item_discount_total, :order_stage,
              :invoice_discount_type, :invoice_discount_value, :invoice_discount_amount,
              :tax_enabled, :tax_rate, :tax_amount,
              :grand_total, :invoice_notes)
          ON DUPLICATE KEY UPDATE
             sub_total = VALUES(sub_total),
             item_discount_total = VALUES(item_discount_total),
+            order_stage = VALUES(order_stage),
             invoice_discount_type = VALUES(invoice_discount_type),
             invoice_discount_value = VALUES(invoice_discount_value),
             invoice_discount_amount = VALUES(invoice_discount_amount),
@@ -89,6 +90,7 @@ function app_upsert_order_financials(PDO $pdo, int $orderId, array $financials, 
         'order_id' => $orderId,
         'sub_total' => max(0, (int)($financials['subTotal'] ?? 0)),
         'item_discount_total' => max(0, (int)($financials['itemDiscountTotal'] ?? 0)),
+        'order_stage' => trim((string)($financials['orderStage'] ?? 'registered')),
         'invoice_discount_type' => $discountType,
         'invoice_discount_value' => max(0, (int)($financials['invoiceDiscountValue'] ?? 0)),
         'invoice_discount_amount' => max(0, (int)($financials['invoiceDiscountAmount'] ?? 0)),
@@ -193,6 +195,7 @@ function app_read_order_financials(PDO $pdo, int $orderId): ?array
     return [
         'subTotal' => (int)$row['sub_total'],
         'itemDiscountTotal' => (int)$row['item_discount_total'],
+        'orderStage' => (string)($row['order_stage'] ?? 'registered'),
         'invoiceDiscountType' => (string)$row['invoice_discount_type'],
         'invoiceDiscountValue' => (int)$row['invoice_discount_value'],
         'invoiceDiscountAmount' => (int)$row['invoice_discount_amount'],

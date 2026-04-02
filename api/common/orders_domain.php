@@ -72,6 +72,7 @@ function app_order_meta_defaults(int $grandTotal = 0): array
         'financials' => [
             'subTotal' => $safeGrandTotal,
             'itemDiscountTotal' => 0,
+            'orderStage' => 'registered',
             'invoiceDiscountType' => 'none',
             'invoiceDiscountValue' => 0,
             'invoiceDiscountAmount' => 0,

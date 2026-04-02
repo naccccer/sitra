@@ -85,17 +85,17 @@ export const deriveFinancialSummary = (order = {}) => {
 };
 
 export const paymentStatusPill = (status) => {
-  if (status === 'paid') return { label: 'تسویه کامل', className: 'bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]' };
+  if (status === 'paid') return { label: 'تسویه کامل', className: 'border border-[rgb(var(--ui-success-border))]/55 bg-[rgb(var(--ui-success-bg))]/55 text-[rgb(var(--ui-success-text))]' };
   if (status === 'partial') return { label: 'تسویه ناقص', className: 'bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]' };
   return { label: 'تسویه نشده', className: 'bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]' };
 };
 
 export const ORDER_STAGE_OPTIONS = [
-  { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text-muted))]' },
-  { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]' },
-  { id: 'in_progress', label: 'در حال انجام', status: 'processing', className: 'bg-[rgb(var(--ui-info-bg))] text-[rgb(var(--ui-info-text))]' },
-  { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' },
-  { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))]' },
+  { id: 'registered', label: 'ثبت شده', status: 'pending', className: 'bg-slate-100 text-slate-700 border-slate-200' },
+  { id: 'followup', label: 'نیاز به پیگیری', status: 'pending', className: 'bg-amber-100/85 text-amber-800 border-amber-200' },
+  { id: 'in_progress', label: 'در حال انجام', status: 'processing', className: 'bg-sky-100/90 text-sky-800 border-sky-200' },
+  { id: 'ready_delivery', label: 'آماده تحویل', status: 'processing', className: 'bg-indigo-100/88 text-indigo-800 border-indigo-200' },
+  { id: 'delivered', label: 'تحویل شده', status: 'delivered', className: 'bg-emerald-100/90 text-emerald-800 border-emerald-200' },
 ];
 
 export const ORDER_STAGE_MAP = ORDER_STAGE_OPTIONS.reduce((acc, option) => {

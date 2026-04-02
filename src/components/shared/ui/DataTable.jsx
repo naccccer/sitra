@@ -9,7 +9,7 @@ import { cn } from '@/components/shared/ui/cn';
 
 const ALIGN_CLASSNAMES = { start: 'text-start', center: 'text-center', end: 'text-end' };
 const ROW_TONE_CLASSNAMES = {
-  default: 'even:bg-[rgb(var(--ui-surface-muted))]/22 even:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.94),inset_0_-8px_16px_rgba(15,23,42,0.015)] hover:bg-[rgb(var(--ui-accent-muted))]/34',
+  default: 'even:bg-[linear-gradient(180deg,rgba(250,250,251,0.98),rgba(242,244,248,0.94))] even:[box-shadow:inset_0_1px_0_rgba(255,255,255,0.95),0_10px_26px_rgba(18,33,74,0.08)] hover:bg-[rgb(var(--ui-accent-muted))]/32',
   muted: 'bg-[rgb(var(--ui-surface-muted))]/55 text-[rgb(var(--ui-text-muted))]',
 };
 
@@ -18,12 +18,23 @@ export const DataTable = ({ children, className = '', minWidthClass = 'min-w-ful
     <div className="overflow-x-auto">
       <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
     </div>
-    {footer ? <div className="rounded-b-[var(--radius-xl)] bg-[rgb(var(--ui-surface-muted))] px-2 pb-2 pt-1.5">{footer}</div> : null}
+    {footer ? (
+      <div className="rounded-b-[var(--radius-xl)] border-t border-[rgb(var(--ui-border-soft))] bg-[linear-gradient(180deg,rgba(247,247,248,0.99),rgba(240,240,242,0.96))] px-2 pb-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_-8px_24px_rgba(18,33,74,0.08)]">
+        {footer}
+      </div>
+    ) : null}
   </Card>
 );
 
 export const DataTableHead = ({ children, className = '' }) => (
-  <thead className={cn('border-b border-[rgb(var(--ui-border-soft))]/10 bg-[rgb(var(--ui-surface-muted))]/72 text-[12px] font-extrabold text-[rgb(var(--ui-text))]/72', className)}>{children}</thead>
+  <thead
+    className={cn(
+      'border-b border-[rgb(var(--ui-primary))]/75 bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] text-[12px] font-extrabold text-white/90 shadow-[inset_0_-1px_0_rgba(255,255,255,0.05),0_10px_22px_rgba(18,33,74,0.18)] backdrop-blur-[18px]',
+      className,
+    )}
+  >
+    {children}
+  </thead>
 );
 
 export const DataTableBody = ({ children, className = '' }) => (

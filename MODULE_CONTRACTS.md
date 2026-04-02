@@ -99,6 +99,7 @@
 - Owner: `sales`
 - Input:
   - payload compatible with `/api/orders.php` PUT
+  - compatible `financials.orderStage?: 'registered' | 'followup' | 'in_progress' | 'ready_delivery' | 'delivered'`
   - `clientRequestId?: string`
   - `expectedUpdatedAt?: string`
 - Output:

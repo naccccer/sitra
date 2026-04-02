@@ -176,7 +176,7 @@ export const PrintInvoice = ({
         <div className="text-left text-xs font-bold space-y-1 bg-slate-50 p-3 rounded-xl border border-slate-200 min-w-[180px]">
           <div className="flex justify-between gap-4"><span className="text-slate-500">تاریخ:</span> <span>{toPN(date)}</span></div>
           {customerName && <div className="flex justify-between gap-4"><span className="text-slate-500">مشتری:</span> <span>{customerName}</span></div>}
-          <div className="flex justify-between gap-4 border-t pt-1 mt-1"><span className="text-slate-500">کد رهگیری:</span> <span className="tabular-nums text-slate-900 font-black tracking-wider" dir="ltr">{toPN(orderCode)}</span></div>
+          <div className="flex justify-between gap-4 border-t pt-1 mt-1"><span className="text-slate-500">کد رهگیری:</span> <span className="tabular-nums font-black tracking-wider text-[rgb(10,22,52)]" dir="ltr">{toPN(orderCode)}</span></div>
         </div>
       </div>
 

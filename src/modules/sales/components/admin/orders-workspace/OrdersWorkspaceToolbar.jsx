@@ -1,7 +1,6 @@
 import React from 'react';
 import { Search } from 'lucide-react';
-import { Badge, FilterRow, Input, WorkspaceToolbar } from '@/components/shared/ui';
-import { toPN } from '@/utils/helpers';
+import { FilterRow, Input, SegmentedTabs, WorkspaceToolbar } from '@/components/shared/ui';
 
 const TAB_OPTIONS = [
   { id: 'all', label: 'همه سفارش‌ها' },
@@ -16,41 +15,14 @@ export const OrdersWorkspaceToolbar = ({
   onTabChange,
   searchQuery,
   onSearchChange,
-  tabCounts,
-  filteredCount = 0,
   createAction = null,
 }) => (
   <WorkspaceToolbar
     className="print-hide"
     actions={createAction}
-    summary={(
-      <>
-        <Badge tone="accent">نتیجه جاری: {toPN(filteredCount)}</Badge>
-        <Badge tone="neutral">کل فعال: {toPN(tabCounts.all)}</Badge>
-        <Badge tone="warning">در انتظار: {toPN(tabCounts.pending)}</Badge>
-        <Badge tone="info">در حال انجام: {toPN(tabCounts.processing)}</Badge>
-        <Badge tone="success">تحویل‌شده: {toPN(tabCounts.delivered)}</Badge>
-        <Badge tone="neutral">بایگانی: {toPN(tabCounts.archived)}</Badge>
-      </>
-    )}
   >
     <FilterRow className="justify-between gap-3">
-      <div className="flex w-full gap-1 overflow-x-auto rounded-[var(--radius-lg)] bg-[rgb(var(--ui-surface-muted))] p-1 hide-scrollbar md:w-auto">
-        {TAB_OPTIONS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => onTabChange(tab.id)}
-            className={`focus-ring whitespace-nowrap rounded-[var(--radius-md)] px-2.5 py-1.5 text-[10px] font-semibold transition-colors sm:text-[11px] ${
-              activeOrdersTab === tab.id
-                ? 'bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]'
-                : 'text-[rgb(var(--ui-text-muted))] hover:text-[rgb(var(--ui-text))]'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
+      <SegmentedTabs tabs={TAB_OPTIONS} activeId={activeOrdersTab} onChange={onTabChange} className="w-full md:w-auto" />
 
       <div className="relative w-full md:w-80">
         <Search size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--ui-text-muted))]" />

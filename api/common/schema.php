@@ -275,6 +275,7 @@ function app_ensure_order_financials_tables(PDO $pdo): void
                 order_id             BIGINT UNSIGNED NOT NULL,
                 sub_total            BIGINT NOT NULL DEFAULT 0,
                 item_discount_total  BIGINT NOT NULL DEFAULT 0,
+                order_stage          VARCHAR(32) NULL,
                 invoice_discount_type ENUM('none','percent','fixed') NOT NULL DEFAULT 'none',
                 invoice_discount_value  BIGINT NOT NULL DEFAULT 0,
                 invoice_discount_amount BIGINT NOT NULL DEFAULT 0,
@@ -291,6 +292,10 @@ function app_ensure_order_financials_tables(PDO $pdo): void
                     ON UPDATE CASCADE ON DELETE CASCADE
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
         );
+    }
+
+    if (!app_column_is_queryable($pdo, 'order_financials', 'order_stage')) {
+        $pdo->exec("ALTER TABLE order_financials ADD COLUMN order_stage VARCHAR(32) NULL AFTER item_discount_total");
     }
 
     if (!app_table_is_queryable($pdo, 'order_payments')) {

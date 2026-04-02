@@ -25,35 +25,35 @@
 
 @layer base {
   :root {
-    --ui-bg: 242 246 252;
-    --ui-bg-accent: 233 239 249;
+    --ui-bg: 239 239 241;
+    --ui-bg-accent: 228 228 232;
     --ui-surface: 255 255 255;
     --ui-surface-elevated: 255 255 255;
-    --ui-surface-muted: 243 247 252;
+    --ui-surface-muted: 246 246 247;
     --ui-surface-glass: 255 255 255;
-    --ui-border: 211 220 234;
-    --ui-border-soft: 227 233 243;
-    --ui-text: 15 23 42;
-    --ui-text-muted: 88 99 124;
-    --ui-primary: 19 33 68;
+    --ui-border: 214 214 220;
+    --ui-border-soft: 231 231 235;
+    --ui-text: 29 29 33;
+    --ui-text-muted: 108 108 118;
+    --ui-primary: 28 28 32;
     --ui-primary-contrast: 255 255 255;
-    --ui-accent: 127 49 67;
-    --ui-accent-strong: 104 39 54;
-    --ui-accent-muted: 250 240 244;
-    --ui-accent-border: 228 190 201;
-    --ui-info-bg: 251 245 247;
-    --ui-info-border: 236 209 218;
-    --ui-info-text: 127 49 67;
-    --ui-success-bg: 236 253 245;
-    --ui-success-border: 134 239 172;
-    --ui-success-text: 22 101 52;
-    --ui-warning-bg: 245 250 255;
-    --ui-warning-border: 191 219 254;
-    --ui-warning-text: 30 64 175;
-    --ui-danger-bg: 255 241 245;
-    --ui-danger-border: 251 182 206;
-    --ui-danger-text: 157 23 77;
-    --ui-focus: 127 49 67;
+    --ui-accent: 18 33 74;
+    --ui-accent-strong: 10 22 52;
+    --ui-accent-muted: 236 241 250;
+    --ui-accent-border: 185 198 225;
+    --ui-info-bg: 242 242 244;
+    --ui-info-border: 207 207 214;
+    --ui-info-text: 61 61 70;
+    --ui-success-bg: 238 246 240;
+    --ui-success-border: 176 210 183;
+    --ui-success-text: 49 92 57;
+    --ui-warning-bg: 246 242 234;
+    --ui-warning-border: 219 204 164;
+    --ui-warning-text: 120 87 28;
+    --ui-danger-bg: 247 238 240;
+    --ui-danger-border: 222 190 198;
+    --ui-danger-text: 122 43 62;
+    --ui-focus: 18 33 74;
 
     --space-1: 0.25rem;
     --space-2: 0.5rem;
@@ -68,11 +68,11 @@
     --radius-xl: 1.25rem;
     --radius-2xl: 1.5rem;
 
-    --shadow-soft: 0 1px 2px rgba(15, 23, 42, 0.05), 0 12px 28px rgba(15, 23, 42, 0.06);
-    --shadow-surface: 0 14px 34px rgba(15, 23, 42, 0.08);
-    --shadow-strong: 0 22px 52px rgba(15, 23, 42, 0.15);
-    --shadow-overlay: 0 18px 40px rgba(15, 23, 42, 0.18);
-    --shadow-accent: 0 16px 40px rgba(127, 49, 67, 0.18);
+    --shadow-soft: 0 1px 2px rgba(20, 20, 24, 0.04), 0 12px 28px rgba(20, 20, 24, 0.05);
+    --shadow-surface: 0 14px 34px rgba(20, 20, 24, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    --shadow-strong: 0 22px 52px rgba(20, 20, 24, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+    --shadow-overlay: 0 18px 40px rgba(20, 20, 24, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.62);
+    --shadow-accent: 0 16px 40px rgba(18, 33, 74, 0.18);
     --motion-fast: 150ms ease;
     --motion-base: 220ms ease;
   }
@@ -85,12 +85,42 @@
 
   body {
     background:
-      radial-gradient(circle at top right, rgba(127, 49, 67, 0.08), transparent 28%),
-      radial-gradient(circle at top left, rgba(30, 64, 175, 0.07), transparent 24%),
+      radial-gradient(circle at 18% 22%, rgba(255, 255, 255, 0.56), transparent 18%),
+      radial-gradient(circle at top right, rgba(18, 33, 74, 0.06), transparent 28%),
+      radial-gradient(circle at top left, rgba(34, 34, 38, 0.045), transparent 24%),
       linear-gradient(180deg, rgb(var(--ui-bg-accent)) 0%, rgb(var(--ui-bg)) 18%, rgb(var(--ui-bg)) 100%);
     color: rgb(var(--ui-text));
     font-family: 'Vazirmatn', sans-serif;
     text-rendering: optimizeLegibility;
+  }
+
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(28, 28, 32, 0.28) rgba(255, 255, 255, 0);
+  }
+
+  *::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+
+  *::-webkit-scrollbar-track {
+    margin-block: 10px;
+    margin-inline: 10px;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0));
+  }
+
+  *::-webkit-scrollbar-thumb {
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background: linear-gradient(180deg, rgba(28, 28, 32, 0.34), rgba(28, 28, 32, 0.2));
+    background-clip: padding-box;
+  }
+
+  *:hover::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(28, 28, 32, 0.42), rgba(28, 28, 32, 0.28));
+    background-clip: padding-box;
   }
 }
 
@@ -98,9 +128,10 @@
   .app-shell {
     @apply min-h-screen text-slate-800;
     background:
+      radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.48), transparent 16%),
       linear-gradient(180deg, rgba(255, 255, 255, 0.45) 0%, rgba(255, 255, 255, 0) 18%),
-      radial-gradient(circle at top right, rgba(127, 49, 67, 0.07), transparent 32%),
-      radial-gradient(circle at bottom left, rgba(30, 64, 175, 0.06), transparent 26%);
+      radial-gradient(circle at top right, rgba(18, 33, 74, 0.06), transparent 32%),
+      radial-gradient(circle at bottom left, rgba(34, 34, 38, 0.05), transparent 26%);
   }
 
   .app-content-wrap {
@@ -116,23 +147,27 @@
   }
 
   .surface-card {
-    border: 1px solid transparent;
-    background-color: rgb(var(--ui-surface));
+    border: 1px solid rgba(255, 255, 255, 0.52);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 248, 249, 0.7));
+    backdrop-filter: blur(20px);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-soft);
   }
 
   .surface-muted {
-    border: 1px solid transparent;
-    background-color: rgb(var(--ui-surface));
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(246, 246, 247, 0.62));
+    backdrop-filter: blur(18px);
     border-radius: var(--radius-xl);
     box-shadow: var(--shadow-soft);
   }
 
   .surface-glass {
-    border: 1px solid rgba(255, 255, 255, 0.7);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68));
-    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255, 255, 255, 0.76);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(247, 247, 248, 0.68)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.35), transparent 42%);
+    backdrop-filter: blur(24px) saturate(118%);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-surface);
   }
@@ -154,23 +189,30 @@
 
   .workspace-panel {
     overflow: hidden;
-    border: 1px solid transparent;
-    background-color: rgb(var(--ui-surface));
+    border: 1px solid rgba(255, 255, 255, 0.56);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(247, 247, 248, 0.66));
+    backdrop-filter: blur(20px);
     border-radius: var(--radius-2xl);
     box-shadow: var(--shadow-soft);
   }
 
   .workspace-toolbar {
     @apply rounded-[var(--radius-2xl)] border px-4 py-4;
-    border-color: transparent;
-    background: rgb(var(--ui-surface));
-    box-shadow: var(--shadow-soft);
+    border-color: rgba(255, 255, 255, 0.62);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(247, 247, 248, 0.68)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.32), transparent 38%);
+    backdrop-filter: blur(24px) saturate(115%);
+    box-shadow: var(--shadow-surface);
   }
 
   .shell-brand-surface {
-    border: 1px solid transparent;
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(250, 240, 244, 0.88));
-    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(255, 255, 255, 0.68);
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(244, 244, 246, 0.74)),
+      linear-gradient(135deg, rgba(255, 255, 255, 0.28), transparent 42%);
+    backdrop-filter: blur(22px) saturate(114%);
+    box-shadow: var(--shadow-surface);
   }
 
   .shell-brand-mark {
@@ -180,9 +222,10 @@
   }
 
   .shell-user-chip {
-    border: 1px solid transparent;
-    background: rgba(255, 255, 255, 0.85);
-    box-shadow: var(--shadow-soft);
+    border: 1px solid rgba(255, 255, 255, 0.62);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(246, 246, 247, 0.72));
+    backdrop-filter: blur(18px);
+    box-shadow: var(--shadow-surface);
   }
 
   .shell-user-avatar {
@@ -213,7 +256,7 @@
     border: 1px solid rgba(255, 255, 255, 0.88);
     background:
       linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(250, 240, 244, 0.9)),
-      radial-gradient(circle at top right, rgba(127, 49, 67, 0.07), transparent 34%);
+      radial-gradient(circle at top right, rgba(18, 33, 74, 0.08), transparent 34%);
     box-shadow: var(--shadow-strong);
   }
 
@@ -274,7 +317,7 @@
     height: 20rem;
     width: 20rem;
     border-radius: 9999px;
-    background: radial-gradient(circle, rgba(127, 49, 67, 0.2), rgba(127, 49, 67, 0.07) 42%, transparent 72%);
+    background: radial-gradient(circle, rgba(18, 33, 74, 0.22), rgba(18, 33, 74, 0.08) 42%, transparent 72%);
     filter: blur(28px);
     opacity: 0.78;
   }
@@ -285,7 +328,7 @@
     width: 3.5rem;
     border-radius: 0;
     background:
-      linear-gradient(180deg, rgba(251, 245, 247, 0.96) 0%, rgba(236, 209, 218, 0.82) 16%, rgba(154, 73, 92, 0.64) 42%, rgba(104, 39, 54, 0.56) 70%, rgba(104, 39, 54, 0.04) 100%);
+      linear-gradient(180deg, rgba(246, 248, 252, 0.96) 0%, rgba(224, 231, 244, 0.82) 16%, rgba(97, 122, 180, 0.66) 42%, rgba(32, 49, 100, 0.56) 70%, rgba(32, 49, 100, 0.04) 100%);
     filter: blur(12px);
     opacity: 0.8;
     mix-blend-mode: screen;
@@ -330,7 +373,7 @@
     height: 15rem;
     width: 22rem;
     border-radius: 9999px;
-    background: radial-gradient(circle at 22% 52%, rgba(154, 73, 92, 0.48), rgba(154, 73, 92, 0.15) 30%, transparent 66%);
+    background: radial-gradient(circle at 22% 52%, rgba(18, 33, 74, 0.48), rgba(18, 33, 74, 0.14) 30%, transparent 66%);
     filter: blur(24px);
     opacity: 0.78;
   }
@@ -339,9 +382,9 @@
     position: absolute;
     inset: 0;
     background:
-      linear-gradient(180deg, transparent 54%, rgba(127, 49, 67, 0.04) 72%, rgba(250, 240, 244, 0.18) 100%),
+      linear-gradient(180deg, transparent 54%, rgba(18, 33, 74, 0.04) 72%, rgba(240, 244, 252, 0.18) 100%),
       radial-gradient(circle at 10% 100%, rgba(255, 255, 255, 0.62), transparent 24%),
-      radial-gradient(circle at 20% 86%, rgba(154, 73, 92, 0.16), transparent 20%);
+      radial-gradient(circle at 20% 86%, rgba(18, 33, 74, 0.16), transparent 20%);
     opacity: 0.86;
   }
 
@@ -358,7 +401,7 @@
     right: 8%;
     height: 16rem;
     width: 16rem;
-    background: radial-gradient(circle, rgba(127, 49, 67, 0.14), rgba(127, 49, 67, 0));
+    background: radial-gradient(circle, rgba(18, 33, 74, 0.14), rgba(18, 33, 74, 0));
   }
 
   .auth-entry-orb-secondary {
@@ -366,7 +409,7 @@
     left: 7%;
     height: 18rem;
     width: 18rem;
-    background: radial-gradient(circle, rgba(154, 73, 92, 0.1), rgba(154, 73, 92, 0));
+    background: radial-gradient(circle, rgba(18, 33, 74, 0.1), rgba(18, 33, 74, 0));
   }
 }
 
@@ -378,6 +421,10 @@
   .hide-scrollbar {
     -ms-overflow-style: none;
     scrollbar-width: none;
+  }
+
+  .shell-scrollbar {
+    scrollbar-gutter: stable;
   }
 
   .focus-ring {

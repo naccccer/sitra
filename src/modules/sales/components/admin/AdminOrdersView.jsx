@@ -36,9 +36,7 @@ export const AdminOrdersView = ({
         onTabChange={workflow.setActiveOrdersTab}
         searchQuery={workflow.searchQuery}
         onSearchChange={workflow.setSearchQuery}
-        tabCounts={workflow.tabCounts}
-        filteredCount={workflow.filteredOrders.length}
-        createAction={onCreateOrder ? <Button action="create" showActionIcon size="lg" onClick={onCreateOrder}>سفارش جدید</Button> : null}
+        createAction={onCreateOrder ? <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>سفارش جدید</Button> : null}
       />
 
       <OrdersWorkspaceTable

@@ -116,6 +116,7 @@ function app_sales_normalize_order_meta_payload(array $payload, int $total): arr
 
     $financials['subTotal'] = max(0, (int)($financials['subTotal'] ?? 0));
     $financials['itemDiscountTotal'] = max(0, (int)($financials['itemDiscountTotal'] ?? 0));
+    $financials['orderStage'] = app_sales_normalize_order_stage($financials['orderStage'] ?? null);
     $financials['invoiceDiscountType'] = (string)($financials['invoiceDiscountType'] ?? 'none');
     $financials['invoiceDiscountValue'] = max(0, (int)($financials['invoiceDiscountValue'] ?? 0));
     $financials['invoiceDiscountAmount'] = max(0, (int)($financials['invoiceDiscountAmount'] ?? 0));
@@ -148,6 +149,13 @@ function app_sales_normalize_order_meta_payload(array $payload, int $total): arr
         'payments' => $payments,
         'invoiceNotes' => (string)($payload['invoiceNotes'] ?? ''),
     ];
+}
+
+function app_sales_normalize_order_stage($value): string
+{
+    $stage = trim((string)($value ?? ''));
+    $allowed = ['registered', 'followup', 'in_progress', 'ready_delivery', 'delivered'];
+    return in_array($stage, $allowed, true) ? $stage : 'registered';
 }
 
 function app_sales_orders_date_column_candidates(PDO $pdo): array

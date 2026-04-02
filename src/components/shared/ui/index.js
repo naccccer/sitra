@@ -22,6 +22,7 @@ export { Input } from '@/components/shared/ui/Input';
 export { ModalShell } from '@/components/shared/ui/ModalShell';
 export { PaginationBar } from '@/components/shared/ui/PaginationBar';
 export { SectionHeader } from '@/components/shared/ui/SectionHeader';
+export { SegmentedTabs } from '@/components/shared/ui/SegmentedTabs';
 export { Select } from '@/components/shared/ui/Select';
 export { StatCard } from '@/components/shared/ui/StatCard';
 export { Tooltip } from '@/components/shared/ui/Tooltip';

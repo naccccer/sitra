@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 
 export const ACTION_PRESETS = Object.freeze({
-  create: { label: 'ایجاد', variant: 'accent', icon: Plus },
+  create: { label: 'ایجاد', variant: 'forest', icon: Plus },
   edit: { label: 'ویرایش', variant: 'secondary', icon: Pencil },
   delete: { label: 'حذف', variant: 'danger', icon: Trash2, isDestructive: true },
   archive: { label: 'بایگانی', variant: 'ghost', icon: Archive },

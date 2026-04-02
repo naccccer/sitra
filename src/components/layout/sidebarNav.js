@@ -1,12 +1,13 @@
 import {
   BookOpen,
   ClipboardList,
+  ContactRound,
   Database,
   LayoutDashboard,
   Package,
   ShieldCheck,
   SlidersHorizontal,
-  Users,
+  UsersRound,
 } from 'lucide-react'
 import { isModuleEnabled } from '@/kernel/moduleRegistry'
 
@@ -14,27 +15,27 @@ export const pathMatches = (pathname, to) => Boolean(to) && (pathname === to || 
 
 export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
   `focus-ring flex items-center gap-2.5 rounded-[var(--radius-lg)] border text-[13px] font-black transition duration-[var(--motion-fast)] ${
-    isCollapsed ? 'min-h-11 px-3 py-2 lg:mx-auto lg:h-11 lg:w-11 lg:flex-none lg:justify-center lg:gap-0 lg:px-0' : 'min-h-11 px-3 py-2'
+    isCollapsed ? 'min-h-11 px-3 py-2 lg:mx-auto lg:h-11 lg:w-11 lg:flex-none lg:justify-center lg:gap-0 lg:px-0' : 'min-h-11 w-full px-3 py-2'
   } ${
     tone === 'owner'
       ? isActive
-        ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent))] text-white shadow-[0_10px_24px_rgba(127,49,67,0.22)]'
-        : 'border-transparent bg-[rgb(var(--ui-primary))]/92 text-[rgb(var(--ui-accent-muted))] hover:border-[rgb(var(--ui-accent-border))]/30 hover:bg-[rgb(var(--ui-primary))]'
+        ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent))] text-white shadow-[0_10px_24px_rgba(18,33,74,0.22)]'
+        : 'border-transparent bg-[rgb(var(--ui-primary))]/94 text-[rgb(var(--ui-surface))] hover:border-[rgb(var(--ui-accent-border))]/30 hover:bg-[rgb(var(--ui-primary))]'
       : isActive
         ? 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)]'
-        : 'border-transparent bg-white/50 text-slate-700 hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/40 hover:text-slate-900'
+        : 'border-transparent bg-transparent text-[rgb(var(--ui-text))] hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))]'
   }`
 )
 
 export const navChildLinkClass = (isActive, tone = 'default') => (
-  `focus-ring flex min-h-9 items-center rounded-[var(--radius-md)] border px-2.5 py-1.5 text-[12px] font-bold transition duration-[var(--motion-fast)] ${
+  `focus-ring flex min-h-9 items-center rounded-full border px-3 py-1.5 text-[12px] font-bold transition duration-[var(--motion-fast)] ${
     tone === 'owner'
       ? isActive
-        ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-primary))] shadow-[0_6px_16px_rgba(127,49,67,0.14)]'
-        : 'border-transparent text-slate-800 hover:border-[rgb(var(--ui-accent-border))]/70 hover:bg-[rgb(var(--ui-accent-muted))]/80'
+        ? 'border-white/80 bg-white/94 text-[rgb(var(--ui-primary))] shadow-[0_10px_24px_rgba(20,20,24,0.08)]'
+        : 'border-transparent bg-transparent text-[rgb(var(--ui-text))] hover:bg-white/58 hover:text-[rgb(var(--ui-primary))]'
       : isActive
-        ? 'border-[rgb(var(--ui-border))] bg-white text-slate-900 shadow-[0_8px_18px_rgba(15,23,42,0.08)]'
-        : 'border-transparent text-slate-700 hover:border-[rgb(var(--ui-border-soft))] hover:bg-white/85'
+        ? 'border-white/82 bg-white/94 text-[rgb(var(--ui-primary))] shadow-[0_10px_24px_rgba(20,20,24,0.08)]'
+        : 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-white/58 hover:text-[rgb(var(--ui-text))]'
   }`
 )
 
@@ -45,8 +46,8 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
     items: [
       { to: '/', label: 'داشبورد', icon: LayoutDashboard, end: true, capability: 'canAccessDashboard', moduleId: 'sales' },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
-      { to: '/customers', label: 'مشتریان', icon: Users, capability: 'canManageCustomers', moduleId: 'customers' },
-      { to: '/human-resources', label: 'منابع انسانی', icon: Users, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
+      { to: '/customers', label: 'مشتریان', icon: ContactRound, capability: 'canManageCustomers', moduleId: 'customers' },
+      { to: '/human-resources', label: 'منابع انسانی', icon: UsersRound, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
       {
         id: 'inventory',
         to: '/inventory',

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { ChevronDown, ChevronLeft, LogOut, X } from 'lucide-react'
+import { ChevronDown, LogOut, X } from 'lucide-react'
 import { Tooltip } from '@/components/shared/ui'
 import { isModuleEnabled } from '@/kernel/moduleRegistry'
 import { getVisibleAccountingTabs } from '@/modules/accounting/navigation'
@@ -32,7 +32,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const { isVisible } = useTabSettings()
   const isRailCollapsed = isCollapsed && !isOpen
-  const desktopSidebarWidth = isRailCollapsed ? '5.75rem' : '14rem'
+  const desktopSidebarWidth = isRailCollapsed ? '5.75rem' : '16rem'
   const textRevealClass = isRailCollapsed
     ? 'max-w-0 -translate-x-1 opacity-0'
     : 'max-w-[12rem] translate-x-0 opacity-100'
@@ -79,20 +79,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   }
 
   const getSectionGroups = (section) => {
-    if (section.id !== 'system') return [{ id: `${section.id}-default`, label: '', items: section.items }]
-    const groupDefs = [
-      { id: 'daily-config', label: 'تنظیمات روزمره' },
-      { id: 'owner-config', label: 'سطح مالک/پیشرفته' },
-    ]
-    const grouped = groupDefs
-      .map((group) => ({ ...group, items: section.items.filter((item) => item.group === group.id) }))
-      .filter((group) => group.items.length > 0)
-    const ungrouped = section.items.filter((item) => !item.group)
-    if (ungrouped.length > 0) {
-      if (grouped.length > 0) grouped[0] = { ...grouped[0], items: [...grouped[0].items, ...ungrouped] }
-      else grouped.push({ id: 'fallback', label: '', items: ungrouped })
-    }
-    return grouped.length > 0 ? grouped : [{ id: 'system-fallback', label: '', items: section.items }]
+    return [{ id: `${section.id}-default`, label: '', items: section.items }]
   }
 
   const accordionItems = visibleSections.flatMap((section) => section.items).filter((item) => Array.isArray(item.children) && item.children.length > 0)
@@ -148,7 +135,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
 
     const isGroupOpen = openGroupId === item.id
     return (
-      <div key={item.id || item.to} className="space-y-1.5">
+      <div key={item.id || item.to}>
         <button
           type="button"
           onClick={() => setManualGroupState((prev) => (prev.id === item.id ? { id: item.id, collapsed: !prev.collapsed } : { id: item.id, collapsed: false }))}
@@ -161,19 +148,25 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           <span className={`flex-1 overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
             {item.label}
           </span>
-          <span className="transition-transform duration-[var(--motion-base)]">
-            {isGroupOpen ? <ChevronDown size={14} /> : <ChevronLeft size={14} />}
+          <span className={`transition-transform duration-[var(--motion-base)] ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}>
+            <ChevronDown size={14} />
           </span>
         </button>
-        {isGroupOpen && (
-          <div id={`${item.id}-submenu`} className={`space-y-1 rounded-[var(--radius-lg)] border p-1.5 ${tone === 'owner' ? 'border-[rgb(var(--ui-accent-border))]/80 bg-[rgb(var(--ui-accent-muted))]/90' : 'border-[rgb(var(--ui-border-soft))] bg-white/80'}`}>
+        <div
+          id={`${item.id}-submenu`}
+          aria-hidden={!isGroupOpen}
+          className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${isGroupOpen ? 'mt-1 max-h-64 opacity-100' : 'mt-0 max-h-0 opacity-0'}`}
+        >
+          <div
+            className={`relative ms-4 space-y-1.5 ps-4 transition-[transform,opacity] duration-300 ease-out before:absolute before:bottom-4 before:right-0 before:top-3 before:w-px before:bg-[linear-gradient(180deg,rgba(20,20,24,0.45),rgba(20,20,24,0.18)_82%,transparent)] before:content-[''] ${isGroupOpen ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'}`}
+          >
             {item.children.map((child) => (
               <NavLink key={`${child.to}:${child.tab || ''}`} to={toNavTarget(child)} onClick={onNavigate} className={() => navChildLinkClass(isTargetActive(child), tone)}>
                 <span className="truncate">{child.label}</span>
               </NavLink>
             ))}
           </div>
-        )}
+        </div>
       </div>
     )
   }
@@ -181,15 +174,17 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   return (
     <aside
       style={{ '--sidebar-shell-width': desktopSidebarWidth }}
-      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-[14rem] shrink-0 flex-col overflow-hidden border-l border-white/70 bg-white/92 px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-xl transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/80 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-[16rem] shrink-0 flex-col overflow-hidden border-l border-white/72 bg-[linear-gradient(180deg,rgba(246,246,248,0.82),rgba(238,238,241,0.72))] px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       dir="rtl"
     >
       <button type="button" onClick={onCloseMobile} title="بستن منو" className="shell-mobile-dismiss focus-ring mb-2 inline-flex h-10 w-10 items-center justify-center self-end rounded-[var(--radius-lg)] text-slate-700 lg:hidden">
         <X size={16} />
       </button>
 
+      <div className="flex min-h-0 flex-1 flex-col px-1">
+
       {wrapWithTooltip(
-        <div className={`shell-brand-surface mb-3 rounded-[24px] transition-[padding,border-radius] duration-[var(--motion-base)] ${isRailCollapsed ? 'p-2' : 'px-3 py-3'}`}>
+        <div className={`shell-brand-surface mb-3 w-full rounded-[24px] transition-[padding,border-radius] duration-[var(--motion-base)] ${isRailCollapsed ? 'p-2' : 'px-3 py-2.5'}`}>
           <div className={`flex items-center transition-[gap] duration-[var(--motion-base)] ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
             <div className="shell-brand-mark flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[18px] text-base font-black text-white transition-transform duration-[var(--motion-base)]">
               {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className="h-full w-full object-cover" /> : fallbackLetter}
@@ -203,7 +198,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         normalizedProfile.brandName,
       )}
 
-      <div className={`min-h-0 flex-1 overflow-y-auto ${isRailCollapsed ? 'px-0' : 'pe-1'}`}>
+      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'auto' }}>
         <nav className="space-y-4">
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-2">
@@ -212,20 +207,16 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
                   {section.label}
                 </div>
               )}
-              {getSectionGroups(section).map((group, groupIndex, allGroups) => (
-                <div key={group.id} className="space-y-2">
-                  {!isRailCollapsed && section.id === 'system' && group.label && <div className="px-1 text-[10px] font-bold text-slate-500">{group.label}</div>}
-                  <div className="space-y-1.5">
-                    {group.items.map((item) => {
-                      const tone = item.id === 'owner' ? 'owner' : 'default'
-                      const isActive = Array.isArray(item.children) && item.children.length > 0
-                        ? visualActiveGroupId === item.id
-                        : false
-                      if (!Array.isArray(item.children) || item.children.length === 0) return <React.Fragment key={item.to}>{renderLeaf(item, tone)}</React.Fragment>
-                      return renderGroup(item, tone, isActive)
-                    })}
-                  </div>
-                  {!isRailCollapsed && section.id === 'system' && groupIndex < allGroups.length - 1 && <div className="my-1 h-px bg-[rgb(var(--ui-border-soft))]" />}
+              {getSectionGroups(section).map((group) => (
+                <div key={group.id} className="space-y-1.5">
+                  {group.items.map((item) => {
+                    const tone = item.id === 'owner' ? 'owner' : 'default'
+                    const isActive = Array.isArray(item.children) && item.children.length > 0
+                      ? visualActiveGroupId === item.id
+                      : false
+                    if (!Array.isArray(item.children) || item.children.length === 0) return <React.Fragment key={item.to}>{renderLeaf(item, tone)}</React.Fragment>
+                    return renderGroup(item, tone, isActive)
+                  })}
                 </div>
               ))}
             </div>
@@ -239,9 +230,9 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             type="button"
             onClick={onLogout}
             aria-label="خروج"
-            className={`focus-ring flex min-h-11 w-full items-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] px-3 text-xs font-black text-[rgb(var(--ui-danger-text))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85 ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-1.5'}`}
+            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-lg)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-2'}`}
           >
-            <LogOut size={15} />
+            <LogOut size={16} />
             <span
               aria-hidden={isRailCollapsed}
               className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
@@ -251,6 +242,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           </button>,
           'خروج',
         )}
+      </div>
       </div>
     </aside>
   )

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Archive, ChevronDown, Cog, FileText, Link2 } from 'lucide-react';
+import { Archive, ChevronDown, CreditCard, FileText, Link2 } from 'lucide-react';
 import { StructureDetails } from '@/components/shared/StructureDetails';
 import {
   Badge,
@@ -103,7 +103,7 @@ export const OrdersWorkspaceTable = ({
             <React.Fragment key={order.id}>
               <DataTableRow selected={expandedOrderId === order.id} tone={order.status === 'archived' ? 'muted' : 'default'} className={order.status === 'archived' ? 'opacity-75' : ''}>
                 <DataTableCell align="center">{toPN(index + 1)}</DataTableCell>
-                <DataTableCell align="center" tone="emphasis" className="tracking-wider text-[rgb(var(--ui-accent-strong))]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
+                <DataTableCell align="center" tone="emphasis" className="tracking-wider text-[rgb(10,22,52)]" dir="ltr">{toPN(order.orderCode)}</DataTableCell>
                 <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
                   <div className="flex items-center gap-2">
                     <span className="truncate">{order.customerName}</span>
@@ -123,8 +123,8 @@ export const OrdersWorkspaceTable = ({
                 <DataTableCell align="center">
                   <div className="flex items-center justify-center gap-1.5">
                     <Badge className={`rounded-full ${paymentPill.className}`} tone="neutral">{paymentPill.label}</Badge>
-                    <IconButton size="iconSm" variant="secondary" label="مدیریت پرداخت" tooltip="مدیریت پرداخت" className="text-[rgb(var(--ui-primary))]" onClick={() => onOpenPaymentManager(order)}>
-                      <Cog size={14} />
+                    <IconButton size="iconSm" variant="secondary" label="مدیریت پرداخت" tooltip="مدیریت پرداخت" className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white" onClick={() => onOpenPaymentManager(order)}>
+                      <CreditCard size={14} />
                     </IconButton>
                   </div>
                 </DataTableCell>
@@ -134,7 +134,7 @@ export const OrdersWorkspaceTable = ({
                         <Badge tone="neutral">بایگانی‌شده</Badge>
                       ) : (
                         <div className="relative min-w-[104px]">
-                          <div className={`pointer-events-none grid h-9 grid-cols-[18px_minmax(0,1fr)_18px] items-center rounded-[var(--radius-md)] border border-transparent bg-[rgb(var(--ui-bg-accent))]/38 px-2 text-[10px] font-semibold shadow-none ${orderStage.className}`}>
+                          <div className={`pointer-events-none grid h-9 grid-cols-[18px_minmax(0,1fr)_18px] items-center rounded-[var(--radius-md)] border border-[rgb(var(--ui-border-soft))] bg-white px-2 text-[10px] font-semibold shadow-[0_6px_16px_rgba(18,33,74,0.08)] ${orderStage.className}`}>
                             <ChevronDown size={14} className="justify-self-start text-[rgb(var(--ui-primary))]" />
                             <span className="block text-center">{orderStage.label}</span>
                             <span aria-hidden="true" />
@@ -159,20 +159,20 @@ export const OrdersWorkspaceTable = ({
                       variant={expandedOrderId === order.id ? 'primary' : 'secondary'}
                       label="نمایش آیتم‌ها"
                       tooltip={expandedOrderId === order.id ? 'بستن جزئیات' : 'نمایش آیتم‌ها'}
-                      className="text-[rgb(var(--ui-primary))]"
+                      className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white"
                       onClick={() => onToggleOrderExpansion(order.id)}
                     />
                     {order.status !== 'archived' ? (
                       <>
-                        <IconButton action="edit" size="iconSm" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="text-[rgb(var(--ui-primary))]" onClick={() => onEditOrder(order)} />
-                        <IconButton action="archive" size="iconSm" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="text-[rgb(var(--ui-primary))]" onClick={() => onArchiveOrder(order)}>
+                        <IconButton action="edit" size="iconSm" label="ویرایش سفارش" tooltip="ویرایش سفارش" className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white" onClick={() => onEditOrder(order)} />
+                        <IconButton action="archive" size="iconSm" variant="secondary" label="بایگانی سفارش" tooltip="بایگانی سفارش" className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white" onClick={() => onArchiveOrder(order)}>
                           <Archive size={13} />
                         </IconButton>
                       </>
                     ) : (
                       <>
-                        <Button action="restore" showActionIcon size="sm" onClick={() => onUpdateOrderWorkflowStage(order, 'registered')}>بازیابی</Button>
-                        <Button action="delete" showActionIcon size="sm" onClick={() => onDeleteArchivedOrder(order)}>حذف</Button>
+                        <Button action="restore" showActionIcon size="sm" className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white" onClick={() => onUpdateOrderWorkflowStage(order, 'registered')}>بازیابی</Button>
+                        <Button action="delete" showActionIcon size="sm" className="!border-white/70 !bg-white !text-[rgb(var(--ui-primary))] !shadow-[0_6px_16px_rgba(18,33,74,0.08)] hover:!bg-white" onClick={() => onDeleteArchivedOrder(order)}>حذف</Button>
                       </>
                     )}
                   </DataTableActions>
