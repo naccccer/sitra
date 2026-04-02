@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowUpRight,
   BookOpen,
   Clock3,
   ContactRound,
@@ -11,7 +10,6 @@ import {
   PackageCheck,
   ShieldCheck,
   SlidersHorizontal,
-  Sparkles,
   UsersRound,
 } from 'lucide-react';
 import { Button, Card } from '@/components/shared/ui';
@@ -53,28 +51,19 @@ const HOME_SHORTCUTS = [
   { id: 'master-data', label: 'اطلاعات پایه', path: '/master-data', icon: Database, capability: 'canManageProfile', moduleId: 'master-data' },
 ];
 
-const FocusStat = ({ label, value, icon: Icon, accent = false }) => {
-  const ResolvedIcon = Icon;
+const StatPill = ({ label, value, icon }) => {
+  const Icon = icon;
 
   return (
-  <div
-    className={[
-      'rounded-[1.15rem] border p-3 shadow-[var(--shadow-soft)]',
-      accent
-        ? 'border-[rgb(186,198,228)]/90 bg-[linear-gradient(180deg,rgba(241,245,255,0.96),rgba(224,232,252,0.9))]'
-        : 'border-white/70 bg-white/80',
-    ].join(' ')}
-  >
-    <div className="flex items-center justify-between gap-2">
-      <div>
-        <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{label}</div>
-        <div className="mt-1 text-lg font-black tracking-tight text-[rgb(var(--ui-text))]">{value}</div>
-      </div>
-      <div className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[rgb(var(--ui-border-soft))] bg-white/78 text-[rgb(var(--ui-primary))]">
-        <ResolvedIcon size={15} />
+    <div className="inline-flex min-w-[6.25rem] items-center gap-2 rounded-full bg-white px-3 py-2 shadow-[0_10px_24px_rgba(15,23,42,0.08)]">
+      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-primary))]">
+        <Icon size={13} />
+      </span>
+      <div className="min-w-0">
+        <div className="text-[10px] font-bold leading-none text-[rgb(var(--ui-text-muted))]">{label}</div>
+        <div className="mt-0.5 text-sm font-black leading-none text-[rgb(var(--ui-text))]">{value}</div>
       </div>
     </div>
-  </div>
   );
 };
 
@@ -103,51 +92,31 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
     if (!capabilities?.[shortcut.capability]) return false;
     if (!shortcut.moduleId) return true;
     return isModuleEnabled(modules, shortcut.moduleId);
-  });
-  const dateLabel = toPersianDate(now);
-  const timeLabel = toPersianTime(now);
+  }).slice(0, 8);
 
   return (
     <div className="space-y-4 pb-1">
       <div className="grid grid-cols-1 gap-3 xl:grid-cols-12">
         <Card
-          tone="inverse"
+          tone="glass"
           padding="none"
           className="relative overflow-hidden xl:col-span-7"
         >
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_28%),linear-gradient(135deg,rgba(17,25,48,0.98),rgba(28,60,108,0.96)_42%,rgba(15,23,42,0.98))]" />
-          <div className="absolute -left-16 top-6 h-40 w-40 rounded-full bg-[radial-gradient(circle,rgba(120,169,255,0.28),transparent_70%)] blur-2xl" />
-          <div className="absolute -bottom-16 right-8 h-48 w-48 rounded-full bg-[radial-gradient(circle,rgba(34,197,94,0.18),transparent_72%)] blur-2xl" />
-          <div className="relative flex h-full min-h-[14rem] flex-col justify-between p-5 lg:p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-3">
-                <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-3 py-1.5 text-[11px] font-bold text-white/78 backdrop-blur">
-                  <Sparkles size={12} />
-                  خانه روزانه
+          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,239,241,0.9))]" />
+          <div className="relative flex min-h-[11rem] flex-col items-end justify-center gap-4 p-5 text-right lg:p-6">
+            <div className="flex w-full flex-col items-end gap-3">
+              <div className="text-right" dir="ltr">
+                <div className="text-4xl font-black tracking-tight text-[rgb(var(--ui-text))] lg:text-5xl">
+                  {toPersianTime(now)}
                 </div>
-                <div className="max-w-lg text-2xl font-black leading-tight text-white lg:text-3xl">
-                  مرکز فرمانِ امروز
-                </div>
-                <p className="max-w-xl text-sm font-medium leading-7 text-white/72">
-                  میانبرها و وضعیت‌های مهم همین‌جا جمع شده‌اند تا بدون شلوغی، کارهای اصلی را سریع‌تر جلو ببرید.
-                </p>
               </div>
-              <div className="hidden rounded-2xl border border-white/12 bg-white/10 px-3 py-2 text-right text-[11px] font-bold text-white/70 shadow-[0_18px_40px_rgba(0,0,0,0.18)] backdrop-blur md:block">
-                <div>نمای روزانه</div>
-                <div className="mt-1 text-white/90">بento layout</div>
+              <div
+                dir="rtl"
+                className="inline-flex max-w-full items-center rounded-full bg-white px-4 py-2 text-sm font-bold text-[rgb(var(--ui-text-muted))] shadow-[0_10px_28px_rgba(15,23,42,0.08)]"
+                style={{ unicodeBidi: 'plaintext' }}
+              >
+                {toPersianDate(now)}
               </div>
-            </div>
-            <div className="flex flex-wrap items-center gap-2 pt-4">
-              {canSeeOrders ? (
-                <>
-                  <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')} variant="accent">
-                    سفارش جدید
-                  </Button>
-                  <Button action="openDetails" showActionIcon size="sm" onClick={() => navigate('/orders')} variant="secondary">
-                    سفارشات
-                  </Button>
-                </>
-              ) : null}
             </div>
           </div>
         </Card>
@@ -157,54 +126,25 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
           padding="none"
           className="relative overflow-hidden xl:col-span-5"
         >
-          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(248,250,255,0.86))]" />
-          <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,rgba(20,30,60,0.9),rgba(52,92,180,0.85),rgba(15,118,110,0.85))]" />
-          <div className="relative flex h-full min-h-[14rem] flex-col justify-between p-5 lg:p-6">
-            <div className="flex justify-end">
-              <div
-                dir="rtl"
-                className="inline-flex items-center rounded-full border border-[rgb(226,231,243)] bg-white/88 px-3 py-2 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]"
-                style={{ unicodeBidi: 'plaintext' }}
-              >
-                {dateLabel}
+          <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(243,243,245,0.96),rgba(236,236,239,0.92))]" />
+          <div className="relative space-y-3 p-5 lg:p-6">
+            {canSeeOrders ? (
+              <div className="flex justify-start">
+                <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
+                  ثبت سفارش جدید
+                </Button>
               </div>
-            </div>
-            <div className="pt-2">
-              <div className="text-[11px] font-bold uppercase tracking-[0.24em] text-[rgb(var(--ui-text-muted))]">زمان جاری</div>
-              <div className="mt-2 text-4xl font-black tracking-tight text-[rgb(var(--ui-text))] lg:text-5xl" dir="ltr">
-                {timeLabel}
-              </div>
-              <div className="mt-4 flex items-center gap-2 text-sm font-bold text-[rgb(var(--ui-text-muted))]">
-                <Clock3 size={15} />
-                ساعت زنده
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <Card
-          tone="glass"
-          padding="none"
-          className="relative overflow-hidden xl:col-span-8"
-        >
-          <div className="absolute inset-0 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(240,246,255,0.9))]" />
-          <div className="absolute -right-12 top-1/2 h-40 w-40 -translate-y-1/2 rounded-full bg-[radial-gradient(circle,rgba(34,113,255,0.16),transparent_72%)] blur-2xl" />
-          <div className="relative p-4 lg:p-5">
-            <div className="mb-3 flex items-center justify-between gap-2">
-              <div className="text-xs font-black uppercase tracking-[0.22em] text-[rgb(var(--ui-text-muted))]">دسترسی سریع</div>
-              <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{visibleShortcuts.length} میانبر</div>
-            </div>
+            ) : null}
             <div className="flex flex-wrap gap-2">
               {visibleShortcuts.map((shortcut) => (
                 <button
                   key={shortcut.id}
                   type="button"
                   onClick={() => navigate(shortcut.path)}
-                  className="focus-ring group inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-white/70 bg-white/86 px-3 text-xs font-black text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:shadow-[var(--shadow-surface)]"
+                  className="focus-ring inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-white px-3 text-xs font-black text-[rgb(var(--ui-text))] shadow-[0_12px_28px_rgba(15,23,42,0.12)] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:bg-white hover:shadow-[0_18px_34px_rgba(15,23,42,0.14)]"
                 >
-                  <shortcut.icon size={14} className="text-[rgb(var(--ui-text-muted))]" />
+                  <shortcut.icon size={13} className="text-[rgb(var(--ui-text-muted))]" />
                   <span className="whitespace-nowrap">{shortcut.label}</span>
-                  <ArrowUpRight size={12} className="text-[rgb(var(--ui-text-muted))] opacity-0 transition group-hover:opacity-100" />
                 </button>
               ))}
             </div>
@@ -215,16 +155,14 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
           <Card
             tone="glass"
             padding="none"
-            className="relative overflow-hidden xl:col-span-4"
+            className="relative overflow-hidden xl:col-span-12"
           >
-            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(245,247,255,0.98),rgba(232,238,252,0.9))]" />
-            <div className="absolute -left-8 bottom-0 h-24 w-24 rounded-full bg-[radial-gradient(circle,rgba(59,130,246,0.14),transparent_72%)] blur-2xl" />
+            <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(255,255,255,0.95),rgba(246,246,247,0.9))]" />
             <div className="relative p-4 lg:p-5">
-              <div className="mb-3 text-xs font-black uppercase tracking-[0.22em] text-[rgb(var(--ui-text-muted))]">تمرکز امروز</div>
-              <div className="grid grid-cols-1 gap-2">
-                <FocusStat label="در انتظار" value={toPN(summary.pending)} icon={Clock3} accent />
-                <FocusStat label="در حال انجام" value={toPN(summary.processing)} icon={Factory} />
-                <FocusStat label="تحویل شده" value={toPN(summary.delivered)} icon={PackageCheck} accent />
+              <div className="flex flex-wrap gap-2">
+                <StatPill label="در انتظار" value={toPN(summary.pending)} icon={Clock3} />
+                <StatPill label="در حال انجام" value={toPN(summary.processing)} icon={Factory} />
+                <StatPill label="تحویل شده" value={toPN(summary.delivered)} icon={PackageCheck} />
               </div>
             </div>
           </Card>
