@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Button, Card } from '@/components/shared/ui'
+import { Card, SegmentedTabs } from '@/components/shared/ui'
 import { InventoryProductsPanel } from '@/modules/inventory/components/InventoryProductsPanel'
 import { InventoryReceiptsPanel } from '@/modules/inventory/components/InventoryReceiptsPanel'
 import { InventoryDeliveriesPanel } from '@/modules/inventory/components/InventoryDeliveriesPanel'
@@ -78,25 +78,13 @@ export const InventoryV2Page = ({ session }) => {
   return (
     <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
       <Card padding="md" className="space-y-3">
-        <div>
-          <div className="text-base font-black text-slate-900">انبار نسخه ۲</div>
-          <div className="text-xs font-bold text-slate-500">نسخه عملیاتی کامل با یکپارچگی فروش و تولید</div>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {visibleTabs.map((tab) => (
-            <Button
-              key={tab.id}
-              size="sm"
-              variant={resolvedTab === tab.id ? 'primary' : 'secondary'}
-              onClick={() => setSearchParams({ tab: tab.id })}
-            >
-              {tab.label}
-            </Button>
-          ))}
-        </div>
+        <SegmentedTabs
+          tabs={visibleTabs}
+          activeId={resolvedTab}
+          onChange={(tabId) => setSearchParams({ tab: tabId })}
+        />
       </Card>
       {renderContent()}
     </div>
   )
 }
-

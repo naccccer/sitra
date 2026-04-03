@@ -5,8 +5,6 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { humanResourcesApi } from '../services/humanResourcesApi'
 import { EMPTY_FORM, toFormState, trimValue } from '../utils/humanResourcesView'
 
-const HR_TABS = [{ id: 'personnel', label: 'پرسنل' }]
-
 export const HumanResourcesPage = ({ session }) => {
   const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session])
   const canAccessHumanResources = Boolean(session?.capabilities?.canAccessHumanResources)
@@ -231,18 +229,6 @@ export const HumanResourcesPage = ({ session }) => {
 
   return (
     <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
-        {HR_TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            className="rounded-full bg-slate-900 px-3 py-1.5 text-xs font-black text-white transition-colors"
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
       <HumanResourcesWorkspace
         archiveMode={archiveMode}
         busyKey={busyKey}

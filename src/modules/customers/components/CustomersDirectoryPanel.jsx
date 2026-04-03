@@ -48,8 +48,16 @@ export const CustomersDirectoryPanel = ({
         </>
       )}
     >
-      <FilterRow className="justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-2">
+      <FilterRow className="justify-end gap-3">
+        <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
+          <Input
+            value={query}
+            onChange={(event) => onQueryChange(event.target.value)}
+            placeholder="جست‌وجو..."
+            size="sm"
+            className="w-64 shrink-0 bg-white/90"
+            dir="rtl"
+          />
           <IconButton
             action="archive"
             variant={archiveMode ? 'primary' : 'secondary'}
@@ -58,9 +66,6 @@ export const CustomersDirectoryPanel = ({
             onClick={onArchiveModeToggle}
           />
           <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading} loading={loading} />
-        </div>
-        <div className="w-full md:w-64">
-          <Input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="جست‌وجو..." size="sm" className="bg-white/90" />
         </div>
       </FilterRow>
     </WorkspaceToolbar>
@@ -102,13 +107,20 @@ export const CustomersDirectoryPanel = ({
           />
         ) : customers.map((customer) => (
           <DataTableRow key={customer.id} selected={selectedCustomerId === customer.id} tone={customer.isActive ? 'default' : 'muted'}>
-            <DataTableCell align="center" tone="emphasis" className="font-mono tabular-nums tracking-wider text-sky-700" dir="ltr">
+            <DataTableCell
+              align="center"
+              tone="emphasis"
+              className="font-semibold tracking-wider !text-[rgb(28,63,138)]"
+              dir="ltr"
+            >
               {toPN(customer.customerCode || '-')}
             </DataTableCell>
-            <DataTableCell>
+            <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
               <button type="button" className="block w-full text-start" onClick={() => onOpenDetails(customer)}>
-                <div className="truncate text-[rgb(var(--ui-text))]">{customer.fullName || '-'}</div>
-                {customer.companyName ? <div className="mt-0.5 truncate text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{customer.companyName}</div> : null}
+                <div className="flex items-center gap-2">
+                  <span className="truncate">{customer.fullName || '-'}</span>
+                </div>
+                {customer.companyName ? <span className="mr-1 text-[9px] font-medium text-[rgb(var(--ui-text-muted))]">{customer.companyName}</span> : null}
               </button>
             </DataTableCell>
             <DataTableCell align="center">
@@ -119,12 +131,12 @@ export const CustomersDirectoryPanel = ({
             <DataTableCell align="center" className="tabular-nums font-black text-rose-700">{formatAmount(customer.dueAmount || 0)}</DataTableCell>
             <DataTableCell align="center">
               <DataTableActions>
-                <IconButton action="openDetails" label="جزئیات مشتری" tooltip="جزئیات مشتری" onClick={() => onOpenDetails(customer)} />
+                <IconButton action="openDetails" size="iconSm" surface="table" label="جزئیات مشتری" tooltip="جزئیات مشتری" onClick={() => onOpenDetails(customer)} />
                 {canWriteCustomers ? (
                   customer.isActive ? (
-                    <IconButton action="delete" label="انتقال به آرشیو" tooltip="انتقال به آرشیو" onClick={() => onDeleteCustomer(customer)} />
+                    <IconButton action="archive" size="iconSm" surface="table" label="بایگانی مشتری" tooltip="بایگانی مشتری" onClick={() => onDeleteCustomer(customer)} />
                   ) : (
-                    <IconButton action="restore" label="بازیابی مشتری" tooltip="بازیابی مشتری" onClick={() => onRestoreCustomer(customer)} />
+                    <IconButton action="restore" size="iconSm" surface="table" label="بازیابی مشتری" tooltip="بازیابی مشتری" onClick={() => onRestoreCustomer(customer)} />
                   )
                 ) : null}
               </DataTableActions>

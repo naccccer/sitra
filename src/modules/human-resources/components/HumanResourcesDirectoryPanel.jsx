@@ -13,21 +13,28 @@ import {
   IconButton,
   Input,
   PaginationBar,
+  SegmentedTabs,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
 import { toPN } from '@/utils/helpers'
 import { displayName, hasMissingPayrollData } from '../utils/humanResourcesView'
 
 const PAGE_SIZE_OPTIONS = [25, 50, 100]
+const HR_TABS = [{ id: 'personnel', label: 'پرسنل' }]
 
-function EmployeeStatusBadge({ employee }) {
+function getEmployeeStatusMeta(employee) {
   if (employee.isActive === false) {
-    return <Badge tone="neutral">آرشیو</Badge>
+    return { label: 'بایگانی شده', className: 'border border-slate-200 bg-slate-100 text-slate-700' }
   }
   if (hasMissingPayrollData(employee)) {
-    return <Badge tone="warning">داده ناقص</Badge>
+    return { label: 'داده ناقص', className: 'border border-amber-200 bg-amber-100/85 text-amber-800' }
   }
-  return <Badge tone="success">کامل</Badge>
+  return { label: 'فعال', className: 'border border-emerald-200 bg-emerald-100/90 text-emerald-800' }
+}
+
+function EmployeeStatusBadge({ employee }) {
+  const statusMeta = getEmployeeStatusMeta(employee)
+  return <Badge className={`rounded-full !font-semibold shadow-[var(--shadow-soft)] ${statusMeta.className}`} tone="neutral">{statusMeta.label}</Badge>
 }
 
 export function HumanResourcesDirectoryPanel({
@@ -65,8 +72,17 @@ export function HumanResourcesDirectoryPanel({
           </>
         )}
       >
-        <FilterRow className="justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
+      <FilterRow className="justify-between gap-3">
+          <SegmentedTabs tabs={HR_TABS} activeId="personnel" className="w-full md:w-auto" />
+          <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
+            <Input
+              value={query}
+              onChange={(event) => onQueryChange(event.target.value)}
+              placeholder="جست‌وجو..."
+              size="sm"
+              className="w-64 shrink-0 bg-white/90"
+              dir="rtl"
+            />
             <IconButton
               action="archive"
               variant={archiveMode ? 'primary' : 'secondary'}
@@ -76,9 +92,6 @@ export function HumanResourcesDirectoryPanel({
               disabled={busyKey !== ''}
             />
             <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading || busyKey !== ''} loading={loading} />
-          </div>
-          <div className="w-full md:w-64">
-            <Input value={query} onChange={(event) => onQueryChange(event.target.value)} placeholder="جست‌وجو..." size="sm" className="bg-white/90" />
           </div>
         </FilterRow>
       </WorkspaceToolbar>
@@ -99,12 +112,12 @@ export function HumanResourcesDirectoryPanel({
       >
         <DataTableHead>
           <tr>
-            <DataTableHeaderCell align="center">کد</DataTableHeaderCell>
-            <DataTableHeaderCell>نام</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">واحد</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">سمت</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
-            {canWriteEmployees ? <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell> : null}
+            <DataTableHeaderCell align="center" className="text-[12px]">کد</DataTableHeaderCell>
+            <DataTableHeaderCell className="text-[12px]">نام</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="text-[12px]">واحد</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="text-[12px]">سمت</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="text-[12px]">وضعیت</DataTableHeaderCell>
+            {canWriteEmployees ? <DataTableHeaderCell align="center" className="text-[12px]">عملیات</DataTableHeaderCell> : null}
           </tr>
         </DataTableHead>
         <DataTableBody>
@@ -119,8 +132,19 @@ export function HumanResourcesDirectoryPanel({
             />
           ) : employees.map((employee) => (
             <DataTableRow key={employee.id || employee.employeeCode} tone={employee.isActive === false ? 'muted' : 'default'}>
-              <DataTableCell align="center" tone="emphasis" className="tabular-nums" dir="ltr">{toPN(employee.employeeCode || '-')}</DataTableCell>
-              <DataTableCell tone="emphasis">{displayName(employee)}</DataTableCell>
+              <DataTableCell
+                align="center"
+                tone="emphasis"
+                className="font-semibold tracking-wider !text-[rgb(28,63,138)]"
+                dir="ltr"
+              >
+                {toPN(employee.employeeCode || '-')}
+              </DataTableCell>
+              <DataTableCell tone="emphasis" className="text-[12px] text-[rgb(var(--ui-text))]">
+                <div className="flex items-center gap-2">
+                  <span className="truncate">{displayName(employee)}</span>
+                </div>
+              </DataTableCell>
               <DataTableCell align="center">{employee.department || '-'}</DataTableCell>
               <DataTableCell align="center">{employee.jobTitle || '-'}</DataTableCell>
               <DataTableCell align="center"><EmployeeStatusBadge employee={employee} /></DataTableCell>
@@ -129,11 +153,11 @@ export function HumanResourcesDirectoryPanel({
                   <DataTableActions>
                     {!archiveMode ? (
                       <>
-                        <IconButton action="edit" label="ویرایش پرسنل" tooltip="ویرایش پرسنل" onClick={() => onEditEmployee(employee)} disabled={busyKey !== ''} />
-                        <IconButton action="delete" label="انتقال به آرشیو" tooltip="انتقال به آرشیو" onClick={() => onArchiveEmployee(employee)} disabled={busyKey !== ''} />
+                        <IconButton action="edit" size="iconSm" surface="table" label="ویرایش پرسنل" tooltip="ویرایش پرسنل" onClick={() => onEditEmployee(employee)} disabled={busyKey !== ''} />
+                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی پرسنل" tooltip="بایگانی پرسنل" onClick={() => onArchiveEmployee(employee)} disabled={busyKey !== ''} />
                       </>
                     ) : (
-                      <IconButton action="restore" label="بازیابی پرسنل" tooltip="بازیابی پرسنل" onClick={() => onRestoreEmployee(employee)} disabled={busyKey !== ''} />
+                      <IconButton action="restore" size="iconSm" surface="table" label="بازیابی پرسنل" tooltip="بازیابی پرسنل" onClick={() => onRestoreEmployee(employee)} disabled={busyKey !== ''} />
                     )}
                   </DataTableActions>
                 </DataTableCell>
