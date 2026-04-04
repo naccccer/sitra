@@ -139,15 +139,15 @@ export const MatrixSettingsSection = ({
         className="hidden"
       />
 
-      <DataTable minWidthClass="min-w-max whitespace-nowrap">
-        <DataTableHead>
+      <DataTable minWidthClass="min-w-max whitespace-nowrap" className="text-xs">
+        <DataTableHead className="text-[11px]">
           <tr>
-            <DataTableHeaderCell align="center" className="w-12">ردیف</DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-40">نوع شیشه</DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-32">فرآیند</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="w-10 px-2 py-2">ردیف</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="w-32 px-2 py-2">نوع شیشه</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="w-28 px-2 py-2">فرآیند</DataTableHeaderCell>
             {draft.thicknesses.map((thickness) => (
-              <DataTableHeaderCell key={thickness} align="center" className="w-28">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
+              <DataTableHeaderCell key={thickness} align="center" className="w-24 px-1.5 py-1.5">
+                <div className="flex items-center justify-between gap-1 rounded-md border border-slate-200/80 bg-white px-1.5 py-1">
                   <span className="font-black text-slate-700">{toPN(thickness)} میل</span>
                   <IconButton
                     variant="ghost"
@@ -155,12 +155,12 @@ export const MatrixSettingsSection = ({
                     tooltip={`حذف ضخامت ${toPN(thickness)}`}
                     onClick={() => setDraft((previous) => ({ ...previous, thicknesses: previous.thicknesses.filter((item) => item !== thickness) }))}
                   >
-                    <X size={14} />
+                    <X size={12} />
                   </IconButton>
                 </div>
               </DataTableHeaderCell>
             ))}
-            <DataTableHeaderCell align="center" className="w-28">
+            <DataTableHeaderCell align="center" className="w-24 px-1.5 py-1.5">
               {isAddingCol ? (
                 <form
                   onSubmit={(event) => {
@@ -179,14 +179,14 @@ export const MatrixSettingsSection = ({
                     value={newThickness}
                     onChange={(event) => setNewThickness(event.target.value)}
                     placeholder="ضخامت"
-                    className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-center text-xs outline-none"
+                    className="w-full rounded-md border border-blue-300 bg-white px-1.5 py-1 text-center text-[11px] outline-none"
                   />
                 </form>
               ) : (
-                <Button size="sm" variant="secondary" onClick={() => setIsAddingCol(true)} leadingIcon={Plus}>ستون</Button>
+                <Button size="sm" variant="secondary" className="px-2 py-1 text-[11px]" onClick={() => setIsAddingCol(true)} leadingIcon={Plus}>ستون</Button>
               )}
             </DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-12">حذف</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="w-10 px-1.5 py-1.5">حذف</DataTableHeaderCell>
           </tr>
         </DataTableHead>
         <DataTableBody>
@@ -194,39 +194,39 @@ export const MatrixSettingsSection = ({
             <DataTableState colSpan={draft.thicknesses.length + 5} title="ردیفی برای ماتریس ثبت نشده است." />
           ) : draft.glasses.map((row, index) => (
             <DataTableRow key={row.id}>
-              <DataTableCell align="center" tone="emphasis" className="tabular-nums">{toPN(index + 1)}</DataTableCell>
-              <DataTableCell align="center">
+              <DataTableCell align="center" tone="emphasis" className="px-2 py-1.5 tabular-nums">{toPN(index + 1)}</DataTableCell>
+              <DataTableCell align="center" className="px-1.5 py-1">
                 <input
                   type="text"
                   value={row.title}
                   onChange={(event) => handleMatrixUpdate(row.id, 'title', event.target.value)}
-                  className="w-full rounded-lg bg-transparent py-1.5 text-center font-black outline-none focus:bg-slate-100"
+                  className="w-full rounded-md bg-transparent px-1 py-1 text-center font-black outline-none focus:bg-slate-100"
                 />
               </DataTableCell>
-              <DataTableCell align="center">
+              <DataTableCell align="center" className="px-1.5 py-1">
                 <select
                   value={row.process || 'raw'}
                   onChange={(event) => handleMatrixUpdate(row.id, 'process', event.target.value)}
-                  className={`w-full rounded-lg border py-1.5 text-center font-black outline-none ${(row.process || 'raw') === 'raw' ? 'border-slate-200 bg-slate-50' : 'border-rose-200 bg-rose-50 text-rose-700'}`}
+                  className={`w-full rounded-md border px-1 py-1 text-center font-black outline-none ${(row.process || 'raw') === 'raw' ? 'border-slate-200 bg-slate-50' : 'border-rose-200 bg-rose-50 text-rose-700'}`}
                 >
                   <option value="raw">خام</option>
                   <option value="sekurit">سکوریت</option>
                 </select>
               </DataTableCell>
               {draft.thicknesses.map((thickness) => (
-                <DataTableCell key={`${row.id}-${thickness}`} align="center" className="focus-within:bg-blue-50/30">
-                  <PriceInput value={row.prices[thickness] || ''} onChange={(value) => handleMatrixPriceUpdate(row.id, thickness, value)} />
+                <DataTableCell key={`${row.id}-${thickness}`} align="center" className="px-1 py-1 focus-within:bg-blue-50/30">
+                  <PriceInput className="rounded-md px-1 py-1 text-[11px]" value={row.prices[thickness] || ''} onChange={(value) => handleMatrixPriceUpdate(row.id, thickness, value)} />
                 </DataTableCell>
               ))}
-              <DataTableCell />
-              <DataTableCell align="center">
+              <DataTableCell className="px-1 py-1" />
+              <DataTableCell align="center" className="px-1 py-1">
                 <IconButton
                   variant="ghost"
                   label="حذف ردیف"
                   tooltip="حذف ردیف"
                   onClick={() => setDraft((previous) => ({ ...previous, glasses: previous.glasses.filter((item) => item.id !== row.id) }))}
                 >
-                  <Trash2 size={14} />
+                  <Trash2 size={12} />
                 </IconButton>
               </DataTableCell>
             </DataTableRow>
