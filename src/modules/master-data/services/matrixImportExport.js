@@ -38,20 +38,24 @@ const toStrictNonNegativeInt = (value) => {
 };
 
 const parseThicknessValue = (value) => {
-  const normalized = normalizeDigitsToLatin(String(value ?? ''));
-  const match = normalized.match(/\d+/);
-  if (!match) return null;
-  return toStrictPositiveInt(match[0]);
+  const match = normalizeDigitsToLatin(String(value ?? '')).match(/\d+/);
+  return match ? toStrictPositiveInt(match[0]) : null;
 };
 
-const dedupeAndSortThicknesses = (values) => (
-  [...new Set(values.map(parseThicknessValue).filter((item) => item !== null))].sort((a, b) => a - b)
-);
+const dedupeThicknessesInOrder = (values) => {
+  const seen = new Set();
+  return values.reduce((ordered, value) => {
+    const parsed = parseThicknessValue(value);
+    if (parsed === null || seen.has(parsed)) return ordered;
+    seen.add(parsed);
+    ordered.push(parsed);
+    return ordered;
+  }, []);
+};
 
 const escapeCsvCell = (value) => {
   const raw = String(value ?? '');
-  if (!/[",\r\n]/.test(raw)) return raw;
-  return `"${raw.replace(/"/g, '""')}"`;
+  return /[",\r\n]/.test(raw) ? `"${raw.replace(/"/g, '""')}"` : raw;
 };
 
 const xmlEscape = (value) => String(value ?? '')
@@ -159,7 +163,7 @@ const materializeMatrixFromRows = (rows) => {
     throw new Error('فایل ایمپورت باید شامل هدر و حداقل یک ردیف باشد.');
   }
 
-  const thicknesses = dedupeAndSortThicknesses((rows[0] || []).slice(2));
+  const thicknesses = dedupeThicknessesInOrder((rows[0] || []).slice(2));
   if (thicknesses.length === 0) throw new Error('ستون‌های ضخامت در فایل پیدا نشد.');
 
   const idBase = Date.now();
@@ -183,10 +187,10 @@ const materializeMatrixFromRows = (rows) => {
 };
 
 const resolveThicknessesForExport = (thicknesses, glasses) => {
-  const fromCatalog = dedupeAndSortThicknesses(Array.isArray(thicknesses) ? thicknesses : []);
+  const fromCatalog = dedupeThicknessesInOrder(Array.isArray(thicknesses) ? thicknesses : []);
   if (fromCatalog.length > 0) return fromCatalog;
   const fromRows = (Array.isArray(glasses) ? glasses : []).flatMap((row) => Object.keys(row?.prices || {}));
-  return dedupeAndSortThicknesses(fromRows);
+  return dedupeThicknessesInOrder(fromRows);
 };
 
 export const serializeMatrixCsv = ({ thicknesses = [], glasses = [] } = {}) => {

@@ -1,107 +1,22 @@
 import React from 'react';
-import { CheckCircle2, Flame, Layers, Plus, Ruler, Settings, ShieldAlert } from 'lucide-react';
-import { toPN } from '@/utils/helpers';
-import { glassProcess } from '@/modules/sales/components/customer/order-form/orderFormUtils';
+import { CheckCircle2, Plus, Settings, ShieldAlert } from 'lucide-react';
 import { CustomItemsTable } from '@/modules/sales/components/customer/order-form/CustomItemsTable';
+import {
+  GlassRow,
+  LaminatedPaneEditor,
+  LaminateLayersEditor,
+  SpacerConnectorRow,
+} from '@/modules/sales/components/customer/order-form/GlassAssemblyEditors';
 import { PriceInput } from '@/components/shared/PriceInput';
-
-const getCatalogDefaults = (catalog) => ({
-  glasses: Array.isArray(catalog?.glasses) ? catalog.glasses : [],
-  thicknesses: Array.isArray(catalog?.thicknesses) ? catalog.thicknesses : [],
-  spacers: Array.isArray(catalog?.connectors?.spacers) ? catalog.connectors.spacers : [],
-});
-
-const GlassRow = ({ data, onChange, catalog, layerKey, isUnavailable = false }) => {
-  const defaults = getCatalogDefaults(catalog);
-  const targetProcess = data.isSekurit ? 'sekurit' : 'raw';
-  const glassOptions = defaults.glasses.filter((glass) => glassProcess(glass) === targetProcess);
-  const selectedGlass = defaults.glasses.find((glass) => glass.id === data.glassId);
-  const selectedExists = glassOptions.some((glass) => glass.id === data.glassId);
-  const layerLabel = isUnavailable ? 'ناموجود' : 'شیشه';
-
-  return (
-    <div data-layer-key={layerKey} className={`relative mx-1 flex flex-col overflow-hidden rounded-xl border shadow-sm sm:h-11 sm:flex-row ${isUnavailable ? 'border-red-300 bg-red-50/40' : 'border-slate-200 bg-white'}`}>
-      <div className={`${isUnavailable ? 'bg-red-600' : 'bg-slate-900'} flex h-7 w-full shrink-0 items-center justify-center text-[10px] font-black text-white sm:h-auto sm:w-8 sm:[writing-mode:vertical-rl]`}>
-        <span className="sm:rotate-180">{layerLabel}</span>
-      </div>
-      <div className={`flex flex-1 flex-wrap items-center gap-1.5 p-1 ${isUnavailable ? 'bg-red-50/20' : 'bg-white'}`}>
-        <select value={data.glassId} onChange={(event) => onChange('glassId', event.target.value)} className={`h-8 min-w-0 grow basis-[130px] rounded-lg border bg-slate-50 px-2 py-1.5 text-[11px] font-black outline-none ${isUnavailable ? 'border-red-300 text-red-700' : 'border-slate-200'}`}>
-          {!selectedExists && selectedGlass && <option value={selectedGlass.id}>{selectedGlass.title} (ناموجود)</option>}
-          {glassOptions.map((glass) => <option key={glass.id} value={glass.id}>{glass.title}</option>)}
-        </select>
-        <select value={data.thick} onChange={(event) => onChange('thick', parseInt(event.target.value, 10))} className="h-8 w-20 rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5 text-center text-[11px] font-black outline-none">
-          {defaults.thicknesses.map((thickness) => <option key={thickness} value={thickness}>{toPN(thickness)} میل</option>)}
-        </select>
-        <label className={`flex h-8 grow basis-[95px] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.isSekurit ? 'border-rose-200 bg-rose-50 text-rose-600' : 'border-slate-200 bg-white text-slate-400'}`}>
-          <input type="checkbox" checked={data.isSekurit} onChange={(event) => onChange('isSekurit', event.target.checked)} className="hidden" />
-          <Flame size={12} />
-          سکوریت
-        </label>
-        <label className={`flex h-8 grow basis-[95px] cursor-pointer items-center justify-center gap-1 rounded-lg border text-[10px] font-black ${data.hasEdge ? 'border-indigo-200 bg-indigo-50 text-indigo-700' : 'border-slate-200 bg-white text-slate-400'}`}>
-          <input type="checkbox" checked={data.hasEdge} onChange={(event) => onChange('hasEdge', event.target.checked)} className="hidden" />
-          <Ruler size={12} />
-          ابزار
-        </label>
-      </div>
-    </div>
-  );
-};
-
-const ConnectorRow = ({ value, onChange, type, catalog }) => {
-  const defaults = getCatalogDefaults(catalog);
-  if (type === 'interlayer') {
-    return (
-      <div className="flex justify-center py-1">
-        <div className="h-1.5 w-24 rounded-full bg-indigo-200 opacity-60" />
-      </div>
-    );
-  }
-  return (
-    <div className="relative z-20 -my-2 flex justify-center py-2">
-      <div className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 shadow-sm">
-        <Layers size={14} className="text-blue-500" />
-        <select value={value} onChange={(event) => onChange(event.target.value)} className="bg-transparent text-xs font-black text-blue-700 outline-none">
-          {defaults.spacers.map((spacer) => <option key={spacer.id} value={spacer.id}>{spacer.title}</option>)}
-        </select>
-      </div>
-    </div>
-  );
-};
-
-const LaminatedPaneEditor = ({ assembly, paneKey, config, updateConfigLayer, catalog, unavailableLayers }) => {
-  const paneData = config[assembly][paneKey];
-  const layer1Key = `${assembly}.${paneKey}.glass1`;
-  const layer2Key = `${assembly}.${paneKey}.glass2`;
-  return (
-    <div className="relative z-10 mb-1.5 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2">
-        <span className="text-xs font-black text-slate-800">{paneKey === 'pane1' ? 'جداره بیرونی' : 'جداره داخلی'}</span>
-        <label className="flex cursor-pointer flex-row-reverse items-center gap-2">
-          <span className="text-[10px] font-bold text-slate-500">تبدیل به لمینت</span>
-          <input type="checkbox" checked={paneData.isLaminated} onChange={(event) => updateConfigLayer(assembly, paneKey, 'isLaminated', event.target.checked)} className="hidden" />
-          <div className={`flex h-4.5 w-8 rounded-full p-0.5 transition-all ${paneData.isLaminated ? 'bg-indigo-400' : 'bg-slate-300'}`}>
-            <div className={`h-3.5 w-3.5 rounded-full bg-white shadow-sm ${paneData.isLaminated ? '-translate-x-3.5' : ''}`} />
-          </div>
-        </label>
-      </div>
-      <div className={`bg-slate-50/50 p-2.5 ${paneData.isLaminated ? 'space-y-1.5' : ''}`}>
-        <GlassRow layerKey={layer1Key} isUnavailable={Boolean(unavailableLayers[layer1Key])} data={paneData.glass1} onChange={(field, value) => updateConfigLayer(assembly, paneKey, 'glass1', value, field)} catalog={catalog} />
-        {paneData.isLaminated && (
-          <>
-            <ConnectorRow type="interlayer" />
-            <GlassRow layerKey={layer2Key} isUnavailable={Boolean(unavailableLayers[layer2Key])} data={paneData.glass2} onChange={(field, value) => updateConfigLayer(assembly, paneKey, 'glass2', value, field)} catalog={catalog} />
-          </>
-        )}
-      </div>
-    </div>
-  );
-};
+import { toPN } from '@/utils/helpers';
 
 export const OrderConfigurationSection = ({
   activeTab,
   setActiveTab,
   config,
   updateConfigLayer,
+  addLaminateLayer,
+  removeLaminateLayer,
   catalog,
   unavailableLayers,
   dimensions,
@@ -121,7 +36,12 @@ export const OrderConfigurationSection = ({
   customDraftState,
   onGoToCustomItems,
 }) => {
-  const tabs = [{ id: 'single', label: 'تک جداره' }, { id: 'double', label: 'دوجداره' }, { id: 'laminate', label: 'لمینت' }, { id: 'custom', label: 'سفارشی' }];
+  const tabs = [
+    { id: 'single', label: 'تک جداره' },
+    { id: 'double', label: 'دوجداره' },
+    { id: 'laminate', label: 'لمینت' },
+    { id: 'custom', label: 'سفارشی' },
+  ];
   const isCustomTab = activeTab === 'custom';
   const customUnitCode = String(customDraftState?.unitCode || 'm_square');
   const isCustomQtyUnit = isCustomTab && customUnitCode === 'qty';
@@ -140,21 +60,37 @@ export const OrderConfigurationSection = ({
 
       <div className="flex flex-col items-start gap-8 p-6 lg:flex-row">
         <div className="w-full flex-1">
-          {activeTab === 'single' && <div className="mx-auto max-w-2xl"><GlassRow layerKey="single.glass1" isUnavailable={Boolean(unavailableLayers['single.glass1'])} data={config.single} onChange={(field, value) => updateConfigLayer('single', field, null, value)} catalog={catalog} /></div>}
-          {activeTab === 'laminate' && (
-            <div className="mx-auto max-w-2xl rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
-              <GlassRow layerKey="laminate.glass1" isUnavailable={Boolean(unavailableLayers['laminate.glass1'])} data={config.laminate.glass1} onChange={(field, value) => updateConfigLayer('laminate', 'glass1', field, value)} catalog={catalog} />
-              <ConnectorRow type="interlayer" />
-              <GlassRow layerKey="laminate.glass2" isUnavailable={Boolean(unavailableLayers['laminate.glass2'])} data={config.laminate.glass2} onChange={(field, value) => updateConfigLayer('laminate', 'glass2', field, value)} catalog={catalog} />
+          {activeTab === 'single' && (
+            <div className="mx-auto max-w-2xl">
+              <GlassRow
+                layerKey="single.glass1"
+                unavailableState={unavailableLayers['single.glass1'] || null}
+                data={config.single}
+                onChange={(field, value) => updateConfigLayer('single', field, null, value)}
+                catalog={catalog}
+              />
             </div>
           )}
+
+          {activeTab === 'laminate' && (
+            <LaminateLayersEditor
+              laminateConfig={config.laminate}
+              catalog={catalog}
+              unavailableLayers={unavailableLayers}
+              updateConfigLayer={updateConfigLayer}
+              onAddLaminateLayer={addLaminateLayer}
+              onRemoveLaminateLayer={removeLaminateLayer}
+            />
+          )}
+
           {activeTab === 'double' && (
             <div className="mx-auto flex max-w-2xl flex-col gap-1.5">
               <LaminatedPaneEditor assembly="double" paneKey="pane1" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} unavailableLayers={unavailableLayers} />
-              <ConnectorRow type="spacer" value={config.double.spacerId} onChange={(value) => updateConfigLayer('double', 'spacerId', null, value)} catalog={catalog} />
+              <SpacerConnectorRow value={config.double.spacerId} onChange={(value) => updateConfigLayer('double', 'spacerId', null, value)} catalog={catalog} />
               <LaminatedPaneEditor assembly="double" paneKey="pane2" config={config} updateConfigLayer={updateConfigLayer} catalog={catalog} unavailableLayers={unavailableLayers} />
             </div>
           )}
+
           {activeTab === 'custom' && (
             <div className="mx-auto w-full max-w-2xl space-y-3">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-inner">

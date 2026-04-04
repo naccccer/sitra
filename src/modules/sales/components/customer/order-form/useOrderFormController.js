@@ -22,8 +22,13 @@ import {
 import { createOrderFormHandlers } from '@/modules/sales/components/customer/order-form/orderFormHandlers';
 import { useOrderCustomerLinks } from '@/modules/sales/components/customer/order-form/useOrderCustomerLinks';
 import { clearOrderCreateDraft, readOrderCreateDraft, writeOrderCreateDraft } from '@/modules/sales/components/customer/order-form/orderDraftStorage';
-import { buildInitialConfig, resolveCatalogDefaults } from '@/modules/sales/components/customer/order-form/orderFormConfigDefaults';
-import { buildManualErrors, createConfigLayerUpdater } from '@/modules/sales/components/customer/order-form/orderFormControllerHelpers';
+import { normalizeOrderFormConfig, resolveCatalogDefaults } from '@/modules/sales/components/customer/order-form/orderFormConfigDefaults';
+import {
+  buildManualErrors,
+  createConfigLayerUpdater,
+  createLaminateLayerAdder,
+  createLaminateLayerRemover,
+} from '@/modules/sales/components/customer/order-form/orderFormControllerHelpers';
 export const useOrderFormController = ({
   catalog,
   editingOrder,
@@ -79,7 +84,7 @@ export const useOrderFormController = ({
       ? editingOrder.payments.map(normalizePayment)
       : (Array.isArray(initialCreateDraft?.payments) ? initialCreateDraft.payments.map(normalizePayment) : [])
   ));
-  const [config, setConfig] = useState(() => initialCreateDraft?.config || buildInitialConfig(catalog));
+  const [config, setConfig] = useState(() => normalizeOrderFormConfig(initialCreateDraft?.config, catalog));
 
   const customerLinks = useOrderCustomerLinks({
     isStaffContext,
@@ -124,6 +129,14 @@ export const useOrderFormController = ({
   const updateConfigLayer = useMemo(
     () => createConfigLayerUpdater({ setConfig, catalogDefaults, catalog }),
     [catalog, catalogDefaults, setConfig],
+  );
+  const addLaminateLayer = useMemo(
+    () => createLaminateLayerAdder({ setConfig, catalogDefaults }),
+    [catalogDefaults, setConfig],
+  );
+  const removeLaminateLayer = useMemo(
+    () => createLaminateLayerRemover({ setConfig, catalogDefaults }),
+    [catalogDefaults, setConfig],
   );
 
   const { validationErrors, summaryErrors, unavailableLayers, pricingDetails } = usePricingCalculator(dimensions, activeTab, config, catalog);
@@ -256,6 +269,8 @@ export const useOrderFormController = ({
     config,
     setConfig,
     updateConfigLayer,
+    addLaminateLayer,
+    removeLaminateLayer,
     itemPricing,
     setItemPricing,
     manualDraft,

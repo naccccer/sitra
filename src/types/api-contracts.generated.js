@@ -34,7 +34,7 @@ export const __type_AccountingPayrollWorkspaceResponse = null
  */
 export const __type_BootstrapResponse = null
 /**
- * @typedef { glasses: Array<Record<string, any>>, operations: Array<Record<string, any>>, connectors: Record<string, any>, fees: Record<string, any>, jumboRules?: Array<Record<string, any>>, roundStep?: number } CatalogSaveRequest
+ * @typedef { glasses: Array<Record<string, any>>, thicknesses?: Array<number>, operations: Array<Record<string, any>>, connectors: Record<string, any>, fees: Record<string, any>, jumboRules?: Array<Record<string, any>>, roundStep?: number } CatalogSaveRequest
  */
 export const __type_CatalogSaveRequest = null
 /**

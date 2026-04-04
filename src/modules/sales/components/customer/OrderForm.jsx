@@ -40,6 +40,8 @@ export const OrderForm = ({
     config,
     setConfig,
     updateConfigLayer,
+    addLaminateLayer,
+    removeLaminateLayer,
     itemPricing,
     setItemPricing,
     manualDraft,
@@ -157,6 +159,8 @@ export const OrderForm = ({
         setActiveTab={setActiveTab}
         config={config}
         updateConfigLayer={updateConfigLayer}
+        addLaminateLayer={addLaminateLayer}
+        removeLaminateLayer={removeLaminateLayer}
         catalog={catalog}
         unavailableLayers={unavailableLayers}
         dimensions={dimensions}

@@ -1,9 +1,16 @@
-﻿import React from 'react';
+import React from 'react';
 import { Layers } from 'lucide-react';
 import { normalizeCustomUnitLabel } from '@/utils/customItemUnits';
+import { normalizeLaminateConfig } from '@/utils/laminateConfig';
 import { toPN } from '../../utils/helpers';
 
 const DEFAULT_UNIT_LABEL = '\u0639\u062f\u062f';
+
+const formatThicknessLabel = (thick) => {
+  if (thick === undefined || thick === null || thick === '') return '-';
+  const raw = String(thick);
+  return raw.endsWith('mm') ? `${toPN(raw.slice(0, -2))}mm` : `${toPN(raw)}mm`;
+};
 
 export const StructureDetails = ({ item, catalog }) => {
   const itemType = String(item?.itemType || 'catalog');
@@ -52,13 +59,10 @@ export const StructureDetails = ({ item, catalog }) => {
 
   const getGlassLabel = (layer = {}) => {
     const glass = getGlassById(layer?.glassId);
-    const thick = layer?.thick ?? '-';
-    return `${glass?.title || 'فلوت'} ${toPN(thick)}mm`;
+    return `${glass?.title || 'فلوت'} ${formatThicknessLabel(layer?.thick)}`;
   };
 
   const getSpacerLabel = (spacerId) => catalog?.connectors?.spacers?.find((s) => s.id === spacerId)?.title || 'اسپیسر';
-  const getInterlayerLabel = (interlayerId) => catalog?.connectors?.interlayers?.find((x) => x.id === interlayerId)?.title || 'PVB';
-
   const renderGlassLayerRow = (marker, layer = {}) => (
     <div className="flex items-center gap-1 text-[11px]">
       <span className="font-black text-slate-400">{toPN(marker)}</span>
@@ -70,22 +74,27 @@ export const StructureDetails = ({ item, catalog }) => {
     </div>
   );
 
-  const renderLaminatedBlock = ({ prefix = '1', title = 'لمینت', config = {} }) => (
-    <div className="space-y-1">
-      <div className="flex items-center gap-1 text-[11px]">
-        <span className="font-black text-slate-400">{toPN(`${prefix}-`)}</span>
-        <span className="font-black text-slate-700">{title}</span>
-      </div>
-      <div className="space-y-1 pr-4">
-        {renderGlassLayerRow(`${prefix}.1-`, config?.glass1 || {})}
-        <div className="flex items-center gap-2 py-0.5 text-[10px] font-bold text-blue-500">
-          <Layers size={10} className="opacity-50" />
-          {getInterlayerLabel(config?.interlayerId)}
+  const renderLaminatedBlock = ({ prefix = '1', title = 'لمینت', config = {} }) => {
+    const hasLaminateData = Array.isArray(config?.layers) ? config.layers.length > 0 : Boolean(config?.glass1 || config?.glass2);
+    if (!hasLaminateData) return null;
+
+    const laminateConfig = normalizeLaminateConfig(config);
+    return (
+      <div className="space-y-1">
+        <div className="flex items-center gap-1 text-[11px]">
+          <span className="font-black text-slate-400">{toPN(`${prefix}-`)}</span>
+          <span className="font-black text-slate-700">{title}</span>
         </div>
-        {renderGlassLayerRow(`${prefix}.2-`, config?.glass2 || {})}
+        <div className="space-y-1 pr-4">
+          {laminateConfig.layers.map((layer, index) => (
+            <div key={`${prefix}-${index}`}>
+              {renderGlassLayerRow(`${prefix}.${index + 1}-`, layer)}
+            </div>
+          ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const patternLabel = () => {
     if (!hasPattern) return '';

@@ -1,8 +1,9 @@
-﻿import {
+import {
   buildCatalogPricingMeta,
   buildManualPricingMeta,
 } from '@/modules/sales/domain/invoice';
 import { normalizeCustomUnitLabel, resolveCustomUnitCode } from '@/utils/customItemUnits';
+import { normalizeLaminateConfig } from '@/utils/laminateConfig';
 
 const DEFAULT_UNIT_LABEL = '\u0639\u062f\u062f';
 
@@ -120,5 +121,8 @@ export const normalizeLoadedItem = (item) => {
         baseUnitPrice: Math.max(0, parseIntSafe(item?.custom?.baseUnitPrice ?? unitPrice, 0)),
       }
       : undefined,
+    config: itemType === 'catalog' && item?.activeTab === 'laminate'
+      ? normalizeLaminateConfig(item?.config)
+      : item?.config,
   };
 };

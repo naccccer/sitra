@@ -13,11 +13,11 @@ const toComparableRows = (rows = []) => rows.map((row) => ({
 }));
 
 describe('matrix import/export service', () => {
-  it('exports and imports CSV matrix', () => {
+  it('exports and imports CSV matrix while preserving custom thickness order', () => {
     const source = {
-      thicknesses: [4, 6],
+      thicknesses: [6, 4],
       glasses: [
-        { id: 'g1', title: 'فلوت', process: 'raw', prices: { 4: 100000, 6: 120000 } },
+        { id: 'g1', title: 'فلوت', process: 'raw', prices: { 6: 120000, 4: 100000 } },
         { id: 'g2', title: 'سوپر کلیر', process: 'sekurit', prices: { 4: 150000 } },
       ],
     };
@@ -25,26 +25,26 @@ describe('matrix import/export service', () => {
     const csv = serializeMatrixCsv(source);
     const parsed = parseMatrixCsvText(csv);
 
-    expect(parsed.thicknesses).toEqual([4, 6]);
+    expect(parsed.thicknesses).toEqual([6, 4]);
     expect(toComparableRows(parsed.glasses)).toEqual([
       { title: 'فلوت', process: 'raw', prices: { 4: 100000, 6: 120000 } },
       { title: 'سوپر کلیر', process: 'sekurit', prices: { 4: 150000 } },
     ]);
   });
 
-  it('imports CSV containing Persian digits and separators', () => {
+  it('imports CSV containing Persian digits and preserves file column order', () => {
     const csv = [
-      'title,process,4,6',
-      'فلوت,خام,"۱۲۰,۰۰۰","۱۵۰٬۰۰۰"',
-      'سوپر کلیر,سکوریت,200000,',
+      'title,process,8,4,6',
+      'فلوت,خام,"۱۸۰,۰۰۰","۱۲۰,۰۰۰","۱۵۰٬۰۰۰"',
+      'سوپر کلیر,سکوریت,,200000,210000',
     ].join('\n');
 
     const parsed = parseMatrixImportText(csv, 'csv');
 
-    expect(parsed.thicknesses).toEqual([4, 6]);
+    expect(parsed.thicknesses).toEqual([8, 4, 6]);
     expect(toComparableRows(parsed.glasses)).toEqual([
-      { title: 'فلوت', process: 'raw', prices: { 4: 120000, 6: 150000 } },
-      { title: 'سوپر کلیر', process: 'sekurit', prices: { 4: 200000 } },
+      { title: 'فلوت', process: 'raw', prices: { 4: 120000, 6: 150000, 8: 180000 } },
+      { title: 'سوپر کلیر', process: 'sekurit', prices: { 4: 200000, 6: 210000 } },
     ]);
   });
 
@@ -69,4 +69,3 @@ describe('matrix import/export service', () => {
     expect(() => parseMatrixImportText('title,process\nفلوت,raw', 'csv')).toThrow();
   });
 });
-

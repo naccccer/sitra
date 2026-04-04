@@ -184,15 +184,17 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       <div className="flex min-h-0 flex-1 flex-col px-1">
 
       {wrapWithTooltip(
-        <div className={`shell-brand-surface mb-3 w-full rounded-[24px] transition-[padding,border-radius] duration-[var(--motion-base)] ${isRailCollapsed ? 'p-2' : 'px-3 py-2.5'}`}>
+        <div className={`shell-brand-surface mb-3 rounded-[24px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-fit p-1.5' : 'w-full px-3 py-2.5'}`}>
           <div className={`flex items-center transition-[gap] duration-[var(--motion-base)] ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
-            <div className="shell-brand-mark flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[18px] text-base font-black text-white transition-transform duration-[var(--motion-base)]">
-              {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className="h-full w-full object-cover" /> : fallbackLetter}
+            <div className={`shell-brand-mark flex shrink-0 items-center justify-center overflow-hidden text-base font-black text-white transition-[transform,border-radius,width,height] duration-[var(--motion-base)] ${isRailCollapsed ? 'h-10 w-10 rounded-[16px]' : 'h-11 w-11 rounded-[18px]'}`}>
+              {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className={`h-full w-full ${isRailCollapsed ? 'object-contain p-1' : 'object-cover'}`} /> : fallbackLetter}
             </div>
-            <div className={`overflow-hidden transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
-              <div className="text-sm font-black text-[rgb(var(--ui-text))]">{normalizedProfile.brandName}</div>
-              <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
-            </div>
+            {!isRailCollapsed && (
+              <div className={`overflow-hidden transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
+                <div className="text-sm font-black text-[rgb(var(--ui-text))]">{normalizedProfile.brandName}</div>
+                <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
+              </div>
+            )}
           </div>
         </div>,
         normalizedProfile.brandName,

@@ -1,4 +1,6 @@
 import { useMemo } from 'react';
+import { toPN } from '@/utils/helpers';
+import { normalizeLaminateConfig } from '@/utils/laminateConfig';
 
 const glassProcess = (glass) => glass?.process || 'raw';
 const normalizeGlassTitle = (title) => (title || '').toString().trim().toLowerCase();
@@ -7,10 +9,14 @@ const LABELS = {
   single: '\u0634\u06cc\u0634\u0647 \u062a\u06a9\u200c\u062c\u062f\u0627\u0631\u0647',
   pane1: '\u062c\u062f\u0627\u0631\u0647 \u0628\u06cc\u0631\u0648\u0646\u06cc',
   pane2: '\u062c\u062f\u0627\u0631\u0647 \u062f\u0627\u062e\u0644\u06cc',
-  laminateGlass1: '\u0644\u0645\u06cc\u0646\u062a - \u0644\u0627\u06cc\u0647 \u0627\u0648\u0644',
-  laminateGlass2: '\u0644\u0645\u06cc\u0646\u062a - \u0644\u0627\u06cc\u0647 \u062f\u0648\u0645',
   paneLayer1: '\u0644\u0627\u06cc\u0647 \u0627\u0648\u0644',
   paneLayer2: '\u0644\u0627\u06cc\u0647 \u062f\u0648\u0645',
+};
+
+const getVariableUnitPrice = (unit, basePrice, effectiveArea, perimeter) => {
+  if (unit === 'm_square') return basePrice * effectiveArea;
+  if (unit === 'm_length') return basePrice * perimeter;
+  return basePrice;
 };
 
 export const usePricingCalculator = (dimensions, activeTab, config, catalog) => {
@@ -19,6 +25,11 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
     const w = parseFloat(dimensions.width) || 0;
     const h = parseFloat(dimensions.height) || 0;
     const maxLimits = catalog.factoryLimits;
+    const glasses = Array.isArray(catalog.glasses) ? catalog.glasses : [];
+    const interlayers = Array.isArray(catalog.connectors?.interlayers) ? catalog.connectors.interlayers : [];
+    const laminateConfig = normalizeLaminateConfig(config.laminate, {
+      interlayers,
+    });
 
     const addIssue = (message, kind = 'summary', layerKey = null) => {
       issues.push({ message, kind, layerKey });
@@ -28,8 +39,6 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       addIssue(`\u0627\u0628\u0639\u0627\u062f \u0627\u0632 \u062d\u062f\u0627\u06a9\u062b\u0631 \u0638\u0631\u0641\u06cc\u062a \u06a9\u0627\u0631\u062e\u0627\u0646\u0647 (${maxLimits.maxWidth}\u00d7${maxLimits.maxHeight}) \u0628\u06cc\u0634\u062a\u0631 \u0627\u0633\u062a.`);
     }
 
-    const glasses = Array.isArray(catalog.glasses) ? catalog.glasses : [];
-
     const validateGlassLayer = (layer, label, layerKey) => {
       if (!layer?.glassId) {
         addIssue(`${label}: \u0646\u0648\u0639 \u0634\u06cc\u0634\u0647 \u0627\u0646\u062a\u062e\u0627\u0628 \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.`);
@@ -38,7 +47,7 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
 
       const selectedGlass = glasses.find((g) => g.id === layer.glassId);
       if (!selectedGlass) {
-        addIssue(`${label}: \u0631\u062f\u06cc\u0641 \u0634\u06cc\u0634\u0647 \u0627\u0646\u062a\u062e\u0627\u0628\u06cc \u067e\u06cc\u062f\u0627 \u0646\u0634\u062f.`, 'unavailable', layerKey);
+        addIssue(`${label}: \u0631\u062f\u06cc\u0641 \u0634\u06cc\u0634\u0647 \u0627\u0646\u062a\u062e\u0627\u0628\u06cc \u067e\u06cc\u062f\u0627 \u0646\u0634\u062f.`, 'unavailable_glass', layerKey);
         return;
       }
 
@@ -53,12 +62,12 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
           addIssue(`${label}: \u0646\u0648\u0639 \u0641\u0631\u0622\u06cc\u0646\u062f \u0628\u0627 \u0648\u0636\u0639\u06cc\u062a \u0633\u06a9\u0648\u0631\u06cc\u062a \u0647\u0645\u200c\u062e\u0648\u0627\u0646\u06cc \u0646\u062f\u0627\u0631\u062f.`);
         } else {
           const processLabel = expectedProcess === 'sekurit' ? '\u0633\u06a9\u0648\u0631\u06cc\u062a' : '\u062e\u0627\u0645';
-          addIssue(`${label}: \u0631\u062f\u06cc\u0641 ${processLabel} \u0647\u0645\u200c\u0639\u0646\u0648\u0627\u0646 \u062f\u0631 \u0645\u0627\u062a\u0631\u06cc\u0633 \u062a\u0639\u0631\u06cc\u0641 \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.`, 'unavailable', layerKey);
+          addIssue(`${label}: \u0631\u062f\u06cc\u0641 ${processLabel} \u0647\u0645\u200c\u0639\u0646\u0648\u0627\u0646 \u062f\u0631 \u0645\u0627\u062a\u0631\u06cc\u0633 \u062a\u0639\u0631\u06cc\u0641 \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.`, 'unavailable_glass', layerKey);
         }
       }
 
       if (!Object.prototype.hasOwnProperty.call(selectedGlass.prices || {}, layer.thick)) {
-        addIssue(`${label}: \u0642\u06cc\u0645\u062a \u0636\u062e\u0627\u0645\u062a ${layer.thick} \u0645\u06cc\u0644\u06cc\u200c\u0645\u062a\u0631 \u062a\u0639\u0631\u06cc\u0641 \u0646\u0634\u062f\u0647 \u0627\u0633\u062a.`, 'unavailable', layerKey);
+        addIssue(`${label}: ضخامت انتخاب شده موجود نیست.`, 'unavailable_thickness', layerKey);
       }
     };
 
@@ -80,21 +89,22 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       validatePane(config.double?.pane1, LABELS.pane1, 'double.pane1');
       validatePane(config.double?.pane2, LABELS.pane2, 'double.pane2');
     } else if (activeTab === 'laminate') {
-      validateGlassLayer(config.laminate?.glass1, LABELS.laminateGlass1, 'laminate.glass1');
-      validateGlassLayer(config.laminate?.glass2, LABELS.laminateGlass2, 'laminate.glass2');
+      laminateConfig.layers.forEach((layer, index) => {
+        validateGlassLayer(layer, `لمینت - لایه ${toPN(index + 1)}`, `laminate.layers.${index}`);
+      });
     }
 
     const unavailableMap = {};
     issues.forEach((issue) => {
-      if (issue.kind === 'unavailable' && issue.layerKey) {
-        unavailableMap[issue.layerKey] = true;
+      if (issue.layerKey) {
+        unavailableMap[issue.layerKey] = issue.kind;
       }
     });
 
     return {
       validationErrors: issues.map((issue) => issue.message),
       summaryErrors: issues
-        .filter((issue) => issue.kind === 'summary')
+        .filter((issue) => issue.kind === 'summary' || issue.kind === 'unavailable_thickness')
         .map((issue) => issue.message),
       unavailableLayers: unavailableMap,
     };
@@ -111,8 +121,11 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
 
     const fees = catalog.fees || {};
     const roundStep = Number(catalog.roundStep) > 0 ? Number(catalog.roundStep) : 1000;
-    const interlayers = catalog.connectors?.interlayers || [];
-    const spacers = catalog.connectors?.spacers || [];
+    const interlayers = Array.isArray(catalog.connectors?.interlayers) ? catalog.connectors.interlayers : [];
+    const spacers = Array.isArray(catalog.connectors?.spacers) ? catalog.connectors.spacers : [];
+    const laminateConfig = normalizeLaminateConfig(config.laminate, {
+      interlayers,
+    });
 
     let unitTotal = 0;
 
@@ -122,33 +135,44 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       return Number.isFinite(price) ? price : 0;
     };
 
-    const calcPane = (pane) => {
-      if (!pane?.isLaminated) {
-        return getGlassPrice(pane?.glass1?.glassId, pane?.glass1?.thick) * effectiveArea;
-      }
-
+    const calcLegacyLaminatedPane = (pane) => {
       const g1 = getGlassPrice(pane.glass1?.glassId, pane.glass1?.thick) * effectiveArea;
       const g2 = getGlassPrice(pane.glass2?.glassId, pane.glass2?.thick) * effectiveArea;
-      const interlayer = interlayers.find((i) => i.id === pane.interlayerId);
-      const pvbUnit = interlayer?.unit || 'm_square';
-      const pvbPriceBase = Number(interlayer?.price || 0);
-      const pvbPrice = pvbUnit === 'm_square' ? pvbPriceBase * effectiveArea : pvbPriceBase;
+      const interlayer = interlayers.find((item) => item.id === pane.interlayerId);
+      const pvbPrice = getVariableUnitPrice(interlayer?.unit || 'm_square', Number(interlayer?.price || 0), effectiveArea, perimeter);
 
       const laminatingFee = fees.laminating || {};
-      const asmUnit = laminatingFee.unit || 'm_square';
-      const asmPriceBase = Number(laminatingFee.price || 0);
-      const asmPrice = asmUnit === 'm_square' ? asmPriceBase * effectiveArea : asmPriceBase;
+      const asmPrice = getVariableUnitPrice(laminatingFee.unit || 'm_square', Number(laminatingFee.price || 0), effectiveArea, perimeter);
       const asmFixed = Number(laminatingFee.fixedOrderPrice || 0);
 
       return g1 + g2 + pvbPrice + asmPrice + asmFixed;
     };
 
+    const calcLaminateAssembly = (laminate) => {
+      const layersTotal = laminate.layers.reduce((sum, layer) => (
+        sum + (getGlassPrice(layer?.glassId, layer?.thick) * effectiveArea)
+      ), 0);
+
+      const interlayerTotal = laminate.interlayerIds.reduce((sum, interlayerId) => {
+        const interlayer = interlayers.find((item) => item.id === interlayerId);
+        return sum + getVariableUnitPrice(interlayer?.unit || 'm_square', Number(interlayer?.price || 0), effectiveArea, perimeter);
+      }, 0);
+
+      const laminatingFee = fees.laminating || {};
+      const asmVariable = laminate.interlayerIds.length * getVariableUnitPrice(
+        laminatingFee.unit || 'm_square',
+        Number(laminatingFee.price || 0),
+        effectiveArea,
+        perimeter,
+      );
+      const asmFixed = laminate.interlayerIds.length > 0 ? Number(laminatingFee.fixedOrderPrice || 0) : 0;
+
+      return layersTotal + interlayerTotal + asmVariable + asmFixed;
+    };
+
     const collectLayersForEdgeWork = () => {
       if (activeTab === 'single') return [config.single];
-
-      if (activeTab === 'laminate') {
-        return [config.laminate?.glass1, config.laminate?.glass2].filter(Boolean);
-      }
+      if (activeTab === 'laminate') return laminateConfig.layers;
 
       if (activeTab === 'double') {
         const pane1Layers = config.double?.pane1?.isLaminated
@@ -166,22 +190,24 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
     };
 
     if (activeTab === 'single') {
-      unitTotal += calcPane({ isLaminated: false, glass1: config.single });
+      unitTotal += getGlassPrice(config.single?.glassId, config.single?.thick) * effectiveArea;
     } else if (activeTab === 'double') {
-      unitTotal += calcPane(config.double?.pane1) + calcPane(config.double?.pane2);
+      unitTotal += config.double?.pane1?.isLaminated
+        ? calcLegacyLaminatedPane(config.double.pane1)
+        : getGlassPrice(config.double?.pane1?.glass1?.glassId, config.double?.pane1?.glass1?.thick) * effectiveArea;
+      unitTotal += config.double?.pane2?.isLaminated
+        ? calcLegacyLaminatedPane(config.double.pane2)
+        : getGlassPrice(config.double?.pane2?.glass1?.glassId, config.double?.pane2?.glass1?.thick) * effectiveArea;
 
       const spacer = spacers.find((s) => s.id === config.double?.spacerId);
-      const spacerUnit = spacer?.unit || 'm_length';
       const spacerPriceBase = Number(spacer?.price || 0);
-      unitTotal += spacerUnit === 'm_length' ? spacerPriceBase * perimeter : spacerPriceBase * effectiveArea;
+      unitTotal += getVariableUnitPrice(spacer?.unit || 'm_length', spacerPriceBase, effectiveArea, perimeter);
 
       const doubleGlazingFee = fees.doubleGlazing || {};
-      const dblUnit = doubleGlazingFee.unit || 'm_square';
-      const dblPriceBase = Number(doubleGlazingFee.price || 0);
-      unitTotal += dblUnit === 'm_square' ? dblPriceBase * effectiveArea : dblPriceBase;
+      unitTotal += getVariableUnitPrice(doubleGlazingFee.unit || 'm_square', Number(doubleGlazingFee.price || 0), effectiveArea, perimeter);
       unitTotal += Number(doubleGlazingFee.fixedOrderPrice || 0);
     } else if (activeTab === 'laminate') {
-      unitTotal += calcPane({ isLaminated: true, ...config.laminate });
+      unitTotal += calcLaminateAssembly(laminateConfig);
     }
 
     Object.entries(config.operations || {}).forEach(([opId, qty]) => {

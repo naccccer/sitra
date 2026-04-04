@@ -1,26 +1,18 @@
 import React, { useRef, useState } from 'react'
-import { Download, Plus, Trash2, Upload, X } from 'lucide-react'
+import { Download, Upload } from 'lucide-react'
 import {
   Badge,
   Button,
-  DataTable,
-  DataTableBody,
-  DataTableCell,
-  DataTableHead,
-  DataTableHeaderCell,
-  DataTableRow,
-  DataTableState,
   FilterRow,
-  IconButton,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
-import { PriceInput } from '@/components/shared/PriceInput'
 import { toPN } from '@/utils/helpers'
 import {
   buildMatrixExportFileName,
   parseMatrixImportText,
   serializeMatrixExcelXml,
 } from '@/modules/master-data/services/matrixImportExport'
+import { MatrixSettingsTable } from './MatrixSettingsTable'
 
 export const MatrixSettingsSection = ({
   draft,
@@ -62,6 +54,52 @@ export const MatrixSettingsSection = ({
         else nextPrices[thickness] = value
         return { ...row, prices: nextPrices }
       }),
+    }))
+  }
+
+  const handleThicknessMove = (activeThickness, overThickness) => {
+    setDraft((previous) => {
+      const nextThicknesses = [...previous.thicknesses]
+      const activeIndex = nextThicknesses.indexOf(activeThickness)
+      const overIndex = nextThicknesses.indexOf(overThickness)
+      if (activeIndex === -1 || overIndex === -1) return previous
+      const [movedThickness] = nextThicknesses.splice(activeIndex, 1)
+      nextThicknesses.splice(overIndex, 0, movedThickness)
+      return { ...previous, thicknesses: nextThicknesses }
+    })
+  }
+
+  const handleRowMove = (activeRowId, overRowId) => {
+    setDraft((previous) => {
+      const nextGlasses = [...previous.glasses]
+      const activeIndex = nextGlasses.findIndex((row) => row.id === activeRowId)
+      const overIndex = nextGlasses.findIndex((row) => row.id === overRowId)
+      if (activeIndex === -1 || overIndex === -1) return previous
+      const [movedRow] = nextGlasses.splice(activeIndex, 1)
+      nextGlasses.splice(overIndex, 0, movedRow)
+      return { ...previous, glasses: nextGlasses }
+    })
+  }
+
+  const handleAddThickness = (thickness) => {
+    setDraft((previous) => (
+      previous.thicknesses.includes(thickness)
+        ? previous
+        : { ...previous, thicknesses: [...previous.thicknesses, thickness] }
+    ))
+  }
+
+  const handleRemoveThickness = (thickness) => {
+    setDraft((previous) => ({
+      ...previous,
+      thicknesses: previous.thicknesses.filter((item) => item !== thickness),
+    }))
+  }
+
+  const handleRemoveRow = (rowId) => {
+    setDraft((previous) => ({
+      ...previous,
+      glasses: previous.glasses.filter((item) => item.id !== rowId),
     }))
   }
 
@@ -139,100 +177,20 @@ export const MatrixSettingsSection = ({
         className="hidden"
       />
 
-      <DataTable minWidthClass="min-w-max whitespace-nowrap">
-        <DataTableHead>
-          <tr>
-            <DataTableHeaderCell align="center" className="w-12">ردیف</DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-40">نوع شیشه</DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-32">فرآیند</DataTableHeaderCell>
-            {draft.thicknesses.map((thickness) => (
-              <DataTableHeaderCell key={thickness} align="center" className="w-28">
-                <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-2 py-1.5 shadow-sm">
-                  <span className="font-black text-slate-700">{toPN(thickness)} میل</span>
-                  <IconButton
-                    variant="ghost"
-                    label={`حذف ضخامت ${toPN(thickness)}`}
-                    tooltip={`حذف ضخامت ${toPN(thickness)}`}
-                    onClick={() => setDraft((previous) => ({ ...previous, thicknesses: previous.thicknesses.filter((item) => item !== thickness) }))}
-                  >
-                    <X size={14} />
-                  </IconButton>
-                </div>
-              </DataTableHeaderCell>
-            ))}
-            <DataTableHeaderCell align="center" className="w-28">
-              {isAddingCol ? (
-                <form
-                  onSubmit={(event) => {
-                    event.preventDefault()
-                    const thickness = parseInt(newThickness, 10)
-                    if (thickness && !draft.thicknesses.includes(thickness)) {
-                      setDraft((previous) => ({ ...previous, thicknesses: [...previous.thicknesses, thickness].sort((a, b) => a - b) }))
-                    }
-                    setIsAddingCol(false)
-                    setNewThickness('')
-                  }}
-                >
-                  <input
-                    type="number"
-                    autoFocus
-                    value={newThickness}
-                    onChange={(event) => setNewThickness(event.target.value)}
-                    placeholder="ضخامت"
-                    className="w-full rounded-lg border border-blue-300 bg-white px-2 py-1 text-center text-xs outline-none"
-                  />
-                </form>
-              ) : (
-                <Button size="sm" variant="secondary" onClick={() => setIsAddingCol(true)} leadingIcon={Plus}>ستون</Button>
-              )}
-            </DataTableHeaderCell>
-            <DataTableHeaderCell align="center" className="w-12">حذف</DataTableHeaderCell>
-          </tr>
-        </DataTableHead>
-        <DataTableBody>
-          {draft.glasses.length === 0 ? (
-            <DataTableState colSpan={draft.thicknesses.length + 5} title="ردیفی برای ماتریس ثبت نشده است." />
-          ) : draft.glasses.map((row, index) => (
-            <DataTableRow key={row.id}>
-              <DataTableCell align="center" tone="emphasis" className="tabular-nums">{toPN(index + 1)}</DataTableCell>
-              <DataTableCell align="center">
-                <input
-                  type="text"
-                  value={row.title}
-                  onChange={(event) => handleMatrixUpdate(row.id, 'title', event.target.value)}
-                  className="w-full rounded-lg bg-transparent py-1.5 text-center font-black outline-none focus:bg-slate-100"
-                />
-              </DataTableCell>
-              <DataTableCell align="center">
-                <select
-                  value={row.process || 'raw'}
-                  onChange={(event) => handleMatrixUpdate(row.id, 'process', event.target.value)}
-                  className={`w-full rounded-lg border py-1.5 text-center font-black outline-none ${(row.process || 'raw') === 'raw' ? 'border-slate-200 bg-slate-50' : 'border-rose-200 bg-rose-50 text-rose-700'}`}
-                >
-                  <option value="raw">خام</option>
-                  <option value="sekurit">سکوریت</option>
-                </select>
-              </DataTableCell>
-              {draft.thicknesses.map((thickness) => (
-                <DataTableCell key={`${row.id}-${thickness}`} align="center" className="focus-within:bg-blue-50/30">
-                  <PriceInput value={row.prices[thickness] || ''} onChange={(value) => handleMatrixPriceUpdate(row.id, thickness, value)} />
-                </DataTableCell>
-              ))}
-              <DataTableCell />
-              <DataTableCell align="center">
-                <IconButton
-                  variant="ghost"
-                  label="حذف ردیف"
-                  tooltip="حذف ردیف"
-                  onClick={() => setDraft((previous) => ({ ...previous, glasses: previous.glasses.filter((item) => item.id !== row.id) }))}
-                >
-                  <Trash2 size={14} />
-                </IconButton>
-              </DataTableCell>
-            </DataTableRow>
-          ))}
-        </DataTableBody>
-      </DataTable>
+      <MatrixSettingsTable
+        draft={draft}
+        newThickness={newThickness}
+        setNewThickness={setNewThickness}
+        isAddingCol={isAddingCol}
+        setIsAddingCol={setIsAddingCol}
+        onMatrixUpdate={handleMatrixUpdate}
+        onMatrixPriceUpdate={handleMatrixPriceUpdate}
+        onMoveThickness={handleThicknessMove}
+        onMoveRow={handleRowMove}
+        onRemoveThickness={handleRemoveThickness}
+        onRemoveRow={handleRemoveRow}
+        onAddThickness={handleAddThickness}
+      />
 
       <Button
         action="create"

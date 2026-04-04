@@ -5,6 +5,7 @@
   "required": ["glasses", "operations", "connectors", "fees"],
   "properties": {
     "glasses": { "type": "array", "items": { "type": "object" } },
+    "thicknesses": { "type": "array", "items": { "type": "integer" } },
     "operations": { "type": "array", "items": { "type": "object" } },
     "connectors": { "type": "object" },
     "fees": { "type": "object" },

@@ -29,6 +29,8 @@ This file defines **stable cross-module contracts** at a compact level.
 - `master_data.profile_save.v1`
 - `master_data.operation_icon_upload.v1`
 
+`master_data.catalog_save.v1` preserves ordered catalog arrays such as `thicknesses` and `glasses` as provided by the frontend.
+
 ### Sales
 - `sales.order_create.v1`
 - `sales.order_update.v1`
