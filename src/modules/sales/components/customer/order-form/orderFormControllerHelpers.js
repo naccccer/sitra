@@ -120,17 +120,17 @@ export const buildManualErrors = ({
   manualUnitPriceRaw,
 }) => {
   const next = {};
-  if (String(manualDraft.title || '').trim() === '') next.title = 'Ø¹Ù†ÙˆØ§Ù† Ø¢ÛŒØªÙ… Ø§Ù„Ø²Ø§Ù…ÛŒ Ø§Ø³Øª.';
-  if (manualQtyRaw === null || manualQtyRaw < 1) next.qty = 'ØªØ¹Ø¯Ø§Ø¯ Ø¨Ø§ÛŒØ¯ Ø­Ø¯Ø§Ù‚Ù„ 1 Ø¨Ø§Ø´Ø¯.';
-  if (manualUnitPriceRaw === null || manualUnitPriceRaw <= 0) next.unitPrice = 'Ù‚ÛŒÙ…Øª ÙÛŒ Ø¨Ø§ÛŒØ¯ Ø¨ÛŒØ´ØªØ± Ø§Ø² ØµÙØ± Ø¨Ø§Ø´Ø¯.';
+  if (String(manualDraft.title || '').trim() === '') next.title = 'عنوان آیتم الزامی است.';
+  if (manualQtyRaw === null || manualQtyRaw < 1) next.qty = 'تعداد باید حداقل 1 باشد.';
+  if (manualUnitPriceRaw === null || manualUnitPriceRaw <= 0) next.unitPrice = 'قیمت فی باید بیشتر از صفر باشد.';
   if (manualDraft.discountType === 'percent') {
-    if (manualDiscountRaw === null) next.discountValue = 'Ø¯Ø±ØµØ¯ ØªØ®ÙÛŒÙ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯.';
-    else if (manualDiscountRaw < 0 || manualDiscountRaw > 100) next.discountValue = 'Ø¯Ø±ØµØ¯ ØªØ®ÙÛŒÙ Ø¨Ø§ÛŒØ¯ Ø¨ÛŒÙ† 0 ØªØ§ 100 Ø¨Ø§Ø´Ø¯.';
+    if (manualDiscountRaw === null) next.discountValue = 'درصد تخفیف را وارد کنید.';
+    else if (manualDiscountRaw < 0 || manualDiscountRaw > 100) next.discountValue = 'درصد تخفیف باید بین 0 تا 100 باشد.';
   }
   if (manualDraft.discountType === 'fixed') {
-    if (manualDiscountRaw === null) next.discountValue = 'Ù…Ø¨Ù„Øº ØªØ®ÙÛŒÙ Ø±Ø§ ÙˆØ§Ø±Ø¯ Ú©Ù†ÛŒØ¯.';
-    else if (manualDiscountRaw < 0) next.discountValue = 'Ù…Ø¨Ù„Øº ØªØ®ÙÛŒÙ Ù†Ù…ÛŒâ€ŒØªÙˆØ§Ù†Ø¯ Ù…Ù†ÙÛŒ Ø¨Ø§Ø´Ø¯.';
-    else if (manualDiscountRaw > manualBaseAmount) next.discountValue = 'ØªØ®ÙÛŒÙ Ø«Ø§Ø¨Øª Ù†Ù…ÛŒâ€ŒØªÙˆØ§Ù†Ø¯ Ø¨ÛŒØ´ØªØ± Ø§Ø² Ù…Ø¨Ù„Øº Ù¾Ø§ÛŒÙ‡ Ø¨Ø§Ø´Ø¯.';
+    if (manualDiscountRaw === null) next.discountValue = 'مبلغ تخفیف را وارد کنید.';
+    else if (manualDiscountRaw < 0) next.discountValue = 'مبلغ تخفیف نمی‌تواند منفی باشد.';
+    else if (manualDiscountRaw > manualBaseAmount) next.discountValue = 'تخفیف ثابت نمی‌تواند بیشتر از مبلغ پایه باشد.';
   }
   return next;
 };
