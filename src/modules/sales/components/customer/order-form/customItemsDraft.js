@@ -120,6 +120,8 @@ export const resolveCustomDraftState = ({
     overrideReason: itemPricing?.overrideReason,
     discountType: itemPricing?.discountType,
     discountValue: itemPricing?.discountValue,
+    pricingUnit: unitCode === 'm_square' ? 'm_square' : 'unit',
+    pricingUnitFactor: metricFactor,
   });
 
   return {

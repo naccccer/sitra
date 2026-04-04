@@ -1,9 +1,8 @@
 ﻿import React, { useMemo, useState } from 'react';
 import { toPN } from '../../utils/helpers';
 import { StructureDetails } from './StructureDetails';
-import { getPaymentMethodLabel, normalizePaymentMethod } from '../../utils/invoice';
+import { getPaymentMethodLabel, normalizePaymentMethod, resolvePerSquareMeterPrice } from '../../utils/invoice';
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '../../utils/profile';
-import { isCustomSquareMeterUnit } from '@/utils/customItemUnits';
 import { OperationChip, PatternPreview } from '@/components/shared/print-invoice/PatternPreview';
 
 const normalizePayment = (payment = {}, fallbackIndex = 0) => ({
@@ -29,34 +28,6 @@ const getPaymentStatusMeta = (status = '') => {
   return { label: 'تسویه نشده', className: 'bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]' };
 };
 
-const toPositiveNumber = (value) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
-};
-
-const normalizeByRoundStep = (value, roundStep = 1000) => {
-  const numeric = Math.max(0, Number(value) || 0);
-  const stepNumeric = Number(roundStep);
-  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
-  return Math.floor(numeric / step) * step;
-};
-
-const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
-  const itemType = String(item?.itemType || 'catalog');
-  if (itemType === 'manual') return null;
-  if (itemType === 'custom' && !isCustomSquareMeterUnit(item?.custom?.unitLabel || item?.config?.unitLabel)) return null;
-
-  const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
-  const widthCm = toPositiveNumber(item?.dimensions?.width);
-  const heightCm = toPositiveNumber(item?.dimensions?.height);
-  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
-
-  const rawArea = (widthCm * heightCm) / 10000;
-  const effectiveArea = Math.max(0.25, rawArea);
-  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
-
-  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
-};
 
 export const PrintInvoice = ({
   items = [],

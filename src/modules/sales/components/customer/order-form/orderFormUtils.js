@@ -86,8 +86,12 @@ export const normalizeLoadedItem = (item) => {
       overrideUnitPrice: pricingMeta.overrideUnitPrice === null || pricingMeta.overrideUnitPrice === ''
         ? null
         : Math.max(0, parseIntSafe(pricingMeta.overrideUnitPrice, 0)),
+      overrideAppliedUnitPrice: pricingMeta.overrideAppliedUnitPrice === null || pricingMeta.overrideAppliedUnitPrice === ''
+        ? null
+        : Math.max(0, parseIntSafe(pricingMeta.overrideAppliedUnitPrice, 0)),
       overrideReason: String(pricingMeta.overrideReason || ''),
       floorUnitPrice: Math.max(0, parseIntSafe(pricingMeta.floorUnitPrice ?? unitPrice, unitPrice)),
+      displayFloorUnitPrice: Math.max(0, parseIntSafe(pricingMeta.displayFloorUnitPrice ?? pricingMeta.floorUnitPrice ?? unitPrice, unitPrice)),
       isBelowFloor: Boolean(pricingMeta.isBelowFloor),
       itemDiscountType: pricingMeta.itemDiscountType === 'percent' || pricingMeta.itemDiscountType === 'fixed'
         ? pricingMeta.itemDiscountType
@@ -96,6 +100,8 @@ export const normalizeLoadedItem = (item) => {
       itemDiscountAmount: Math.max(0, parseIntSafe(pricingMeta.itemDiscountAmount ?? 0, 0)),
       finalUnitPrice: Math.max(0, parseIntSafe(pricingMeta.finalUnitPrice ?? unitPrice, unitPrice)),
       finalLineTotal: Math.max(0, parseIntSafe(pricingMeta.finalLineTotal ?? totalPrice, totalPrice)),
+      pricingUnit: pricingMeta.pricingUnit === 'm_square' ? 'm_square' : 'unit',
+      pricingUnitFactor: Math.max(1, Number(pricingMeta.pricingUnitFactor) || 1),
     },
     manual: itemType === 'manual'
       ? {

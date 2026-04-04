@@ -2,6 +2,22 @@
 import { createEmptyManualDraft, parseIntSafe } from '@/modules/sales/components/customer/order-form/orderFormUtils';
 import { submitOrderPayload } from '@/modules/sales/components/customer/order-form/orderFormSubmitter';
 
+const resolveOverrideInputValue = (item = {}) => {
+  const rawOverride = item?.pricingMeta?.overrideUnitPrice;
+  if (rawOverride === null || rawOverride === undefined || rawOverride === '') return '';
+  if (item?.pricingMeta?.pricingUnit === 'm_square') return rawOverride;
+  const isSquareMeterBased = item?.itemType !== 'manual'
+    && (item?.itemType !== 'custom'
+      || item?.custom?.unitCode === 'm_square'
+      || item?.config?.unitCode === 'm_square');
+  if (!isSquareMeterBased) return rawOverride;
+  const widthCm = Math.max(0, Number(item?.dimensions?.width) || 0);
+  const heightCm = Math.max(0, Number(item?.dimensions?.height) || 0);
+  if (widthCm <= 0 || heightCm <= 0) return rawOverride;
+  const effectiveArea = Math.max(0.25, (widthCm * heightCm) / 10000);
+  return effectiveArea > 0 ? Math.round(Number(rawOverride) / effectiveArea) : rawOverride;
+};
+
 export const createOrderFormHandlers = ({
   activeTab,
   canAddCatalogItem,
@@ -195,7 +211,7 @@ export const createOrderFormHandlers = ({
         pattern: item?.pattern && typeof item.pattern === 'object' ? item.pattern : { type: 'none', fileName: '' },
       }));
       setItemPricing({
-        overrideUnitPrice: item?.pricingMeta?.overrideUnitPrice ?? '',
+        overrideUnitPrice: resolveOverrideInputValue(item),
         overrideReason: '',
         discountType: item?.pricingMeta?.itemDiscountType || 'none',
         discountValue: String(item?.pricingMeta?.itemDiscountValue ?? ''),
@@ -218,7 +234,7 @@ export const createOrderFormHandlers = ({
     setEditingItemId(item.id);
     setEditingItemType('catalog');
     setItemPricing({
-      overrideUnitPrice: item?.pricingMeta?.overrideUnitPrice ?? '',
+      overrideUnitPrice: resolveOverrideInputValue(item),
       overrideReason: '',
       discountType: 'none',
       discountValue: '',

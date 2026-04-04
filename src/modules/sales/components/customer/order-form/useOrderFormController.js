@@ -136,7 +136,9 @@ export const useOrderFormController = ({
     overrideReason: itemPricing.overrideReason,
     discountType: itemPricing.discountType,
     discountValue: itemPricing.discountValue,
-  }), [billing.priceFloorPercent, dimensions.count, itemPricing, pricingDetails.unitPrice]);
+    pricingUnit: 'm_square',
+    pricingUnitFactor: pricingDetails.effectiveArea,
+  }), [billing.priceFloorPercent, dimensions.count, itemPricing, pricingDetails.effectiveArea, pricingDetails.unitPrice]);
 
   const customDraftState = useMemo(
     () => resolveCustomDraftState({

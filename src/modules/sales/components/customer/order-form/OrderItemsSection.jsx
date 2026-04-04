@@ -1,39 +1,10 @@
 ﻿import React from 'react';
 import { CheckCircle2, Edit3, Plus, Printer, Trash2 } from 'lucide-react';
-import { isCustomSquareMeterUnit } from '@/utils/customItemUnits';
 import { toPN } from '@/utils/helpers';
+import { resolvePerSquareMeterPrice } from '@/utils/invoice';
 import { StructureDetails } from '@/components/shared/StructureDetails';
 
-const toPositiveNumber = (value) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
-};
-
-const normalizeByRoundStep = (value, roundStep = 1000) => {
-  const numeric = Math.max(0, Number(value) || 0);
-  const stepNumeric = Number(roundStep);
-  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
-  return Math.floor(numeric / step) * step;
-};
-
 const isManualLike = (item = {}) => String(item?.itemType || 'catalog') === 'manual';
-
-const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
-  const itemType = String(item?.itemType || 'catalog');
-  if (itemType === 'manual') return null;
-  if (itemType === 'custom' && !isCustomSquareMeterUnit(item?.custom?.unitLabel || item?.config?.unitLabel)) return null;
-
-  const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
-  const widthCm = toPositiveNumber(item?.dimensions?.width);
-  const heightCm = toPositiveNumber(item?.dimensions?.height);
-  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
-
-  const rawArea = (widthCm * heightCm) / 10000;
-  const effectiveArea = Math.max(0.25, rawArea);
-  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
-
-  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
-};
 
 const mobileTypeLabel = (item = {}) => {
   if (item?.itemType === 'manual') return 'آیتم دستی';

@@ -5,6 +5,7 @@ export const CustomItemsTable = ({
   customDraft,
   setCustomDraft,
   onGoToCustomItems,
+  isStaffContext = false,
 }) => {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(false);
@@ -35,10 +36,14 @@ export const CustomItemsTable = ({
     return (
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center">
         <p className="text-sm font-black text-slate-700">آیتم سفارشی فعالی وجود ندارد.</p>
-        <p className="mt-1 text-xs font-bold text-slate-500">ابتدا از اطلاعات پایه آیتم سفارشی بسازید.</p>
-        <button type="button" onClick={onGoToCustomItems} className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">
-          ساخت آیتم
-        </button>
+        <p className="mt-1 text-xs font-bold text-slate-500">
+          {isStaffContext ? 'ابتدا از اطلاعات پایه آیتم سفارشی بسازید.' : 'در حال حاضر آیتم سفارشی برای انتخاب وجود ندارد.'}
+        </p>
+        {isStaffContext && (
+          <button type="button" onClick={onGoToCustomItems} className="mt-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 hover:bg-slate-50">
+            ساخت آیتم
+          </button>
+        )}
       </div>
     );
   }

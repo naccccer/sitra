@@ -6,6 +6,18 @@ const toInt = (value, fallback = 0) => {
 
 const normalizeDiscountType = (type) => (type === 'percent' || type === 'fixed' ? type : 'none');
 
+const resolveUnitFactor = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+};
+
+const normalizeByRoundStep = (value, roundStep = 1000) => {
+  const numeric = Math.max(0, Number(value) || 0);
+  const stepNumeric = Number(roundStep);
+  const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
+  return Math.floor(numeric / step) * step;
+};
+
 export const DEFAULT_BILLING = {
   priceFloorPercent: 90,
   taxDefaultEnabled: false,
@@ -83,6 +95,8 @@ export const buildCatalogPricingMeta = ({
   overrideReason,
   discountType,
   discountValue,
+  pricingUnit = 'unit',
+  pricingUnitFactor = 1,
 }) => {
   const qty = Math.max(1, toInt(count, 1));
   const baseUnit = toInt(catalogUnitPrice, 0);
@@ -90,27 +104,39 @@ export const buildCatalogPricingMeta = ({
   const floorUnitPrice = Math.round((baseUnit * Math.min(100, Math.max(1, toInt(floorPercent, DEFAULT_BILLING.priceFloorPercent)))) / 100);
   const overrideRaw = toInt(overrideUnitPrice, 0);
   const hasOverride = overrideRaw > 0;
-  const effectiveUnit = hasOverride ? overrideRaw : baseUnit;
+  const isSquareMeterPricing = pricingUnit === 'm_square';
+  const unitFactor = resolveUnitFactor(pricingUnitFactor);
+  const appliedOverrideUnitPrice = hasOverride
+    ? (isSquareMeterPricing ? Math.round(overrideRaw * unitFactor) : overrideRaw)
+    : null;
+  const effectiveUnit = hasOverride ? appliedOverrideUnitPrice : baseUnit;
   const effectiveLine = effectiveUnit * qty;
-  const isBelowFloor = hasOverride && overrideRaw < floorUnitPrice;
+  const isBelowFloor = hasOverride && appliedOverrideUnitPrice < floorUnitPrice;
   const itemDiscountType = normalizeDiscountType(discountType);
   const itemDiscountValue = toInt(discountValue, 0);
   const itemDiscountAmount = calcDiscountAmount(effectiveLine, itemDiscountType, itemDiscountValue);
   const finalLineTotal = Math.max(0, effectiveLine - itemDiscountAmount);
   const finalUnitPrice = qty > 0 ? Math.round(finalLineTotal / qty) : finalLineTotal;
+  const displayFloorUnitPrice = isSquareMeterPricing
+    ? normalizeByRoundStep(floorUnitPrice / unitFactor)
+    : floorUnitPrice;
 
   return {
     catalogUnitPrice: baseUnit,
     catalogLineTotal: baseLine,
     overrideUnitPrice: hasOverride ? overrideRaw : null,
+    overrideAppliedUnitPrice: appliedOverrideUnitPrice,
     overrideReason: hasOverride ? String(overrideReason || '').trim() : '',
     floorUnitPrice,
+    displayFloorUnitPrice,
     isBelowFloor,
     itemDiscountType,
     itemDiscountValue,
     itemDiscountAmount,
     finalUnitPrice,
     finalLineTotal,
+    pricingUnit,
+    pricingUnitFactor: unitFactor,
   };
 };
 
@@ -212,4 +238,22 @@ export const computeInvoiceFinancials = ({
     dueAmount,
     paymentStatus,
   };
+};
+
+export const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
+  const itemType = String(item?.itemType || 'catalog');
+  if (itemType === 'manual') return null;
+  if (itemType === 'custom' && item?.custom?.unitCode && item.custom.unitCode !== 'm_square') return null;
+  if (itemType === 'custom' && item?.config?.unitCode && item.config.unitCode !== 'm_square') return null;
+
+  const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
+  const widthCm = Math.max(0, Number(item?.dimensions?.width) || 0);
+  const heightCm = Math.max(0, Number(item?.dimensions?.height) || 0);
+  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  const rawArea = (widthCm * heightCm) / 10000;
+  const effectiveArea = Math.max(0.25, rawArea);
+  if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
+
+  return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);
 };

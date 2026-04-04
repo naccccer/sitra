@@ -3,6 +3,7 @@ import { CheckCircle2, Flame, Layers, Plus, Ruler, Settings, ShieldAlert } from 
 import { toPN } from '@/utils/helpers';
 import { glassProcess } from '@/modules/sales/components/customer/order-form/orderFormUtils';
 import { CustomItemsTable } from '@/modules/sales/components/customer/order-form/CustomItemsTable';
+import { PriceInput } from '@/components/shared/PriceInput';
 
 const getCatalogDefaults = (catalog) => ({
   glasses: Array.isArray(catalog?.glasses) ? catalog.glasses : [],
@@ -125,6 +126,7 @@ export const OrderConfigurationSection = ({
   const customUnitCode = String(customDraftState?.unitCode || 'm_square');
   const isCustomQtyUnit = isCustomTab && customUnitCode === 'qty';
   const isCustomServiceDisabled = isCustomTab && customUnitCode !== 'm_square';
+  const overrideFloorPrice = catalogPricingPreview.displayFloorUnitPrice ?? catalogPricingPreview.floorUnitPrice;
 
   return (
     <div className="print-hide overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
@@ -154,25 +156,28 @@ export const OrderConfigurationSection = ({
             </div>
           )}
           {activeTab === 'custom' && (
-            <div className="mx-auto w-full max-w-2xl space-y-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-inner">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-xs font-black text-slate-700">انتخاب آیتم سفارشی</div>
-                <button
-                  type="button"
-                  onClick={onGoToCustomItems}
-                  className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700 hover:bg-slate-50"
-                >
-                  <Plus size={12} />
-                  ساخت آیتم
-                </button>
+            <div className="mx-auto w-full max-w-2xl space-y-3">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-inner">
+                <CustomItemsTable
+                  customItems={customItems}
+                  customDraft={customDraft}
+                  setCustomDraft={setCustomDraft}
+                  onGoToCustomItems={onGoToCustomItems}
+                  isStaffContext={isStaffContext}
+                />
               </div>
-
-              <CustomItemsTable
-                customItems={customItems}
-                customDraft={customDraft}
-                setCustomDraft={setCustomDraft}
-                onGoToCustomItems={onGoToCustomItems}
-              />
+              {isStaffContext && (
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={onGoToCustomItems}
+                    className="inline-flex h-8 items-center gap-1 rounded-lg border border-slate-200 bg-white px-2.5 text-[11px] font-black text-slate-700 hover:bg-slate-50"
+                  >
+                    <Plus size={12} />
+                    ساخت آیتم
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -216,9 +221,16 @@ export const OrderConfigurationSection = ({
 
           {isStaffContext && (
             <div className="space-y-2 rounded-xl border border-slate-200 bg-white p-2.5">
-              <input type="number" value={itemPricing.overrideUnitPrice} onChange={(event) => setItemPricing((previous) => ({ ...previous, overrideUnitPrice: event.target.value }))} placeholder="فی توافقی" className="w-full rounded-lg border border-slate-200 bg-slate-50 p-2 text-xs font-bold" dir="ltr" />
+              <div className="h-10 rounded-lg border border-slate-200 bg-slate-50 px-1">
+                <PriceInput
+                  value={itemPricing.overrideUnitPrice}
+                  onChange={(value) => setItemPricing((previous) => ({ ...previous, overrideUnitPrice: value }))}
+                  placeholder="فی توافقی"
+                  className="rounded-lg text-xs text-slate-900"
+                />
+              </div>
               <div className={`text-[10px] font-bold ${catalogPricingPreview.isBelowFloor ? 'text-red-600' : 'text-slate-500'}`}>
-                کف مجاز: {toPN(catalogPricingPreview.floorUnitPrice.toLocaleString())} تومان
+                کف مجاز: {toPN(overrideFloorPrice.toLocaleString())} تومان
               </div>
             </div>
           )}
