@@ -112,8 +112,8 @@ export function HumanResourcesDirectoryPanel({
       >
         <DataTableHead>
           <tr>
-            <DataTableHeaderCell align="center" className="text-[12px]">کد</DataTableHeaderCell>
-            <DataTableHeaderCell className="text-[12px]">نام</DataTableHeaderCell>
+            <DataTableHeaderCell align="center" className="text-[12px]">کد پرسنلی</DataTableHeaderCell>
+            <DataTableHeaderCell className="text-[12px]">نام پرسنل</DataTableHeaderCell>
             <DataTableHeaderCell align="center" className="text-[12px]">واحد</DataTableHeaderCell>
             <DataTableHeaderCell align="center" className="text-[12px]">سمت</DataTableHeaderCell>
             <DataTableHeaderCell align="center" className="text-[12px]">وضعیت</DataTableHeaderCell>
