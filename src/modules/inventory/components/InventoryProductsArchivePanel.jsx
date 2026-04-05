@@ -27,6 +27,22 @@ const TYPE_LABELS = {
   service: 'خدماتی',
 }
 
+const UOM_OPTIONS = [
+  'عدد',
+  'کیلوگرم',
+  'گرم',
+  'تن',
+  'لیتر',
+  'میلی‌لیتر',
+  'متر',
+  'سانتی‌متر',
+  'مترمربع',
+  'مترمکعب',
+  'بسته',
+  'کارتن',
+  'جفت',
+]
+
 const EMPTY_FORM = { id: null, name: '', productCode: '', productType: 'stockable', uom: '', notes: '' }
 
 export const InventoryProductsArchivePanel = ({ session }) => {
@@ -121,7 +137,6 @@ export const InventoryProductsArchivePanel = ({ session }) => {
   return (
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
-        actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
         summary={(
           <>
             <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
@@ -129,24 +144,27 @@ export const InventoryProductsArchivePanel = ({ session }) => {
           </>
         )}
       >
-        <FilterRow className="gap-3">
-          <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            <div className="w-full sm:w-52">
-              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" />
-            </div>
-            <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="sm:w-40">
+        <FilterRow className="justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-2">
+            <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="w-full sm:w-40">
               <option value="">همه انواع</option>
               {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
           </div>
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
+            <div className="w-full sm:w-52">
+              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" dir="rtl" />
+            </div>
+            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            <IconButton
+              action="archive"
+              variant={archiveMode ? 'primary' : 'secondary'}
+              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              onClick={() => setArchiveMode((current) => !current)}
+            />
+          </div>
         </FilterRow>
       </WorkspaceToolbar>
 
@@ -156,32 +174,26 @@ export const InventoryProductsArchivePanel = ({ session }) => {
         <DataTableHead>
           <tr>
             <DataTableHeaderCell>نام محصول</DataTableHeaderCell>
-            <DataTableHeaderCell>کد</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">کد محصول</DataTableHeaderCell>
             <DataTableHeaderCell align="center">نوع</DataTableHeaderCell>
             <DataTableHeaderCell align="center">واحد</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
             {canWrite ? <DataTableHeaderCell align="center">اقدامات</DataTableHeaderCell> : null}
           </tr>
         </DataTableHead>
         <DataTableBody>
           {loading ? (
-            <DataTableState colSpan={canWrite ? 6 : 5} state="loading" title="در حال بارگذاری..." />
+            <DataTableState colSpan={canWrite ? 5 : 4} state="loading" title="در حال بارگذاری..." />
           ) : rows.length === 0 ? (
             <DataTableState
-              colSpan={canWrite ? 6 : 5}
+              colSpan={canWrite ? 5 : 4}
               title={archiveMode ? 'محصول بایگانی‌شده‌ای وجود ندارد' : 'محصولی برای نمایش وجود ندارد'}
             />
           ) : rows.map((product) => (
             <DataTableRow key={product.id} tone={product.isActive === false ? 'muted' : 'default'}>
               <DataTableCell tone="emphasis">{product.name}</DataTableCell>
-              <DataTableCell className="font-mono tabular-nums" dir="ltr">{product.productCode || '-'}</DataTableCell>
+              <DataTableCell align="center" className="font-mono tabular-nums" dir="ltr">{product.productCode || '-'}</DataTableCell>
               <DataTableCell align="center">{TYPE_LABELS[product.productType] ?? product.productType}</DataTableCell>
               <DataTableCell align="center">{product.uom}</DataTableCell>
-              <DataTableCell align="center">
-                <Badge tone={product.isActive === false ? 'neutral' : 'success'}>
-                  {product.isActive === false ? 'بایگانی شده' : 'فعال'}
-                </Badge>
-              </DataTableCell>
               {canWrite ? (
                 <DataTableCell align="center">
                   <DataTableActions>
@@ -221,7 +233,10 @@ export const InventoryProductsArchivePanel = ({ session }) => {
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-slate-600">واحد اندازه‌گیری <span className="text-red-500">*</span></label>
-              <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.uom} onChange={(event) => setModal((current) => ({ ...current, uom: event.target.value }))} placeholder="مثال: کیلوگرم" required />
+              <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.uom} onChange={(event) => setModal((current) => ({ ...current, uom: event.target.value }))} required>
+                <option value="" disabled>انتخاب واحد</option>
+                {UOM_OPTIONS.map((uom) => <option key={uom} value={uom}>{uom}</option>)}
+              </select>
             </div>
           </div>
           <div>

@@ -1,50 +1,49 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Button, Card } from '@/components/shared/ui'
+import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const EMPTY_FORM = { id: null, productId: '', warehouseId: '', minQty: '', maxQty: '', notes: '' }
 
 const RuleForm = ({ modal, setModal, onSave, onClose, saving, formError, products, warehouses }) => (
-  <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" role="dialog" aria-modal="true" dir="rtl">
-    <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-2xl">
-      <h2 className="mb-4 text-base font-bold text-slate-800">{modal.id ? 'ویرایش قانون تامین مجدد' : 'قانون تامین مجدد جدید'}</h2>
-      <form onSubmit={onSave} className="space-y-3">
-        {formError && <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>}
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">محصول <span className="text-red-500">*</span></label>
-          <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.productId} onChange={(e) => setModal((m) => ({ ...m, productId: e.target.value }))} required>
-            <option value="">انتخاب محصول</option>
-            {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">انبار <span className="text-red-500">*</span></label>
-          <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.warehouseId} onChange={(e) => setModal((m) => ({ ...m, warehouseId: e.target.value }))} required>
-            <option value="">انتخاب انبار</option>
-            {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
-          </select>
-        </div>
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">حداقل موجودی <span className="text-red-500">*</span></label>
-            <input type="number" min="0" step="0.001" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.minQty} onChange={(e) => setModal((m) => ({ ...m, minQty: e.target.value }))} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">حداکثر موجودی <span className="text-red-500">*</span></label>
-            <input type="number" min="0" step="0.001" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.maxQty} onChange={(e) => setModal((m) => ({ ...m, maxQty: e.target.value }))} required />
-          </div>
-        </div>
-        <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
-          <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(e) => setModal((m) => ({ ...m, notes: e.target.value }))} />
-        </div>
-        <div className="flex justify-end gap-3 pt-2">
-          <Button type="button" variant="ghost" onClick={onClose}>انصراف</Button>
-          <Button type="submit" variant="primary" disabled={saving}>{saving ? 'در حال ذخیره...' : 'ذخیره'}</Button>
-        </div>
-      </form>
+  <InventoryEntityDialog
+    isOpen
+    title={modal.id ? 'ویرایش قانون تامین مجدد' : 'قانون تامین مجدد جدید'}
+    onClose={onClose}
+    onSubmit={onSave}
+    saving={saving}
+    maxWidthClass="max-w-md"
+  >
+    {formError && <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div>}
+    <div>
+      <label className="mb-1 block text-xs font-medium text-slate-600">محصول <span className="text-red-500">*</span></label>
+      <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.productId} onChange={(e) => setModal((m) => ({ ...m, productId: e.target.value }))} required>
+        <option value="">انتخاب محصول</option>
+        {products.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
     </div>
-  </div>
+    <div>
+      <label className="mb-1 block text-xs font-medium text-slate-600">انبار <span className="text-red-500">*</span></label>
+      <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.warehouseId} onChange={(e) => setModal((m) => ({ ...m, warehouseId: e.target.value }))} required>
+        <option value="">انتخاب انبار</option>
+        {warehouses.map((w) => <option key={w.id} value={w.id}>{w.name}</option>)}
+      </select>
+    </div>
+    <div className="grid grid-cols-2 gap-3">
+      <div>
+        <label className="mb-1 block text-xs font-medium text-slate-600">حداقل موجودی <span className="text-red-500">*</span></label>
+        <input type="number" min="0" step="0.001" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.minQty} onChange={(e) => setModal((m) => ({ ...m, minQty: e.target.value }))} required />
+      </div>
+      <div>
+        <label className="mb-1 block text-xs font-medium text-slate-600">حداکثر موجودی <span className="text-red-500">*</span></label>
+        <input type="number" min="0" step="0.001" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.maxQty} onChange={(e) => setModal((m) => ({ ...m, maxQty: e.target.value }))} required />
+      </div>
+    </div>
+    <div>
+      <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
+      <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(e) => setModal((m) => ({ ...m, notes: e.target.value }))} />
+    </div>
+  </InventoryEntityDialog>
 )
 
 export const InventoryReplenishmentPanel = ({ session }) => {
