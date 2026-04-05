@@ -17,6 +17,7 @@ import {
   WorkspaceToolbar,
 } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
+import { InventoryShamsiDateInput } from '@/modules/inventory/components/InventoryShamsiDateInput'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 import { toPN } from '@/utils/helpers'
 
@@ -125,7 +126,6 @@ export const InventoryLotsArchivePanel = ({ session }) => {
   return (
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
-        actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
         summary={(
           <>
             <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
@@ -133,21 +133,24 @@ export const InventoryLotsArchivePanel = ({ session }) => {
           </>
         )}
       >
-        <FilterRow className="gap-3">
-          <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="sm:w-48">
+        <FilterRow className="justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-2">
+            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="w-full sm:w-48">
               <option value="">همه محصولات</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
             </Select>
           </div>
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
+            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            <IconButton
+              action="archive"
+              variant={archiveMode ? 'primary' : 'secondary'}
+              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              onClick={() => setArchiveMode((current) => !current)}
+            />
+          </div>
         </FilterRow>
       </WorkspaceToolbar>
 
@@ -156,28 +159,22 @@ export const InventoryLotsArchivePanel = ({ session }) => {
       <DataTable minWidthClass="min-w-[760px]">
         <DataTableHead>
           <tr>
-            <DataTableHeaderCell>کد سری</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">کد سری</DataTableHeaderCell>
             <DataTableHeaderCell>محصول</DataTableHeaderCell>
             <DataTableHeaderCell align="center">تاریخ انقضا</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
             {canWrite ? <DataTableHeaderCell align="center">اقدامات</DataTableHeaderCell> : null}
           </tr>
         </DataTableHead>
         <DataTableBody>
           {loading ? (
-            <DataTableState colSpan={canWrite ? 5 : 4} state="loading" title="در حال بارگذاری..." />
+            <DataTableState colSpan={canWrite ? 4 : 3} state="loading" title="در حال بارگذاری..." />
           ) : rows.length === 0 ? (
-            <DataTableState colSpan={canWrite ? 5 : 4} title={archiveMode ? 'سری بایگانی‌شده‌ای وجود ندارد' : 'سری‌ای برای نمایش وجود ندارد'} />
+            <DataTableState colSpan={canWrite ? 4 : 3} title={archiveMode ? 'سری بایگانی‌شده‌ای وجود ندارد' : 'سری‌ای برای نمایش وجود ندارد'} />
           ) : rows.map((lot) => (
             <DataTableRow key={lot.id} tone={lot.isActive === false ? 'muted' : 'default'}>
-              <DataTableCell tone="emphasis" className="font-mono tabular-nums" dir="ltr">{lot.lotCode}</DataTableCell>
+              <DataTableCell tone="emphasis" align="center" className="font-mono tabular-nums" dir="ltr">{lot.lotCode}</DataTableCell>
               <DataTableCell>{productName(lot.productId)}</DataTableCell>
               <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatExpiryDate(lot.expiryDate)}</DataTableCell>
-              <DataTableCell align="center">
-                <Badge tone={lot.isActive === false ? 'neutral' : 'success'}>
-                  {lot.isActive === false ? 'بایگانی شده' : 'فعال'}
-                </Badge>
-              </DataTableCell>
               {canWrite ? (
                 <DataTableCell align="center">
                   <DataTableActions>
@@ -213,7 +210,7 @@ export const InventoryLotsArchivePanel = ({ session }) => {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">تاریخ انقضا</label>
-            <input type="date" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.expiryDate} onChange={(event) => setModal((current) => ({ ...current, expiryDate: event.target.value }))} />
+            <InventoryShamsiDateInput value={modal.expiryDate} onChange={(nextDate) => setModal((current) => ({ ...current, expiryDate: nextDate }))} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>

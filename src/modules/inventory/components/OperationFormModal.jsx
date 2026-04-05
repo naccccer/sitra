@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, ModalShell } from '@/components/shared/ui'
 import { OperationLineEditor } from '@/modules/inventory/components/OperationLineEditor'
 import { getInventoryOperationConfig } from '@/modules/inventory/config/inventoryConfig'
+import { UOM_OPTIONS } from '@/modules/inventory/config/uomOptions'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const buildEmptyLine = () => ({
@@ -149,12 +150,17 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
       onClose={onClose}
       closeButtonMode="icon"
       maxWidthClass="max-w-5xl"
+      overlayClassName="bg-slate-950/55 backdrop-blur-[6px]"
+      contentClassName="!rounded-[32px] border border-white/75 bg-[rgb(var(--ui-surface))]"
+      headerClassName="rounded-t-[32px] !border-white/10 !bg-[linear-gradient(180deg,rgba(15,23,42,0.98),rgba(2,6,23,0.98))] [&>div]:!items-center [&_h3]:!text-white [&_button]:!text-white [&_button]:hover:!bg-white/10"
+      bodyClassName="space-y-4 bg-[linear-gradient(180deg,rgba(247,247,248,0.88),rgba(243,243,245,0.96))] p-4 sm:p-5 [&_label]:text-[12px] [&_label]:font-black [&_label]:text-slate-600 [&_input]:rounded-xl [&_input]:border-slate-200 [&_input]:bg-white/90 [&_select]:rounded-xl [&_select]:border-slate-200 [&_select]:bg-white/90"
+      footerClassName="rounded-b-[32px] border-white/80 bg-white/90 px-4 py-3"
       footer={(
-        <div className="flex items-center justify-end gap-3">
-          <Button type="button" variant="ghost" onClick={onClose}>انصراف</Button>
-          <Button type="submit" form="inventory-operation-form" variant="primary" disabled={submitting}>
+        <div className="flex items-center justify-start gap-2" dir="ltr">
+          <Button type="submit" form="inventory-operation-form" variant="primary" disabled={submitting} className="!rounded-[18px] !bg-emerald-600 !text-white hover:!bg-emerald-700">
             {submitting ? 'در حال ذخیره...' : 'ذخیره پیش نویس'}
           </Button>
+          <Button type="button" variant="secondary" onClick={onClose} className="!rounded-[18px]">انصراف</Button>
         </div>
       )}
     >
@@ -211,7 +217,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">خطوط عملیات</span>
-            <Button type="button" size="xs" variant="secondary" onClick={addLine}>+ خط جدید</Button>
+            <Button type="button" size="xs" action="create" onClick={addLine}>+ خط جدید</Button>
           </div>
 
           <div className="space-y-2">
@@ -224,6 +230,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
                 config={config}
                 sourceLocations={sourceLocations}
                 targetLocations={targetLocations}
+                uomOptions={UOM_OPTIONS}
                 setLine={setLine}
                 removeLine={removeLine}
               />

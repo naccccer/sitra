@@ -7,6 +7,7 @@ export const OperationLineEditor = ({
   config,
   sourceLocations,
   targetLocations,
+  uomOptions,
   setLine,
   removeLine,
 }) => (
@@ -54,13 +55,16 @@ export const OperationLineEditor = ({
 
     <div className={`col-span-12 ${config.needsSource && config.needsTarget ? 'md:col-span-2' : 'md:col-span-3'}`}>
       <label className="mb-0.5 block text-xs text-slate-500">واحد</label>
-      <input
-        type="text"
+      <select
         className="w-full rounded border border-slate-300 px-1.5 py-1 text-xs"
         value={line.uom}
         onChange={(event) => setLine(line._key, 'uom', event.target.value)}
-        placeholder="مثال: کیلوگرم"
-      />
+      >
+        <option value="">انتخاب واحد</option>
+        {Array.from(new Set([...(Array.isArray(uomOptions) ? uomOptions : []), line.uom].filter(Boolean))).map((uom) => (
+          <option key={uom} value={uom}>{uom}</option>
+        ))}
+      </select>
     </div>
 
     {config.needsSource ? (
