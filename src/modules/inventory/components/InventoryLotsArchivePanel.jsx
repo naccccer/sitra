@@ -17,6 +17,7 @@ import {
   WorkspaceToolbar,
 } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
+import { InventoryShamsiDateInput } from '@/modules/inventory/components/InventoryShamsiDateInput'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 import { toPN } from '@/utils/helpers'
 
@@ -209,7 +210,7 @@ export const InventoryLotsArchivePanel = ({ session }) => {
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">تاریخ انقضا</label>
-            <input type="date" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.expiryDate} onChange={(event) => setModal((current) => ({ ...current, expiryDate: event.target.value }))} />
+            <InventoryShamsiDateInput value={modal.expiryDate} onChange={(nextDate) => setModal((current) => ({ ...current, expiryDate: nextDate }))} />
           </div>
           <div>
             <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
