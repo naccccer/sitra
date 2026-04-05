@@ -149,7 +149,6 @@ export const InventoryProductsArchivePanel = ({ session }) => {
             <div className="w-full sm:w-52">
               <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" />
             </div>
-            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
             <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="sm:w-40">
               <option value="">همه انواع</option>
               {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
@@ -163,6 +162,7 @@ export const InventoryProductsArchivePanel = ({ session }) => {
             onClick={() => setArchiveMode((current) => !current)}
           />
           <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+          {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
         </FilterRow>
       </WorkspaceToolbar>
 

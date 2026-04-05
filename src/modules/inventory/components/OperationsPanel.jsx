@@ -131,7 +131,6 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
               size="sm"
               className="sm:w-64"
             />
-            <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
             <Select
               value={statusFilter}
               onChange={(event) => {
@@ -148,6 +147,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
             </Select>
           </div>
           <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
+          <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
         </FilterRow>
       </WorkspaceToolbar>
 

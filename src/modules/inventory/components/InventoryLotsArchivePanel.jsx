@@ -134,7 +134,6 @@ export const InventoryLotsArchivePanel = ({ session }) => {
       >
         <FilterRow className="gap-3">
           <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
             <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="sm:w-48">
               <option value="">همه محصولات</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
@@ -148,6 +147,7 @@ export const InventoryLotsArchivePanel = ({ session }) => {
             onClick={() => setArchiveMode((current) => !current)}
           />
           <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+          {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
         </FilterRow>
       </WorkspaceToolbar>
 
