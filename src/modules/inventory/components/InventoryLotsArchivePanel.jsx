@@ -132,22 +132,24 @@ export const InventoryLotsArchivePanel = ({ session }) => {
           </>
         )}
       >
-        <FilterRow className="gap-3">
-          <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="sm:w-48">
+        <FilterRow className="justify-between gap-3">
+          <div className="flex shrink-0 items-center gap-2">
+            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="w-full sm:w-48">
               <option value="">همه محصولات</option>
               {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
             </Select>
           </div>
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-          {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
+          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
+            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            <IconButton
+              action="archive"
+              variant={archiveMode ? 'primary' : 'secondary'}
+              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              onClick={() => setArchiveMode((current) => !current)}
+            />
+          </div>
         </FilterRow>
       </WorkspaceToolbar>
 

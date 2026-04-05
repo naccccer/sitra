@@ -120,17 +120,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
         summary={<Badge tone="neutral">نتیجه: {toPN(total)}</Badge>}
       >
         <FilterRow className="justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Input
-              value={q}
-              onChange={(event) => {
-                setQ(event.target.value)
-                setPage(1)
-              }}
-              placeholder="جستجو در شماره عملیات یا کد مرجع"
-              size="sm"
-              className="sm:w-64"
-            />
+          <div className="flex shrink-0 items-center gap-2">
             <Select
               value={statusFilter}
               onChange={(event) => {
@@ -146,8 +136,22 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
               ))}
             </Select>
           </div>
-          <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
-          <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
+          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+            <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
+            <div className="w-full sm:w-64">
+              <Input
+                value={q}
+                onChange={(event) => {
+                  setQ(event.target.value)
+                  setPage(1)
+                }}
+                placeholder="جستجو در شماره عملیات یا کد مرجع"
+                size="sm"
+                dir="rtl"
+              />
+            </div>
+            <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
+          </div>
         </FilterRow>
       </WorkspaceToolbar>
 
