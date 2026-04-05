@@ -145,17 +145,17 @@ export const InventoryProductsArchivePanel = ({ session }) => {
         )}
       >
         <FilterRow className="justify-between gap-3">
-          <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+          <div className="flex shrink-0 items-center gap-2">
             <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="w-full sm:w-40">
               <option value="">همه انواع</option>
               {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
-            <div className="w-full sm:w-52">
-              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" />
-            </div>
           </div>
-          <div className="flex shrink-0 items-center gap-2" dir="ltr">
+          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
             {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
+            <div className="w-full sm:w-52">
+              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" dir="rtl" />
+            </div>
             <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
             <IconButton
               action="archive"
