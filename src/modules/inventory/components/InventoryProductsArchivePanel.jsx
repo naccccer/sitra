@@ -144,25 +144,27 @@ export const InventoryProductsArchivePanel = ({ session }) => {
           </>
         )}
       >
-        <FilterRow className="gap-3">
-          <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            <div className="w-full sm:w-52">
-              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" />
-            </div>
-            <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="sm:w-40">
+        <FilterRow className="justify-between gap-3">
+          <div className="flex flex-1 flex-wrap items-center justify-end gap-2">
+            <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="w-full sm:w-40">
               <option value="">همه انواع</option>
               {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </Select>
+            <div className="w-full sm:w-52">
+              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" />
+            </div>
           </div>
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-          {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
+          <div className="flex shrink-0 items-center gap-2" dir="ltr">
+            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
+            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            <IconButton
+              action="archive"
+              variant={archiveMode ? 'primary' : 'secondary'}
+              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+              onClick={() => setArchiveMode((current) => !current)}
+            />
+          </div>
         </FilterRow>
       </WorkspaceToolbar>
 
