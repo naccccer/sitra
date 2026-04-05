@@ -35,7 +35,16 @@ const PAGE_SIZE_OPTIONS = [20]
 
 const formatDateToken = (value) => {
   const raw = String(value ?? '').trim()
-  return raw ? toPN(raw.replaceAll('-', '/')) : '-'
+  if (!raw) return '-'
+  const date = new Date(raw)
+  if (Number.isNaN(date.getTime())) {
+    return toPN(raw.replaceAll('-', '/'))
+  }
+  return new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(date)
 }
 
 export const OperationsPanel = ({ operationType, session, onNew }) => {
@@ -108,7 +117,6 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
   return (
     <div className="space-y-4" dir="rtl">
       <WorkspaceToolbar
-        actions={<Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>}
         summary={<Badge tone="neutral">نتیجه: {toPN(total)}</Badge>}
       >
         <FilterRow className="justify-between gap-3">
@@ -123,6 +131,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
               size="sm"
               className="sm:w-64"
             />
+            <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
             <Select
               value={statusFilter}
               onChange={(event) => {
@@ -165,7 +174,6 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
             <DataTableHeaderCell>انبار مبدا</DataTableHeaderCell>
             <DataTableHeaderCell>انبار مقصد</DataTableHeaderCell>
             <DataTableHeaderCell>کد مرجع</DataTableHeaderCell>
-            <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
             <DataTableHeaderCell align="center">تعداد خطوط</DataTableHeaderCell>
             <DataTableHeaderCell>تاریخ</DataTableHeaderCell>
             <DataTableHeaderCell align="center">اقدامات</DataTableHeaderCell>
@@ -173,11 +181,10 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
         </DataTableHead>
         <DataTableBody>
           {loading ? (
-            <DataTableState colSpan={9} state="loading" title="در حال بارگذاری عملیات" />
+            <DataTableState colSpan={8} state="loading" title="در حال بارگذاری عملیات" />
           ) : rows.length === 0 ? (
-            <DataTableState colSpan={9} title="رکوردی یافت نشد" />
+            <DataTableState colSpan={8} title="رکوردی یافت نشد" />
           ) : rows.map((operation) => {
-            const status = STATUS_MAP[operation.status] ?? STATUS_MAP.draft
             const actions = getActions(operation)
             return (
               <DataTableRow key={operation.id}>
@@ -186,9 +193,6 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
                 <DataTableCell>{operation.sourceWarehouseName || '-'}</DataTableCell>
                 <DataTableCell>{operation.targetWarehouseName || '-'}</DataTableCell>
                 <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{toPN(operation.referenceCode || '-')}</DataTableCell>
-                <DataTableCell align="center">
-                  <span className={`inline-flex rounded-full px-2 py-1 text-[10px] font-black ${status.cls}`}>{status.label}</span>
-                </DataTableCell>
                 <DataTableCell align="center" className="tabular-nums">{toPN(operation.lineCount || 0)}</DataTableCell>
                 <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{formatDateToken(operation.createdAt)}</DataTableCell>
                 <DataTableCell align="center">
