@@ -1,12 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "InventoryV2OperationsCreateRequest",
+  "description": "Create a draft inventory operation. production_move remains a legacy-compatible accepted type but is hidden from the current UI.",
   "type": "object",
   "required": ["operationType", "lines"],
   "properties": {
     "operationType": {
       "type": "string",
-      "enum": ["receipt", "delivery", "transfer", "production_move", "adjustment", "count"]
+      "enum": [
+        "receipt",
+        "delivery",
+        "transfer",
+        "production_move",
+        "production_consume",
+        "production_output",
+        "adjustment",
+        "count"
+      ]
     },
     "sourceWarehouseId": { "type": ["string", "number", "null"] },
     "targetWarehouseId": { "type": ["string", "number", "null"] },
@@ -26,12 +36,14 @@
           "lotId": { "type": ["string", "number", "null"] },
           "sourceLocationId": { "type": ["string", "number", "null"] },
           "targetLocationId": { "type": ["string", "number", "null"] },
-          "quantityRequested": { "type": "number", "minimum": 0 },
+          "quantityRequested": { "type": "number", "exclusiveMinimum": 0 },
           "quantityDone": { "type": "number" },
           "uom": { "type": "string" },
           "notes": { "type": "string" }
-        }
+        },
+        "additionalProperties": false
       }
     }
-  }
+  },
+  "additionalProperties": false
 }

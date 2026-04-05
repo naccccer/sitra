@@ -2,6 +2,8 @@
 
 This file describes the current repo shape. It is the source of truth for active module ownership and canonical edit paths. `docs/ROADMAP.md` is future-looking only.
 
+Operational explainer for the current inventory UI and domain model: `docs/inventory-v2-guide.md`
+
 ## Module Status
 
 | Area | Status |
@@ -40,3 +42,8 @@ This file describes the current repo shape. It is the source of truth for active
 - Backend business handlers: `api/modules/<module>/*`
 - Thin endpoint wrappers: `api/*.php`
 - Backend shared helpers for module internals: `api/modules/<module>/*_helpers.php`, `api/common/*`
+
+## Legacy Inventory Note
+- `database/schema.sql` still contains legacy `inventory_*` tables alongside active `inventory_v2_*` tables.
+- Current active ownership, routes, and UI target only `inventory_v2_*`.
+- Legacy `inventory_*` structures should be treated as migration/deprecation work, not as the current module surface.

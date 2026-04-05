@@ -9,7 +9,9 @@ $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 app_require_module_enabled($pdo, 'inventory');
 app_ensure_inventory_v2_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = $method === 'GET'
+    ? app_require_auth(['admin', 'manager', 'sales'])
+    : app_require_auth(['admin', 'manager']);
 if ($method === 'GET') {
     app_inventory_v2_require_permission($actor, 'inventory.v2_lots.read', $pdo);
 } else {
@@ -44,7 +46,7 @@ function app_inventory_v2_lots_payload(array $payload, ?array $current = null): 
 
 if ($method === 'GET') {
     $productId = app_inventory_v2_parse_id($_GET['productId'] ?? null);
-    $includeInactive = app_inventory_v2_parse_bool($_GET['includeInactive'] ?? false, false);
+    $includeArchived = app_inventory_v2_parse_archive_filter($_GET);
 
     $sql = 'SELECT * FROM inventory_v2_lots';
     $where = [];
@@ -54,7 +56,7 @@ if ($method === 'GET') {
         $where[] = 'product_id = :product_id';
         $params['product_id'] = $productId;
     }
-    if (!$includeInactive) {
+    if (!$includeArchived) {
         $where[] = 'is_active = 1';
     }
 
@@ -133,19 +135,49 @@ $id = app_inventory_v2_parse_id($payload['id'] ?? null);
 if ($id === null) {
     app_json(['success' => false, 'error' => 'Valid id is required.'], 400);
 }
-$isActive = app_inventory_v2_parse_bool($payload['isActive'] ?? true, true);
+$fetch = $pdo->prepare('SELECT * FROM inventory_v2_lots WHERE id = :id LIMIT 1');
+$fetch->execute(['id' => $id]);
+$current = $fetch->fetch();
+if (!$current) {
+    app_json(['success' => false, 'error' => 'Lot not found.'], 404);
+}
 
+$action = app_inventory_v2_resolve_entity_action($payload);
+if ($action === 'delete') {
+    app_inventory_v2_require_archived_for_delete($current, 'Lot');
+
+    $dependencies = [
+        'stock snapshots' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_quants WHERE lot_id = :id', ['id' => $id]),
+        'stock ledger entries' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_stock_ledger WHERE lot_id = :id', ['id' => $id]),
+        'reservations' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_reservations WHERE lot_id = :id', ['id' => $id]),
+        'operation lines' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_operation_lines WHERE lot_id = :id', ['id' => $id]),
+    ];
+
+    foreach ($dependencies as $label => $count) {
+        if ($count > 0) {
+            app_json(['success' => false, 'error' => "Archived lot cannot be deleted because it still has related {$label}."], 409);
+        }
+    }
+
+    $delete = $pdo->prepare('DELETE FROM inventory_v2_lots WHERE id = :id');
+    $delete->execute(['id' => $id]);
+
+    app_audit_log($pdo, 'inventory.vtwo_lots.deleted', 'inventory_v2_lot', (string)$id, ['lotCode' => (string)($current['lot_code'] ?? '')], $actor);
+    app_json(['success' => true, 'deletedId' => (string)$id]);
+}
+
+$isActive = $action === 'restore';
 $patch = $pdo->prepare('UPDATE inventory_v2_lots SET is_active = :is_active, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
 $patch->execute(['id' => $id, 'is_active' => $isActive ? 1 : 0]);
 
-$fetch = $pdo->prepare('SELECT * FROM inventory_v2_lots WHERE id = :id LIMIT 1');
 $fetch->execute(['id' => $id]);
 $row = $fetch->fetch();
 if (!$row) {
     app_json(['success' => false, 'error' => 'Lot not found.'], 404);
 }
 
-app_audit_log($pdo, 'inventory.vtwo_lots.active_changed', 'inventory_v2_lot', (string)$id, ['isActive' => $isActive], $actor);
+$auditEvent = $isActive ? 'inventory.vtwo_lots.restored' : 'inventory.vtwo_lots.archived';
+app_audit_log($pdo, $auditEvent, 'inventory_v2_lot', (string)$id, ['isActive' => $isActive], $actor);
 app_json(['success' => true, 'lot' => app_inventory_v2_lot_from_row($row)]);
 
 

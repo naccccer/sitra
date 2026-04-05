@@ -1,18 +1,20 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "InventoryV2ReservationsCreateRequest",
+  "description": "Create an active reservation against currently available inventory. The reservation lifecycle exposed by the public contract is active -> fulfilled | released.",
   "type": "object",
   "required": ["productId", "warehouseId", "locationId", "quantityReserved"],
   "properties": {
-    "productId":        { "type": ["string", "number"] },
-    "variantId":        { "type": ["string", "number", "null"] },
-    "lotId":            { "type": ["string", "number", "null"] },
-    "warehouseId":      { "type": ["string", "number"] },
-    "locationId":       { "type": ["string", "number"] },
+    "productId": { "type": ["string", "number"] },
+    "variantId": { "type": ["string", "number", "null"] },
+    "lotId": { "type": ["string", "number", "null"] },
+    "warehouseId": { "type": ["string", "number"] },
+    "locationId": { "type": ["string", "number"] },
     "quantityReserved": { "type": "number", "exclusiveMinimum": 0 },
-    "referenceType":    { "type": "string" },
-    "referenceId":      { "type": "string" },
-    "referenceCode":    { "type": "string" },
-    "notes":            { "type": "string" }
-  }
+    "referenceType": { "type": "string" },
+    "referenceId": { "type": "string" },
+    "referenceCode": { "type": "string" },
+    "notes": { "type": "string" }
+  },
+  "additionalProperties": false
 }

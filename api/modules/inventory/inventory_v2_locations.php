@@ -9,7 +9,9 @@ $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 app_require_module_enabled($pdo, 'inventory');
 app_ensure_inventory_v2_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = $method === 'GET'
+    ? app_require_auth(['admin', 'manager', 'sales'])
+    : app_require_auth(['admin', 'manager']);
 if ($method === 'GET') {
     app_inventory_v2_require_permission($actor, 'inventory.v2_locations.read', $pdo);
 } else {
@@ -47,7 +49,7 @@ function app_inventory_v2_locations_payload(array $payload, ?array $current = nu
 
 if ($method === 'GET') {
     $warehouseId = app_inventory_v2_parse_id($_GET['warehouseId'] ?? null);
-    $includeInactive = app_inventory_v2_parse_bool($_GET['includeInactive'] ?? false, false);
+    $includeArchived = app_inventory_v2_parse_archive_filter($_GET);
 
     $sql = 'SELECT * FROM inventory_v2_locations';
     $where = [];
@@ -57,7 +59,7 @@ if ($method === 'GET') {
         $where[] = 'warehouse_id = :warehouse_id';
         $params['warehouse_id'] = $warehouseId;
     }
-    if (!$includeInactive) {
+    if (!$includeArchived) {
         $where[] = 'is_active = 1';
     }
 
@@ -140,19 +142,54 @@ $id = app_inventory_v2_parse_id($payload['id'] ?? null);
 if ($id === null) {
     app_json(['success' => false, 'error' => 'Valid id is required.'], 400);
 }
-$isActive = app_inventory_v2_parse_bool($payload['isActive'] ?? true, true);
+$fetch = $pdo->prepare('SELECT * FROM inventory_v2_locations WHERE id = :id LIMIT 1');
+$fetch->execute(['id' => $id]);
+$current = $fetch->fetch();
+if (!$current) {
+    app_json(['success' => false, 'error' => 'Location not found.'], 404);
+}
 
+$action = app_inventory_v2_resolve_entity_action($payload);
+if ($action === 'delete') {
+    app_inventory_v2_require_archived_for_delete($current, 'Location');
+
+    $dependencies = [
+        'child locations' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_locations WHERE parent_location_id = :id', ['id' => $id]),
+        'stock snapshots' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_quants WHERE location_id = :id', ['id' => $id]),
+        'stock ledger entries' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_stock_ledger WHERE location_id = :id', ['id' => $id]),
+        'reservations' => app_inventory_v2_count_related_rows($pdo, 'SELECT COUNT(*) FROM inventory_v2_reservations WHERE location_id = :id', ['id' => $id]),
+        'operation lines' => app_inventory_v2_count_related_rows(
+            $pdo,
+            'SELECT COUNT(*) FROM inventory_v2_operation_lines WHERE source_location_id = :source_id OR target_location_id = :target_id',
+            ['source_id' => $id, 'target_id' => $id]
+        ),
+    ];
+
+    foreach ($dependencies as $label => $count) {
+        if ($count > 0) {
+            app_json(['success' => false, 'error' => "Archived location cannot be deleted because it still has related {$label}."], 409);
+        }
+    }
+
+    $delete = $pdo->prepare('DELETE FROM inventory_v2_locations WHERE id = :id');
+    $delete->execute(['id' => $id]);
+
+    app_audit_log($pdo, 'inventory.vtwo_locations.deleted', 'inventory_v2_location', (string)$id, ['name' => (string)($current['name'] ?? '')], $actor);
+    app_json(['success' => true, 'deletedId' => (string)$id]);
+}
+
+$isActive = $action === 'restore';
 $patch = $pdo->prepare('UPDATE inventory_v2_locations SET is_active = :is_active, updated_at = CURRENT_TIMESTAMP WHERE id = :id');
 $patch->execute(['id' => $id, 'is_active' => $isActive ? 1 : 0]);
 
-$fetch = $pdo->prepare('SELECT * FROM inventory_v2_locations WHERE id = :id LIMIT 1');
 $fetch->execute(['id' => $id]);
 $row = $fetch->fetch();
 if (!$row) {
     app_json(['success' => false, 'error' => 'Location not found.'], 404);
 }
 
-app_audit_log($pdo, 'inventory.vtwo_locations.active_changed', 'inventory_v2_location', (string)$id, ['isActive' => $isActive], $actor);
+$auditEvent = $isActive ? 'inventory.vtwo_locations.restored' : 'inventory.vtwo_locations.archived';
+app_audit_log($pdo, $auditEvent, 'inventory_v2_location', (string)$id, ['isActive' => $isActive], $actor);
 app_json(['success' => true, 'location' => app_inventory_v2_location_from_row($row)]);
 
 

@@ -38,6 +38,43 @@ function app_inventory_v2_require_permission(array $actor, string $permission, P
     }
 }
 
+function app_inventory_v2_parse_archive_filter(array $query): bool
+{
+    if (array_key_exists('includeArchived', $query)) {
+        return app_inventory_v2_parse_bool($query['includeArchived'], false);
+    }
+    return app_inventory_v2_parse_bool($query['includeInactive'] ?? false, false);
+}
+
+function app_inventory_v2_resolve_entity_action(array $payload): string
+{
+    $action = app_inventory_v2_normalize_text($payload['action'] ?? '');
+    if (in_array($action, ['archive', 'restore', 'delete'], true)) {
+        return $action;
+    }
+
+    if (array_key_exists('isActive', $payload)) {
+        return app_inventory_v2_parse_bool($payload['isActive'], true) ? 'restore' : 'archive';
+    }
+
+    return 'archive';
+}
+
+function app_inventory_v2_require_archived_for_delete(array $current, string $entityLabel): void
+{
+    $isActive = ((int)($current['is_active'] ?? 0)) === 1;
+    if ($isActive) {
+        app_json(['success' => false, 'error' => "{$entityLabel} must be archived before deletion."], 422);
+    }
+}
+
+function app_inventory_v2_count_related_rows(PDO $pdo, string $sql, array $params): int
+{
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute($params);
+    return (int)$stmt->fetchColumn();
+}
+
 function app_inventory_v2_product_from_row(array $row): array
 {
     return [
@@ -48,6 +85,7 @@ function app_inventory_v2_product_from_row(array $row): array
         'uom' => (string)($row['uom'] ?? ''),
         'notes' => (string)($row['notes'] ?? ''),
         'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
+        'isArchived' => ((int)($row['is_active'] ?? 0)) !== 1,
         'createdAt' => app_format_order_timestamp($row['created_at'] ?? null),
         'updatedAt' => app_format_order_timestamp($row['updated_at'] ?? null),
     ];
@@ -61,6 +99,7 @@ function app_inventory_v2_warehouse_from_row(array $row): array
         'name' => (string)($row['name'] ?? ''),
         'notes' => (string)($row['notes'] ?? ''),
         'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
+        'isArchived' => ((int)($row['is_active'] ?? 0)) !== 1,
         'createdAt' => app_format_order_timestamp($row['created_at'] ?? null),
         'updatedAt' => app_format_order_timestamp($row['updated_at'] ?? null),
     ];
@@ -77,6 +116,7 @@ function app_inventory_v2_location_from_row(array $row): array
         'usageType' => (string)($row['usage_type'] ?? ''),
         'notes' => (string)($row['notes'] ?? ''),
         'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
+        'isArchived' => ((int)($row['is_active'] ?? 0)) !== 1,
         'createdAt' => app_format_order_timestamp($row['created_at'] ?? null),
         'updatedAt' => app_format_order_timestamp($row['updated_at'] ?? null),
     ];
@@ -92,6 +132,7 @@ function app_inventory_v2_lot_from_row(array $row): array
         'expiryDate' => isset($row['expiry_date']) ? (string)$row['expiry_date'] : null,
         'notes' => (string)($row['notes'] ?? ''),
         'isActive' => ((int)($row['is_active'] ?? 0)) === 1,
+        'isArchived' => ((int)($row['is_active'] ?? 0)) !== 1,
         'createdAt' => app_format_order_timestamp($row['created_at'] ?? null),
         'updatedAt' => app_format_order_timestamp($row['updated_at'] ?? null),
     ];

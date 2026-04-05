@@ -43,7 +43,7 @@ if ($method === 'GET') {
 
     $where  = [];
     $params = [];
-    $validStatuses = ['active', 'fulfilled', 'released', 'expired'];
+    $validStatuses = ['active', 'fulfilled', 'released'];
     if ($status !== '' && in_array($status, $validStatuses, true)) {
         $where[] = 'r.status = :status';
         $params['status'] = $status;

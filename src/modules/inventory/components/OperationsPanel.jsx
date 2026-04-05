@@ -18,8 +18,9 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
-import { toPN } from '@/utils/helpers'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
+import { getInventoryOperationLabel } from '@/modules/inventory/config/inventoryConfig'
+import { toPN } from '@/utils/helpers'
 
 const STATUS_MAP = {
   draft: { label: 'پیش نویس', cls: 'bg-slate-100 text-slate-600' },
@@ -29,19 +30,9 @@ const STATUS_MAP = {
   cancelled: { label: 'لغو شده', cls: 'bg-red-100 text-red-600' },
 }
 
-const TYPE_LABELS = {
-  receipt: 'رسید',
-  delivery: 'حواله',
-  transfer: 'انتقال',
-  production_move: 'تولید',
-  production_consume: 'مصرف تولید',
-  production_output: 'خروجی تولید',
-  adjustment: 'تعدیل',
-  count: 'شمارش',
-}
-
 const PAGE_SIZE = 20
 const PAGE_SIZE_OPTIONS = [20]
+
 const formatDateToken = (value) => {
   const raw = String(value ?? '').trim()
   return raw ? toPN(raw.replaceAll('-', '/')) : '-'
@@ -191,7 +182,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
             return (
               <DataTableRow key={operation.id}>
                 <DataTableCell tone="emphasis" className="font-mono tabular-nums" dir="ltr">{toPN(operation.operationNo || '-')}</DataTableCell>
-                <DataTableCell>{TYPE_LABELS[operation.operationType] ?? operation.operationType}</DataTableCell>
+                <DataTableCell>{getInventoryOperationLabel(operation.operationType)}</DataTableCell>
                 <DataTableCell>{operation.sourceWarehouseName || '-'}</DataTableCell>
                 <DataTableCell>{operation.targetWarehouseName || '-'}</DataTableCell>
                 <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{toPN(operation.referenceCode || '-')}</DataTableCell>

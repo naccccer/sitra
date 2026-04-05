@@ -55,6 +55,10 @@ This file defines **stable cross-module contracts** at a compact level.
 - `inventory.v2_replenishment.v1`
 - `inventory.v2_reports.v1`
 
+`inventory.v2_operations.v1` accepts `receipt`, `delivery`, `transfer`, `adjustment`, `count`, `production_consume`, `production_output`, and the legacy-compatible hidden type `production_move`.
+
+`inventory.v2_reservations.v1` remains a public contract anchor, but manual reservation management is currently not surfaced in the general inventory UI; the exposed lifecycle is `active -> fulfilled | released`.
+
 ### Human Resources
 - `human_resources.employee_list_write.v1`
 - `human_resources.employee_documents.v1`

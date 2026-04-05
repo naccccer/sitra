@@ -19,7 +19,7 @@ export const SegmentedTabs = ({
         className={cn(
           'focus-ring whitespace-nowrap rounded-[var(--radius-lg)] px-3 py-1.5 text-xs font-black transition-colors',
           activeId === tab.id
-            ? 'bg-white text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]'
+            ? 'bg-[rgb(234,88,12)] text-white shadow-[0_8px_20px_rgba(234,88,12,0.24)]'
             : 'text-[rgb(var(--ui-text-muted))] hover:text-[rgb(var(--ui-text))]',
           tabClassName,
         )}

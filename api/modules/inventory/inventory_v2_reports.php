@@ -9,7 +9,7 @@ $method = app_require_method(['GET']);
 app_require_module_enabled($pdo, 'inventory');
 app_ensure_inventory_v2_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'sales']);
 app_inventory_v2_require_permission($actor, 'inventory.v2_reports.read', $pdo);
 
 $report = app_inventory_v2_normalize_text($_GET['report'] ?? 'on_hand');

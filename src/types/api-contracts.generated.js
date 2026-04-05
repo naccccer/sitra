@@ -70,7 +70,7 @@ export const __type_InventoryV2LotsUpsertRequest = null
  */
 export const __type_InventoryV2OperationsActionRequest = null
 /**
- * @typedef { operationType: "receipt" | "delivery" | "transfer" | "production_move" | "adjustment" | "count", sourceWarehouseId?: string | number | null, targetWarehouseId?: string | number | null, referenceType?: string, referenceId?: string, referenceCode?: string, notes?: string, lines: Array<{ productId: string | number, variantId?: string | number | null, lotId?: string | number | null, sourceLocationId?: string | number | null, targetLocationId?: string | number | null, quantityRequested: number, quantityDone?: number, uom?: string, notes?: string }> } InventoryV2OperationsCreateRequest
+ * @typedef { operationType: "receipt" | "delivery" | "transfer" | "production_move" | "production_consume" | "production_output" | "adjustment" | "count", sourceWarehouseId?: string | number | null, targetWarehouseId?: string | number | null, referenceType?: string, referenceId?: string, referenceCode?: string, notes?: string, lines: Array<{ productId: string | number, variantId?: string | number | null, lotId?: string | number | null, sourceLocationId?: string | number | null, targetLocationId?: string | number | null, quantityRequested: number, quantityDone?: number, uom?: string, notes?: string }> } InventoryV2OperationsCreateRequest
  */
 export const __type_InventoryV2OperationsCreateRequest = null
 /**
