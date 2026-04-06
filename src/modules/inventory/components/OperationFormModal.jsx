@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, ModalShell } from '@/components/shared/ui'
 import { OperationLineEditor } from '@/modules/inventory/components/OperationLineEditor'
 import { getInventoryOperationConfig } from '@/modules/inventory/config/inventoryConfig'
-import { UOM_OPTIONS } from '@/modules/inventory/config/uomOptions'
+import { useInventoryUomOptions } from '@/modules/inventory/hooks/useInventoryUomOptions'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const buildEmptyLine = () => ({
@@ -30,6 +30,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
   const [lines, setLines] = useState([buildEmptyLine()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const { uomOptions } = useInventoryUomOptions()
 
   useEffect(() => {
     inventoryApi.fetchV2Warehouses({ includeInactive: false }).then((response) => {
@@ -230,7 +231,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
                 config={config}
                 sourceLocations={sourceLocations}
                 targetLocations={targetLocations}
-                uomOptions={UOM_OPTIONS}
+                uomOptions={uomOptions}
                 setLine={setLine}
                 removeLine={removeLine}
               />

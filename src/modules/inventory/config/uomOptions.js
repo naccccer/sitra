@@ -1,4 +1,4 @@
-export const UOM_OPTIONS = [
+export const DEFAULT_UOM_OPTIONS = [
   'عدد',
   'کیلوگرم',
   'گرم',
@@ -13,3 +13,12 @@ export const UOM_OPTIONS = [
   'کارتن',
   'جفت',
 ]
+
+export const normalizeUomOptions = (value) => {
+  if (!Array.isArray(value)) return []
+  return Array.from(new Set(
+    value
+      .map((item) => String(item ?? '').trim())
+      .filter(Boolean),
+  ))
+}

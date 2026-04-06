@@ -54,6 +54,7 @@ This file defines **stable cross-module contracts** at a compact level.
 - `inventory.v2_reservations.v1`
 - `inventory.v2_replenishment.v1`
 - `inventory.v2_reports.v1`
+- `inventory.v2_settings.v1`
 
 `inventory.v2_operations.v1` accepts `receipt`, `delivery`, `transfer`, `adjustment`, `count`, `production_consume`, `production_output`, and the legacy-compatible hidden type `production_move`.
 
@@ -102,6 +103,7 @@ Public wrappers remain contract anchors and must stay compatible:
 - `/api/inventory_v2_reservations.php`
 - `/api/inventory_v2_replenishment.php`
 - `/api/inventory_v2_reports.php`
+- `/api/inventory_v2_settings.php`
 - `/api/acc_payroll.php`
 - `/api/acc_payroll_import.php`
 - `/api/acc_settings.php`
