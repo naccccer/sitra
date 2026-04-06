@@ -50,6 +50,7 @@ export const INVENTORY_STOCK_TABS = [
 export const INVENTORY_SETTINGS_TABS = [
   { id: 'warehouses', label: 'انبارها' },
   { id: 'locations', label: 'مکان‌ها' },
+  { id: 'uom-options', label: 'واحدها' },
 ]
 
 export const INVENTORY_OPERATION_TYPE_CONFIG = {

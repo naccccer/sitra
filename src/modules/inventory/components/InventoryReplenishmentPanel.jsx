@@ -138,7 +138,7 @@ export const InventoryReplenishmentPanel = ({ session }) => {
           <div className="text-sm font-bold text-slate-700">قوانین تامین مجدد (حداقل / حداکثر)</div>
           <div className="text-xs text-slate-500">وقتی موجودی به حداقل برسد، پیشنهاد خرید یا تولید ایجاد می‌شود.</div>
         </div>
-        {canWrite && <Button size="sm" variant="primary" onClick={openCreate}>+ قانون جدید</Button>}
+        {canWrite && <Button size="sm" action="create" onClick={openCreate}>+ قانون جدید</Button>}
         <Button size="sm" variant="secondary" disabled={suggestLoading} onClick={handleSuggest}>
           {suggestLoading ? 'در حال محاسبه...' : 'نمایش پیشنهادات'}
         </Button>

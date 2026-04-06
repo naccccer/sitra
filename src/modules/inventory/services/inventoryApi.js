@@ -138,6 +138,13 @@ export const inventoryApi = {
     return request('/api/inventory_v2_replenishment.php?action=suggest', { method: 'GET' })
   },
 
+  async fetchV2Settings(key) {
+    return request(`/api/inventory_v2_settings.php${buildQuery({ key })}`, { method: 'GET' })
+  },
+  async saveV2Settings(key, value) {
+    return request('/api/inventory_v2_settings.php', { method: 'POST', body: JSON.stringify({ key, value }) })
+  },
+
   async fetchV2Report(reportType, filters = {}) {
     return request(`/api/inventory_v2_reports.php${buildQuery({ report: reportType, ...filters })}`, { method: 'GET' })
   },

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Button, ModalShell } from '@/components/shared/ui'
 import { OperationLineEditor } from '@/modules/inventory/components/OperationLineEditor'
 import { getInventoryOperationConfig } from '@/modules/inventory/config/inventoryConfig'
+import { useInventoryUomOptions } from '@/modules/inventory/hooks/useInventoryUomOptions'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
 const buildEmptyLine = () => ({
@@ -29,6 +30,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
   const [lines, setLines] = useState([buildEmptyLine()])
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
+  const { uomOptions } = useInventoryUomOptions()
 
   useEffect(() => {
     inventoryApi.fetchV2Warehouses({ includeInactive: false }).then((response) => {
@@ -216,7 +218,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
         <div>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">خطوط عملیات</span>
-            <Button type="button" size="xs" variant="secondary" onClick={addLine}>+ خط جدید</Button>
+            <Button type="button" size="xs" action="create" onClick={addLine}>+ خط جدید</Button>
           </div>
 
           <div className="space-y-2">
@@ -229,6 +231,7 @@ export const OperationFormModal = ({ operationType, onClose, onCreated }) => {
                 config={config}
                 sourceLocations={sourceLocations}
                 targetLocations={targetLocations}
+                uomOptions={uomOptions}
                 setLine={setLine}
                 removeLine={removeLine}
               />

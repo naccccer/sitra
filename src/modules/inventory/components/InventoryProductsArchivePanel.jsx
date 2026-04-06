@@ -18,6 +18,7 @@ import {
   WorkspaceToolbar,
 } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
+import { useInventoryUomOptions } from '@/modules/inventory/hooks/useInventoryUomOptions'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 import { toPN } from '@/utils/helpers'
 
@@ -58,6 +59,7 @@ export const InventoryProductsArchivePanel = ({ session }) => {
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const { uomOptions } = useInventoryUomOptions()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -235,7 +237,7 @@ export const InventoryProductsArchivePanel = ({ session }) => {
               <label className="mb-1 block text-xs font-medium text-slate-600">واحد اندازه‌گیری <span className="text-red-500">*</span></label>
               <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.uom} onChange={(event) => setModal((current) => ({ ...current, uom: event.target.value }))} required>
                 <option value="" disabled>انتخاب واحد</option>
-                {UOM_OPTIONS.map((uom) => <option key={uom} value={uom}>{uom}</option>)}
+                {uomOptions.map((uom) => <option key={uom} value={uom}>{uom}</option>)}
               </select>
             </div>
           </div>
