@@ -1,6 +1,7 @@
-﻿import { buildManualPricingMeta } from '@/modules/sales/domain/invoice';
+import { buildManualPricingMeta } from '@/modules/sales/domain/invoice';
 import { createEmptyManualDraft, parseIntSafe } from '@/modules/sales/components/customer/order-form/orderFormUtils';
 import { submitOrderPayload } from '@/modules/sales/components/customer/order-form/orderFormSubmitter';
+import { resolvePricingDimensions } from '@/utils/catalogPricing';
 
 const resolveOverrideInputValue = (item = {}) => {
   const rawOverride = item?.pricingMeta?.overrideUnitPrice;
@@ -11,10 +12,13 @@ const resolveOverrideInputValue = (item = {}) => {
       || item?.custom?.unitCode === 'm_square'
       || item?.config?.unitCode === 'm_square');
   if (!isSquareMeterBased) return rawOverride;
-  const widthCm = Math.max(0, Number(item?.dimensions?.width) || 0);
-  const heightCm = Math.max(0, Number(item?.dimensions?.height) || 0);
-  if (widthCm <= 0 || heightCm <= 0) return rawOverride;
-  const effectiveArea = Math.max(0.25, (widthCm * heightCm) / 10000);
+  const storedFactor = Number(item?.pricingMeta?.pricingUnitFactor);
+  if (Number.isFinite(storedFactor) && storedFactor > 0) {
+    return Math.round(Number(rawOverride) / storedFactor);
+  }
+  const pricingDimensions = resolvePricingDimensions(item?.dimensions);
+  if (!pricingDimensions.hasValidDimensions) return rawOverride;
+  const effectiveArea = pricingDimensions.billableAreaM2;
   return effectiveArea > 0 ? Math.round(Number(rawOverride) / effectiveArea) : rawOverride;
 };
 
@@ -259,7 +263,6 @@ export const createOrderFormHandlers = ({
   const handleCustomerInfoChange = (field, value) => {
     setCustomerInfo((previous) => ({ ...previous, [field]: value }));
   };
-
   const submitOrderToServer = () => submitOrderPayload({
     customerInfo,
     editingOrder,
@@ -283,7 +286,6 @@ export const createOrderFormHandlers = ({
     setOrders,
     setPayments,
   });
-
   return {
     handleAddToCart,
     handleAddManualItem,

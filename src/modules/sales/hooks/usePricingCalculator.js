@@ -1,6 +1,12 @@
 import { useMemo } from 'react';
 import { toPN } from '@/utils/helpers';
 import { normalizeLaminateConfig } from '@/utils/laminateConfig';
+import {
+  findApplicableJumboRule,
+  isFactoryLimitExceeded,
+  normalizeFactoryLimits,
+  resolvePricingDimensions,
+} from '@/utils/catalogPricing';
 
 const glassProcess = (glass) => glass?.process || 'raw';
 const normalizeGlassTitle = (title) => (title || '').toString().trim().toLowerCase();
@@ -22,9 +28,7 @@ const getVariableUnitPrice = (unit, basePrice, effectiveArea, perimeter) => {
 export const usePricingCalculator = (dimensions, activeTab, config, catalog) => {
   const { validationErrors, summaryErrors, unavailableLayers } = useMemo(() => {
     const issues = [];
-    const w = parseFloat(dimensions.width) || 0;
-    const h = parseFloat(dimensions.height) || 0;
-    const maxLimits = catalog.factoryLimits;
+    const maxLimits = normalizeFactoryLimits(catalog.factoryLimits);
     const glasses = Array.isArray(catalog.glasses) ? catalog.glasses : [];
     const interlayers = Array.isArray(catalog.connectors?.interlayers) ? catalog.connectors.interlayers : [];
     const laminateConfig = normalizeLaminateConfig(config.laminate, {
@@ -35,8 +39,8 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       issues.push({ message, kind, layerKey });
     };
 
-    if (maxLimits && ((w > maxLimits.maxWidth && h > maxLimits.maxHeight) || (w > maxLimits.maxHeight && h > maxLimits.maxWidth))) {
-      addIssue(`\u0627\u0628\u0639\u0627\u062f \u0627\u0632 \u062d\u062f\u0627\u06a9\u062b\u0631 \u0638\u0631\u0641\u06cc\u062a \u06a9\u0627\u0631\u062e\u0627\u0646\u0647 (${maxLimits.maxWidth}\u00d7${maxLimits.maxHeight}) \u0628\u06cc\u0634\u062a\u0631 \u0627\u0633\u062a.`);
+    if (isFactoryLimitExceeded(dimensions, maxLimits)) {
+      addIssue(`ابعاد از حداکثر ظرفیت کارخانه (عرض ${toPN(maxLimits.maxShortSideCm)} و طول ${toPN(maxLimits.maxLongSideCm)}) بیشتر است.`);
     }
 
     const validateGlassLayer = (layer, label, layerKey) => {
@@ -111,13 +115,14 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
   }, [dimensions, activeTab, config, catalog]);
 
   const pricingDetails = useMemo(() => {
-    const w = parseFloat(dimensions.width) || 0;
-    const h = parseFloat(dimensions.height) || 0;
+    const resolvedDimensions = resolvePricingDimensions(dimensions, catalog.factoryLimits);
     const count = parseInt(dimensions.count, 10) || 1;
-    const effectiveArea = w > 0 && h > 0 ? Math.max(0.25, (w * h) / 10000) : 0;
-    const perimeter = w > 0 && h > 0 ? (2 * (w + h)) / 100 : 0;
+    const effectiveArea = resolvedDimensions.billableAreaM2;
+    const perimeter = resolvedDimensions.perimeterM;
 
-    if (effectiveArea === 0 || count < 1 || validationErrors.length > 0) return { unitPrice: 0, total: 0 };
+    if (!resolvedDimensions.hasValidDimensions || effectiveArea === 0 || count < 1 || validationErrors.length > 0) {
+      return { unitPrice: 0, total: 0, effectiveArea: 0, actualArea: 0, shortSideCm: 0, longSideCm: 0 };
+    }
 
     const fees = catalog.fees || {};
     const roundStep = Number(catalog.roundStep) > 0 ? Number(catalog.roundStep) : 1000;
@@ -235,21 +240,24 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       unitTotal += patUnit === 'qty' ? patternPrice * count : patternPrice;
     }
 
-    const maxDim = Math.max(w, h);
-    const jumboRules = Array.isArray(catalog.jumboRules) ? catalog.jumboRules : [];
-    const applicableJumbo = jumboRules
-      .filter((r) => maxDim >= r.minDim && (r.maxDim === 0 || maxDim <= r.maxDim))
-      .sort((a, b) => Number(b.value ?? b.addedPercentage ?? 0) - Number(a.value ?? a.addedPercentage ?? 0))[0];
+    const applicableJumbo = findApplicableJumboRule(dimensions, catalog.jumboRules);
 
     if (applicableJumbo) {
-      const jumboType = applicableJumbo.type || 'percentage';
-      const jumboValue = Number(applicableJumbo.value ?? applicableJumbo.addedPercentage ?? 0);
+      const jumboType = applicableJumbo.adjustmentType || 'percentage';
+      const jumboValue = Number(applicableJumbo.adjustmentValue ?? 0);
       if (jumboType === 'fixed') unitTotal += jumboValue;
       else unitTotal += unitTotal * (jumboValue / 100);
     }
 
     const roundedUnitPrice = Math.ceil(unitTotal / roundStep) * roundStep;
-    return { unitPrice: roundedUnitPrice, total: roundedUnitPrice * count, effectiveArea };
+    return {
+      unitPrice: roundedUnitPrice,
+      total: roundedUnitPrice * count,
+      effectiveArea,
+      actualArea: resolvedDimensions.actualAreaM2,
+      shortSideCm: resolvedDimensions.shortSideCm,
+      longSideCm: resolvedDimensions.longSideCm,
+    };
   }, [dimensions, activeTab, config, catalog, validationErrors]);
 
   return { validationErrors, summaryErrors, unavailableLayers, pricingDetails };

@@ -1,15 +1,11 @@
-﻿import { buildCatalogPricingMeta } from '@/modules/sales/domain/invoice';
+import { buildCatalogPricingMeta } from '@/modules/sales/domain/invoice';
 import { parseIntSafe } from '@/modules/sales/components/customer/order-form/orderFormUtils';
+import { resolvePricingDimensions } from '@/utils/catalogPricing';
 import {
   CUSTOM_UNIT_LABEL_M_SQUARE,
   normalizeCustomUnitLabel,
   resolveCustomUnitCode,
 } from '@/utils/customItemUnits';
-
-const toPositiveNumber = (value) => {
-  const numeric = Number(value);
-  return Number.isFinite(numeric) && numeric > 0 ? numeric : 0;
-};
 
 const resolveRoundStep = (catalog) => {
   const parsed = Number(catalog?.roundStep);
@@ -88,15 +84,16 @@ export const resolveCustomDraftState = ({
   const selectedCustomItem = list.find((item) => item.id === String(customDraft?.itemId || '')) || null;
 
   const count = Math.max(1, parseIntSafe(dimensions?.count ?? 1, 1));
-  const widthCm = toPositiveNumber(dimensions?.width);
-  const heightCm = toPositiveNumber(dimensions?.height);
-  const effectiveArea = widthCm > 0 && heightCm > 0 ? Math.max(0.25, (widthCm * heightCm) / 10000) : 0;
-  const perimeter = widthCm > 0 && heightCm > 0 ? (2 * (widthCm + heightCm)) / 100 : 0;
+  const pricingDimensions = resolvePricingDimensions(dimensions, catalog?.factoryLimits);
+  const widthCm = pricingDimensions.widthCm;
+  const heightCm = pricingDimensions.heightCm;
+  const effectiveArea = pricingDimensions.billableAreaM2;
+  const perimeter = pricingDimensions.perimeterM;
 
   const unitLabel = normalizeCustomUnitLabel(selectedCustomItem?.unitLabel || CUSTOM_UNIT_LABEL_M_SQUARE);
   const unitCode = resolveCustomUnitCode(unitLabel);
   const needsDimensions = unitCode !== 'qty';
-  const dimensionsReady = !needsDimensions || (widthCm > 0 && heightCm > 0);
+  const dimensionsReady = !needsDimensions || pricingDimensions.hasValidDimensions;
 
   const baseRate = resolveCustomBaseRate(selectedCustomItem, customDraft);
   const metricFactor = unitCode === 'm_square' ? effectiveArea : unitCode === 'm_length' ? perimeter : 1;

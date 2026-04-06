@@ -1,6 +1,11 @@
 export const initialCatalog = {
   roundStep: 1000,
-  factoryLimits: { maxWidth: 321, maxHeight: 600 },
+  factoryLimits: {
+    maxShortSideCm: 321,
+    maxLongSideCm: 600,
+    minimumChargeThresholdM2: 1,
+    minimumBillableAreaM2: 1,
+  },
   thicknesses: [4, 5, 6, 8, 10, 12],
   glasses: [
     { id: '1', title: 'فلوت', process: 'raw', prices: { 4: 120000, 5: 150000, 6: 180000, 8: 250000, 10: 320000 } },
@@ -36,8 +41,24 @@ export const initialCatalog = {
     { id: 'pvbL2', minTotalThickness: 11, maxTotalThickness: 20, defaultInterlayerId: 'pvb076' }
   ],
   jumboRules: [
-    { id: 'j1', minDim: 250, maxDim: 320, type: 'percentage', value: 15 },
-    { id: 'j2', minDim: 321, maxDim: 0, type: 'fixed', value: 500000 }
+    {
+      id: 'j1',
+      title: 'مرحله اول جامبو',
+      shortSideOverCm: 250,
+      longSideOverCm: 320,
+      adjustmentType: 'percentage',
+      adjustmentValue: 15,
+      sortOrder: 0,
+    },
+    {
+      id: 'j2',
+      title: 'مرحله دوم جامبو',
+      shortSideOverCm: 321,
+      longSideOverCm: 0,
+      adjustmentType: 'fixed',
+      adjustmentValue: 500000,
+      sortOrder: 1,
+    }
   ],
   billing: {
     priceFloorPercent: 90,

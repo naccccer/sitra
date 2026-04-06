@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
-import { NavLink, Navigate, Outlet, useLocation } from 'react-router-dom'
+import { ArrowRight } from 'lucide-react'
+import { NavLink, Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
 import { Card } from '@/components/shared/ui'
 import { isModuleEnabled } from '@/kernel/moduleRegistry'
@@ -15,6 +16,7 @@ const tabClassName = (isActive) => (
 
 export const MasterDataPage = ({ session }) => {
   const location = useLocation()
+  const navigate = useNavigate()
 
   const visibleRoutes = useMemo(() => {
     const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}
@@ -46,14 +48,25 @@ export const MasterDataPage = ({ session }) => {
     <div className="mx-auto max-w-[1300px] space-y-4" dir="rtl">
       <h1 className="sr-only">اطلاعات پایه</h1>
       <Card className="border-slate-200/90" padding="sm">
-        <div className="overflow-x-auto hide-scrollbar">
-          <div className="flex min-w-max items-center gap-2">
-            {visibleRoutes.map((tab) => (
-              <NavLink key={tab.id} to={tab.to} className={({ isActive }) => tabClassName(isActive)}>
-                {tab.label}
-              </NavLink>
-            ))}
+        <div className="flex items-center gap-3">
+          <div className="min-w-0 flex-1 overflow-x-auto hide-scrollbar">
+            <div className="flex min-w-max items-center gap-2">
+              {visibleRoutes.map((tab) => (
+                <NavLink key={tab.id} to={tab.to} className={({ isActive }) => tabClassName(isActive)}>
+                  {tab.label}
+                </NavLink>
+              ))}
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => navigate('/orders/new')}
+            className="inline-flex h-9 shrink-0 items-center gap-1 rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 transition hover:bg-slate-50"
+          >
+            <ArrowRight size={14} />
+            بازگشت به ثبت سفارش
+          </button>
         </div>
       </Card>
 

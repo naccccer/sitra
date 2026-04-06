@@ -1,7 +1,7 @@
 ﻿import React from 'react';
 import { CheckCircle2, Edit3, Plus, Printer, Trash2 } from 'lucide-react';
 import { toPN } from '@/utils/helpers';
-import { resolvePerSquareMeterPrice } from '@/utils/invoice';
+import { resolveItemArea, resolvePerSquareMeterPrice } from '@/utils/invoice';
 import { StructureDetails } from '@/components/shared/StructureDetails';
 
 const isManualLike = (item = {}) => String(item?.itemType || 'catalog') === 'manual';
@@ -24,7 +24,10 @@ export const OrderItemsSection = ({
   grandTotal,
   editingOrder,
   onOpenCheckout,
-}) => (
+}) => {
+  const totalArea = orderItems.reduce((sum, item) => sum + (resolveItemArea(item, catalog?.factoryLimits) ?? 0), 0);
+
+  return (
   <div className="print-hide mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
     <div className="flex items-center justify-between bg-slate-900 p-3 text-white">
       <span className="pl-2 text-sm font-black">سبد سفارش مشتری</span>
@@ -56,6 +59,7 @@ export const OrderItemsSection = ({
                 <th className="border-l border-slate-200/50 p-2 font-bold">پیکربندی و خدمات</th>
                 <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">ابعاد (cm)</th>
                 <th className="w-12 border-l border-slate-200/50 p-2 text-center font-bold">تعداد</th>
+                <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">مساحت (مترمربع)</th>
                 <th className="w-24 border-l border-slate-200/50 p-2 text-center font-bold">فی (مترمربع)</th>
                 <th className="w-28 border-l border-slate-200/50 p-2 pl-3 text-left font-bold">مبلغ کل</th>
                 <th className="w-16 p-2 text-center font-bold">عملیات</th>
@@ -63,7 +67,8 @@ export const OrderItemsSection = ({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {orderItems.map((item, index) => {
-                const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep);
+                const itemArea = resolveItemArea(item, catalog?.factoryLimits);
+                const perSquareMeterPrice = resolvePerSquareMeterPrice(item, catalog?.roundStep, catalog?.factoryLimits);
                 const manualLike = isManualLike(item);
 
                 return (
@@ -77,6 +82,9 @@ export const OrderItemsSection = ({
                     <td className="border-l border-slate-100 p-2"><StructureDetails item={item} catalog={catalog} /></td>
                     <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-600" dir="ltr">{manualLike ? '-' : `${toPN(item.dimensions.width)} × ${toPN(item.dimensions.height)}`}</td>
                     <td className="border-l border-slate-100 p-2 text-center font-black tabular-nums text-slate-800">{toPN(item.itemType === 'manual' ? (item?.manual?.qty ?? item?.dimensions?.count ?? 1) : (item?.dimensions?.count ?? 1))}</td>
+                    <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500" dir="ltr">
+                      {itemArea === null ? '-' : toPN(itemArea.toFixed(2))}
+                    </td>
                     <td className="border-l border-slate-100 p-2 text-center font-bold tabular-nums text-slate-500">
                       {perSquareMeterPrice === null ? '-' : toPN(perSquareMeterPrice.toLocaleString())}
                     </td>
@@ -121,9 +129,18 @@ export const OrderItemsSection = ({
         </div>
 
         <div className="flex flex-col items-center justify-between gap-4 border-t border-slate-200 bg-slate-50 p-4 sm:flex-row">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-black text-slate-500">مبلغ نهایی فاکتور:</span>
-            <span className="text-lg font-black tabular-nums text-slate-900 lg:text-xl">{toPN(grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-500">متراژ:</span>
+              <span className="text-sm font-black tabular-nums text-slate-800 lg:text-base" dir="ltr">
+                {toPN(totalArea.toFixed(2))}
+                <span className="mr-1 text-[10px] font-normal text-slate-500">مترمربع</span>
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-black text-slate-500">مبلغ نهایی فاکتور:</span>
+              <span className="text-lg font-black tabular-nums text-slate-900 lg:text-xl">{toPN(grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
+            </div>
           </div>
           <button onClick={onOpenCheckout} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:bg-green-500 active:scale-95 sm:w-auto">
             <CheckCircle2 size={16} />
@@ -133,4 +150,5 @@ export const OrderItemsSection = ({
       </>
     )}
   </div>
-);
+  );
+};

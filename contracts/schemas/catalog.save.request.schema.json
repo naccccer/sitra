@@ -9,7 +9,33 @@
     "operations": { "type": "array", "items": { "type": "object" } },
     "connectors": { "type": "object" },
     "fees": { "type": "object" },
-    "jumboRules": { "type": "array", "items": { "type": "object" } },
+    "factoryLimits": {
+      "type": "object",
+      "properties": {
+        "maxShortSideCm": { "type": "integer", "minimum": 0 },
+        "maxLongSideCm": { "type": "integer", "minimum": 0 },
+        "minimumChargeThresholdM2": { "type": "number", "minimum": 0 },
+        "minimumBillableAreaM2": { "type": "number", "minimum": 0 }
+      },
+      "additionalProperties": false
+    },
+    "jumboRules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "shortSideOverCm": { "type": "integer", "minimum": 0 },
+          "longSideOverCm": { "type": "integer", "minimum": 0 },
+          "adjustmentType": { "type": "string", "enum": ["percentage", "fixed"] },
+          "adjustmentValue": { "type": "integer", "minimum": 0 },
+          "sortOrder": { "type": "integer", "minimum": 0 }
+        },
+        "required": ["id"],
+        "additionalProperties": false
+      }
+    },
     "roundStep": { "type": "number" }
   },
   "additionalProperties": true

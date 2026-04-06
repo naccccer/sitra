@@ -4,7 +4,7 @@
 - Own canonical operational reference data used by other modules.
 
 ## Owns
-- Catalog model (glasses, connectors, operations, fees, rules).
+- Catalog model (glasses, connectors, operations, fees, factory limits, jumbo pricing stages, rules).
 - Catalog persistence and validation.
 
 ## Public Services

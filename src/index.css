@@ -456,7 +456,7 @@
 }
 
 @media print {
-  @page { size: A4 portrait; margin: 10mm; }
+  @page { size: A4 portrait; margin: 10mm 6mm; }
   body { 
     -webkit-print-color-adjust: exact; 
     print-color-adjust: exact; 
@@ -474,6 +474,7 @@
     overflow: visible !important;
     background: white; 
     z-index: auto;
+    padding: 0 !important;
   }
   .app-print-shell,
   .app-print-frame,
@@ -525,21 +526,85 @@
   .invoice-main-page {
     display: flex !important;
     flex-direction: column !important;
-    min-height: 252mm !important;
+    min-height: 277mm !important;
   }
   .invoice-main-page .invoice-main-lower-stack {
     margin-top: auto !important;
   }
-  .invoice-main-page .invoice-financial-card {
-    font-size: 10px !important;
+  .invoice-main-page .invoice-summary-notes {
+    line-height: 1.7 !important;
+    width: 100% !important;
+    border: 1px solid rgba(255, 255, 255, 0.72) !important;
+    background: linear-gradient(180deg, rgba(249, 250, 252, 0.92), rgba(244, 246, 250, 0.82)) !important;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.75) !important;
   }
-  .invoice-main-page .invoice-financial-card .invoice-grand-total {
-    font-size: 15px !important;
-    line-height: 1.2 !important;
+  .invoice-main-page .invoice-summary-bar {
+    padding-top: 2.5mm !important;
+    padding-bottom: 2.5mm !important;
+  }
+  .invoice-main-page .invoice-summary-strip {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    gap: 3.5mm !important;
+    align-items: end !important;
+  }
+  .invoice-main-page .invoice-summary-strip-grid {
+    display: grid !important;
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 2mm 3mm !important;
+    align-items: end !important;
+  }
+  .invoice-main-page .invoice-summary-metric {
+    display: flex !important;
+    flex-direction: column !important;
+    min-width: 0 !important;
+  }
+  .invoice-main-page .invoice-summary-metric-card {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.8mm !important;
+    min-height: 100% !important;
+    padding: 1.6mm 2mm !important;
+    border-radius: 8px !important;
+    border: 1px solid rgb(var(--ui-border-soft)) !important;
+    background: rgba(248, 249, 251, 0.85) !important;
+  }
+  .invoice-main-page .invoice-summary-metric-label {
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    color: rgb(var(--ui-text-muted)) !important;
+  }
+  .invoice-main-page .invoice-summary-metric-value {
+    font-size: 12px !important;
+    font-weight: 900 !important;
+    color: rgb(var(--ui-text)) !important;
+    white-space: nowrap !important;
+  }
+  .invoice-main-page .invoice-summary-metric-emphasis .invoice-summary-metric-value {
+    color: rgb(var(--ui-accent-strong)) !important;
+  }
+  .invoice-main-page .invoice-summary-metric-emphasis .invoice-summary-metric-card {
+    background: rgba(236, 241, 250, 0.9) !important;
+    border-color: rgb(var(--ui-accent-border)) !important;
+  }
+  .invoice-main-page .invoice-summary-grand-total {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: flex-end !important;
+    min-width: 36mm !important;
+    padding-inline-start: 3mm !important;
+    border-inline-start: 1px solid rgb(var(--ui-border-soft)) !important;
+  }
+  .invoice-main-page .invoice-summary-grand-total > div:last-child {
+    line-height: 1.15 !important;
   }
   .print-page-break {
     break-after: page !important;
     page-break-after: always !important;
+  }
+  .appendix-page {
+    padding-top: 6mm !important;
   }
   .appendix-grid {
     display: grid;

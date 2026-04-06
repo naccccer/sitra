@@ -34,7 +34,7 @@ export const __type_AccountingPayrollWorkspaceResponse = null
  */
 export const __type_BootstrapResponse = null
 /**
- * @typedef { glasses: Array<Record<string, any>>, thicknesses?: Array<number>, operations: Array<Record<string, any>>, connectors: Record<string, any>, fees: Record<string, any>, jumboRules?: Array<Record<string, any>>, roundStep?: number } CatalogSaveRequest
+ * @typedef { glasses: Array<Record<string, any>>, thicknesses?: Array<number>, operations: Array<Record<string, any>>, connectors: Record<string, any>, fees: Record<string, any>, factoryLimits?: { maxShortSideCm?: number, maxLongSideCm?: number, minimumChargeThresholdM2?: number, minimumBillableAreaM2?: number }, jumboRules?: Array<{ id: string, title?: string, shortSideOverCm?: number, longSideOverCm?: number, adjustmentType?: "percentage" | "fixed", adjustmentValue?: number, sortOrder?: number }>, roundStep?: number } CatalogSaveRequest
  */
 export const __type_CatalogSaveRequest = null
 /**

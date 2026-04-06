@@ -66,10 +66,14 @@ export const StructureDetails = ({ item, catalog }) => {
   const renderGlassLayerRow = (marker, layer = {}) => (
     <div className="flex items-center gap-1 text-[11px]">
       <span className="font-black text-slate-400">{toPN(marker)}</span>
-      <span className={layer?.isSekurit ? 'font-black text-rose-600' : 'font-black text-slate-700'}>
+      <span className={layer?.isSekurit ? 'font-black text-[rgb(var(--ui-accent-strong))]' : 'font-black text-slate-700'}>
         {getGlassLabel(layer)}
       </span>
-      {layer?.isSekurit && <span className="mr-1 rounded bg-rose-100 px-1 text-[8px] font-black text-rose-700">سکوریت</span>}
+      {layer?.isSekurit && (
+        <span className="mr-1 rounded border border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] px-1 text-[8px] font-black text-[rgb(var(--ui-accent-strong))]">
+          سکوریت
+        </span>
+      )}
       {layer?.hasEdge && <span className="mr-1 rounded bg-[rgb(var(--ui-accent-muted))] px-1 text-[8px] font-black text-[rgb(var(--ui-accent-strong))]">ابزار</span>}
     </div>
   );

@@ -7,6 +7,11 @@ import { normalizeLaminateConfig } from '@/utils/laminateConfig';
 
 const DEFAULT_UNIT_LABEL = '\u0639\u062f\u062f';
 
+const resolvePricingUnitFactor = (value) => {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric > 0 ? numeric : 1;
+};
+
 export const normalizeGlassTitle = (title) => (title || '').toString().trim().toLowerCase();
 export const glassProcess = (glass) => glass?.process || 'raw';
 
@@ -102,7 +107,7 @@ export const normalizeLoadedItem = (item) => {
       finalUnitPrice: Math.max(0, parseIntSafe(pricingMeta.finalUnitPrice ?? unitPrice, unitPrice)),
       finalLineTotal: Math.max(0, parseIntSafe(pricingMeta.finalLineTotal ?? totalPrice, totalPrice)),
       pricingUnit: pricingMeta.pricingUnit === 'm_square' ? 'm_square' : 'unit',
-      pricingUnitFactor: Math.max(1, Number(pricingMeta.pricingUnitFactor) || 1),
+      pricingUnitFactor: resolvePricingUnitFactor(pricingMeta.pricingUnitFactor),
     },
     manual: itemType === 'manual'
       ? {

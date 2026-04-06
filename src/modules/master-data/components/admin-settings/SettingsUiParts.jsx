@@ -1,44 +1,117 @@
 import React from 'react';
 
-export const TabHint = ({ tone = 'blue', children }) => {
-  const toneClass = tone === 'indigo'
-    ? 'border-indigo-200 bg-indigo-50/60 text-indigo-700'
-    : 'border-blue-200 bg-blue-50/60 text-blue-700';
+export const CountBadge = ({ children, tone = 'light' }) => {
+  const toneClass = tone === 'dark'
+    ? 'bg-white/12 text-white ring-1 ring-white/15'
+    : 'bg-slate-100 text-slate-700';
 
   return (
-    <div className={`rounded-xl border px-3 py-2 text-xs font-bold ${toneClass}`}>
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-black ${toneClass}`}>
       {children}
-    </div>
+    </span>
   );
 };
 
-export const SettingsCard = ({ children, className = '' }) => (
-  <section className={`rounded-2xl border border-slate-200 bg-slate-50/70 p-4 shadow-[inset_0_1px_0_rgba(59,130,246,0.08)] ${className}`}>
-    {children}
+export const SettingsSection = ({
+  title,
+  subtitle = '',
+  badge = '',
+  actions = null,
+  children,
+  className = '',
+  bodyClassName = '',
+}) => (
+  <section className={`overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm ${className}`}>
+    <div className="flex min-h-14 flex-wrap items-center justify-between gap-3 bg-slate-900 px-4 py-3 text-white">
+      <div className="min-w-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-sm font-black">{title}</h3>
+          {badge ? <CountBadge tone="dark">{badge}</CountBadge> : null}
+        </div>
+        {subtitle ? <p className="mt-1 text-[11px] font-bold text-slate-300">{subtitle}</p> : null}
+      </div>
+      {actions}
+    </div>
+    <div className={`p-4 ${bodyClassName}`}>{children}</div>
   </section>
 );
 
-export const CardTitle = ({ title, subtitle, badge }) => (
-  <div className="mb-3">
-    <div className="mb-1 flex items-center justify-between gap-2">
-      <h3 className="text-sm font-black text-slate-800">{title}</h3>
-      {badge ? <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-black text-blue-700">{badge}</span> : null}
-    </div>
-    {subtitle ? <p className="text-[11px] font-bold text-slate-500">{subtitle}</p> : null}
+export const SettingsCard = ({ children, className = '' }) => (
+  <div className={`rounded-xl border border-slate-200 bg-slate-50/50 p-3 ${className}`}>
+    {children}
   </div>
 );
 
-export const DashedActionButton = ({ onClick, children, tone = 'blue' }) => {
+export const CardTitle = ({ title, subtitle = '', badge = '' }) => (
+  <div className="mb-3 flex min-h-8 flex-wrap items-center justify-between gap-2 border-b border-slate-200 pb-2">
+    <div>
+      <h4 className="text-xs font-black text-slate-800">{title}</h4>
+      {subtitle ? <p className="mt-1 text-[10px] font-bold text-slate-500">{subtitle}</p> : null}
+    </div>
+    {badge ? <CountBadge>{badge}</CountBadge> : null}
+  </div>
+);
+
+export const FieldLabel = ({ children }) => (
+  <span className="mb-2 block text-[10px] font-black text-slate-500">{children}</span>
+);
+
+export const CompactField = ({ children, className = '' }) => (
+  <div className={`w-full min-w-[96px] max-w-[126px] ${className}`}>{children}</div>
+);
+
+export const InputShell = ({ children, className = '' }) => (
+  <div className={`overflow-hidden rounded-xl border border-slate-200 bg-white ${className}`}>
+    {children}
+  </div>
+);
+
+export const CompactTextInput = ({ className = '', ...props }) => (
+  <input
+    {...props}
+    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-700 outline-none transition focus:border-slate-400 ${className}`}
+  />
+);
+
+export const CompactSelect = ({ className = '', children, ...props }) => (
+  <select
+    {...props}
+    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 outline-none transition focus:border-slate-400 ${className}`}
+  >
+    {children}
+  </select>
+);
+
+export const SettingsInlineGroup = ({ children, className = '' }) => (
+  <div className={`flex flex-wrap gap-2.5 ${className}`}>{children}</div>
+);
+
+export const DangerIconButton = ({ children, className = '', ...props }) => (
+  <button
+    {...props}
+    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${className}`}
+  >
+    {children}
+  </button>
+);
+
+export const DashedActionButton = ({ onClick, children, tone = 'blue', className = '' }) => {
   const toneClass = tone === 'indigo'
-    ? 'border-indigo-200 text-indigo-600 hover:bg-indigo-50'
-    : 'border-blue-200 text-blue-600 hover:bg-blue-50';
+    ? 'border-slate-300 text-slate-700 hover:bg-slate-50'
+    : 'border-slate-300 text-slate-700 hover:bg-slate-50';
 
   return (
     <button
       onClick={onClick}
-      className={`mt-1 flex w-full items-center justify-center gap-1 rounded-xl border-2 border-dashed py-2.5 text-xs font-black transition-colors sm:w-fit sm:px-5 ${toneClass}`}
+      className={`inline-flex h-10 items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 text-xs font-black transition ${toneClass} ${className}`}
     >
       {children}
     </button>
   );
 };
+
+export const ToggleChip = ({ checked = false, children, className = '' }) => (
+  <span className={`inline-flex items-center rounded-xl border px-3 py-2 text-xs font-black transition ${checked ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-700'} ${className}`}>
+    {children}
+  </span>
+);

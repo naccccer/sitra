@@ -1,3 +1,5 @@
+import { resolvePricingDimensions } from './catalogPricing';
+
 const toInt = (value, fallback = 0) => {
   const n = Number(value);
   if (!Number.isFinite(n)) return fallback;
@@ -16,6 +18,26 @@ const normalizeByRoundStep = (value, roundStep = 1000) => {
   const stepNumeric = Number(roundStep);
   const step = Number.isFinite(stepNumeric) && stepNumeric > 0 ? stepNumeric : 1000;
   return Math.floor(numeric / step) * step;
+};
+
+export const resolveItemArea = (item = {}, factoryLimits = null) => {
+  const itemType = String(item?.itemType || 'catalog');
+  if (itemType === 'manual') return null;
+  if (itemType === 'custom' && item?.custom?.unitCode && item.custom.unitCode !== 'm_square') return null;
+  if (itemType === 'custom' && item?.config?.unitCode && item.config.unitCode !== 'm_square') return null;
+
+  const storedFactor = Number(item?.pricingMeta?.pricingUnitFactor);
+  if (
+    String(item?.pricingMeta?.pricingUnit || '') === 'm_square'
+    && Number.isFinite(storedFactor)
+    && storedFactor > 0
+  ) {
+    return storedFactor;
+  }
+
+  const pricingDimensions = resolvePricingDimensions(item?.dimensions, factoryLimits || item?.factoryLimits);
+  if (!pricingDimensions.hasValidDimensions) return null;
+  return pricingDimensions.billableAreaM2;
 };
 
 export const DEFAULT_BILLING = {
@@ -240,19 +262,15 @@ export const computeInvoiceFinancials = ({
   };
 };
 
-export const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000) => {
+export const resolvePerSquareMeterPrice = (item = {}, roundStep = 1000, factoryLimits = null) => {
   const itemType = String(item?.itemType || 'catalog');
   if (itemType === 'manual') return null;
   if (itemType === 'custom' && item?.custom?.unitCode && item.custom.unitCode !== 'm_square') return null;
   if (itemType === 'custom' && item?.config?.unitCode && item.config.unitCode !== 'm_square') return null;
 
   const piecePrice = Math.max(0, Number(item?.unitPrice) || 0);
-  const widthCm = Math.max(0, Number(item?.dimensions?.width) || 0);
-  const heightCm = Math.max(0, Number(item?.dimensions?.height) || 0);
-  if (piecePrice <= 0 || widthCm <= 0 || heightCm <= 0) return normalizeByRoundStep(piecePrice, roundStep);
-
-  const rawArea = (widthCm * heightCm) / 10000;
-  const effectiveArea = Math.max(0.25, rawArea);
+  const effectiveArea = resolveItemArea(item, factoryLimits);
+  if (piecePrice <= 0 || effectiveArea === null) return normalizeByRoundStep(piecePrice, roundStep);
   if (effectiveArea <= 0) return normalizeByRoundStep(piecePrice, roundStep);
 
   return normalizeByRoundStep(piecePrice / effectiveArea, roundStep);

@@ -30,6 +30,7 @@ This file defines **stable cross-module contracts** at a compact level.
 - `master_data.operation_icon_upload.v1`
 
 `master_data.catalog_save.v1` preserves ordered catalog arrays such as `thicknesses` and `glasses` as provided by the frontend.
+It also carries pricing rules for `factoryLimits` and ordered `jumboRules` used by the sales pricing runtime.
 
 ### Sales
 - `sales.order_create.v1`

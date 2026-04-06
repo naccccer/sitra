@@ -53,7 +53,7 @@ ON DUPLICATE KEY UPDATE
 
 INSERT INTO system_settings (setting_key, setting_value)
 VALUES
-  ('catalog', '{"glasses":[],"operations":[],"connectors":{"interlayers":[],"spacers":[]},"fees":{},"jumboRules":[],"roundStep":1000}'),
+  ('catalog', '{"glasses":[],"operations":[],"connectors":{"interlayers":[],"spacers":[]},"fees":{},"factoryLimits":{"maxShortSideCm":0,"maxLongSideCm":0,"minimumChargeThresholdM2":1,"minimumBillableAreaM2":1},"jumboRules":[],"roundStep":1000}'),
   ('profile', '{"brandName":"Sitra","address":"","phone":"","logoPath":""}')
 ON DUPLICATE KEY UPDATE
   setting_value = VALUES(setting_value);

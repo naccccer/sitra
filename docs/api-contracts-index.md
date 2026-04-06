@@ -46,6 +46,8 @@ Compact navigation index for runtime API contracts.
   - `GET|POST /api/acc_sales_bridge.php`
 - Master data/profile:
   - `GET|POST /api/catalog.php`
+  - Notes:
+    - `catalog` includes pricing metadata such as `factoryLimits` and ordered `jumboRules` for billable-area and jumbo-stage calculations.
   - `GET|POST /api/profile.php`
   - `POST /api/master_data_operation_icon_upload.php`
 - Users and control plane:
