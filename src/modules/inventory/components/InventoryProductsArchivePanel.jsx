@@ -28,6 +28,22 @@ const TYPE_LABELS = {
   service: 'خدماتی',
 }
 
+const UOM_OPTIONS = [
+  'عدد',
+  'کیلوگرم',
+  'گرم',
+  'تن',
+  'لیتر',
+  'میلی‌لیتر',
+  'متر',
+  'سانتی‌متر',
+  'مترمربع',
+  'مترمکعب',
+  'بسته',
+  'کارتن',
+  'جفت',
+]
+
 const EMPTY_FORM = { id: null, name: '', productCode: '', productType: 'stockable', uom: '', notes: '' }
 
 export const InventoryProductsArchivePanel = ({ session }) => {
