@@ -1,5 +1,21 @@
 # Codex Prompts — AI-Native Aggressive ERP UI Rewrite
 
+## How to use this file (single purpose)
+This file is the **execution prompt pack** for the phased roadmap in `doc/ui-redesign.md`.
+- Each phase in roadmap has a matching prompt here.
+- Copy one prompt at a time into Codex/Cursor to execute that phase.
+- Do not skip phase-close/final-close prompts.
+
+## Prompt execution order
+1. Phase 0
+2. Phase 1
+3. Phase 2
+4. Phase 3
+5. Phase 4
+6. Phase 5
+7. Phase-close prompt (after every phase)
+8. Final-close prompt (after Phase 5)
+
 Use these prompts in order. They are optimized for development-phase execution where legacy constraints are minimal.
 
 ## Phase 0 prompt — Decide rebuild map

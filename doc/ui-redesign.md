@@ -1,5 +1,11 @@
 # ERP UI/UX Redesign Plan — AI-Native Aggressive Mode (No Legacy Constraints)
 
+## How to use this file (single purpose)
+This file is the **phased roadmap** and source of truth for execution order.
+- It defines what each phase means, scope boundaries, timeline targets, and done criteria.
+- It is for strategy, sequencing, governance, and acceptance rules.
+- It is **not** the step-by-step command script; prompts live in `doc/ui-redesign-prompts.md`.
+
 Owner: Naser Zafar (Architecture)
 Execution model: AI-only delivery (Codex/Cursor), no human engineering bottleneck.
 
@@ -148,6 +154,12 @@ Everything ships through shared primitives first; modules compose, not reinvent.
 ---
 
 ## 7. Module-by-module rollout plan
+
+
+### Phase-to-prompt mapping (use this to execute)
+- Execute the corresponding phase prompt from `doc/ui-redesign-prompts.md` for each roadmap phase.
+- After each phase, run the **Phase-close prompt** to update docs/roadmap.
+- After Phase 5, run the **Final-close prompt** for full reconciliation.
 
 ## Phase 0 — Cutover strategy (0.5–1 day)
 - Choose migration mode per module: rebuild vs refactor.
