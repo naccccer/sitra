@@ -27,7 +27,7 @@ export const OrdersWorkspaceToolbar = ({
       <SegmentedTabs tabs={TAB_OPTIONS} activeId={activeOrdersTab} onChange={onTabChange} className="w-full md:w-auto" />
 
       <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
-        <div className="relative w-full md:w-80">
+        <div className="relative w-64 shrink-0">
           <Search size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--ui-text-muted))]" />
           <Input
             type="text"
