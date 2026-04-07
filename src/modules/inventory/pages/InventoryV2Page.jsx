@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Card } from '@/components/shared/ui'
+import { Card, WorkspaceShellTemplate } from '@/components/shared/ui'
 import { InventoryCatalogWorkspace } from '@/modules/inventory/components/InventoryCatalogWorkspace'
 import { InventoryHelpPanel } from '@/modules/inventory/components/InventoryHelpPanel'
 import { InventoryHierarchyTabs } from '@/modules/inventory/components/InventoryHierarchyTabs'
@@ -108,29 +108,35 @@ export const InventoryV2Page = ({ session }) => {
   }
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
-      <Card padding="md">
-        <InventoryHierarchyTabs
-          tabs={visibleTabs}
-          activeTabId={resolvedTab}
-          onTabChange={(tabId) => {
-            const nextSubtab = getDefaultChildTab(tabId)
-            const nextDetail = nextSubtab === 'production' ? 'production_consume' : ''
-            updateNav({ tab: tabId, subtab: nextSubtab, detail: nextDetail })
-          }}
-          childTabs={childTabs}
-          activeChildId={resolvedChildTab}
-          onChildChange={(childId) => {
-            const nextDetail = childId === 'production' ? 'production_consume' : ''
-            updateNav({ subtab: childId, detail: nextDetail })
-          }}
-          grandchildTabs={productionTabs}
-          activeGrandchildId={resolvedDetailTab}
-          onGrandchildChange={(detailId) => updateNav({ detail: detailId })}
-        />
-      </Card>
-
+    <WorkspaceShellTemplate
+      showHeader={false}
+      eyebrow="انبار"
+      title="میزکار عملیات انبار"
+      description="کاتالوگ، عملیات، موجودی و تنظیمات با گرامر یکپارچه جدول/فیلتر/اقدام."
+      tabs={(
+        <Card padding="md">
+          <InventoryHierarchyTabs
+            tabs={visibleTabs}
+            activeTabId={resolvedTab}
+            onTabChange={(tabId) => {
+              const nextSubtab = getDefaultChildTab(tabId)
+              const nextDetail = nextSubtab === 'production' ? 'production_consume' : ''
+              updateNav({ tab: tabId, subtab: nextSubtab, detail: nextDetail })
+            }}
+            childTabs={childTabs}
+            activeChildId={resolvedChildTab}
+            onChildChange={(childId) => {
+              const nextDetail = childId === 'production' ? 'production_consume' : ''
+              updateNav({ subtab: childId, detail: nextDetail })
+            }}
+            grandchildTabs={productionTabs}
+            activeGrandchildId={resolvedDetailTab}
+            onGrandchildChange={(detailId) => updateNav({ detail: detailId })}
+          />
+        </Card>
+      )}
+    >
       {renderContent()}
-    </div>
+    </WorkspaceShellTemplate>
   )
 }

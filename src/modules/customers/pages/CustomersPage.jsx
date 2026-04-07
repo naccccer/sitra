@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
+import { InlineAlert, WorkspaceShellTemplate } from '@/components/shared/ui'
 import { CustomerDetailsModal } from '../components/CustomerDetailsModal'
 import { CustomerFormModal } from '../components/CustomerFormModal'
 import { CustomersDirectoryPanel } from '../components/CustomersDirectoryPanel'
@@ -106,12 +107,16 @@ export const CustomersPage = ({ session }) => {
   const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / Math.max(1, pagination.pageSize || pageSize)))
 
   return (
-    <div className="mx-auto max-w-[1600px] space-y-4">
+    <WorkspaceShellTemplate
+      showHeader={false}
+      eyebrow="مشتریان"
+      title="دایرکتوری مشتریان"
+      description="جستجو، مشاهده جزئیات، و مدیریت وضعیت فعال/آرشیو با الگوی یکپارچه." 
+    >
       {error ? (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-xs font-black text-rose-700">
+        <InlineAlert tone="danger" title="خطا" actions={<button type="button" className="underline" onClick={() => setError('')}>بستن</button>}>
           {error}
-          <button type="button" className="ms-3 underline" onClick={() => setError('')}>بستن</button>
-        </div>
+        </InlineAlert>
       ) : null}
 
       <CustomersDirectoryPanel
@@ -152,6 +157,6 @@ export const CustomersPage = ({ session }) => {
         onClose={() => setDetailsCustomer(null)}
         onReloadCustomerList={reload}
       />
-    </div>
+    </WorkspaceShellTemplate>
   )
 }
