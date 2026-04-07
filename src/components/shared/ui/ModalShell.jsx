@@ -35,7 +35,7 @@ export const ModalShell = ({
             headerClassName,
           )}
         >
-          <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center justify-between gap-3">
             <div className="min-w-0">
               {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
               <h3 className="text-sm font-black text-current">{title}</h3>

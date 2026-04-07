@@ -198,7 +198,7 @@ export const CustomerDetailsModal = ({
     <ModalShell
       isOpen={isOpen}
       title={`جزئیات مشتری: ${normalizedCustomer.fullName || '-'}`}
-      description="پروفایل، پروژه‌ها و گزارش مالی مشتری را از این پنجره مدیریت کنید."
+      description=""
       onClose={onClose}
       maxWidthClass="max-w-6xl"
       closeButtonMode="icon"
