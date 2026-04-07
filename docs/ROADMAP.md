@@ -1,29 +1,24 @@
-# Sitra ERP Roadmap (Final UI Redesign State)
+# Sitra ERP Roadmap
 
-This file remains forward-looking, but this section records the final state of the UI redesign program at Phase 5 close.
+Updated: 2026-04-08
+Purpose: future-only planning
 
-## Final redesign state (2026-04-07)
+This file is future-looking only. Do not use it as the source of truth for current architecture, contracts, module ownership, or active redesign execution.
 
-### Completed
-- Shared shell/state contracts are established and used on all module entry surfaces.
-- Design-system governance is formalized (policy, PR checklist, contribution template, visual regression process).
-- Phase 5 optimization framework is defined (KPI dashboard, rewrite triggers, quarterly optimization cycle).
+Current truth locations:
+- architecture and security: `ARCHITECTURE.md`
+- contracts and compatibility: `MODULE_CONTRACTS.md`
+- active ownership map: `docs/code-map.md`
+- guardrails: `docs/guardrails.md`
+- active redesign program: `docs/real-ui-ux/real-ui_ux-redesign-roadmap.md`
 
-### Remaining continuous work (post-program)
-- Internal screen normalization and debt deletion continue as rolling maintenance (not as a redesign phase).
-- KPI instrumentation and visual baseline updates are now release operations.
+## Near-term roadmap themes
+1. Execute the active UI and UX redesign program phase by phase from `docs/real-ui-ux/`.
+2. Remove legacy redirect routes after redesign phases make them unnecessary.
+3. Continue tightening shared UI governance so new bespoke patterns do not reappear.
+4. Keep `production` inactive until explicit contracts, routes, and migration rules are defined.
 
-### Operating model going forward
-1. Every UI PR must pass design-system conformance checklist.
-2. Every perceptible UI change must include visual diff evidence or rationale.
-3. Every UX change must declare measurable KPI impact hypothesis.
-
-## Final consistency baseline references
-- Component alignment: `docs/design-system.md`
-- Deprecated pattern archive: `docs/design-system/deprecated-patterns-archive.md`
-- Quarterly maintenance: `docs/design-system/quarterly-maintenance-playbook.md`
-
-## Validation Gate
+## Validation gate
 - Fast: `npm run verify:fast`
 - Safe: `npm run verify:safe`
 - Full: `npm run test:all`

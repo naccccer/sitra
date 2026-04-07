@@ -1,6 +1,6 @@
 # Design System Governance Policy (AI-first)
 
-Updated: 2026-04-07
+Updated: 2026-04-08
 Owner: Design-system governance owner
 
 ## 1) Enforcement policy for token/component compliance
@@ -21,6 +21,7 @@ Owner: Design-system governance owner
 - Use shared UI primitives from `src/components/shared/ui/*` before adding new primitives.
 - Keep module internals module-owned, but rendering grammar must compose from shared contracts.
 - Every new component variant must document usage, states, and migration impact.
+- For active redesign work, treat `docs/real-ui-ux/` as the canonical planning location.
 
 ### AI-only workflow optimization
 - Prefer extending existing component variants over creating new files.
@@ -36,7 +37,7 @@ Use `.github/PULL_REQUEST_TEMPLATE.md` checklist in every PR:
 - Primitive reuse compliance
 - Universal state grammar compliance
 - Permission/action clarity check
-- Docs sync check (roadmap + design docs + prompts when phase-affecting)
+- Docs sync check (`docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` + active phase prompt when phase-affecting)
 - Screenshot/visual evidence for perceptible UI changes
 
 Any unchecked blocker item means PR is not merge-ready.
