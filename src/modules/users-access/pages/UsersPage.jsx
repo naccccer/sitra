@@ -12,6 +12,7 @@ export const UsersPage = ({ session, onRefreshSession }) => {
 
   return (
     <WorkspaceShellTemplate
+      showHeader={false}
       eyebrow="کاربران و دسترسی"
       title="مدیریت کاربران"
       description="نقش ها، وضعیت فعال سازی و مجوزهای عملیاتی با رفتار قابل پیش بینی."

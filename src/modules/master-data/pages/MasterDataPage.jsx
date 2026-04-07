@@ -38,6 +38,7 @@ export const MasterDataPage = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
+      showHeader={false}
       eyebrow="اطلاعات پایه"
       title="مدیریت تنظیمات مرجع"
       description="پیکربندی قیمت گذاری و پروفایل کسب و کار با الگوی تنظیمات استاندارد."
