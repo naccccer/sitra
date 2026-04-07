@@ -149,26 +149,26 @@ Everything ships through shared primitives first; modules compose, not reinvent.
 
 ## 7. Module-by-module rollout plan
 
-## Phase 0 — Cutover strategy (1 week)
+## Phase 0 — Cutover strategy (0.5–1 day)
 - Choose migration mode per module: rebuild vs refactor.
 - Freeze UX principles and DS contracts.
 - Define KPI baseline and target deltas.
 
-## Phase 1 — Foundation rewrite (2–4 weeks)
+## Phase 1 — Foundation rewrite (2–5 days)
 - Rebuild shell, headers, toolbar, base states.
 - Finalize token layer and shared primitives v1.
 - Replace fragmented navigation patterns.
 
-## Phase 2 — Core operations rewrite (4–8 weeks)
+## Phase 2 — Core operations rewrite (5–10 days)
 - Rewrite Sales, Inventory, Accounting high-frequency workflows on new templates.
 - Enforce DataTable/Form/Modal contracts.
 - Remove obsolete UI paths.
 
-## Phase 3 — Admin/reference rewrite (3–6 weeks)
+## Phase 3 — Admin/reference rewrite (3–7 days)
 - Rewrite Customers, HR, Users Access, Master Data.
 - Normalize directories, details, and settings pages.
 
-## Phase 4 — Hardening + acceleration (ongoing)
+## Phase 4 — Hardening + acceleration (2–4 days per cycle, then ongoing)
 - Add visual regression and design conformance checks.
 - Continuously remove UI debt and duplicate primitives.
 - Optimize keyboard-first flows and power-user patterns.
@@ -178,6 +178,11 @@ Everything ships through shared primitives first; modules compose, not reinvent.
 - UX states standardized
 - KPI delta achieved or explained
 - No new bespoke UI debt introduced
+
+
+### AI-first delivery speed note
+The timelines above assume AI-first implementation with parallel agent execution and architecture-level approvals by Naser.
+If phase scope is tightly controlled, multiple phases can run in overlapping tracks.
 
 ---
 
