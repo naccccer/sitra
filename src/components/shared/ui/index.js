@@ -27,6 +27,9 @@ export { Select } from '@/components/shared/ui/Select';
 export { SelectPill } from '@/components/shared/ui/SelectPill';
 export { StatCard } from '@/components/shared/ui/StatCard';
 export { Tooltip } from '@/components/shared/ui/Tooltip';
+export { UniversalState } from '@/components/shared/ui/UniversalState';
 export { WorkspaceDetailPanel } from '@/components/shared/ui/WorkspaceDetailPanel';
 export { WorkspacePageHeader } from '@/components/shared/ui/WorkspacePageHeader';
 export { WorkspaceToolbar } from '@/components/shared/ui/WorkspaceToolbar';
+
+export { WorkspaceShellTemplate } from '@/components/shared/ui/WorkspaceShellTemplate';
