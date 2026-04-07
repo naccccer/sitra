@@ -305,3 +305,32 @@ Approximate download/addition size can vary by npm cache and lockfile state.
 ### 11.4 Enforcement rule
 - Only these must-haves are added first.
 - Any new package request must show explicit ROI and overlap analysis.
+
+
+### 11.5 Low-bandwidth install mode (internet-optimized)
+Use this mode when internet usage is a constraint.
+
+1. Install must-have runtime and dev packages first (without browser binaries).
+2. Do **not** run Playwright browser install during baseline setup.
+3. Enable Playwright browser download only in QA phases that actually run E2E/visual tests.
+4. Prefer Chromium-only install unless cross-browser validation is required.
+5. Reuse npm cache and lockfile in AI environments to avoid repeated downloads.
+
+#### Suggested commands (bandwidth-aware)
+```bash
+# Step 1: packages only
+npm install @tanstack/react-query @tanstack/react-table @tanstack/react-virtual react-hook-form zod @hookform/resolvers lucide-react clsx tailwind-merge react-error-boundary @radix-ui/react-dialog @radix-ui/react-dropdown-menu @radix-ui/react-popover @radix-ui/react-tabs @radix-ui/react-tooltip @radix-ui/react-select @radix-ui/react-checkbox @radix-ui/react-switch @radix-ui/react-label
+npm install -D @axe-core/react @playwright/test
+
+# Step 2: optional, only when E2E/visual regression starts
+npx playwright install chromium
+```
+
+#### Why Playwright is included at all
+`@playwright/test` provides end-to-end test runner capabilities for real browser automation:
+- opens real browser sessions (not jsdom mocks)
+- runs critical workflow tests (login, create/edit/approve flows)
+- supports visual regression snapshots
+- can trace and record flaky failures for debugging
+
+In this plan, Playwright is used to protect high-impact ERP workflows during aggressive UI rewrites.

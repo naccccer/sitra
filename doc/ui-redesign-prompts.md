@@ -224,3 +224,29 @@ Constraints:
 - do not add optional/nice-to-have packages
 - keep package set minimal and enforceable
 ```
+
+
+## Low-bandwidth setup prompt — minimize internet usage
+
+```text
+Act as frontend platform engineer in low-bandwidth mode.
+
+Task:
+1) Install must-have packages without downloading Playwright browser binaries.
+2) Prepare project for future E2E tests, but defer browser install.
+3) Report estimated network usage for package install and optional browser install.
+
+Commands policy:
+- Allow: npm install for approved package set
+- Defer: `npx playwright install` until QA/E2E phase
+- Optional later: `npx playwright install chromium` only
+
+Output:
+- executed commands
+- estimated internet usage now vs later
+- when to enable browser download in phase timeline
+
+Constraints:
+- optimize for low internet usage
+- keep full capability available for future QA phases
+```
