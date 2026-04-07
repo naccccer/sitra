@@ -174,7 +174,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   return (
     <aside
       style={{ '--sidebar-shell-width': desktopSidebarWidth }}
-      className={`print-hide fixed inset-y-0 right-0 z-40 flex w-[16rem] shrink-0 flex-col overflow-hidden border-l border-white/72 bg-[linear-gradient(180deg,rgba(246,246,248,0.82),rgba(238,238,241,0.72))] px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`app-shell-nav print-hide fixed inset-y-0 right-0 flex w-[16rem] shrink-0 flex-col overflow-hidden border-l border-white/72 bg-[linear-gradient(180deg,rgba(246,246,248,0.82),rgba(238,238,241,0.72))] px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
       dir="rtl"
     >
       <button type="button" onClick={onCloseMobile} title="بستن منو" className="shell-mobile-dismiss focus-ring mb-2 inline-flex h-10 w-10 items-center justify-center self-end rounded-[var(--radius-lg)] text-slate-700 lg:hidden">
