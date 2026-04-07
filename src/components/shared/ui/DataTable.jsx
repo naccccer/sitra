@@ -1,9 +1,7 @@
 import React from 'react';
-import { LoaderCircle } from 'lucide-react';
 import { Badge } from '@/components/shared/ui/Badge';
 import { Card } from '@/components/shared/ui/Card';
-import { EmptyState } from '@/components/shared/ui/EmptyState';
-import { InlineAlert } from '@/components/shared/ui/InlineAlert';
+import { UniversalState } from '@/components/shared/ui/UniversalState';
 import { WorkspaceDetailPanel } from '@/components/shared/ui/WorkspaceDetailPanel';
 import { cn } from '@/components/shared/ui/cn';
 
@@ -70,16 +68,12 @@ export const DataTableState = ({
 }) => (
   <tr>
     <td colSpan={colSpan} className="px-4 py-6">
-      {state === 'loading' ? (
-        <div className="flex items-center justify-center gap-2 rounded-[var(--radius-xl)] border border-dashed border-[rgb(var(--ui-border-soft))]/65 bg-[rgb(var(--ui-surface-muted))]/45 px-4 py-6 text-sm font-black text-[rgb(var(--ui-text-muted))]">
-          <LoaderCircle size={18} className="animate-spin" />
-          {title || 'در حال بارگذاری داده‌ها'}
-        </div>
-      ) : state === 'error' ? (
-        <InlineAlert tone="danger" title={title || 'خطا در بارگذاری'}>{description || 'بخش داده‌ها در حال حاضر قابل نمایش نیست.'}</InlineAlert>
-      ) : (
-        <EmptyState title={title || 'داده‌ای برای نمایش وجود ندارد'} description={description} action={action} />
-      )}
+      <UniversalState
+        state={state}
+        title={title || (state === 'loading' ? 'در حال بارگذاری داده‌ها' : '')}
+        description={description}
+        action={action}
+      />
     </td>
   </tr>
 );
