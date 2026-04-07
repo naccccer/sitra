@@ -98,6 +98,7 @@ export default function App() {
           ordersHasMore={ordersHasMore}
           setOrders={setOrders}
           onLoadMoreOrders={loadMoreOrders}
+          onReloadOrders={handleRefreshSession}
           onLogin={handleLogin}
           onLogout={handleLogout}
           onRefreshSession={handleRefreshSession}

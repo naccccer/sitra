@@ -195,21 +195,33 @@ export const CustomerDetailsModal = ({
   }
   const profileCustomer = useMemo(() => ({ ...editableCustomer, updatedAt: formatDateTime(editableCustomer.updatedAt) }), [editableCustomer])
   return (
-      <ModalShell
+    <ModalShell
       isOpen={isOpen}
       title={`جزئیات مشتری: ${normalizedCustomer.fullName || '-'}`}
       description=""
       onClose={onClose}
       maxWidthClass="max-w-6xl"
-      footer={<div className="flex items-center justify-between gap-2"><div className="text-[11px] font-bold text-slate-500">{error || ' '}</div><div className="flex items-center gap-2"><Button variant="secondary" onClick={onClose}>بستن</Button></div></div>}
+      closeButtonMode="icon"
+      headerClassName="border-slate-800 bg-none bg-slate-900 text-white [&_button]:text-white [&_button:hover]:bg-white/10"
+      contentClassName="rounded-3xl border border-slate-300/70"
+      bodyClassName="max-h-[82vh] space-y-3 bg-slate-100 p-4"
+      footerClassName="bg-slate-100 px-4 py-3"
+      footer={(
+        <div className="flex items-center justify-between gap-3">
+          <div className={`min-h-5 text-xs font-black ${error ? 'text-rose-700' : 'text-slate-600'}`}>
+            {error || ' '}
+          </div>
+          <Button variant="secondary" onClick={onClose}>بستن</Button>
+        </div>
+      )}
     >
-      <div className="flex flex-wrap gap-2 border-b border-slate-200 pb-3">
+      <div className="flex flex-wrap items-center gap-1.5 rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
         {DETAILS_TABS.map((tab) => (
           <button
             key={tab.id}
             type="button"
             onClick={() => setActiveTab(tab.id)}
-            className={`rounded-full px-3 py-1.5 text-xs font-black transition-colors ${activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
+            className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${activeTab === tab.id ? 'bg-slate-900 text-white' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}
           >
             {tab.label}
           </button>

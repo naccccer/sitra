@@ -14,6 +14,7 @@ export const AdminOrdersView = ({
   hasMoreOrders,
   setOrders,
   onLoadMoreOrders,
+  onReloadOrders,
   catalog,
   profile,
   onCreateOrder = null,
@@ -24,6 +25,7 @@ export const AdminOrdersView = ({
     orders,
     setOrders,
     onLoadMoreOrders,
+    onReloadOrders,
     onOrderDeleted: paymentManager.handleOrderDeleted,
   });
 
@@ -36,6 +38,9 @@ export const AdminOrdersView = ({
         onTabChange={workflow.setActiveOrdersTab}
         searchQuery={workflow.searchQuery}
         onSearchChange={workflow.setSearchQuery}
+        onArchiveModeToggle={() => workflow.setActiveOrdersTab((prev) => (prev === 'archived' ? 'all' : 'archived'))}
+        onReload={workflow.handleReloadOrders}
+        loading={workflow.isRefreshingOrders}
         createAction={
           onCreateOrder ? (
             <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>

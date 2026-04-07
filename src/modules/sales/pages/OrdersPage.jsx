@@ -2,7 +2,7 @@
 import { useNavigate } from 'react-router-dom';
 import { AdminOrdersView } from '../components/admin/AdminOrdersView';
 
-export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders, catalog, profile }) => {
+export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders, onReloadOrders, catalog, profile }) => {
   const navigate = useNavigate();
 
   return (
@@ -12,6 +12,7 @@ export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders,
         hasMoreOrders={ordersHasMore}
         setOrders={setOrders}
         onLoadMoreOrders={onLoadMoreOrders}
+        onReloadOrders={onReloadOrders}
         catalog={catalog}
         profile={profile}
         onCreateOrder={() => navigate('/orders/new')}

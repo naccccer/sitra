@@ -27,6 +27,7 @@ export const AppRoutes = ({
   ordersHasMore,
   setOrders,
   onLoadMoreOrders,
+  onReloadOrders,
   onLogin,
   onLogout,
   onRefreshSession,
@@ -68,7 +69,7 @@ export const AppRoutes = ({
       <Route element={<ProtectedRoute isAuthenticated={Boolean(session?.authenticated)} />}>
         <Route element={<MainLayout onLogout={onLogout} profile={profile} session={session} />}>
           <Route index element={<DashboardPage orders={orders} session={session} />} />
-          <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
+          <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} onReloadOrders={onReloadOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="customers" element={<CapabilityRouteGuard session={session} capability="canManageCustomers"><ModuleRouteGuard session={session} moduleId="customers"><CustomersPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="human-resources" element={<CapabilityRouteGuard session={session} capability="canAccessHumanResources"><ModuleRouteGuard session={session} moduleId="human-resources"><HumanResourcesPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />

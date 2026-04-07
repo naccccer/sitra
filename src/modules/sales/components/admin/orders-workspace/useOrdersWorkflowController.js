@@ -30,6 +30,7 @@ export const useOrdersWorkflowController = ({
   orders,
   setOrders,
   onLoadMoreOrders,
+  onReloadOrders,
   onOrderDeleted = () => {},
 }) => {
   const [activeOrdersTab, setActiveOrdersTab] = useState('all');
@@ -38,6 +39,7 @@ export const useOrdersWorkflowController = ({
   const [viewingOrder, setViewingOrder] = useState(null);
   const [viewingOrderType, setViewingOrderType] = useState('factory');
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [isRefreshingOrders, setIsRefreshingOrders] = useState(false);
   const [patternFilesContext, setPatternFilesContext] = useState(null);
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
@@ -167,6 +169,16 @@ export const useOrdersWorkflowController = ({
     }
   };
 
+  const handleReloadOrders = async () => {
+    if (!onReloadOrders || isRefreshingOrders) return;
+    setIsRefreshingOrders(true);
+    try {
+      await onReloadOrders();
+    } finally {
+      setIsRefreshingOrders(false);
+    }
+  };
+
   const filteredOrders = useMemo(() => orders.filter((order) => {
     const matchesTab = activeOrdersTab === 'all' ? order.status !== 'archived' : order.status === activeOrdersTab;
     const q = String(searchQuery || '');
@@ -212,6 +224,7 @@ export const useOrdersWorkflowController = ({
     viewingOrderType,
     setViewingOrder,
     isLoadingMore,
+    isRefreshingOrders,
     patternFilesContext,
     setPatternFilesContext,
     filteredOrders,
@@ -230,6 +243,7 @@ export const useOrdersWorkflowController = ({
     printFactoryOrder,
     printCustomerOrder,
     handleLoadMoreOrders,
+    handleReloadOrders,
     resolveOrderStageId,
   };
 };
