@@ -47,14 +47,7 @@ export const AccountingPage = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
-<<<<<<< ours
-<<<<<<< ours
-=======
       showHeader={false}
->>>>>>> theirs
-=======
-      showHeader={false}
->>>>>>> theirs
       eyebrow="حسابداری"
       title="میزکار تراکنش های مالی"
       description="اسناد، حساب ها، گزارش ها و تنظیمات با مدل تعاملی یکپارچه."

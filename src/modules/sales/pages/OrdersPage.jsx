@@ -8,14 +8,7 @@ export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders,
 
   return (
     <WorkspaceShellTemplate
-<<<<<<< ours
-<<<<<<< ours
-=======
       showHeader={false}
->>>>>>> theirs
-=======
-      showHeader={false}
->>>>>>> theirs
       eyebrow="فروش"
       title="میزکار سفارشات"
       description="جستجو، ویرایش، آرشیو و مدیریت پرداخت سفارشات در یک جریان استاندارد."

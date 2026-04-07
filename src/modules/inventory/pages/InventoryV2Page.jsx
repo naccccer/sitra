@@ -109,14 +109,7 @@ export const InventoryV2Page = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
-<<<<<<< ours
-<<<<<<< ours
-=======
       showHeader={false}
->>>>>>> theirs
-=======
-      showHeader={false}
->>>>>>> theirs
       eyebrow="انبار"
       title="میزکار عملیات انبار"
       description="کاتالوگ، عملیات، موجودی و تنظیمات با گرامر یکپارچه جدول/فیلتر/اقدام."

@@ -12,20 +12,6 @@ export const WorkspaceShellTemplate = ({
   toolbar = null,
   children,
   className = '',
-<<<<<<< ours
-<<<<<<< ours
-}) => (
-  <section className={cn('mx-auto max-w-[1400px] space-y-4', className)} dir="rtl">
-    <WorkspacePageHeader
-      eyebrow={eyebrow}
-      title={title}
-      description={description}
-      summary={summary}
-      actions={actions}
-    />
-=======
-=======
->>>>>>> theirs
   showHeader = true,
 }) => (
   <section className={cn('mx-auto max-w-[1400px] space-y-4', className)} dir="rtl">
@@ -38,10 +24,6 @@ export const WorkspaceShellTemplate = ({
         actions={actions}
       />
     ) : null}
-<<<<<<< ours
->>>>>>> theirs
-=======
->>>>>>> theirs
     {tabs ? <div>{tabs}</div> : null}
     {toolbar ? <div>{toolbar}</div> : null}
     <div>{children}</div>
