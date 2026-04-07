@@ -80,8 +80,15 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
   }, []);
 
   return (
-    <div className="app-shell app-print-shell h-screen overflow-hidden" dir="rtl">
-      <div className="app-content-wrap app-print-frame relative h-full px-0 lg:px-4 lg:py-4">
+    <div className="app-shell app-print-shell min-h-screen" dir="rtl">
+      <a
+        href="#app-workspace"
+        className="focus-ring sr-only absolute right-4 top-4 z-[80] rounded-[var(--radius-lg)] bg-[rgb(var(--ui-primary))] px-4 py-2 text-sm font-black text-white focus:not-sr-only"
+      >
+        پرش به محتوای اصلی
+      </a>
+
+      <div className="app-content-wrap app-print-frame relative">
         {isSidebarOpen && (
           <button
             type="button"
@@ -101,9 +108,10 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
           onNavigate={closeMobileSidebar}
         />
 
-        <div className="app-print-main flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+        <div className="app-shell-main app-print-main min-h-0 overflow-hidden">
           <main
-            className="app-print-content flex-1 overflow-y-auto pb-5 pt-0 lg:pb-6"
+            id="app-workspace"
+            className="app-print-content flex-1 overflow-y-auto pb-5 lg:pb-6"
             style={{ scrollbarGutter: 'stable both-edges' }}
           >
             <Header
@@ -112,8 +120,8 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
               isSidebarCollapsed={isSidebarCollapsed}
               isSidebarOpen={isSidebarOpen}
             />
-            <div className="px-4 lg:px-6">
-              <div className="app-shell-content">
+            <div className="app-shell-content">
+              <div className="min-h-full pb-2">
                 {children || <Outlet />}
               </div>
             </div>

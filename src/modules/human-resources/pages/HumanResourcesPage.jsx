@@ -230,7 +230,6 @@ export const HumanResourcesPage = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
-      showHeader={false}
       eyebrow="منابع انسانی"
       title="دایرکتوری پرسنل"
       description="ثبت، ویرایش، آرشیو و مدیریت مدارک پرسنل با قرارداد یکپارچه."

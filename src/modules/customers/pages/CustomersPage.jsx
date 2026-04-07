@@ -108,7 +108,6 @@ export const CustomersPage = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
-      showHeader={false}
       eyebrow="مشتریان"
       title="دایرکتوری مشتریان"
       description="جستجو، مشاهده جزئیات، و مدیریت وضعیت فعال/آرشیو با الگوی یکپارچه." 

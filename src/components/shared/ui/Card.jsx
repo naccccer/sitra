@@ -9,11 +9,11 @@ const PADDING_CLASSNAMES = {
 };
 
 const TONE_CLASSNAMES = {
-  default: 'border-transparent bg-[rgb(var(--ui-surface-muted))]/72 text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
-  muted: 'border-transparent bg-[rgb(var(--ui-surface-muted))]/56 text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)]',
+  default: 'workspace-surface text-[rgb(var(--ui-text))]',
+  muted: 'workspace-surface workspace-surface--muted text-[rgb(var(--ui-text))]',
   inverse: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-strong)]',
-  accent: 'border-transparent bg-[rgb(var(--ui-accent-muted))]/44 text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)]',
-  glass: 'border-white/70 bg-white/82 text-[rgb(var(--ui-text))] shadow-[var(--shadow-surface)] backdrop-blur-xl',
+  accent: 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))]/72 text-[rgb(var(--ui-accent-strong))] shadow-[var(--shadow-soft)]',
+  glass: 'workspace-surface bg-white/86 text-[rgb(var(--ui-text))]',
 };
 
 export const Card = ({

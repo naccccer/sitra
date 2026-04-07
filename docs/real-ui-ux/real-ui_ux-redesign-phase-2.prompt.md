@@ -22,6 +22,8 @@ Out of scope:
 - Modals are the default secondary-task surface where they preserve flow.
 - Persian RTL-first interaction must remain intact.
 - Shared shell, token, action, and state contracts from Phase 1 are authoritative.
+- Reduce chrome: fewer cards, fewer badges/tags, and fewer persistent explanation blocks.
+- If an explanation is optional, use a small help/tooltip affordance instead of always-visible note text.
 
 ## In-scope modules and screens
 - `sales`
@@ -40,6 +42,9 @@ Out of scope:
 - Standardize validation timing, confirmation thresholds, and submission states.
 - Make success, error, and in-progress states instructional instead of generic.
 - Remove fragmented local patterns that conflict with the new shared system.
+- Strip decorative shell chrome introduced during Phase 1 where it does not improve throughput.
+- Remove redundant cards around headers, filters, and top-level controls unless they separate meaningfully distinct surfaces.
+- Replace persistent explanatory text with tooltip help affordances wherever the information is useful but not required for constant visibility.
 
 ## Verification checklist
 - Benchmark workflow can be completed end-to-end without shell or modal confusion.
@@ -47,6 +52,8 @@ Out of scope:
 - Primary actions are clear at every step.
 - KPI measurement can compare baseline and redesigned flow using the same method.
 - Sales and customers surfaces use the shared system rather than bespoke local conventions.
+- Header and toolbar areas avoid decorative tags and redundant wrapper cards.
+- Optional guidance appears on demand rather than adding visual noise by default.
 
 ## Acceptance criteria
 - The benchmark workflow is measurably faster, clearer, or lower-friction than baseline.

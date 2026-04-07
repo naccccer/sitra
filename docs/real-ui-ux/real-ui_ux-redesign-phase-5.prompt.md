@@ -21,6 +21,7 @@ Out of scope:
 - Governance should be lightweight but enforceable.
 - Historical redesign material should not be carried forward unless a future task explicitly requires it.
 - The final system should be maintainable through normal product work, not another large rewrite immediately after close.
+- Visual restraint is part of the final system definition: optional help on demand, minimal badges, and no redundant wrapper cards.
 
 ## Required repo and doc updates
 - Finalize the roadmap close-out sections.
@@ -33,6 +34,7 @@ Out of scope:
 - Finalize governance language for shared primitives, tokens, states, and review expectations.
 - Publish final KPI summary and unresolved debt with clear ownership.
 - Define rewrite triggers or maintenance thresholds so future drift is caught early.
+- Remove decorative shell/meta tags, excessive helper copy, and redundant card wrappers that survived earlier phases.
 
 ## Verification checklist
 - Active modules no longer present obvious pre-redesign visual or interaction leftovers.

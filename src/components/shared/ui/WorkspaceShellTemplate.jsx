@@ -12,9 +12,9 @@ export const WorkspaceShellTemplate = ({
   toolbar = null,
   children,
   className = '',
-  showHeader = true,
+  showHeader = false,
 }) => (
-  <section className={cn('mx-auto max-w-[1400px] space-y-4', className)} dir="rtl">
+  <section className={cn('workspace-shell w-full space-y-4', className)} dir="rtl">
     {showHeader ? (
       <WorkspacePageHeader
         eyebrow={eyebrow}
@@ -26,6 +26,6 @@ export const WorkspaceShellTemplate = ({
     ) : null}
     {tabs ? <div>{tabs}</div> : null}
     {toolbar ? <div>{toolbar}</div> : null}
-    <div>{children}</div>
+    <div className="space-y-4">{children}</div>
   </section>
 );

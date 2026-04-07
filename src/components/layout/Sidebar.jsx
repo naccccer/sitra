@@ -32,7 +32,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   const permissions = Array.isArray(session?.permissions) ? session.permissions : EMPTY_PERMISSIONS
   const { isVisible } = useTabSettings()
   const isRailCollapsed = isCollapsed && !isOpen
-  const desktopSidebarWidth = isRailCollapsed ? '5.75rem' : '16rem'
+  const desktopSidebarWidth = isRailCollapsed ? 'var(--shell-rail-width-collapsed)' : 'var(--shell-rail-width)'
   const textRevealClass = isRailCollapsed
     ? 'max-w-0 -translate-x-1 opacity-0'
     : 'max-w-[12rem] translate-x-0 opacity-100'
@@ -174,7 +174,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   return (
     <aside
       style={{ '--sidebar-shell-width': desktopSidebarWidth }}
-      className={`app-shell-nav print-hide fixed inset-y-0 right-0 flex w-[16rem] shrink-0 flex-col overflow-hidden border-l border-white/72 bg-[linear-gradient(180deg,rgba(246,246,248,0.82),rgba(238,238,241,0.72))] px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[28px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+      className={`app-shell-nav print-hide fixed inset-y-0 left-0 z-40 flex w-[17.75rem] shrink-0 flex-col overflow-hidden border-r border-white/72 px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[30px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       dir="rtl"
     >
       <button type="button" onClick={onCloseMobile} title="بستن منو" className="shell-mobile-dismiss focus-ring mb-2 inline-flex h-10 w-10 items-center justify-center self-end rounded-[var(--radius-lg)] text-slate-700 lg:hidden">
@@ -184,15 +184,15 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       <div className="flex min-h-0 flex-1 flex-col px-1">
 
       {wrapWithTooltip(
-        <div className={`shell-brand-surface mb-3 rounded-[24px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-fit p-1.5' : 'w-full px-3 py-2.5'}`}>
+        <div className={`shell-brand-surface mb-3 rounded-[26px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-fit p-1.5' : 'w-full px-3 py-3'}`}>
           <div className={`flex items-center transition-[gap] duration-[var(--motion-base)] ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
-            <div className={`shell-brand-mark flex shrink-0 items-center justify-center overflow-hidden text-base font-black text-white transition-[transform,border-radius,width,height] duration-[var(--motion-base)] ${isRailCollapsed ? 'h-10 w-10 rounded-[16px]' : 'h-11 w-11 rounded-[18px]'}`}>
+            <div className={`shell-brand-mark flex shrink-0 items-center justify-center overflow-hidden text-base font-black text-white transition-[transform,border-radius,width,height] duration-[var(--motion-base)] ${isRailCollapsed ? 'h-10 w-10 rounded-[18px]' : 'h-12 w-12 rounded-[20px]'}`}>
               {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className={`h-full w-full ${isRailCollapsed ? 'object-contain p-1' : 'object-cover'}`} /> : fallbackLetter}
             </div>
             {!isRailCollapsed && (
               <div className={`overflow-hidden transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
                 <div className="text-sm font-black text-[rgb(var(--ui-text))]">{normalizedProfile.brandName}</div>
-                <div className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
+                <div className="mt-1 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">{normalizedProfile.panelSubtitle}</div>
               </div>
             )}
           </div>
@@ -200,19 +200,19 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         normalizedProfile.brandName,
       )}
 
-      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'auto' }}>
+      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable both-edges' }}>
         <nav className="space-y-4">
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-2">
               {!isRailCollapsed && (
-                <div className="px-1 text-[10px] font-black text-[rgb(var(--ui-text-muted))] transition-opacity duration-[var(--motion-base)]">
+                <div className="shell-section-label px-1 transition-opacity duration-[var(--motion-base)]">
                   {section.label}
                 </div>
               )}
               {getSectionGroups(section).map((group) => (
                 <div key={group.id} className="space-y-1.5">
                   {group.items.map((item) => {
-                    const tone = 'default'
+                    const tone = section.tone || 'default'
                     const isActive = Array.isArray(item.children) && item.children.length > 0
                       ? visualActiveGroupId === item.id
                       : false
@@ -232,7 +232,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             type="button"
             onClick={onLogout}
             aria-label="خروج"
-            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-lg)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-2'}`}
+            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-2'}`}
           >
             <LogOut size={16} />
             <span

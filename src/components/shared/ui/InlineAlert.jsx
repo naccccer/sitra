@@ -19,7 +19,7 @@ export const InlineAlert = ({
 }) => (
   <div
     className={cn(
-      'rounded-[var(--radius-lg)] border px-4 py-3 text-xs font-black shadow-[var(--shadow-soft)]',
+      'rounded-[var(--radius-xl)] border px-4 py-3 text-xs font-black shadow-[var(--shadow-soft)]',
       TONE_CLASSNAMES[tone] || TONE_CLASSNAMES.neutral,
       className,
     )}

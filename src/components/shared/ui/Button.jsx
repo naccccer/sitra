@@ -3,12 +3,15 @@ import { cn } from '@/components/shared/ui/cn';
 import { getActionPreset } from '@/components/shared/ui/actionPresets';
 
 const VARIANT_CLASSNAMES = {
-  primary: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/95',
-  secondary: 'border-transparent bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-primary))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-bg-accent))]/82 hover:text-[rgb(var(--ui-primary))]',
+  primary: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/94',
+  secondary: 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:border-[rgb(var(--ui-accent))] hover:bg-[rgb(var(--ui-accent-muted))]/82',
+  tertiary: 'border-[rgb(var(--ui-border-soft))] bg-white/88 text-[rgb(var(--ui-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:border-[rgb(var(--ui-accent-border))] hover:bg-white',
+  quiet: 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-[rgb(var(--ui-surface-muted))] hover:text-[rgb(var(--ui-text))]',
+  destructive: 'border-transparent bg-[rgb(var(--ui-danger-text))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-text))]/92',
   ghost: 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-[rgb(var(--ui-surface-muted))] hover:text-[rgb(var(--ui-text))]',
-  danger: 'border-transparent bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-bg))]/85',
+  danger: 'border-transparent bg-[rgb(var(--ui-danger-text))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-text))]/92',
   success: 'border-transparent bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-success-bg))]/85',
-  forest: 'border-transparent bg-[rgb(18,74,45)] text-white shadow-[0_14px_34px_rgba(18,74,45,0.24)] hover:-translate-y-px hover:bg-[rgb(13,57,34)]',
+  forest: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/94',
   accent: 'border-transparent bg-[rgb(var(--ui-accent))] text-white shadow-[var(--shadow-accent)] hover:-translate-y-px hover:bg-[rgb(var(--ui-accent-strong))]',
 };
 
@@ -59,7 +62,7 @@ export const Button = forwardRef(({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        'focus-ring inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border font-black transition duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:opacity-50',
+        'focus-ring inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border font-black transition duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:border-[rgb(var(--ui-border-soft))] disabled:bg-[rgb(var(--ui-surface-muted))] disabled:text-[rgb(var(--ui-text-muted))] disabled:opacity-100',
         VARIANT_CLASSNAMES[resolvedVariant] || VARIANT_CLASSNAMES.secondary,
         SIZE_CLASSNAMES[size] || SIZE_CLASSNAMES.md,
         SURFACE_CLASSNAMES[surface] || SURFACE_CLASSNAMES.default,

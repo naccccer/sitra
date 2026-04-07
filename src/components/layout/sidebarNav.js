@@ -14,13 +14,13 @@ import { isModuleEnabled } from '@/kernel/moduleRegistry'
 export const pathMatches = (pathname, to) => Boolean(to) && (pathname === to || pathname.startsWith(`${to}/`))
 
 export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
-  `focus-ring flex items-center gap-2.5 rounded-[var(--radius-lg)] border text-[13px] font-black transition duration-[var(--motion-fast)] ${
-    isCollapsed ? 'min-h-11 px-3 py-2 lg:mx-auto lg:h-11 lg:w-11 lg:flex-none lg:justify-center lg:gap-0 lg:px-0' : 'min-h-11 w-full px-3 py-2'
+  `focus-ring flex items-center gap-2.5 rounded-[var(--radius-xl)] border text-[13px] font-black transition duration-[var(--motion-fast)] ${
+    isCollapsed ? 'min-h-11 px-3 py-2 lg:mx-auto lg:h-11 lg:w-11 lg:flex-none lg:justify-center lg:gap-0 lg:px-0' : 'min-h-11 w-full px-3 py-2.5'
   } ${
-    tone === 'owner'
+    tone === 'control'
       ? isActive
-        ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent))] text-white shadow-[0_10px_24px_rgba(18,33,74,0.22)]'
-        : 'border-transparent bg-[rgb(var(--ui-primary))]/94 text-[rgb(var(--ui-surface))] hover:border-[rgb(var(--ui-accent-border))]/30 hover:bg-[rgb(var(--ui-primary))]'
+        ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))] shadow-[var(--shadow-soft)]'
+        : 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:border-[rgb(var(--ui-accent-border))] hover:bg-[rgb(var(--ui-accent-muted))]/66 hover:text-[rgb(var(--ui-accent-strong))]'
       : isActive
         ? 'border-[rgb(var(--ui-primary))] bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)]'
         : 'border-transparent bg-transparent text-[rgb(var(--ui-text))] hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))]'
@@ -29,10 +29,10 @@ export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
 
 export const navChildLinkClass = (isActive, tone = 'default') => (
   `focus-ring flex min-h-9 items-center rounded-full border px-3 py-1.5 text-[12px] font-bold transition duration-[var(--motion-fast)] ${
-    tone === 'owner'
+    tone === 'control'
       ? isActive
-        ? 'border-white/80 bg-white/94 text-[rgb(var(--ui-primary))] shadow-[0_10px_24px_rgba(20,20,24,0.08)]'
-        : 'border-transparent bg-transparent text-[rgb(var(--ui-text))] hover:bg-white/58 hover:text-[rgb(var(--ui-primary))]'
+        ? 'border-[rgb(var(--ui-accent-border))] bg-white text-[rgb(var(--ui-accent-strong))] shadow-[var(--shadow-soft)]'
+        : 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-white/58 hover:text-[rgb(var(--ui-accent-strong))]'
       : isActive
         ? 'border-white/82 bg-white/94 text-[rgb(var(--ui-primary))] shadow-[0_10px_24px_rgba(20,20,24,0.08)]'
         : 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-white/58 hover:text-[rgb(var(--ui-text))]'
@@ -41,12 +41,18 @@ export const navChildLinkClass = (isActive, tone = 'default') => (
 
 export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
   {
-    id: 'daily',
-    label: 'عملیات روزانه',
+    id: 'workspace',
+    label: 'ورود سریع',
     items: [
       { to: '/', label: 'خانه', icon: LayoutDashboard, end: true },
       { to: '/orders', label: 'سفارشات', icon: ClipboardList, capability: 'canManageOrders', moduleId: 'sales' },
       { to: '/customers', label: 'مشتریان', icon: ContactRound, capability: 'canManageCustomers', moduleId: 'customers' },
+    ],
+  },
+  {
+    id: 'operations',
+    label: 'عملیات',
+    items: [
       { to: '/human-resources', label: 'منابع انسانی', icon: UsersRound, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
       {
         id: 'inventory',
@@ -69,8 +75,9 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
     ],
   },
   {
-    id: 'system',
-    label: 'پیکربندی',
+    id: 'control',
+    label: 'کنترل و پیکربندی',
+    tone: 'control',
     items: [
       {
         id: 'master-data',
@@ -92,11 +99,10 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
         to: '/management/audit',
         label: 'امنیت و دسترسی',
         icon: SlidersHorizontal,
-        group: 'daily-config',
         dynamicToFirstVisibleChild: true,
         children: [
           { to: '/management/audit', label: 'ممیزی فعالیت ها', capability: 'canViewAuditLogs' },
-          { to: '/users-access', label: 'کاربران و دسترسی', capability: 'canManageUsers', moduleId: 'users-access' },
+          { to: '/users-access', label: 'کاربران', capability: 'canManageUsers', moduleId: 'users-access' },
         ],
       },
       {
@@ -104,7 +110,6 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
         to: '/owner',
         label: 'اتاق فرمان',
         icon: ShieldCheck,
-        group: 'owner-config',
         capability: 'canManageSystemSettings',
         children: [
           { to: '/owner/modules', label: 'کنترل ماژول ها', capability: 'canManageSystemSettings' },

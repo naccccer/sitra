@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { Card, SegmentedTabs, WorkspaceShellTemplate } from '@/components/shared/ui'
+import { SegmentedTabs, WorkspaceShellTemplate } from '@/components/shared/ui'
 import { AccountsPanel } from '../components/accounts/AccountsPanel'
 import { PayrollPanel } from '../components/payroll/PayrollPanel'
 import { VouchersPanel } from '../components/vouchers/VouchersPanel'
@@ -47,18 +47,15 @@ export const AccountingPage = ({ session }) => {
 
   return (
     <WorkspaceShellTemplate
-      showHeader={false}
       eyebrow="حسابداری"
       title="میزکار تراکنش های مالی"
       description="اسناد، حساب ها، گزارش ها و تنظیمات با مدل تعاملی یکپارچه."
       tabs={(
-        <Card padding="md" className="space-y-3">
-          <SegmentedTabs
-            tabs={visibleTabs}
-            activeId={resolvedTab}
-            onChange={(tabId) => setSearchParams({ tab: tabId })}
-          />
-        </Card>
+        <SegmentedTabs
+          tabs={visibleTabs}
+          activeId={resolvedTab}
+          onChange={(tabId) => setSearchParams({ tab: tabId })}
+        />
       )}
     >
       {renderContent()}

@@ -22,6 +22,8 @@ Out of scope:
 - Modals are the default secondary-task surface
 - Shared primitives and templates must absorb the behavior, not local screen-specific hacks
 - Keyboard friendliness and RTL integrity remain mandatory
+- Shared primitives must support low-chrome layouts, not force extra cards, tags, or static helper text
+- Optional explanations should be available through tooltip/help affordances by default
 
 ## In-scope representative areas
 - Shared UI primitives under `src/components/shared/ui/*`
@@ -40,6 +42,8 @@ Out of scope:
 - Convert shared primitives and templates to encode these rules.
 - Migrate representative screens to prove the contracts are reusable.
 - Mark or remove old patterns that directly conflict with the new system.
+- Add a shared help-affordance pattern for optional explanations.
+- Remove primitive behavior that encourages redundant nested cards or decorative status/meta tags in workspace chrome.
 
 ## Verification checklist
 - Tables share consistent density, action placement, and state treatment.
@@ -47,6 +51,7 @@ Out of scope:
 - Modals share consistent layout, footer, and close behavior.
 - Representative conversions do not reintroduce bespoke local interaction grammar.
 - Shared primitives are flexible enough for later module adoption without new one-off variants.
+- Shared primitives allow concise headers and toolbars without mandatory explanatory paragraphs.
 
 ## Acceptance criteria
 - The app now has one reusable data-surface and data-entry language.

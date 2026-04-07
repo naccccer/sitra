@@ -1,7 +1,7 @@
 # Real UI/UX Redesign Roadmap
 
 Updated: 2026-04-08
-Status: Active program, Phase 0 complete
+Status: Active program, Phase 1 complete
 Approval authority: Repository owner
 Canonical redesign planning location: `docs/real-ui-ux/`
 
@@ -41,6 +41,9 @@ These constraints remain in force throughout the redesign:
 - Keyboard-friendly interaction
 - Desktop-first workspace layouts
 - Measured rollout over aesthetic churn
+- Chrome restraint over ornamental UI
+- Fewer cards, badges, and always-visible helper blocks unless they materially improve task speed
+- If explanation is optional, prefer tooltip help affordances over persistent explanatory text
 
 ## KPI framework
 Phase 0 establishes baselines for the benchmark workflow and the redesign operating model. Every later phase must report deltas against that baseline.
@@ -66,6 +69,9 @@ Every phase close must update this roadmap with:
 - Shared pattern changes must be adopted program-wide over time, not recreated independently per module.
 - If a phase changes UX-facing behavior, the roadmap and the matching phase prompt must be updated in the same change.
 - If a UX blocker requires backend or contract change, keep it additive or versioned and update the owning contract docs in the same change.
+- Decorative shell/meta tags should not appear by default.
+- Cards should group truly distinct operational surfaces, not serve as redundant wrappers around already clear content.
+- Optional guidance should default to hover/focus help affordances instead of persistent paragraph copy.
 
 ## Expected frontend contract additions
 The redesign does not plan backend or database changes by default. It does plan new shared frontend contracts for:
@@ -185,3 +191,10 @@ Copy this block into the end of the roadmap at each phase close and fill it in:
 - KPI delta: baseline method established; static consistency baseline captured at 7 bespoke sales overlays, 15 `window.confirm` usages, 2 legacy redirect routes, and 7 routed entry surfaces already using `WorkspaceShellTemplate`.
 - Risks: the current sales workflow still bypasses shared shell and modal standards in its most critical surfaces, so Phase 2 risk remains high until those bespoke overlays are removed.
 - Next-phase adjustments: Phase 1 should include shell unification rules that explicitly protect the sales benchmark workflow, and Phase 3 should absorb confirm-dialog replacement as a shared-system requirement.
+
+## Phase 1 Close Update
+- What changed: established the Phase 1 shell contract in `docs/design-system/foundation-shell-system.md`, introduced a shared token/shell override layer in `src/kernel/styles/ui-foundation.css`, moved the authenticated desktop layout to a persistent left rail plus a single global workspace header, normalized top-level navigation into `ورود سریع` / `عملیات` / `کنترل و پیکربندی`, standardized shared action hierarchy variants (`primary`, `secondary`, `tertiary`, `quiet`, `destructive`, `icon-only`), expanded the universal state grammar to `loading`, `empty`, `error`, `success`, `archived`, and `disabled`, removed duplicate inner workspace headers by default, and aligned shell titles with sidebar wording.
+- What remains: `/orders/new` still supports an unauthenticated flow outside the authenticated shared shell, sales still owns the highest-profile bespoke overlays, `window.confirm` remains in workflow-heavy modules pending Phase 2 and Phase 3 adoption, and minor shell alignment polish may still need spot-fixes if any page shows edge drift after the shared changes.
+- KPI delta: shared entry-surface coverage via `WorkspaceShellTemplate` increased from 7 routed entry surfaces to 8 shared entry surfaces including dashboard; top-level `showHeader={false}` exceptions dropped from 7 to 0; shell-level `window.confirm` debt did not change and remains 15 usages across workflow surfaces.
+- Risks: the left-rail shift changes long-established muscle memory for operators, inventory/accounting nested navigation now depends more heavily on clear tab labeling, and the split authenticated vs unauthenticated order-entry shell can still feel inconsistent until Phase 2 addresses the benchmark workflow.
+- Next-phase adjustments: Phase 2 should preserve the simplified shell rules now in place: one global header only, titles that mirror sidebar labels, no decorative tags, fewer redundant cards, and optional explanations behind tooltip-style help affordances; it should also test whether the new left rail actually reduces context switching during order entry, keep sales/customer intake inside the shared shell vocabulary, and prioritize replacing bespoke sales overlays with shared modal/action/state contracts before deeper workflow polish.

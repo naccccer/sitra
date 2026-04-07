@@ -9,7 +9,7 @@ export const SegmentedTabs = ({
   tabClassName = '',
   wrapperClassName = '',
 }) => (
-  <div className={cn('flex gap-1 overflow-x-auto rounded-[var(--radius-xl)] bg-[rgb(var(--ui-surface-muted))] p-1 hide-scrollbar', className)}>
+  <div className={cn('flex gap-1 overflow-x-auto rounded-[var(--radius-2xl)] bg-[rgb(var(--ui-surface-muted))]/92 p-1.5 hide-scrollbar', className)}>
     {tabs.map((tab) => (
       <button
         key={tab.id}
@@ -17,10 +17,10 @@ export const SegmentedTabs = ({
         onClick={() => onChange(tab.id)}
         aria-pressed={activeId === tab.id}
         className={cn(
-          'focus-ring whitespace-nowrap rounded-[var(--radius-lg)] px-3 py-1.5 text-xs font-black transition-colors',
+          'focus-ring whitespace-nowrap rounded-[var(--radius-xl)] px-3 py-2 text-xs font-black transition',
           activeId === tab.id
-            ? 'bg-[rgb(234,88,12)] text-white shadow-[0_8px_20px_rgba(234,88,12,0.24)]'
-            : 'text-[rgb(var(--ui-text-muted))] hover:text-[rgb(var(--ui-text))]',
+            ? 'bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)]'
+            : 'text-[rgb(var(--ui-text-muted))] hover:bg-white/70 hover:text-[rgb(var(--ui-text))]',
           tabClassName,
         )}
       >

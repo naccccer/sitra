@@ -1,13 +1,52 @@
 import React from 'react';
-import { Archive, CheckCircle2, LoaderCircle, TriangleAlert } from 'lucide-react';
-import { Card } from '@/components/shared/ui/Card';
+import { Archive, Ban, CheckCircle2, Inbox, LoaderCircle, TriangleAlert } from 'lucide-react';
 import { EmptyState } from '@/components/shared/ui/EmptyState';
-import { InlineAlert } from '@/components/shared/ui/InlineAlert';
 import { cn } from '@/components/shared/ui/cn';
 
-const STATE_ICON = {
-  archived: Archive,
-  success: CheckCircle2,
+const STATE_META = {
+  loading: {
+    icon: LoaderCircle,
+    tone: 'accent',
+    iconClassName: 'universal-state-icon--loading',
+    title: 'در حال بارگذاری',
+    description: 'اطلاعات این بخش در حال آماده سازی است.',
+    loading: true,
+  },
+  empty: {
+    icon: Inbox,
+    tone: 'muted',
+    iconClassName: 'universal-state-icon--empty',
+    title: 'داده‌ای برای نمایش وجود ندارد',
+    description: 'برای ادامه، فیلترها را تغییر دهید یا یک مورد جدید ایجاد کنید.',
+  },
+  error: {
+    icon: TriangleAlert,
+    tone: 'muted',
+    iconClassName: 'universal-state-icon--error',
+    title: 'خطا در نمایش بخش',
+    description: 'بارگذاری این بخش کامل نشد. دوباره تلاش کنید یا وضعیت ورودی ها را بررسی کنید.',
+  },
+  success: {
+    icon: CheckCircle2,
+    tone: 'accent',
+    iconClassName: 'universal-state-icon--success',
+    title: 'عملیات با موفقیت انجام شد',
+    description: 'تغییرات ثبت شد و می توانید کار بعدی را ادامه دهید.',
+  },
+  archived: {
+    icon: Archive,
+    tone: 'muted',
+    iconClassName: 'universal-state-icon--archived',
+    title: 'این رکورد بایگانی شده است',
+    description: 'در صورت نیاز آن را بازگردانی کنید یا فقط برای مشاهده نگه دارید.',
+  },
+  disabled: {
+    icon: Ban,
+    tone: 'muted',
+    iconClassName: 'universal-state-icon--disabled',
+    title: 'این بخش در حال حاضر در دسترس نیست',
+    description: 'برای ادامه به مجوز یا وضعیت فعال سازی مناسب نیاز دارید.',
+  },
 };
 
 export const UniversalState = ({
@@ -17,48 +56,19 @@ export const UniversalState = ({
   action = null,
   className = '',
 }) => {
-  if (state === 'loading') {
-    return (
-      <Card className={cn('text-center', className)} tone="muted" padding="lg">
-        <div className="inline-flex items-center gap-2 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-state-loading-border))] bg-[rgb(var(--ui-state-loading-bg))] px-4 py-3 text-sm font-black text-[rgb(var(--ui-state-loading-text))]">
-          <LoaderCircle size={18} className="animate-spin" />
-          {title || 'در حال بارگذاری'}
-        </div>
-        {description ? <p className="mt-2 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
-      </Card>
-    );
-  }
-
-  if (state === 'error') {
-    return (
-      <InlineAlert tone="danger" title={title || 'خطا'} className={className}>
-        <div className="inline-flex items-center gap-1.5">
-          <TriangleAlert size={14} aria-hidden="true" />
-          <span>{description || 'بخش موردنظر در حال حاضر قابل نمایش نیست.'}</span>
-        </div>
-      </InlineAlert>
-    );
-  }
-
-  if (state === 'success' || state === 'archived') {
-    const Icon = STATE_ICON[state];
-    return (
-      <EmptyState
-        title={title || (state === 'success' ? 'عملیات با موفقیت انجام شد' : 'این رکورد بایگانی شده است')}
-        description={description}
-        action={action}
-        icon={Icon}
-        tone={state === 'success' ? 'accent' : 'muted'}
-        className={className}
-      />
-    );
-  }
+  const resolvedState = STATE_META[state] ? state : 'empty';
+  const meta = STATE_META[resolvedState];
+  const Icon = meta.icon;
 
   return (
     <EmptyState
-      title={title || 'داده‌ای برای نمایش وجود ندارد'}
-      description={description}
+      title={title || meta.title}
+      description={description || meta.description}
       action={action}
+      icon={Icon}
+      tone={meta.tone}
+      iconClassName={cn(meta.iconClassName, meta.loading ? 'animate-pulse' : '')}
+      iconInnerClassName={meta.loading ? 'animate-spin text-current' : 'text-current'}
       className={className}
     />
   );

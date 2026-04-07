@@ -9,13 +9,15 @@ export const EmptyState = ({
   action = null,
   icon: Icon = null,
   tone = 'muted',
+  iconClassName = '',
+  iconInnerClassName = '',
 }) => (
-  <Card className={cn('text-center', className)} tone={tone} padding="lg">
-    <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-[var(--radius-lg)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-accent-muted))]/45 shadow-[var(--shadow-soft)]">
-      {Icon ? <Icon size={18} className="text-[rgb(var(--ui-text-muted))]" aria-hidden="true" /> : null}
+  <Card className={cn('universal-state-card', className)} tone={tone} padding="lg">
+    <div className={cn('universal-state-icon mx-auto mb-3', iconClassName)}>
+      {Icon ? <Icon size={18} className={cn('text-[rgb(var(--ui-text-muted))]', iconInnerClassName)} aria-hidden="true" /> : null}
     </div>
     <h3 className="text-sm font-black text-[rgb(var(--ui-text))]">{title}</h3>
-    {description ? <p className="mt-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
+    {description ? <p className="mt-1 text-xs font-bold leading-6 text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
     {action ? <div className="mt-4 flex justify-center">{action}</div> : null}
   </Card>
 );

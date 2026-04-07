@@ -22,6 +22,7 @@ Out of scope:
 - Module-specific exceptions are allowed only when clearly domain-driven.
 - Compact, desktop-first operator workflows remain the default.
 - Persian RTL-first behavior and keyboard-friendly interaction remain mandatory.
+- Low-chrome execution remains mandatory: no decorative tags, redundant cards, or always-visible optional help text by default.
 
 ## Required repo and doc updates
 - Update the roadmap with adoption progress by module cluster.
@@ -34,12 +35,15 @@ Out of scope:
 - Resolve module-specific visual drift and duplicated components.
 - Keep module logic module-owned while normalizing rendering grammar.
 - Capture any remaining debt that must move to Phase 5 instead of quietly persisting.
+- Collapse redundant visual wrappers and helper copy introduced during earlier adoption passes.
+- Use tooltip/help affordances for optional clarification instead of persistent notes wherever feasible.
 
 ## Verification checklist
 - Each affected module gets manual smoke checks for navigation, actions, states, tables, and forms.
 - No module reintroduces an outdated visual language for convenience.
 - Shared primitives cover the real module cases without forcing excessive local overrides.
 - Any domain exceptions are explicit and documented.
+- Module headers and entry controls remain visually restrained rather than card-heavy.
 
 ## Acceptance criteria
 - Remaining active modules look and behave like part of one product family.

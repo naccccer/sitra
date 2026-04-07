@@ -28,7 +28,7 @@ export const IconButton = forwardRef(({
     <Button
       ref={ref}
       size={size}
-      variant={variant || preset?.variant || 'secondary'}
+      variant={variant || preset?.variant || 'quiet'}
       surface={surface}
       className={surface === 'table' ? `!text-[rgb(68,68,78)] hover:!text-[rgb(34,34,40)] ${className}` : className}
       aria-label={resolvedLabel}
