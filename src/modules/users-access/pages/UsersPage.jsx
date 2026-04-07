@@ -1,6 +1,6 @@
 import React from 'react';
 import { AccessDenied } from '@/components/shared/AccessDenied';
-import { Card } from '@/components/shared/ui';
+import { Card, WorkspaceShellTemplate } from '@/components/shared/ui';
 import { AdminUsersSettingsTab } from '@/modules/users-access/components/AdminUsersSettingsTab';
 
 export const UsersPage = ({ session, onRefreshSession }) => {
@@ -11,10 +11,14 @@ export const UsersPage = ({ session, onRefreshSession }) => {
   }
 
   return (
-    <div className="mx-auto max-w-[1300px] space-y-4">
+    <WorkspaceShellTemplate
+      eyebrow="کاربران و دسترسی"
+      title="مدیریت کاربران"
+      description="نقش ها، وضعیت فعال سازی و مجوزهای عملیاتی با رفتار قابل پیش بینی."
+    >
       <Card padding="lg">
         <AdminUsersSettingsTab session={session} onRefreshSession={onRefreshSession} />
       </Card>
-    </div>
+    </WorkspaceShellTemplate>
   );
 };
