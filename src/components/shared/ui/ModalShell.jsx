@@ -27,7 +27,14 @@ export const ModalShell = ({
   return (
     <div className={cn('fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm print-hide', overlayClassName)}>
       <Card className={cn('w-full overflow-hidden rounded-3xl shadow-[var(--shadow-overlay)]', maxWidthClass, contentClassName)} padding="none">
-        <div className={cn('border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3', headerClassName)}>
+        <div
+          className={cn(
+            headerClassName
+              ? 'rounded-t-3xl border-b px-4 py-3'
+              : 'rounded-t-3xl border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3',
+            headerClassName,
+          )}
+        >
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
@@ -50,7 +57,7 @@ export const ModalShell = ({
 
         <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>
 
-        {footer ? <div className={cn('border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null}
+        {footer ? <div className={cn('rounded-b-3xl border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null}
       </Card>
     </div>
   );
