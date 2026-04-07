@@ -7,6 +7,7 @@ const TONE_CLASSNAMES = {
   warning: 'border-[rgb(var(--ui-warning-border))] bg-[rgb(var(--ui-warning-bg))] text-[rgb(var(--ui-warning-text))]',
   danger: 'border-[rgb(var(--ui-danger-border))] bg-[rgb(var(--ui-danger-bg))] text-[rgb(var(--ui-danger-text))]',
   neutral: 'border-[rgb(var(--ui-border))] bg-[rgb(var(--ui-surface-muted))] text-[rgb(var(--ui-text-muted))]',
+  archived: 'border-[rgb(var(--ui-state-archived-border))] bg-[rgb(var(--ui-state-archived-bg))] text-[rgb(var(--ui-state-archived-text))]',
 };
 
 export const InlineAlert = ({

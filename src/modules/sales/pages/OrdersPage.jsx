@@ -1,12 +1,18 @@
 ﻿import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { WorkspaceShellTemplate } from '@/components/shared/ui';
 import { AdminOrdersView } from '../components/admin/AdminOrdersView';
 
 export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders, onReloadOrders, catalog, profile }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="mx-auto w-full">
+    <WorkspaceShellTemplate
+      showHeader={false}
+      eyebrow="فروش"
+      title="میزکار سفارشات"
+      description="جستجو، ویرایش، آرشیو و مدیریت پرداخت سفارشات در یک جریان استاندارد."
+    >
       <AdminOrdersView
         orders={orders}
         hasMoreOrders={ordersHasMore}
@@ -18,6 +24,6 @@ export const OrdersPage = ({ orders, ordersHasMore, setOrders, onLoadMoreOrders,
         onCreateOrder={() => navigate('/orders/new')}
         onEditOrder={(order) => navigate(`/orders/${order.id}`)}
       />
-    </div>
+    </WorkspaceShellTemplate>
   );
 };

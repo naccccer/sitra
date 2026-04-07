@@ -1,43 +1,29 @@
-# Sitra ERP Roadmap
+# Sitra ERP Roadmap (Final UI Redesign State)
 
-This file is forward-looking only. It does not define the current architecture or current active module list; use `docs/code-map.md` for that.
+This file remains forward-looking, but this section records the final state of the UI redesign program at Phase 5 close.
 
-## Current Platform Snapshot
-- Active business modules already in repo:
-  - `sales`
-  - `customers`
-  - `inventory`
-  - `human-resources`
-  - `accounting`
-  - `master-data`
-  - `users-access`
-- Shared runtime:
-  - `kernel`
-- Reserved, inactive scaffold:
-  - `production`
+## Final redesign state (2026-04-07)
 
-## Next Priorities
+### Completed
+- Shared shell/state contracts are established and used on all module entry surfaces.
+- Design-system governance is formalized (policy, PR checklist, contribution template, visual regression process).
+- Phase 5 optimization framework is defined (KPI dashboard, rewrite triggers, quarterly optimization cycle).
 
-### 1) Sales Hardening
-- Improve order list performance and filtering for larger datasets.
-- Expand optimistic concurrency and conflict UX.
-- Continue splitting oversized sales/admin components into smaller containers/hooks.
+### Remaining continuous work (post-program)
+- Internal screen normalization and debt deletion continue as rolling maintenance (not as a redesign phase).
+- KPI instrumentation and visual baseline updates are now release operations.
 
-### 2) Master Data Improvements
-- Add stricter validation for pricing and dimension rules.
-- Improve catalog edit ergonomics for large operation lists.
-- Add import/export for catalog snapshots.
+### Operating model going forward
+1. Every UI PR must pass design-system conformance checklist.
+2. Every perceptible UI change must include visual diff evidence or rationale.
+3. Every UX change must declare measurable KPI impact hypothesis.
 
-### 3) Access and Control Plane
-- Improve role-permission matrix UX.
-- Add stronger safeguards for owner-only operations.
-
-### 4) Platform Reliability
-- Expand automated integration coverage for auth/bootstrap/orders/settings.
-- Add migration scripts for schema evolution.
-- Improve observability around failed requests and retries.
+## Final consistency baseline references
+- Component alignment: `docs/design-system.md`
+- Deprecated pattern archive: `docs/design-system/deprecated-patterns-archive.md`
+- Quarterly maintenance: `docs/design-system/quarterly-maintenance-playbook.md`
 
 ## Validation Gate
 - Fast: `npm run verify:fast`
 - Safe: `npm run verify:safe`
-- Full tests: `npm run test:all`
+- Full: `npm run test:all`
