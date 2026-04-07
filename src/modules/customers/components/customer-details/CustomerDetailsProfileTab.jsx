@@ -26,16 +26,16 @@ const ProfileFieldCard = ({
   onDelete,
   onValueChange,
 }) => (
-  <div className={`rounded-2xl border border-slate-200 bg-white p-3 shadow-sm ${field.className || ''}`}>
-    <div className="mb-2 flex items-center justify-between gap-2">
+  <div className={`rounded-2xl border border-slate-200/90 bg-white px-3 py-2.5 shadow-sm ${field.className || ''}`}>
+    <div className="mb-1.5 flex items-center justify-between gap-2">
       <div className="text-xs font-black text-slate-500">{field.label}</div>
       {canWriteCustomers ? (
         <div className="flex items-center gap-1.5">
-          <Button variant={isEditing ? 'primary' : 'secondary'} size="sm" onClick={onToggleEdit}>
+          <Button variant={isEditing ? 'primary' : 'secondary'} size="sm" className="!h-8 !rounded-lg !px-2.5" onClick={onToggleEdit}>
             {isEditing ? 'ثبت فیلد' : 'ویرایش'}
           </Button>
           {field.allowDelete ? (
-            <Button variant="danger" size="sm" onClick={onDelete}>
+            <Button variant="danger" size="sm" className="!h-8 !w-8 !rounded-lg !p-0" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5" />
             </Button>
           ) : null}
@@ -50,10 +50,10 @@ const ProfileFieldCard = ({
         placeholder={field.placeholder}
         inputMode={field.inputMode}
         dir={field.dir}
-        className="h-10"
+        className="h-9 rounded-lg"
       />
     ) : (
-      <div className="min-h-10 rounded-xl bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800">
+      <div className="min-h-9 rounded-lg bg-slate-50 px-3 py-2 text-sm font-bold text-slate-800">
         {hasDisplayValue(value) ? String(value) : '—'}
       </div>
     )}
@@ -90,22 +90,22 @@ export const CustomerDetailsProfileTab = ({
   }
 
   return (
-    <div className="space-y-4">
-      <Card tone="muted" className="space-y-4 rounded-2xl" padding="md">
+    <div className="space-y-3">
+      <Card tone="muted" className="space-y-3 rounded-2xl" padding="md">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="text-sm font-black text-slate-900">پروفایل مشتری</div>
             <div className="mt-1 text-xs font-bold text-slate-500">اطلاعات پایه مشتری را با ساختار خوانا در همین بخش مدیریت کنید.</div>
           </div>
           {canWriteCustomers ? (
-            <Button variant="secondary" size="sm" onClick={addField}>
+            <Button variant="secondary" size="sm" className="!h-8 !rounded-lg !px-2.5" onClick={addField}>
               <Plus className="h-4 w-4" />
               افزودن فیلد
             </Button>
           ) : null}
         </div>
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 md:grid-cols-2">
           {fields.map((field) => (
             <ProfileFieldCard
               key={field.key}
@@ -125,7 +125,7 @@ export const CustomerDetailsProfileTab = ({
 
         {canWriteCustomers ? (
           <div className="flex justify-end">
-            <Button variant="primary" onClick={onSaveProfile} disabled={isSavingProfile}>
+            <Button variant="primary" size="sm" className="!rounded-lg !px-3" onClick={onSaveProfile} disabled={isSavingProfile}>
               {isSavingProfile ? 'در حال ذخیره...' : 'ذخیره تغییرات'}
             </Button>
           </div>

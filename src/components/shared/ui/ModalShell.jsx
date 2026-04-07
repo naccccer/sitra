@@ -31,8 +31,8 @@ export const ModalShell = ({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
-              <h3 className="text-sm font-black text-[rgb(var(--ui-text))]">{title}</h3>
-              {description ? <p className="mt-1 text-xs font-bold text-[rgb(var(--ui-text-muted))]">{description}</p> : null}
+              <h3 className="text-sm font-black text-current">{title}</h3>
+              {description ? <p className="mt-1 text-xs font-bold text-current/75">{description}</p> : null}
             </div>
 
             <div className="flex shrink-0 items-center gap-2">
