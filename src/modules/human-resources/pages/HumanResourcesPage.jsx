@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
+import { WorkspaceShellTemplate } from '@/components/shared/ui'
 import { HumanResourcesWorkspace } from '../components/HumanResourcesWorkspace'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { humanResourcesApi } from '../services/humanResourcesApi'
@@ -228,7 +229,11 @@ export const HumanResourcesPage = ({ session }) => {
   const totalPages = Math.max(1, Math.ceil((pagination.total || 0) / Math.max(1, pageSize)))
 
   return (
-    <div className="mx-auto max-w-[1400px] space-y-4" dir="rtl">
+    <WorkspaceShellTemplate
+      eyebrow="منابع انسانی"
+      title="دایرکتوری پرسنل"
+      description="ثبت، ویرایش، آرشیو و مدیریت مدارک پرسنل با قرارداد یکپارچه."
+    >
       <HumanResourcesWorkspace
         archiveMode={archiveMode}
         busyKey={busyKey}
@@ -264,6 +269,6 @@ export const HumanResourcesPage = ({ session }) => {
         totalCount={pagination.total || 0}
         totalPages={totalPages}
       />
-    </div>
+    </WorkspaceShellTemplate>
   )
 }

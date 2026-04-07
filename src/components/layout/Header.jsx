@@ -36,9 +36,9 @@ export const Header = ({
   const menuTooltip = isSidebarOpen ? 'بستن منوی کناری' : isSidebarCollapsed ? 'گسترش نوار کناری' : 'تغییر حالت ناوبری'
 
   return (
-    <header className="print-hide sticky top-0 z-30 px-4 pb-4 pt-0 lg:px-6">
+    <header className="app-shell-header print-hide sticky top-0 px-4 pb-4 pt-0 lg:px-6">
       <div className="app-shell-content">
-        <div className="surface-glass flex items-center justify-between gap-3 px-3 py-3 lg:px-4">
+        <div className="page-header-shell flex items-center justify-between gap-3">
           <div className="min-w-0 flex items-center gap-3">
             <IconButton
               onClick={onToggleSidebar}
