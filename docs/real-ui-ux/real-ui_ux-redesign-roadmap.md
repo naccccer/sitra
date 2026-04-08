@@ -1,7 +1,7 @@
 # Real UI/UX Redesign Roadmap
 
 Updated: 2026-04-08
-Status: Active program, Phase 3 complete
+Status: Active program, Phase 4 complete
 Approval authority: Repository owner
 Canonical redesign planning location: `docs/real-ui-ux/`
 
@@ -212,3 +212,10 @@ Copy this block into the end of the roadmap at each phase close and fill it in:
 - KPI delta: scoped consistency debt reduced by removing 4 browser-native confirmation dialogs from representative operational surfaces (inventory locations archive, inventory lots archive, HR employee archive, HR document delete); representative modal forms now share one grouping/required/help grammar instead of duplicated local label/input styling.
 - Risks: shared primitives now cover more interaction grammar but still need wider module adoption to validate flexibility under all high-density workflows; partial migration may create temporary mixed patterns until Phase 4 completes.
 - Next-phase adjustments: Phase 4 should prioritize remaining operational modules with lingering bespoke overlays and local form chrome, finish replacing remaining browser-native confirms, and capture live timing/click KPI deltas against the Phase 0 baseline during wider adoption.
+
+## Phase 4 Close Update
+- What changed by module cluster: inventory (`InventoryProductsArchivePanel`, `InventoryWarehousesArchivePanel`, `InventoryReplenishmentPanel`, `OperationsPanel`) migrated destructive confirmations to shared `ConfirmDialog`; accounting (`VouchersPanel`, `FiscalYearPanel`) migrated post/cancel/close confirmations to shared `ConfirmDialog`; master-data (`MatrixSettingsSection`) migrated matrix import replacement confirmation to shared `ConfirmDialog`; human-resources and users-access retained Phase 3 shared patterns without new module-local confirmation regressions.
+- What legacy patterns still remain: multiple heavy module surfaces still use local table/form markup and bespoke wrappers (notably in accounting settings/payroll internals and inventory replenishment/suggestions tables), and some `window.alert`-style recovery messaging remains pending broader shared-state consolidation.
+- KPI delta or consistency-debt reduction: repo-wide browser-native confirm usage across in-scope active modules dropped from 8 remaining usages to 0 (`inventory`, `accounting`, `master-data`, plus earlier `human-resources` migration), removing a full class of interaction drift from operational destructive actions.
+- Risks found during broad adoption: confirm-dialog standardization is complete for active modules, but mixed table/form grammars still increase cognitive switching risk until Phase 5 consolidation; shared primitives now cover destructive confirmation broadly, but further modal/form normalization may expose edge-case sizing or footer-action ordering gaps.
+- Any final cleanup priorities for Phase 5: replace remaining local table/form shells with shared primitives on high-traffic module screens, retire residual legacy alert messaging in favor of shared state surfaces, and perform final consistency pass to eliminate low-value wrappers and decorative status treatments.

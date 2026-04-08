@@ -3,6 +3,7 @@ import { Download, Upload } from 'lucide-react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   FilterRow,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
@@ -24,6 +25,7 @@ export const MatrixSettingsSection = ({
 }) => {
   const fileInputRef = useRef(null)
   const [isImporting, setIsImporting] = useState(false)
+  const [pendingImport, setPendingImport] = useState(null)
 
   const downloadTextFile = (content, filename, mimeType) => {
     const blob = new Blob([content], { type: mimeType })
@@ -126,23 +128,26 @@ export const MatrixSettingsSection = ({
       const text = await file.text()
       const extension = file.name.split('.').pop()
       const parsed = parseMatrixImportText(text, extension)
-      const confirmed = window.confirm('با ایمپورت فایل، ماتریس فعلی جایگزین می‌شود. ادامه می‌دهید؟')
-      if (!confirmed) return
-
-      setDraft((previous) => ({
-        ...previous,
-        thicknesses: parsed.thicknesses,
-        glasses: parsed.glasses,
-      }))
-      setIsAddingCol(false)
-      setNewThickness('')
-      alert('ایمپورت ماتریس با موفقیت انجام شد.')
+      setPendingImport(parsed)
     } catch (error) {
       alert(error?.message || 'ایمپورت فایل ناموفق بود.')
     } finally {
       setIsImporting(false)
       event.target.value = ''
     }
+  }
+
+  const applyImport = () => {
+    if (!pendingImport) return
+    setDraft((previous) => ({
+      ...previous,
+      thicknesses: pendingImport.thicknesses,
+      glasses: pendingImport.glasses,
+    }))
+    setIsAddingCol(false)
+    setNewThickness('')
+    setPendingImport(null)
+    alert('ایمپورت ماتریس با موفقیت انجام شد.')
   }
 
   return (
@@ -201,6 +206,14 @@ export const MatrixSettingsSection = ({
       >
         افزودن ردیف شیشه
       </Button>
+      <ConfirmDialog
+        isOpen={Boolean(pendingImport)}
+        title="جایگزینی ماتریس"
+        description="با ایمپورت فایل، ماتریس فعلی جایگزین می‌شود. ادامه می‌دهید؟"
+        confirmLabel="جایگزینی ماتریس"
+        onCancel={() => setPendingImport(null)}
+        onConfirm={applyImport}
+      />
     </div>
   )
 }

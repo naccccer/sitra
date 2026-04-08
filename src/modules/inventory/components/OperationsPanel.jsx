@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -56,6 +57,7 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [acting, setActing] = useState(null)
+  const [cancelCandidate, setCancelCandidate] = useState(null)
 
   const role = session?.user?.role || session?.role
   const isManager = role === 'admin' || role === 'manager'
@@ -86,13 +88,28 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
   }, [load])
 
   const handleAction = async (id, action) => {
-    if (action === 'cancel' && !window.confirm('آیا از لغو این عملیات مطمئن هستید؟')) {
+    if (action === 'cancel') {
+      setCancelCandidate(id)
       return
     }
 
     setActing(id)
     try {
       await inventoryApi.operationAction({ id, action })
+      await load()
+    } catch (err) {
+      window.alert(err?.message || 'خطا در اجرای عملیات')
+    } finally {
+      setActing(null)
+    }
+  }
+
+  const handleConfirmCancel = async () => {
+    if (!cancelCandidate) return
+    setActing(cancelCandidate)
+    try {
+      await inventoryApi.operationAction({ id: cancelCandidate, action: 'cancel' })
+      setCancelCandidate(null)
       await load()
     } catch (err) {
       window.alert(err?.message || 'خطا در اجرای عملیات')
@@ -220,6 +237,15 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
           })}
         </DataTableBody>
       </DataTable>
+      <ConfirmDialog
+        isOpen={Boolean(cancelCandidate)}
+        title="لغو عملیات"
+        description="آیا از لغو این عملیات مطمئن هستید؟"
+        confirmLabel="لغو عملیات"
+        loading={acting === cancelCandidate}
+        onCancel={() => setCancelCandidate(null)}
+        onConfirm={handleConfirmCancel}
+      />
     </div>
   )
 }

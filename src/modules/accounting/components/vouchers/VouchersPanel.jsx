@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -44,6 +45,7 @@ export function VouchersPanel({ session }) {
   const [page, setPage] = useState(1)
   const [createModal, setCreateModal] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
+  const [confirmAction, setConfirmAction] = useState(null)
 
   const filters = {
     ...(currentDefault ? { fiscalYearId: currentDefault.id } : {}),
@@ -55,17 +57,17 @@ export function VouchersPanel({ session }) {
   const { vouchers, total, totalPages, loading, error, reload } = useVouchers(filters)
 
   const handlePost = async (v) => {
-    if (!window.confirm(`سند ${v.voucherNo} را نهایی می‌کنید؟ این عمل غیرقابل بازگشت است.`)) return
     try {
       await accountingApi.patchVoucher({ id: v.id, action: 'post' })
+      setConfirmAction(null)
       reload()
     } catch (e) { alert(e.message) }
   }
 
   const handleCancel = async (v) => {
-    if (!window.confirm(`سند ${v.voucherNo} را ابطال می‌کنید؟`)) return
     try {
       await accountingApi.patchVoucher({ id: v.id, action: 'cancel' })
+      setConfirmAction(null)
       reload()
     } catch (e) { alert(e.message) }
   }
@@ -146,10 +148,10 @@ export function VouchersPanel({ session }) {
                       <Button size="xs" variant="ghost" surface="table" onClick={() => setEditTarget(v)}>ویرایش</Button>
                     ) : null}
                     {canPost && v.status === 'draft' ? (
-                      <Button size="xs" variant="success" surface="table" onClick={() => handlePost(v)}>ثبت</Button>
+                      <Button size="xs" variant="success" surface="table" onClick={() => setConfirmAction({ type: 'post', voucher: v })}>ثبت</Button>
                     ) : null}
                     {canWrite && v.status !== 'cancelled' ? (
-                      <Button size="xs" variant="danger" surface="table" onClick={() => handleCancel(v)}>ابطال</Button>
+                      <Button size="xs" variant="danger" surface="table" onClick={() => setConfirmAction({ type: 'cancel', voucher: v })}>ابطال</Button>
                     ) : null}
                   </DataTableActions>
                 </DataTableCell>
@@ -174,6 +176,20 @@ export function VouchersPanel({ session }) {
           onSaved={() => { setEditTarget(null); reload() }}
         />
       )}
+      <ConfirmDialog
+        isOpen={Boolean(confirmAction)}
+        title={confirmAction?.type === 'post' ? 'ثبت نهایی سند' : 'ابطال سند'}
+        description={confirmAction?.type === 'post'
+          ? `سند ${confirmAction?.voucher?.voucherNo || ''} نهایی شود؟ این عمل غیرقابل بازگشت است.`
+          : `سند ${confirmAction?.voucher?.voucherNo || ''} باطل شود؟`}
+        confirmLabel={confirmAction?.type === 'post' ? 'ثبت نهایی' : 'ابطال سند'}
+        onCancel={() => setConfirmAction(null)}
+        onConfirm={() => {
+          if (!confirmAction?.voucher) return
+          if (confirmAction.type === 'post') void handlePost(confirmAction.voucher)
+          if (confirmAction.type === 'cancel') void handleCancel(confirmAction.voucher)
+        }}
+      />
     </div>
   )
 }

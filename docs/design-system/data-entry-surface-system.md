@@ -48,4 +48,4 @@ It extends the shell/state rules in `foundation-shell-system.md` and the benchma
 
 ## 6) Remaining migration debt
 - Some inventory and accounting workflows still use bespoke overlays and local form markup.
-- Program-wide replacement of remaining `window.confirm` usages continues in Phase 4 module adoption.
+- Program-wide `window.confirm` replacement is complete for active operational modules; remaining consistency debt is now table/form/modal wrapper normalization for Phase 5 consolidation.

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Button, Card } from '@/components/shared/ui'
+import { Button, Card, ConfirmDialog } from '@/components/shared/ui'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { useAccounts } from '../../hooks/useAccounts'
 import { accountingApi } from '../../services/accountingApi'
@@ -29,6 +29,7 @@ export function FiscalYearPanel({ session }) {
   const [arAccountId, setArAccountId] = useState('')
   const [mapSaving, setMapSaving] = useState(false)
   const [mapSaved, setMapSaved] = useState(false)
+  const [closeCandidate, setCloseCandidate] = useState(null)
 
   const handleCreateFY = async (e) => {
     e.preventDefault()
@@ -53,9 +54,9 @@ export function FiscalYearPanel({ session }) {
   }
 
   const handleClose = async (id) => {
-    if (!window.confirm('آیا مطمئنید؟ بستن سال مالی غیرقابل بازگشت است.')) return
     try {
       await accountingApi.patchFiscalYear({ id, action: 'close' })
+      setCloseCandidate(null)
       reload()
     } catch (e) { alert(e.message) }
   }
@@ -116,7 +117,7 @@ export function FiscalYearPanel({ session }) {
                           <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
                         )}
                         {fy.status === 'open' && (
-                          <Button size="sm" variant="danger" onClick={() => handleClose(fy.id)}>بستن</Button>
+                          <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
                         )}
                       </div>
                     </td>
@@ -220,6 +221,14 @@ export function FiscalYearPanel({ session }) {
           </div>
         </Card>
       )}
+      <ConfirmDialog
+        isOpen={Boolean(closeCandidate)}
+        title="بستن سال مالی"
+        description="آیا مطمئنید؟ بستن سال مالی غیرقابل بازگشت است."
+        confirmLabel="بستن سال"
+        onCancel={() => setCloseCandidate(null)}
+        onConfirm={() => closeCandidate ? handleClose(closeCandidate) : undefined}
+      />
     </div>
   )
 }

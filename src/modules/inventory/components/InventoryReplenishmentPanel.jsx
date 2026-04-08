@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Button, Card } from '@/components/shared/ui'
+import { Button, Card, ConfirmDialog } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
 
@@ -61,6 +61,7 @@ export const InventoryReplenishmentPanel = ({ session }) => {
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
   const [showSuggestions, setShowSuggestions] = useState(false)
+  const [deleteRuleId, setDeleteRuleId] = useState(null)
 
   useEffect(() => {
     inventoryApi.fetchV2Products({ includeInactive: false }).then((res) => setProducts(Array.isArray(res?.products) ? res.products : [])).catch(() => {})
@@ -106,9 +107,9 @@ export const InventoryReplenishmentPanel = ({ session }) => {
   }
 
   const handleDelete = async (id) => {
-    if (!window.confirm('آیا از حذف این قانون مطمئن هستید؟')) return
     try {
       await inventoryApi.deleteV2ReplenishmentRule(id)
+      setDeleteRuleId(null)
       void load()
     } catch {
       window.alert('خطا در حذف قانون')
@@ -174,7 +175,7 @@ export const InventoryReplenishmentPanel = ({ session }) => {
                     <td className="border border-slate-200 px-3 py-2">
                       <div className="flex gap-1">
                         <Button size="xs" variant="secondary" onClick={() => openEdit(r)}>ویرایش</Button>
-                        <Button size="xs" variant="danger" onClick={() => handleDelete(r.id)}>حذف</Button>
+                        <Button size="xs" variant="danger" onClick={() => setDeleteRuleId(r.id)}>حذف</Button>
                       </div>
                     </td>
                   )}
@@ -223,6 +224,14 @@ export const InventoryReplenishmentPanel = ({ session }) => {
       )}
 
       {modal && <RuleForm modal={modal} setModal={setModal} onSave={handleSave} onClose={closeModal} saving={saving} formError={formError} products={products} warehouses={warehouses} />}
+      <ConfirmDialog
+        isOpen={Boolean(deleteRuleId)}
+        title="حذف قانون تامین مجدد"
+        description="آیا از حذف این قانون مطمئن هستید؟"
+        confirmLabel="حذف قانون"
+        onCancel={() => setDeleteRuleId(null)}
+        onConfirm={() => deleteRuleId ? handleDelete(deleteRuleId) : undefined}
+      />
     </Card>
   )
 }

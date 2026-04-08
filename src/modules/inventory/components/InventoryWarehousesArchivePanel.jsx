@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -32,6 +33,7 @@ export const InventoryWarehousesArchivePanel = ({ session }) => {
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [archiveCandidate, setArchiveCandidate] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -82,10 +84,9 @@ export const InventoryWarehousesArchivePanel = ({ session }) => {
   }
 
   const handleArchive = async (warehouse) => {
-    const confirmed = window.confirm(`انبار ${warehouse?.name || ''} بایگانی شود؟`)
-    if (!confirmed) return
     try {
       await inventoryApi.archiveV2Warehouse(warehouse.id)
+      setArchiveCandidate(null)
       await load()
     } catch (archiveError) {
       setError(archiveError?.message || 'بایگانی انبار ناموفق بود.')
@@ -157,7 +158,7 @@ export const InventoryWarehousesArchivePanel = ({ session }) => {
                     {!archiveMode ? (
                       <>
                         <IconButton action="edit" size="iconSm" surface="table" label="ویرایش انبار" tooltip="ویرایش انبار" onClick={() => { setFormError(''); setModal({ ...warehouse }) }} />
-                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی انبار" tooltip="بایگانی انبار" onClick={() => handleArchive(warehouse)} />
+                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی انبار" tooltip="بایگانی انبار" onClick={() => setArchiveCandidate(warehouse)} />
                       </>
                     ) : (
                       <IconButton action="restore" size="iconSm" surface="table" label="بازیابی انبار" tooltip="بازیابی انبار" onClick={() => handleRestore(warehouse)} />
@@ -187,6 +188,14 @@ export const InventoryWarehousesArchivePanel = ({ session }) => {
           </div>
         </InventoryEntityDialog>
       ) : null}
+      <ConfirmDialog
+        isOpen={Boolean(archiveCandidate)}
+        title="بایگانی انبار"
+        description={`انبار ${archiveCandidate?.name || ''} بایگانی شود؟`}
+        confirmLabel="بایگانی انبار"
+        onCancel={() => setArchiveCandidate(null)}
+        onConfirm={() => archiveCandidate ? handleArchive(archiveCandidate) : undefined}
+      />
     </div>
   )
 }
