@@ -14,7 +14,7 @@ const ROW_TONE_CLASSNAMES = {
 export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', toolbar = null, footer = null }) => (
   <Card className={cn('overflow-hidden bg-white', className)} padding="none">
     {toolbar ? (
-      <div className="border-b border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/55">
+      <div>
         {toolbar}
       </div>
     ) : null}
