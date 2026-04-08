@@ -33,23 +33,6 @@ export const AdminOrdersView = ({
 
   return (
     <div className="animate-in slide-in-from-left-4 space-y-4">
-      <OrdersWorkspaceToolbar
-        activeOrdersTab={workflow.activeOrdersTab}
-        onTabChange={workflow.setActiveOrdersTab}
-        searchQuery={workflow.searchQuery}
-        onSearchChange={workflow.setSearchQuery}
-        onArchiveModeToggle={() => workflow.setActiveOrdersTab((prev) => (prev === 'archived' ? 'all' : 'archived'))}
-        onReload={workflow.handleReloadOrders}
-        loading={workflow.isRefreshingOrders}
-        createAction={
-          onCreateOrder ? (
-            <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>
-              سفارش جدید
-            </Button>
-          ) : null
-        }
-      />
-
       <OrdersWorkspaceTable
         filteredOrders={workflow.paginatedOrders}
         expandedOrderId={workflow.expandedOrderId}
@@ -63,6 +46,25 @@ export const AdminOrdersView = ({
         onPrintFactoryOrder={workflow.printFactoryOrder}
         onPrintCustomerOrder={workflow.printCustomerOrder}
         catalog={catalog}
+        toolbar={(
+          <OrdersWorkspaceToolbar
+            embedded
+            activeOrdersTab={workflow.activeOrdersTab}
+            onTabChange={workflow.setActiveOrdersTab}
+            searchQuery={workflow.searchQuery}
+            onSearchChange={workflow.setSearchQuery}
+            onArchiveModeToggle={() => workflow.setActiveOrdersTab((prev) => (prev === 'archived' ? 'all' : 'archived'))}
+            onReload={workflow.handleReloadOrders}
+            loading={workflow.isRefreshingOrders}
+            createAction={
+              onCreateOrder ? (
+                <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>
+                  سفارش جدید
+                </Button>
+              ) : null
+            }
+          />
+        )}
         footer={(
           <PaginationBar
             page={workflow.page}

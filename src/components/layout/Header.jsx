@@ -22,17 +22,17 @@ export const Header = ({
   const menuTooltip = isSidebarOpen ? 'بستن نوار کناری' : isSidebarCollapsed ? 'گسترش نوار کناری' : 'جمع کردن نوار کناری'
 
   return (
-    <header className="app-shell-header print-hide sticky top-0 pb-4">
+    <header className="app-shell-header print-hide sticky top-0 pb-2.5">
       <div className="app-shell-content">
-        <div className="page-header-shell p-4 lg:p-5">
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+        <div className="page-header-shell px-4 py-3.5 lg:px-5 lg:py-4">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
             <div className="min-w-0 flex items-center gap-3">
               <IconButton
                 onClick={onToggleSidebar}
                 variant="tertiary"
                 label={menuTooltip}
                 tooltip={menuTooltip}
-                tooltipSide="bottom"
+                tooltipSide="bottom-right"
                 className="shrink-0"
               >
                 <Menu size={17} />

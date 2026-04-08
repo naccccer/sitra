@@ -15,7 +15,7 @@ export const pathMatches = (pathname, to) => Boolean(to) && (pathname === to || 
 
 export const navLinkClass = (isActive, isCollapsed, tone = 'default') => (
   `focus-ring flex items-center gap-2.5 rounded-[var(--radius-xl)] border text-[13px] font-black transition duration-[var(--motion-fast)] ${
-    isCollapsed ? 'min-h-11 px-3 py-2 lg:mx-auto lg:h-11 lg:w-11 lg:flex-none lg:justify-center lg:gap-0 lg:px-0' : 'min-h-11 w-full px-3 py-2.5'
+    isCollapsed ? 'mx-auto h-11 w-11 flex-none justify-center gap-0 p-0' : 'min-h-11 w-full px-3 py-2.5'
   } ${
     tone === 'control'
       ? isActive

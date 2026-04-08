@@ -64,13 +64,6 @@ export function HumanResourcesDirectoryPanel({
         actions={canWriteEmployees && !archiveMode ? (
           <Button action="create" showActionIcon size="sm" onClick={onNewEmployee} disabled={busyKey !== ''}>ثبت پرسنل جدید</Button>
         ) : null}
-        summary={(
-          <>
-            {!canWriteEmployees ? <Badge tone="neutral">فقط مشاهده</Badge> : null}
-            <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: آرشیو' : 'حالت: فعال'}</Badge>
-            <Badge tone="neutral">نتیجه: {toPN(totalCount)}</Badge>
-          </>
-        )}
       >
       <FilterRow className="justify-between gap-3">
           <SegmentedTabs tabs={HR_TABS} activeId="personnel" className="w-full md:w-auto" />

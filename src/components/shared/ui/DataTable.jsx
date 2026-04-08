@@ -11,13 +11,18 @@ const ROW_TONE_CLASSNAMES = {
   muted: 'bg-[rgb(var(--ui-surface-muted))]/55 text-[rgb(var(--ui-text-muted))]',
 };
 
-export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', footer = null }) => (
+export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', toolbar = null, footer = null }) => (
   <Card className={cn('overflow-hidden bg-white', className)} padding="none">
+    {toolbar ? (
+      <div>
+        {toolbar}
+      </div>
+    ) : null}
     <div className="overflow-x-auto">
       <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
     </div>
     {footer ? (
-      <div className="rounded-b-[var(--radius-xl)] border-t border-[rgb(var(--ui-border-soft))] bg-[linear-gradient(180deg,rgba(247,247,248,0.99),rgba(240,240,242,0.96))] px-2 pb-2 pt-1.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_-8px_24px_rgba(18,33,74,0.08)]">
+      <div className="rounded-b-[var(--radius-xl)] border-t border-[rgb(var(--ui-border-soft))] bg-[linear-gradient(180deg,rgba(247,247,248,0.99),rgba(240,240,242,0.96))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_-8px_24px_rgba(18,33,74,0.08)]">
         {footer}
       </div>
     ) : null}
