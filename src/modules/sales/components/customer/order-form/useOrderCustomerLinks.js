@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { customerLinksApi } from '@/modules/sales/services/customerLinksApi'
+import { toEnglishDigits } from '@/modules/sales/components/customer/order-form/orderCustomerLinkDrafts'
 
 const toId = (value) => String(value || '')
+const toMessage = (error, fallback) => error?.message || fallback
 
 export const useOrderCustomerLinks = ({
   isStaffContext,
@@ -16,60 +18,100 @@ export const useOrderCustomerLinks = ({
   const [selectedCustomerId, setSelectedCustomerId] = useState(() => toId(initialSelection?.customerId || editingOrder?.customerId))
   const [selectedProjectId, setSelectedProjectId] = useState(() => toId(initialSelection?.projectId || editingOrder?.projectId))
   const [selectedProjectContactId, setSelectedProjectContactId] = useState(() => toId(initialSelection?.projectContactId || editingOrder?.projectContactId))
+  const [error, setError] = useState('')
+  const [loadingState, setLoadingState] = useState({
+    customers: false,
+    projects: false,
+    contacts: false,
+    mutation: false,
+  })
+
+  const setLoading = useCallback((key, value) => {
+    setLoadingState((prev) => (prev[key] === value ? prev : { ...prev, [key]: value }))
+  }, [])
+
+  const syncCustomerSnapshot = useCallback((customer, phoneFallback = '') => {
+    if (!customer) return
+    setCustomerInfo((prev) => ({
+      ...prev,
+      name: String(customer.fullName || prev?.name || ''),
+      phone: String(customer.defaultPhone || phoneFallback || prev?.phone || ''),
+    }))
+  }, [setCustomerInfo])
+
+  const syncContactSnapshot = useCallback((contact) => {
+    if (!contact) return
+    setCustomerInfo((prev) => ({
+      ...prev,
+      phone: String(contact.phone || prev?.phone || ''),
+    }))
+  }, [setCustomerInfo])
 
   const refreshCustomers = useCallback(async () => {
-    if (!isStaffContext) return
+    if (!isStaffContext) return []
+    setLoading('customers', true)
     try {
-      const response = await customerLinksApi.fetchCustomers({ page: 1, pageSize: 200, isActive: true })
+      const response = await customerLinksApi.fetchCustomers({ page: 1, pageSize: 300, isActive: true })
       const list = Array.isArray(response?.customers) ? response.customers : []
       setCustomers(list)
+      return list
     } catch {
       setCustomers([])
+      return []
+    } finally {
+      setLoading('customers', false)
     }
-  }, [isStaffContext])
+  }, [isStaffContext, setLoading])
 
   const refreshProjects = useCallback(async (customerId) => {
     if (!isStaffContext || !customerId) {
       setProjects([])
-      return
+      return []
     }
+    setLoading('projects', true)
     try {
       const response = await customerLinksApi.fetchProjects(customerId)
       const list = Array.isArray(response?.projects) ? response.projects : []
       setProjects(list)
+      return list
     } catch {
       setProjects([])
+      return []
+    } finally {
+      setLoading('projects', false)
     }
-  }, [isStaffContext])
+  }, [isStaffContext, setLoading])
 
   const refreshProjectContacts = useCallback(async (projectId) => {
     if (!isStaffContext || !projectId) {
       setProjectContacts([])
-      return
+      return []
     }
+    setLoading('contacts', true)
     try {
       const response = await customerLinksApi.fetchProjectContacts(projectId)
       const list = Array.isArray(response?.contacts) ? response.contacts : []
       setProjectContacts(list)
+      return list
     } catch {
       setProjectContacts([])
+      return []
+    } finally {
+      setLoading('contacts', false)
     }
-  }, [isStaffContext])
+  }, [isStaffContext, setLoading])
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshCustomers()
   }, [refreshCustomers])
 
   useEffect(() => {
     if (!isStaffContext) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshProjects(selectedCustomerId)
   }, [isStaffContext, refreshProjects, selectedCustomerId])
 
   useEffect(() => {
     if (!isStaffContext) return
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refreshProjectContacts(selectedProjectId)
   }, [isStaffContext, refreshProjectContacts, selectedProjectId])
 
@@ -86,92 +128,91 @@ export const useOrderCustomerLinks = ({
     [projectContacts, selectedProjectContactId],
   )
 
-  const handleSelectCustomer = (customerId) => {
+  const handleSelectCustomer = useCallback((customerId, fallbackCustomer = null) => {
     const id = toId(customerId)
     setSelectedCustomerId(id)
     setSelectedProjectId('')
     setSelectedProjectContactId('')
-    const customer = customers.find((item) => toId(item.id) === id)
-    if (!customer) return
-    setCustomerInfo((prev) => ({
-      ...prev,
-      name: String(customer.fullName || ''),
-      phone: String(customer.defaultPhone || prev?.phone || ''),
-    }))
-  }
+    const customer = fallbackCustomer || customers.find((item) => toId(item.id) === id)
+    syncCustomerSnapshot(customer, customerInfo?.phone)
+  }, [customerInfo?.phone, customers, syncCustomerSnapshot])
 
-  const handleSelectProject = (projectId) => {
-    const id = toId(projectId)
-    setSelectedProjectId(id)
+  const handleSelectProject = useCallback((projectId) => {
+    setSelectedProjectId(toId(projectId))
     setSelectedProjectContactId('')
-  }
+  }, [])
 
-  const handleSelectProjectContact = (contactId) => {
+  const handleSelectProjectContact = useCallback((contactId, fallbackContact = null) => {
     const id = toId(contactId)
     setSelectedProjectContactId(id)
-    const contact = projectContacts.find((item) => toId(item.id) === id)
-    if (!contact) return
-    setCustomerInfo((prev) => ({
-      ...prev,
-      phone: String(contact.phone || ''),
-    }))
-  }
+    const contact = fallbackContact || projectContacts.find((item) => toId(item.id) === id)
+    syncContactSnapshot(contact)
+  }, [projectContacts, syncContactSnapshot])
 
-  const createQuickCustomer = async () => {
-    const fullName = window.prompt('نام مشتری', String(customerInfo?.name || ''))
-    if (fullName === null) return
-    const defaultPhone = window.prompt('تلفن پیش‌فرض', String(customerInfo?.phone || ''))
-    if (defaultPhone === null) return
-    const response = await customerLinksApi.createCustomer({ fullName: fullName.trim(), defaultPhone: defaultPhone.trim() })
-    await refreshCustomers()
-    const createdId = toId(response?.customer?.id)
-    if (createdId) handleSelectCustomer(createdId)
-  }
+  const runMutation = useCallback(async (task, fallbackMessage) => {
+    setError('')
+    setLoading('mutation', true)
+    try {
+      return await task()
+    } catch (nextError) {
+      const message = toMessage(nextError, fallbackMessage)
+      setError(message)
+      throw nextError
+    } finally {
+      setLoading('mutation', false)
+    }
+  }, [setLoading])
 
-  const editQuickCustomer = async () => {
-    if (!selectedCustomer) return
-    const fullName = window.prompt('نام مشتری', String(selectedCustomer.fullName || ''))
-    if (fullName === null) return
-    const defaultPhone = window.prompt('تلفن پیش‌فرض', String(selectedCustomer.defaultPhone || ''))
-    if (defaultPhone === null) return
-    const applyToOrderHistory = window.confirm('نام/تلفن روی سفارش‌های قبلی همین مشتری هم اعمال شود؟')
-    await customerLinksApi.updateCustomer({
-      id: Number(selectedCustomer.id),
-      fullName: fullName.trim(),
-      defaultPhone: defaultPhone.trim(),
-      applyToOrderHistory,
+  const createCustomer = useCallback((payload) => runMutation(async () => {
+    const response = await customerLinksApi.createCustomer({
+      fullName: String(payload?.fullName || '').trim(),
+      defaultPhone: toEnglishDigits(payload?.defaultPhone),
     })
+    const createdCustomer = response?.customer || null
     await refreshCustomers()
-    handleSelectCustomer(selectedCustomer.id)
-  }
+    if (createdCustomer?.id) handleSelectCustomer(createdCustomer.id, createdCustomer)
+    return createdCustomer
+  }, 'ثبت مشتری ناموفق بود.'), [handleSelectCustomer, refreshCustomers, runMutation])
 
-  const createQuickProject = async () => {
-    if (!selectedCustomerId) return
-    const name = window.prompt('نام پروژه', '')
-    if (!name) return
+  const updateCustomer = useCallback((payload) => runMutation(async () => {
+    const response = await customerLinksApi.updateCustomer({
+      id: Number(payload?.id || 0),
+      fullName: String(payload?.fullName || '').trim(),
+      defaultPhone: toEnglishDigits(payload?.defaultPhone),
+      applyToOrderHistory: Boolean(payload?.applyToOrderHistory),
+    })
+    const updatedCustomer = response?.customer || null
+    await refreshCustomers()
+    if (updatedCustomer?.id) handleSelectCustomer(updatedCustomer.id, updatedCustomer)
+    return updatedCustomer
+  }, 'ویرایش مشتری ناموفق بود.'), [handleSelectCustomer, refreshCustomers, runMutation])
+
+  const createProject = useCallback((payload) => runMutation(async () => {
     const response = await customerLinksApi.createProject({
-      customerId: Number(selectedCustomerId),
-      name: name.trim(),
+      customerId: Number(payload?.customerId || selectedCustomerId || 0),
+      name: String(payload?.name || '').trim(),
+      notes: String(payload?.notes || '').trim(),
+      isDefault: Boolean(payload?.isDefault),
     })
-    await refreshProjects(selectedCustomerId)
-    const createdId = toId(response?.project?.id)
-    if (createdId) setSelectedProjectId(createdId)
-  }
+    const createdProject = response?.project || null
+    await refreshProjects(payload?.customerId || selectedCustomerId)
+    if (createdProject?.id) handleSelectProject(createdProject.id)
+    return createdProject
+  }, 'ثبت پروژه ناموفق بود.'), [handleSelectProject, refreshProjects, runMutation, selectedCustomerId])
 
-  const createQuickProjectContact = async () => {
-    if (!selectedProjectId) return
-    const phone = window.prompt('شماره تماس پروژه', String(customerInfo?.phone || ''))
-    if (!phone) return
+  const createProjectContact = useCallback((payload) => runMutation(async () => {
     const response = await customerLinksApi.createProjectContact({
-      projectId: Number(selectedProjectId),
-      label: 'main',
-      phone: phone.trim(),
-      isPrimary: true,
+      projectId: Number(payload?.projectId || selectedProjectId || 0),
+      label: String(payload?.label || 'main').trim() || 'main',
+      phone: toEnglishDigits(payload?.phone),
+      isPrimary: Boolean(payload?.isPrimary ?? true),
+      sortOrder: 100,
     })
-    await refreshProjectContacts(selectedProjectId)
-    const createdId = toId(response?.contact?.id)
-    if (createdId) handleSelectProjectContact(createdId)
-  }
+    const createdContact = response?.contact || null
+    await refreshProjectContacts(payload?.projectId || selectedProjectId)
+    if (createdContact?.id) handleSelectProjectContact(createdContact.id, createdContact)
+    return createdContact
+  }, 'ثبت شماره پروژه ناموفق بود.'), [handleSelectProjectContact, refreshProjectContacts, runMutation, selectedProjectId])
 
   return {
     customers,
@@ -183,12 +224,21 @@ export const useOrderCustomerLinks = ({
     selectedCustomerId,
     selectedProjectId,
     selectedProjectContactId,
+    loadingCustomers: loadingState.customers,
+    loadingProjects: loadingState.projects,
+    loadingProjectContacts: loadingState.contacts,
+    isMutating: loadingState.mutation,
+    error,
+    setError,
     setSelectedCustomerId: handleSelectCustomer,
     setSelectedProjectId: handleSelectProject,
     setSelectedProjectContactId: handleSelectProjectContact,
-    createQuickCustomer,
-    editQuickCustomer,
-    createQuickProject,
-    createQuickProjectContact,
+    refreshCustomers,
+    refreshProjects,
+    refreshProjectContacts,
+    createCustomer,
+    updateCustomer,
+    createProject,
+    createProjectContact,
   }
 }

@@ -11,6 +11,7 @@ Scope: Phase 1 shared shell, tokens, action hierarchy, icon language, and univer
 - Shell header metadata: `src/components/layout/Header.jsx`, `src/components/layout/shellMeta.js`
 - Shared page/workspace entry surfaces: `src/components/shared/ui/WorkspaceShellTemplate.jsx`, `src/components/shared/ui/WorkspacePageHeader.jsx`, `src/components/shared/ui/WorkspaceToolbar.jsx`
 - Shared action/state primitives: `src/components/shared/ui/Button.jsx`, `src/components/shared/ui/IconButton.jsx`, `src/components/shared/ui/UniversalState.jsx`, `src/components/shared/ui/InlineAlert.jsx`
+- Benchmark workflow contract extension: `docs/design-system/benchmark-workflow-system.md`
 
 ## Shell rules
 - Desktop shell uses a persistent left rail plus one global workspace header.
@@ -91,6 +92,6 @@ Rules:
 
 ## Phase 1 debt intentionally deferred
 - `/orders/new` still supports an unauthenticated path outside the authenticated shared shell.
-- Sales workflow overlays and `window.confirm` usage remain Phase 2 and Phase 3 work.
+- Sales benchmark customer/project linking and final confirmation now belong to the Phase 2 workflow contract; remaining sales-specific overlays and repo-wide confirm cleanup remain later-phase debt.
 - Module-heavy inner workflows still contain legacy local action ordering that should be normalized during later adoption phases.
 - Header alignment and spacing should be treated as visual polish debt if any page still shows minor shell-geometry drift after the shared fixups.

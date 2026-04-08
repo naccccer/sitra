@@ -1,7 +1,7 @@
 # Real UI/UX Redesign Roadmap
 
 Updated: 2026-04-08
-Status: Active program, Phase 1 complete
+Status: Active program, Phase 2 complete
 Approval authority: Repository owner
 Canonical redesign planning location: `docs/real-ui-ux/`
 
@@ -198,3 +198,10 @@ Copy this block into the end of the roadmap at each phase close and fill it in:
 - KPI delta: shared entry-surface coverage via `WorkspaceShellTemplate` increased from 7 routed entry surfaces to 8 shared entry surfaces including dashboard; top-level `showHeader={false}` exceptions dropped from 7 to 0; shell-level `window.confirm` debt did not change and remains 15 usages across workflow surfaces.
 - Risks: the left-rail shift changes long-established muscle memory for operators, inventory/accounting nested navigation now depends more heavily on clear tab labeling, and the split authenticated vs unauthenticated order-entry shell can still feel inconsistent until Phase 2 addresses the benchmark workflow.
 - Next-phase adjustments: Phase 2 should preserve the simplified shell rules now in place: one global header only, titles that mirror sidebar labels, no decorative tags, fewer redundant cards, and optional explanations behind tooltip-style help affordances; it should also test whether the new left rail actually reduces context switching during order entry, keep sales/customer intake inside the shared shell vocabulary, and prioritize replacing bespoke sales overlays with shared modal/action/state contracts before deeper workflow polish.
+
+## Phase 2 Close Update
+- What changed: mapped the benchmark workflow in `docs/real-ui-ux/real-ui_ux-redesign-phase-2-workflow-map.md`, added the shared workflow contract doc `docs/design-system/benchmark-workflow-system.md`, moved customer name/phone capture to a persistent top-of-page order-context surface, introduced a dedicated customer/project linkage modal built from shared primitives, converted final order submission into a review-first shared modal with instructional success and failure states, and pruned the dead badge-summary pattern from the customers directory toolbar.
+- What remains: `/orders/new` still has an unauthenticated path outside the authenticated shell, configuration-specific sales overlays (`SettingsModal`, `ManualItemModal`, `ServiceCatalogView`, `HoleMapDesignerView`, `OrdersPaymentManagerModal`, `PatternFilesModal`) still need broader shared-modal adoption, benchmark timing/click measurements still need a live manual capture pass, and repo-wide confirm-dialog replacement remains Phase 3 work.
+- KPI delta: browser-native dialogs in the benchmark order-entry linkage path dropped from 5 (`4` prompts + `1` confirm) to `0`; bespoke fixed-overlay sales modals dropped from 7 to 6 after moving checkout to the shared modal contract; customer snapshot entry moved from final-step-only input to an always-visible top workflow surface; scoped verification (`npm run verify:fast`) passed after the redesign slice.
+- Risks: operators can still bypass customer/project linkage because it remains a warning rather than a blocker, the split public vs authenticated `/orders/new` shell still creates a mild context shift, and the remaining sales-specific overlays can still dilute consistency if Phase 3 does not absorb them quickly.
+- Next-phase adjustments: Phase 3 should promote the benchmark flow rules into reusable form/modal/confirm contracts, replace the remaining bespoke sales overlays, add a shared confirmation pattern to retire browser-native confirms elsewhere, and pair the static KPI deltas above with live operator timing and click-count measurement before broader module rollout.

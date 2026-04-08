@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   DataTable,
   DataTableActions,
@@ -41,14 +40,11 @@ export const CustomersDirectoryPanel = ({
   <div className="space-y-4" dir="rtl">
     <WorkspaceToolbar
       actions={canWriteCustomers && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={onCreateCustomer}>مشتری جدید</Button> : null}
-      summary={(
-        <>
-          <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: آرشیو' : 'حالت: فعال'}</Badge>
-          <Badge tone="neutral">نتیجه: {toPN(totalCount)}</Badge>
-        </>
-      )}
     >
       <FilterRow className="justify-end gap-3">
+        <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">
+          {archiveMode ? 'نمای آرشیو' : 'نمای فعال'} · {toPN(totalCount)} نتیجه
+        </div>
         <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
           <Input
             value={query}

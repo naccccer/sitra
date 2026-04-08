@@ -3,6 +3,7 @@ import { CheckCircle2, Edit3, Plus, Printer, Trash2 } from 'lucide-react';
 import { toPN } from '@/utils/helpers';
 import { resolveItemArea, resolvePerSquareMeterPrice } from '@/utils/invoice';
 import { StructureDetails } from '@/components/shared/StructureDetails';
+import { OrderCustomerContextPanel } from '@/modules/sales/components/customer/order-form/OrderCustomerContextPanel';
 
 const isManualLike = (item = {}) => String(item?.itemType || 'catalog') === 'manual';
 
@@ -23,7 +24,10 @@ export const OrderItemsSection = ({
   onRemoveItem,
   grandTotal,
   editingOrder,
+  customerInfo,
+  customerLinks,
   onOpenCheckout,
+  onOpenCustomerLinkModal,
 }) => {
   const totalArea = orderItems.reduce((sum, item) => sum + (resolveItemArea(item, catalog?.factoryLimits) ?? 0), 0);
 
@@ -142,10 +146,18 @@ export const OrderItemsSection = ({
               <span className="text-lg font-black tabular-nums text-slate-900 lg:text-xl">{toPN(grandTotal.toLocaleString())} <span className="text-[10px] font-normal text-slate-500">تومان</span></span>
             </div>
           </div>
-          <button onClick={onOpenCheckout} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:bg-green-500 active:scale-95 sm:w-auto">
-            <CheckCircle2 size={16} />
-            {editingOrder ? 'ثبت نهایی ویرایش سفارش' : 'تایید و ورود مشخصات'}
-          </button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <OrderCustomerContextPanel
+              customerInfo={customerInfo}
+              customerLinks={customerLinks}
+              isStaffContext={isStaffContext}
+              onOpenCustomerLinkModal={onOpenCustomerLinkModal}
+            />
+            <button onClick={onOpenCheckout} className="flex w-full items-center justify-center gap-2 rounded-lg bg-green-600 px-6 py-2.5 text-sm font-black text-white shadow-md transition-all hover:bg-green-500 active:scale-95 sm:w-auto">
+              <CheckCircle2 size={16} />
+              {editingOrder ? 'مرور و ثبت نهایی تغییرات' : 'مرور و ثبت سفارش'}
+            </button>
+          </div>
         </div>
       </>
     )}

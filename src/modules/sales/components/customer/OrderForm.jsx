@@ -1,9 +1,10 @@
 ﻿import React, { useState } from 'react';
-import { Menu, Phone, User } from 'lucide-react';
+import { Menu, User } from 'lucide-react';
 import { SettingsModal } from '@/modules/sales/components/customer/SettingsModal';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
 import { CheckoutModal } from '@/modules/sales/components/customer/order-form/CheckoutModal';
 import { ManualItemModal } from '@/modules/sales/components/customer/order-form/ManualItemModal';
+import { OrderCustomerLinkModal } from '@/modules/sales/components/customer/order-form/OrderCustomerLinkModal';
 import { OrderConfigurationSection } from '@/modules/sales/components/customer/order-form/OrderConfigurationSection';
 import { OrderItemsSection } from '@/modules/sales/components/customer/order-form/OrderItemsSection';
 import { useOrderFormController } from '@/modules/sales/components/customer/order-form/useOrderFormController';
@@ -19,6 +20,7 @@ export const OrderForm = ({
   staffMode = false,
 }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCustomerLinkOpen, setIsCustomerLinkOpen] = useState(false);
   const {
     isStaffContext,
     activeTab,
@@ -76,6 +78,10 @@ export const OrderForm = ({
 
   const isEditingManualItem = Boolean(editingItemId && editingItemType === 'manual');
   const isEditingConfigItem = Boolean(editingItemId && editingItemType !== 'manual');
+  const openCustomerLinkModal = () => {
+    customerLinks?.setError?.('');
+    setIsCustomerLinkOpen(true);
+  };
 
   return (
     <div className={`mx-auto max-w-6xl ${editingOrder ? 'space-y-3' : 'space-y-6'}`}>
@@ -121,36 +127,6 @@ export const OrderForm = ({
               انصراف از ویرایش
             </button>
           </div>
-
-          <div className="mt-2 grid grid-cols-1 gap-2 lg:grid-cols-2">
-            <label className="block">
-              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                <User size={12} />
-                نام و نام خانوادگی / شرکت
-              </span>
-              <input
-                type="text"
-                value={customerInfo.name}
-                onChange={(event) => handleCustomerInfoChange('name', event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-black outline-none transition-colors focus:border-emerald-400"
-                placeholder="مثال: علی حسینی"
-              />
-            </label>
-            <label className="block">
-              <span className="mb-1 flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-                <Phone size={12} />
-                شماره موبایل
-              </span>
-              <input
-                type="tel"
-                value={customerInfo.phone}
-                onChange={(event) => handleCustomerInfoChange('phone', event.target.value)}
-                className="h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm font-black outline-none transition-colors focus:border-emerald-400"
-                placeholder="09123456789"
-                dir="ltr"
-              />
-            </label>
-          </div>
         </section>
       )}
 
@@ -192,7 +168,10 @@ export const OrderForm = ({
         onRemoveItem={handleRemoveItem}
         grandTotal={grandTotal}
         editingOrder={editingOrder}
+        customerInfo={customerInfo}
+        customerLinks={customerLinks}
         onOpenCheckout={() => setIsCheckoutOpen(true)}
+        onOpenCustomerLinkModal={openCustomerLinkModal}
       />
 
       {modalMode === 'settings' && (
@@ -220,14 +199,26 @@ export const OrderForm = ({
       />
 
       <CheckoutModal
+        key={`checkout-${editingOrder?.id || 'create'}-${isCheckoutOpen ? 'open' : 'closed'}`}
         isOpen={isCheckoutOpen}
         isStaffContext={isStaffContext}
         editingOrder={editingOrder}
         customerInfo={customerInfo}
         customerLinks={customerLinks}
-        onCustomerInfoChange={handleCustomerInfoChange}
+        orderItems={orderItems}
+        grandTotal={grandTotal}
         onClose={() => setIsCheckoutOpen(false)}
+        onOpenCustomerLinkModal={openCustomerLinkModal}
         onSubmit={submitOrderToServer}
+      />
+
+      <OrderCustomerLinkModal
+        key={`customer-link-${editingOrder?.id || 'create'}-${isCustomerLinkOpen ? 'open' : 'closed'}`}
+        isOpen={Boolean(isStaffContext && isCustomerLinkOpen)}
+        customerInfo={customerInfo}
+        onCustomerInfoChange={handleCustomerInfoChange}
+        customerLinks={customerLinks}
+        onClose={() => setIsCustomerLinkOpen(false)}
       />
 
       <PrintInvoice

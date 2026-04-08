@@ -2,7 +2,7 @@
 
 ## Responsibility
 - Order lifecycle and customer-facing order intake.
-- Invoice/payment context in phase 1.
+- Invoice/payment context inside the shared benchmark workflow.
 
 ## Owns
 - Orders aggregate.
@@ -21,4 +21,5 @@
 
 ## Interaction Rules
 - Sales owns order lifecycle and does not depend on removed operational domains.
-- Non-orders admin/support sales surfaces should stay aligned to the locked orders-derived shared primitives, preserve print-safety boundaries (`print-hide`/adjacent print flows), and keep customer order-create/detail flows outside this rollout unless explicitly scoped.
+- Order create/detail flows must stay sales-owned, compose from shared UI primitives, and consume customer/project linkage only through public customer contracts.
+- Non-orders admin/support sales surfaces should stay aligned to the locked orders-derived shared primitives and preserve print-safety boundaries (`print-hide`/adjacent print flows).

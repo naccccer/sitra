@@ -23,5 +23,6 @@
 
 ## Interaction Rules
 - Sales module may link orders to customer/project/contact ids, but keeps order snapshot fields (`customer_name`, `phone`) for history stability.
+- Sales benchmark workflow may create or update lightweight customer/project/contact context through customers public endpoints, but it must not import customers-module internals into sales UI.
 - Project transfer changes future ownership context; historical orders stay unchanged.
 - Admin directory list surfaces should follow the orders-derived shared table primitives, with Persian numerals for user-facing numeric output and explicit `dir="ltr"` only for mixed-direction tokens such as customer codes/phones.
