@@ -111,7 +111,7 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
           onNavigate={closeMobileSidebar}
         />
 
-        <div className="app-shell-main app-print-main min-h-0 overflow-hidden">
+        <div className="app-shell-main app-print-main min-h-0">
           <main
             id="app-workspace"
             className="app-print-content flex-1 overflow-y-auto pb-5 lg:pb-6"
