@@ -51,6 +51,7 @@
   --shadow-accent: 0 18px 44px rgba(34, 92, 208, 0.24);
   --shell-rail-width: 17.75rem;
   --shell-rail-width-collapsed: 6rem;
+  --shell-rail-item-size: 3.25rem;
 }
 
 .app-shell {

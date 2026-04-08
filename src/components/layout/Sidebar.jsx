@@ -12,8 +12,8 @@ import { getNavSections, getQueryTab, navChildLinkClass, navLinkClass, pathMatch
 // UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
 const EMPTY_PERMISSIONS = Object.freeze([])
 const SidebarItemIcon = ({ icon, size = 17 }) => (
-  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center leading-none">
-    {icon ? React.createElement(icon, { size }) : null}
+  <span aria-hidden="true" className="relative inline-flex h-5 w-5 shrink-0 leading-none">
+    {icon ? React.createElement(icon, { size, className: 'absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2' }) : null}
   </span>
 )
 
@@ -95,7 +95,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
 
   const wrapWithTooltip = (node, content) => (
     isRailCollapsed
-      ? <Tooltip content={content} side="left" wrapperClassName="flex w-full justify-center">{node}</Tooltip>
+      ? <Tooltip content={content} side="left" wrapperClassName="mx-auto flex w-[var(--shell-rail-item-size)] justify-center">{node}</Tooltip>
       : node
   )
 
@@ -109,12 +109,13 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       className={({ isActive }) => navLinkClass(isActive, isRailCollapsed, tone)}
     >
       <SidebarItemIcon icon={item.icon} />
-      <span
-        aria-hidden={isRailCollapsed}
-        className={`overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
-      >
-        {item.label}
-      </span>
+      {!isRailCollapsed ? (
+        <span
+          className={`overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
+        >
+          {item.label}
+        </span>
+      ) : null}
     </NavLink>,
     item.label,
   )
@@ -130,9 +131,6 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           className={() => navLinkClass(isActive, true, tone)}
         >
           <SidebarItemIcon icon={item.icon} />
-          <span aria-hidden="true" className="max-w-0 overflow-hidden whitespace-nowrap opacity-0">
-            {item.label}
-          </span>
         </NavLink>,
         item.label,
       )
@@ -189,7 +187,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       <div className="flex min-h-0 flex-1 flex-col px-1">
 
       {wrapWithTooltip(
-        <div className={`shell-brand-surface mb-3 rounded-[26px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-fit p-1.5' : 'w-full px-3 py-3'}`}>
+        <div className={`shell-brand-surface mb-3 rounded-[26px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-[var(--shell-rail-item-size)] p-1.5' : 'w-full px-3 py-3'}`}>
           <div className={`flex items-center transition-[gap] duration-[var(--motion-base)] ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
             <div className={`shell-brand-mark flex shrink-0 items-center justify-center overflow-hidden text-base font-black text-white transition-[transform,border-radius,width,height] duration-[var(--motion-base)] ${isRailCollapsed ? 'h-10 w-10 rounded-[18px]' : 'h-12 w-12 rounded-[20px]'}`}>
               {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className={`h-full w-full ${isRailCollapsed ? 'object-contain p-1' : 'object-cover'}`} /> : fallbackLetter}
@@ -205,17 +203,17 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         normalizedProfile.brandName,
       )}
 
-      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
-        <nav className="space-y-4">
+      <div className={`shell-scrollbar min-h-0 flex-1 overflow-y-auto ${isRailCollapsed ? 'overflow-x-visible' : ''}`} style={{ scrollbarGutter: isRailCollapsed ? 'auto' : 'stable' }}>
+        <nav className={isRailCollapsed ? 'flex flex-col items-center space-y-4' : 'space-y-4'}>
           {visibleSections.map((section) => (
-            <div key={section.id} className="space-y-2">
+            <div key={section.id} className={isRailCollapsed ? 'flex w-full flex-col items-center space-y-2' : 'space-y-2'}>
               {!isRailCollapsed && (
                 <div className="shell-section-label px-1 transition-opacity duration-[var(--motion-base)]">
                   {section.label}
                 </div>
               )}
               {getSectionGroups(section).map((group) => (
-                <div key={group.id} className="space-y-1.5">
+                <div key={group.id} className={isRailCollapsed ? 'flex w-full flex-col items-center space-y-1.5' : 'space-y-1.5'}>
                   {group.items.map((item) => {
                     const tone = section.tone || 'default'
                     const isActive = Array.isArray(item.children) && item.children.length > 0
@@ -237,7 +235,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             type="button"
             onClick={onLogout}
             aria-label="خروج"
-            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'w-11 justify-center px-0' : 'gap-2'}`}
+            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'h-[var(--shell-rail-item-size)] w-[var(--shell-rail-item-size)] justify-center px-0' : 'gap-2'}`}
           >
             <SidebarItemIcon icon={LogOut} size={16} />
             <span
