@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -11,6 +12,9 @@ import {
   DataTableRow,
   DataTableState,
   FilterRow,
+  FormField,
+  FormSection,
+  Input,
   IconButton,
   InlineAlert,
   Select,
@@ -42,6 +46,7 @@ export const InventoryLotsArchivePanel = ({ session }) => {
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [archiveCandidate, setArchiveCandidate] = useState(null)
 
   useEffect(() => {
     inventoryApi.fetchV2Products({ includeArchived: true }).then((response) => {
@@ -102,10 +107,9 @@ export const InventoryLotsArchivePanel = ({ session }) => {
   }
 
   const handleArchive = async (lot) => {
-    const confirmed = window.confirm(`سری ${lot?.lotCode || ''} بایگانی شود؟`)
-    if (!confirmed) return
     try {
       await inventoryApi.archiveV2Lot(lot.id)
+      setArchiveCandidate(null)
       await load()
     } catch (archiveError) {
       setError(archiveError?.message || 'بایگانی سری ناموفق بود.')
@@ -181,7 +185,7 @@ export const InventoryLotsArchivePanel = ({ session }) => {
                     {!archiveMode ? (
                       <>
                         <IconButton action="edit" size="iconSm" surface="table" label="ویرایش سری" tooltip="ویرایش سری" onClick={() => { setFormError(''); setModal({ ...lot, expiryDate: lot.expiryDate ?? '' }) }} />
-                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی سری" tooltip="بایگانی سری" onClick={() => handleArchive(lot)} />
+                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی سری" tooltip="بایگانی سری" onClick={() => setArchiveCandidate(lot)} />
                       </>
                     ) : (
                       <IconButton action="restore" size="iconSm" surface="table" label="بازیابی سری" tooltip="بازیابی سری" onClick={() => handleRestore(lot)} />
@@ -197,27 +201,33 @@ export const InventoryLotsArchivePanel = ({ session }) => {
       {modal ? (
         <InventoryEntityDialog isOpen title={modal.id ? 'ویرایش سری' : 'سری جدید'} onClose={closeModal} onSubmit={handleSave} saving={saving}>
           {formError ? <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div> : null}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">محصول <span className="text-red-500">*</span></label>
-            <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.productId} onChange={(event) => setModal((current) => ({ ...current, productId: event.target.value }))} required>
-              <option value="">انتخاب محصول</option>
-              {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">کد سری <span className="text-red-500">*</span></label>
-            <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm font-mono" value={modal.lotCode} onChange={(event) => setModal((current) => ({ ...current, lotCode: event.target.value }))} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">تاریخ انقضا</label>
-            <InventoryShamsiDateInput value={modal.expiryDate} onChange={(nextDate) => setModal((current) => ({ ...current, expiryDate: nextDate }))} />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
-            <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(event) => setModal((current) => ({ ...current, notes: event.target.value }))} />
-          </div>
+          <FormSection title="مشخصات سری" description="فیلدهای موردنیاز را تکمیل کنید.">
+            <FormField label="محصول" required>
+              <Select value={modal.productId} onChange={(event) => setModal((current) => ({ ...current, productId: event.target.value }))} required>
+                <option value="">انتخاب محصول</option>
+                {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+              </Select>
+            </FormField>
+            <FormField label="کد سری" required>
+              <Input type="text" className="font-mono" value={modal.lotCode} onChange={(event) => setModal((current) => ({ ...current, lotCode: event.target.value }))} required />
+            </FormField>
+            <FormField label="تاریخ انقضا" hint="اختیاری، برای کنترل انقضا در گزارش‌ها.">
+              <InventoryShamsiDateInput value={modal.expiryDate} onChange={(nextDate) => setModal((current) => ({ ...current, expiryDate: nextDate }))} />
+            </FormField>
+            <FormField label="توضیحات">
+              <Input type="text" value={modal.notes} onChange={(event) => setModal((current) => ({ ...current, notes: event.target.value }))} />
+            </FormField>
+          </FormSection>
         </InventoryEntityDialog>
       ) : null}
+      <ConfirmDialog
+        isOpen={Boolean(archiveCandidate)}
+        title="بایگانی سری"
+        description={`سری ${archiveCandidate?.lotCode || ''} بایگانی شود؟`}
+        confirmLabel="بایگانی سری"
+        onCancel={() => setArchiveCandidate(null)}
+        onConfirm={() => archiveCandidate ? handleArchive(archiveCandidate) : undefined}
+      />
     </div>
   )
 }

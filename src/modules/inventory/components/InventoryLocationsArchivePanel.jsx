@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import {
   Badge,
   Button,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -11,6 +12,9 @@ import {
   DataTableRow,
   DataTableState,
   FilterRow,
+  FormField,
+  FormSection,
+  Input,
   IconButton,
   InlineAlert,
   Select,
@@ -43,6 +47,7 @@ export const InventoryLocationsArchivePanel = ({ session }) => {
   const [modal, setModal] = useState(null)
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState('')
+  const [archiveCandidate, setArchiveCandidate] = useState(null)
 
   useEffect(() => {
     inventoryApi.fetchV2Warehouses({ includeArchived: true }).then((response) => {
@@ -103,10 +108,9 @@ export const InventoryLocationsArchivePanel = ({ session }) => {
   }
 
   const handleArchive = async (location) => {
-    const confirmed = window.confirm(`مکان ${location?.name || ''} بایگانی شود؟`)
-    if (!confirmed) return
     try {
       await inventoryApi.archiveV2Location(location.id)
+      setArchiveCandidate(null)
       await load()
     } catch (archiveError) {
       setError(archiveError?.message || 'بایگانی مکان ناموفق بود.')
@@ -188,7 +192,7 @@ export const InventoryLocationsArchivePanel = ({ session }) => {
                     {!archiveMode ? (
                       <>
                         <IconButton action="edit" size="iconSm" surface="table" label="ویرایش مکان" tooltip="ویرایش مکان" onClick={() => { setFormError(''); setModal({ ...location, parentLocationId: location.parentLocationId ?? '' }) }} />
-                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی مکان" tooltip="بایگانی مکان" onClick={() => handleArchive(location)} />
+                        <IconButton action="archive" size="iconSm" surface="table" label="بایگانی مکان" tooltip="بایگانی مکان" onClick={() => setArchiveCandidate(location)} />
                       </>
                     ) : (
                       <IconButton action="restore" size="iconSm" surface="table" label="بازیابی مکان" tooltip="بازیابی مکان" onClick={() => handleRestore(location)} />
@@ -204,35 +208,40 @@ export const InventoryLocationsArchivePanel = ({ session }) => {
       {modal ? (
         <InventoryEntityDialog isOpen title={modal.id ? 'ویرایش مکان' : 'مکان جدید'} onClose={closeModal} onSubmit={handleSave} saving={saving} maxWidthClass="max-w-lg">
           {formError ? <div className="rounded bg-red-50 px-3 py-2 text-sm text-red-600">{formError}</div> : null}
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">انبار <span className="text-red-500">*</span></label>
-            <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.warehouseId} onChange={(event) => setModal((current) => ({ ...current, warehouseId: event.target.value }))} required>
-              <option value="">انتخاب انبار</option>
-              {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
-            </select>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">کلید مکان <span className="text-red-500">*</span></label>
-              <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm font-mono" value={modal.locationKey} onChange={(event) => setModal((current) => ({ ...current, locationKey: event.target.value }))} required />
+          <FormSection title="مشخصات مکان" description="فیلدهای ستاره‌دار اجباری هستند.">
+            <FormField label="انبار" required hint="مکان باید به یک انبار فعال متصل باشد.">
+              <Select value={modal.warehouseId} onChange={(event) => setModal((current) => ({ ...current, warehouseId: event.target.value }))} required>
+                <option value="">انتخاب انبار</option>
+                {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
+              </Select>
+            </FormField>
+            <div className="grid grid-cols-2 gap-3">
+              <FormField label="کلید مکان" required>
+                <Input type="text" className="font-mono" value={modal.locationKey} onChange={(event) => setModal((current) => ({ ...current, locationKey: event.target.value }))} required />
+              </FormField>
+              <FormField label="نوع کاربری">
+                <Select value={modal.usageType} onChange={(event) => setModal((current) => ({ ...current, usageType: event.target.value }))}>
+                  {Object.entries(USAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </Select>
+              </FormField>
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-slate-600">نوع کاربری</label>
-              <select className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.usageType} onChange={(event) => setModal((current) => ({ ...current, usageType: event.target.value }))}>
-                {Object.entries(USAGE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">نام مکان <span className="text-red-500">*</span></label>
-            <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.name} onChange={(event) => setModal((current) => ({ ...current, name: event.target.value }))} required />
-          </div>
-          <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">توضیحات</label>
-            <input type="text" className="w-full rounded border border-slate-300 px-2 py-1.5 text-sm" value={modal.notes} onChange={(event) => setModal((current) => ({ ...current, notes: event.target.value }))} />
-          </div>
+            <FormField label="نام مکان" required>
+              <Input type="text" value={modal.name} onChange={(event) => setModal((current) => ({ ...current, name: event.target.value }))} required />
+            </FormField>
+            <FormField label="توضیحات" hint="این فیلد اختیاری است.">
+              <Input type="text" value={modal.notes} onChange={(event) => setModal((current) => ({ ...current, notes: event.target.value }))} />
+            </FormField>
+          </FormSection>
         </InventoryEntityDialog>
       ) : null}
+      <ConfirmDialog
+        isOpen={Boolean(archiveCandidate)}
+        title="بایگانی مکان"
+        description={`مکان ${archiveCandidate?.name || ''} بایگانی شود؟`}
+        confirmLabel="بایگانی مکان"
+        onCancel={() => setArchiveCandidate(null)}
+        onConfirm={() => archiveCandidate ? handleArchive(archiveCandidate) : undefined}
+      />
     </div>
   )
 }

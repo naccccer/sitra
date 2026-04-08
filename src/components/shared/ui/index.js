@@ -2,6 +2,7 @@ export { ACTION_PRESETS, getActionPreset } from '@/components/shared/ui/actionPr
 export { Badge } from '@/components/shared/ui/Badge';
 export { Button } from '@/components/shared/ui/Button';
 export { Card } from '@/components/shared/ui/Card';
+export { ConfirmDialog } from '@/components/shared/ui/ConfirmDialog';
 export {
   DataTable,
   DataTableActions,
@@ -19,6 +20,7 @@ export { FilterRow } from '@/components/shared/ui/FilterRow';
 export { IconButton } from '@/components/shared/ui/IconButton';
 export { InlineAlert } from '@/components/shared/ui/InlineAlert';
 export { Input } from '@/components/shared/ui/Input';
+export { FieldMessage, FormField, FormSection, RequiredMark } from '@/components/shared/ui/FormPrimitives';
 export { ModalShell } from '@/components/shared/ui/ModalShell';
 export { PaginationBar } from '@/components/shared/ui/PaginationBar';
 export { SectionHeader } from '@/components/shared/ui/SectionHeader';

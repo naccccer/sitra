@@ -1,7 +1,7 @@
 # Real UI/UX Redesign Roadmap
 
 Updated: 2026-04-08
-Status: Active program, Phase 2 complete
+Status: Active program, Phase 3 complete
 Approval authority: Repository owner
 Canonical redesign planning location: `docs/real-ui-ux/`
 
@@ -205,3 +205,10 @@ Copy this block into the end of the roadmap at each phase close and fill it in:
 - KPI delta: browser-native dialogs in the benchmark order-entry linkage path dropped from 5 (`4` prompts + `1` confirm) to `0`; bespoke fixed-overlay sales modals dropped from 7 to 6 after moving checkout to the shared modal contract; customer snapshot entry moved from final-step-only input to an always-visible top workflow surface; scoped verification (`npm run verify:fast`) passed after the redesign slice.
 - Risks: operators can still bypass customer/project linkage because it remains a warning rather than a blocker, the split public vs authenticated `/orders/new` shell still creates a mild context shift, and the remaining sales-specific overlays can still dilute consistency if Phase 3 does not absorb them quickly.
 - Next-phase adjustments: Phase 3 should promote the benchmark flow rules into reusable form/modal/confirm contracts, replace the remaining bespoke sales overlays, add a shared confirmation pattern to retire browser-native confirms elsewhere, and pair the static KPI deltas above with live operator timing and click-count measurement before broader module rollout.
+
+## Phase 3 Close Update
+- What changed: defined the shared table/form/modal contract in `docs/design-system/data-entry-surface-system.md`; added reusable shared primitives `ConfirmDialog` and `FormSection`/`FormField`/`FieldMessage`/`RequiredMark`; migrated representative inventory archive surfaces (locations, lots) to the shared form grammar and confirm-dialog behavior; and migrated human-resources archive/delete destructive actions from browser-native confirms to the shared confirmation modal.
+- What remains: several module-local overlays and local form layouts still exist outside the representative scope (especially in inventory operations and accounting-heavy flows), and non-representative `window.confirm` usages still need phased replacement during broad module rollout.
+- KPI delta: scoped consistency debt reduced by removing 4 browser-native confirmation dialogs from representative operational surfaces (inventory locations archive, inventory lots archive, HR employee archive, HR document delete); representative modal forms now share one grouping/required/help grammar instead of duplicated local label/input styling.
+- Risks: shared primitives now cover more interaction grammar but still need wider module adoption to validate flexibility under all high-density workflows; partial migration may create temporary mixed patterns until Phase 4 completes.
+- Next-phase adjustments: Phase 4 should prioritize remaining operational modules with lingering bespoke overlays and local form chrome, finish replacing remaining browser-native confirms, and capture live timing/click KPI deltas against the Phase 0 baseline during wider adoption.

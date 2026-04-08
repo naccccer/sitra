@@ -3,6 +3,7 @@ import { FileText, Trash2, Upload } from 'lucide-react'
 import {
   Button,
   Card,
+  ConfirmDialog,
   DataTable,
   DataTableActions,
   DataTableBody,
@@ -37,6 +38,7 @@ export function HumanResourcesDocumentsTab({
   const [file, setFile] = useState(null)
   const [uploading, setUploading] = useState(false)
   const [deletingId, setDeletingId] = useState(null)
+  const [deleteCandidateId, setDeleteCandidateId] = useState(null)
   const fileInputRef = useRef(null)
 
   const loadDocuments = useCallback(async () => {
@@ -89,12 +91,11 @@ export function HumanResourcesDocumentsTab({
   }
 
   const handleDelete = async (documentId) => {
-    const confirmed = window.confirm('این مدرک حذف شود؟')
-    if (!confirmed) return
     setDeletingId(documentId)
     setError('')
     try {
       await humanResourcesApi.deleteDocument(documentId)
+      setDeleteCandidateId(null)
       await loadDocuments()
     } catch (deleteError) {
       setError(deleteError.message || 'حذف مدرک ناموفق بود.')
@@ -221,7 +222,7 @@ export function HumanResourcesDocumentsTab({
                         size="icon"
                         variant="danger"
                         surface="table"
-                        onClick={() => handleDelete(doc.id)}
+                        onClick={() => setDeleteCandidateId(doc.id)}
                         disabled={deletingId === doc.id}
                         title="حذف مدرک"
                       >
@@ -241,6 +242,15 @@ export function HumanResourcesDocumentsTab({
           className="border border-dashed border-slate-200"
         />
       ) : null}
+      <ConfirmDialog
+        isOpen={Boolean(deleteCandidateId)}
+        title="حذف مدرک"
+        description="این مدرک حذف شود؟"
+        confirmLabel="حذف مدرک"
+        loading={deletingId === deleteCandidateId}
+        onCancel={() => setDeleteCandidateId(null)}
+        onConfirm={() => (deleteCandidateId ? handleDelete(deleteCandidateId) : undefined)}
+      />
     </Card>
   )
 }

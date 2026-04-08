@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { AccessDenied } from '@/components/shared/AccessDenied'
-import { WorkspaceShellTemplate } from '@/components/shared/ui'
+import { ConfirmDialog, WorkspaceShellTemplate } from '@/components/shared/ui'
 import { HumanResourcesWorkspace } from '../components/HumanResourcesWorkspace'
 import { useDebouncedValue } from '../hooks/useDebouncedValue'
 import { humanResourcesApi } from '../services/humanResourcesApi'
@@ -22,6 +22,7 @@ export const HumanResourcesPage = ({ session }) => {
   const [modalOpen, setModalOpen] = useState(false)
   const [importModalOpen, setImportModalOpen] = useState(false)
   const [pendingDocuments, setPendingDocuments] = useState([])
+  const [archiveCandidate, setArchiveCandidate] = useState(null)
   const [page, setPage] = useState(1)
   const [pageSize, setPageSize] = useState(25)
   const [pagination, setPagination] = useState({ page: 1, pageSize: 25, total: 0 })
@@ -155,11 +156,7 @@ export const HumanResourcesPage = ({ session }) => {
 
   const onArchiveEmployee = async (employee) => {
     if (!canWriteEmployees) return
-    const employeeName = employee?.fullName || `${employee?.firstName || ''} ${employee?.lastName || ''}`.trim() || 'این پرسنل'
-    const employeeCode = trimValue(employee?.employeeCode)
-    const confirmed = window.confirm(`پرسنل ${employeeName}${employeeCode ? ` با کد ${employeeCode}` : ''} به آرشیو منتقل شود؟`)
-    if (!confirmed) return
-    await onToggleEmployeeActive(employee, false, 'archive')
+    setArchiveCandidate(employee)
   }
 
   const onRestoreEmployee = async (employee) => {
@@ -268,6 +265,18 @@ export const HumanResourcesPage = ({ session }) => {
         selectedEmployee={selectedEmployee}
         totalCount={pagination.total || 0}
         totalPages={totalPages}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(archiveCandidate)}
+        title="انتقال پرسنل به آرشیو"
+        description={`پرسنل ${(archiveCandidate?.fullName || `${archiveCandidate?.firstName || ''} ${archiveCandidate?.lastName || ''}`.trim() || 'انتخاب‌شده')}${trimValue(archiveCandidate?.employeeCode) ? ` با کد ${trimValue(archiveCandidate?.employeeCode)}` : ''} به آرشیو منتقل شود؟`}
+        confirmLabel="بایگانی پرسنل"
+        onCancel={() => setArchiveCandidate(null)}
+        onConfirm={async () => {
+          if (!archiveCandidate) return
+          await onToggleEmployeeActive(archiveCandidate, false, 'archive')
+          setArchiveCandidate(null)
+        }}
       />
     </WorkspaceShellTemplate>
   )

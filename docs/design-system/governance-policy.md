@@ -20,6 +20,7 @@ Owner: Design-system governance owner
 - Use shared tokens from `src/index.css` for visual foundation values.
 - Use the active shell/action/state contract in `docs/design-system/foundation-shell-system.md` for Phase 1 shared surfaces.
 - Use `docs/design-system/benchmark-workflow-system.md` for Phase 2 benchmark workflow behavior and submission-state rules.
+- Use `docs/design-system/data-entry-surface-system.md` for Phase 3+ table/form/modal grammar and confirmation behavior.
 - Use shared UI primitives from `src/components/shared/ui/*` before adding new primitives.
 - Keep module internals module-owned, but rendering grammar must compose from shared contracts.
 - Every new component variant must document usage, states, and migration impact.
