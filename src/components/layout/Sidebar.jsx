@@ -95,7 +95,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
 
   const wrapWithTooltip = (node, content) => (
     isRailCollapsed
-      ? <Tooltip content={content} side="left" wrapperClassName="flex w-full">{node}</Tooltip>
+      ? <Tooltip content={content} side="left" wrapperClassName="flex w-full justify-center">{node}</Tooltip>
       : node
   )
 
