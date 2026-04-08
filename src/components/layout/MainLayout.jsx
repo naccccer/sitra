@@ -115,7 +115,6 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
           <main
             id="app-workspace"
             className="app-print-content flex-1 overflow-y-auto pb-5 lg:pb-6"
-            style={{ scrollbarGutter: 'stable' }}
           >
             <Header
               session={session}
