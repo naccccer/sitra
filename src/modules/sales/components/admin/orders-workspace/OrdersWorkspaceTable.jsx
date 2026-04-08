@@ -50,9 +50,10 @@ export const OrdersWorkspaceTable = ({
   onPrintFactoryOrder,
   onPrintCustomerOrder,
   catalog,
+  toolbar = null,
   footer = null,
 }) => (
-  <DataTable className="print-hide" minWidthClass="min-w-[1120px] text-[13px]" footer={footer}>
+  <DataTable className="print-hide" minWidthClass="min-w-[1120px] text-[13px]" toolbar={toolbar} footer={footer}>
     <DataTableHead>
       <tr>
         <DataTableHeaderCell className="w-12 text-[12px]" align="center">

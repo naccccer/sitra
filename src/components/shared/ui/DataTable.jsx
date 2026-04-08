@@ -11,8 +11,13 @@ const ROW_TONE_CLASSNAMES = {
   muted: 'bg-[rgb(var(--ui-surface-muted))]/55 text-[rgb(var(--ui-text-muted))]',
 };
 
-export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', footer = null }) => (
+export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', toolbar = null, footer = null }) => (
   <Card className={cn('overflow-hidden bg-white', className)} padding="none">
+    {toolbar ? (
+      <div className="border-b border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/55">
+        {toolbar}
+      </div>
+    ) : null}
     <div className="overflow-x-auto">
       <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
     </div>

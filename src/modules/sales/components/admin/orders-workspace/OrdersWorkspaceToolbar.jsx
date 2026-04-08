@@ -18,9 +18,11 @@ export const OrdersWorkspaceToolbar = ({
   onReload,
   loading = false,
   createAction = null,
+  embedded = false,
 }) => (
   <WorkspaceToolbar
     className="print-hide"
+    embedded={embedded}
     actions={createAction}
   >
     <FilterRow className="justify-between gap-3">

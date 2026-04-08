@@ -11,6 +11,11 @@ import { getNavSections, getQueryTab, navChildLinkClass, navLinkClass, pathMatch
 
 // UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
 const EMPTY_PERMISSIONS = Object.freeze([])
+const SidebarItemIcon = ({ icon, size = 17 }) => (
+  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center leading-none">
+    {icon ? React.createElement(icon, { size }) : null}
+  </span>
+)
 
 const getItemPrimaryTarget = (item) => {
   if (!Array.isArray(item.children) || item.children.length === 0) return toNavTarget(item)
@@ -103,7 +108,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       aria-label={item.label}
       className={({ isActive }) => navLinkClass(isActive, isRailCollapsed, tone)}
     >
-      <item.icon size={17} />
+      <SidebarItemIcon icon={item.icon} />
       <span
         aria-hidden={isRailCollapsed}
         className={`overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
@@ -124,7 +129,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           aria-label={item.label}
           className={() => navLinkClass(isActive, true, tone)}
         >
-          <item.icon size={17} />
+          <SidebarItemIcon icon={item.icon} />
           <span aria-hidden="true" className="max-w-0 overflow-hidden whitespace-nowrap opacity-0">
             {item.label}
           </span>
@@ -144,7 +149,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           aria-controls={`${item.id}-submenu`}
           aria-label={item.label}
         >
-          <item.icon size={17} />
+          <SidebarItemIcon icon={item.icon} />
           <span className={`flex-1 overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
             {item.label}
           </span>
@@ -234,7 +239,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             aria-label="خروج"
             className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-2'}`}
           >
-            <LogOut size={16} />
+            <SidebarItemIcon icon={LogOut} size={16} />
             <span
               aria-hidden={isRailCollapsed}
               className={`overflow-hidden whitespace-nowrap transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
