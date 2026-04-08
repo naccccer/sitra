@@ -166,11 +166,11 @@
   }
 
   .app-content-wrap {
-    @apply flex min-h-screen w-full flex-col lg:flex-row;
+    @apply mx-auto flex min-h-screen w-full max-w-[1680px] flex-col lg:flex-row;
   }
 
   .app-shell-content {
-    @apply w-full;
+    @apply w-full max-w-[1520px] me-auto;
   }
 
   .app-content-area {

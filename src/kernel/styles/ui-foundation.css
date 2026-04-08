@@ -78,7 +78,13 @@
 
 .app-shell-content {
   width: 100%;
-  max-width: 100%;
+  max-width: min(1560px, 100%);
+  margin-inline: auto;
+}
+
+.app-shell,
+.app-shell * {
+  box-shadow: none !important;
 }
 
 .workspace-shell {
