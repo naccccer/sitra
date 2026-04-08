@@ -32,7 +32,7 @@ export const Header = ({
                 variant="tertiary"
                 label={menuTooltip}
                 tooltip={menuTooltip}
-                tooltipSide="bottom"
+                tooltipSide="bottom-right"
                 className="shrink-0"
               >
                 <Menu size={17} />
