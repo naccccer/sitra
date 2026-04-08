@@ -1,4 +1,4 @@
-# Design System Governance Policy (AI-first)
+# Design System Governance Policy (Post-Program)
 
 Updated: 2026-04-08
 Owner: Design-system governance owner
@@ -18,13 +18,20 @@ Owner: Design-system governance owner
 
 ### Required compliance rules
 - Use shared tokens from `src/index.css` for visual foundation values.
-- Use the active shell/action/state contract in `docs/design-system/foundation-shell-system.md` for Phase 1 shared surfaces.
-- Use `docs/design-system/benchmark-workflow-system.md` for Phase 2 benchmark workflow behavior and submission-state rules.
-- Use `docs/design-system/data-entry-surface-system.md` for Phase 3+ table/form/modal grammar and confirmation behavior.
+- Use `docs/design-system/foundation-shell-system.md` for shell/action/state contracts.
+- Use `docs/design-system/benchmark-workflow-system.md` for benchmark workflow behavior and submission states.
+- Use `docs/design-system/data-entry-surface-system.md` for table/form/modal grammar and confirmation behavior.
 - Use shared UI primitives from `src/components/shared/ui/*` before adding new primitives.
 - Keep module internals module-owned, but rendering grammar must compose from shared contracts.
 - Every new component variant must document usage, states, and migration impact.
-- For active redesign work, treat `docs/real-ui-ux/` as the canonical planning location.
+- Treat `docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` as the canonical historical redesign record.
+
+### Maintenance thresholds and rewrite triggers
+- Track and review monthly:
+  - New `window.confirm` usage count (target: `0`).
+  - New module-local table/form/modal primitives that duplicate shared contracts (target: `0`).
+  - Shared-primitive override hotspots requiring `!important` or large local class bundles (trigger review at `>= 3` active hotspots).
+- Trigger a focused cleanup slice when any threshold is exceeded in two consecutive releases.
 
 ### AI-only workflow optimization
 - Prefer extending existing component variants over creating new files.
@@ -40,7 +47,7 @@ Use `.github/PULL_REQUEST_TEMPLATE.md` checklist in every PR:
 - Primitive reuse compliance
 - Universal state grammar compliance
 - Permission/action clarity check
-- Docs sync check (`docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` + active phase prompt when phase-affecting)
+- Docs sync check (`docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` + relevant design-system contract docs)
 - Screenshot/visual evidence for perceptible UI changes
 
 Any unchecked blocker item means PR is not merge-ready.

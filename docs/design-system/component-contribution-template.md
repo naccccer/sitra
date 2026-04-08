@@ -30,6 +30,11 @@ Use this template for any shared UI component or variant change.
 - Snapshot diff intent summary:
 - Breakage risk level (S1/S2/S3):
 
+## Drift Guard Check
+- Does this introduce new local table/form/modal primitives? (yes/no)
+- Does this add browser-native confirm usage? (must be no)
+- Does this require follow-up cleanup before next release? (yes/no + owner)
+
 ## Release Notes Entry
 - Added:
 - Changed:

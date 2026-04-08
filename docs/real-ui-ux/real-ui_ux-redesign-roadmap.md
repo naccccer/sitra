@@ -1,7 +1,7 @@
 # Real UI/UX Redesign Roadmap
 
 Updated: 2026-04-08
-Status: Active program, Phase 4 complete
+Status: Program complete (Phase 5 closed)
 Approval authority: Repository owner
 Canonical redesign planning location: `docs/real-ui-ux/`
 
@@ -67,7 +67,7 @@ Every phase close must update this roadmap with:
 - Historical redesign-cycle docs should be deleted once they are no longer operationally required.
 - Phase 0 must prune duplicate, stale, contradictory, or mirror docs and record each delete decision.
 - Shared pattern changes must be adopted program-wide over time, not recreated independently per module.
-- If a phase changes UX-facing behavior, the roadmap and the matching phase prompt must be updated in the same change.
+- While the program is active, UX-facing behavior changes must update the roadmap and active execution docs in the same change.
 - If a UX blocker requires backend or contract change, keep it additive or versioned and update the owning contract docs in the same change.
 - Decorative shell/meta tags should not appear by default.
 - Cards should group truly distinct operational surfaces, not serve as redundant wrappers around already clear content.
@@ -219,3 +219,10 @@ Copy this block into the end of the roadmap at each phase close and fill it in:
 - KPI delta or consistency-debt reduction: repo-wide browser-native confirm usage across in-scope active modules dropped from 8 remaining usages to 0 (`inventory`, `accounting`, `master-data`, plus earlier `human-resources` migration), removing a full class of interaction drift from operational destructive actions.
 - Risks found during broad adoption: confirm-dialog standardization is complete for active modules, but mixed table/form grammars still increase cognitive switching risk until Phase 5 consolidation; shared primitives now cover destructive confirmation broadly, but further modal/form normalization may expose edge-case sizing or footer-action ordering gaps.
 - Any final cleanup priorities for Phase 5: replace remaining local table/form shells with shared primitives on high-traffic module screens, retire residual legacy alert messaging in favor of shared state surfaces, and perform final consistency pass to eliminate low-value wrappers and decorative status treatments.
+
+## Phase 5 Close Update
+- What changed in the final cleanup and governance pass: removed legacy phase prompt files from `docs/real-ui-ux/`; finalized post-program governance language and maintenance thresholds in `docs/design-system/governance-policy.md`; finalized contribution checklist guardrails in `docs/design-system/component-contribution-template.md`; and removed one dead inventory constant during cleanup.
+- What remains as accepted debt: selected legacy local table/form markup in low-frequency accounting and inventory secondary surfaces remains acceptable debt until touched by normal product work; some legacy `window.alert` recovery messaging remains and should be normalized opportunistically.
+- Final KPI summary: baseline (Phase 0) tracked 15 browser-native confirms and 7 bespoke sales overlays; by close, active-module browser confirms are 0, shared entry-surface coverage remains stabilized at 8 major routed surfaces, and cross-module destructive action confirmation now uses one shared primitive (`ConfirmDialog`) across inventory, accounting, human-resources, and master-data.
+- Residual risks or rewrite triggers: start a focused cleanup slice when any of these persists for two consecutive releases: new browser-native confirms (`> 0`), new module-local table/form/modal primitives duplicating shared contracts (`> 0`), or shared-primitive override hotspots requiring heavy local overrides (`>= 3`).
+- Final operating model for post-program maintenance: enforce lightweight contract-first reviews via shared docs (`foundation-shell-system`, `benchmark-workflow-system`, `data-entry-surface-system`, governance policy, contribution template), keep module logic local and rendering grammar shared, and treat consistency cleanup as part of normal feature delivery rather than a new redesign program.

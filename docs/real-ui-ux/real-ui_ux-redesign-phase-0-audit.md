@@ -46,12 +46,12 @@ Results:
 | `docs/modules/sales.md` | keep | Active ownership reference. |
 | `docs/modules/users-access.md` | keep | Active ownership reference. |
 | `docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` | keep | Active redesign program source of truth. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-0.prompt.md` | keep | Active execution prompt. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-1.prompt.md` | keep | Active execution prompt. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-2.prompt.md` | keep | Active execution prompt. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-3.prompt.md` | keep | Active execution prompt. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-4.prompt.md` | keep | Active execution prompt. |
-| `docs/real-ui-ux/real-ui_ux-redesign-phase-5.prompt.md` | keep | Active execution prompt. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-0.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-1.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-2.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-3.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-4.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
+| `docs/real-ui-ux/real-ui_ux-redesign-phase-5.prompt.md` | removed (Phase 5) | Program-closure cleanup removed legacy execution prompts. |
 | `examples/README.md` | keep | Example payload usage guidance. |
 | `examples/assets/README.md` | keep | Example asset usage guidance. |
 | `src/modules/README.md` | keep | Frontend module structure explainer. |
@@ -221,5 +221,5 @@ Every redesign phase should verify:
 - shell and navigation changes go through shared layout contracts
 - new modal work uses shared modal contracts instead of bespoke overlays
 - destructive actions do not use browser-native confirm dialogs
-- roadmap and active phase prompt are updated in the same change
+- roadmap and relevant design-system contracts are updated in the same change
 - affected workflows have a measurable KPI hypothesis or delta statement
