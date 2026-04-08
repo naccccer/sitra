@@ -55,7 +55,8 @@
 
 .app-shell {
   background:
-    linear-gradient(90deg, rgba(14, 116, 144, 0.2) 0%, rgba(241, 245, 249, 0.95) 48%, rgba(190, 24, 93, 0.2) 100%),
+    radial-gradient(circle at 10% 10%, rgba(255, 255, 255, 0.72), transparent 18%),
+    radial-gradient(circle at 88% 10%, rgba(34, 92, 208, 0.1), transparent 24%),
     linear-gradient(180deg, rgb(var(--ui-bg-accent)) 0%, rgb(var(--ui-bg)) 16%, rgb(var(--ui-bg)) 100%);
 }
 
@@ -77,8 +78,7 @@
 
 .app-shell-content {
   width: 100%;
-  max-width: min(1560px, 100%);
-  margin-inline: auto;
+  max-width: 100%;
 }
 
 .workspace-shell {
