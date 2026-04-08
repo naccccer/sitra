@@ -200,7 +200,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         normalizedProfile.brandName,
       )}
 
-      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable both-edges' }}>
+      <div className="shell-scrollbar min-h-0 flex-1 overflow-y-auto" style={{ scrollbarGutter: 'stable' }}>
         <nav className="space-y-4">
           {visibleSections.map((section) => (
             <div key={section.id} className="space-y-2">

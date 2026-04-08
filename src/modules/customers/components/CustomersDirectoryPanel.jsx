@@ -42,9 +42,6 @@ export const CustomersDirectoryPanel = ({
       actions={canWriteCustomers && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={onCreateCustomer}>مشتری جدید</Button> : null}
     >
       <FilterRow className="justify-end gap-3">
-        <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">
-          {archiveMode ? 'نمای آرشیو' : 'نمای فعال'} · {toPN(totalCount)} نتیجه
-        </div>
         <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
           <Input
             value={query}

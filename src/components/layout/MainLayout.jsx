@@ -88,7 +88,10 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
         پرش به محتوای اصلی
       </a>
 
-      <div className="app-content-wrap app-print-frame relative">
+      <div
+        className="app-content-wrap app-print-frame relative"
+        style={{ '--shell-layout-rail-width': isSidebarCollapsed ? 'var(--shell-rail-width-collapsed)' : 'var(--shell-rail-width)' }}
+      >
         {isSidebarOpen && (
           <button
             type="button"
@@ -112,7 +115,7 @@ export const MainLayout = ({ onLogout, profile, session, children }) => {
           <main
             id="app-workspace"
             className="app-print-content flex-1 overflow-y-auto pb-5 lg:pb-6"
-            style={{ scrollbarGutter: 'stable both-edges' }}
+            style={{ scrollbarGutter: 'stable' }}
           >
             <Header
               session={session}
