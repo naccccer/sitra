@@ -237,7 +237,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             type="button"
             onClick={onLogout}
             aria-label="خروج"
-            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'lg:w-11 lg:justify-center lg:px-0' : 'gap-2'}`}
+            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'w-11 justify-center px-0' : 'gap-2'}`}
           >
             <SidebarItemIcon icon={LogOut} size={16} />
             <span

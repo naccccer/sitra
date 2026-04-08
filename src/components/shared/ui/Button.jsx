@@ -11,7 +11,7 @@ const VARIANT_CLASSNAMES = {
   ghost: 'border-transparent bg-transparent text-[rgb(var(--ui-text-muted))] hover:bg-[rgb(var(--ui-surface-muted))] hover:text-[rgb(var(--ui-text))]',
   danger: 'border-transparent bg-[rgb(var(--ui-danger-text))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-danger-text))]/92',
   success: 'border-transparent bg-[rgb(var(--ui-success-bg))] text-[rgb(var(--ui-success-text))] shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-success-bg))]/85',
-  forest: 'border-transparent bg-[rgb(var(--ui-primary))] text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-[rgb(var(--ui-primary))]/94',
+  forest: 'border-transparent bg-emerald-700 text-white shadow-[var(--shadow-soft)] hover:-translate-y-px hover:bg-emerald-800',
   accent: 'border-transparent bg-[rgb(var(--ui-accent))] text-white shadow-[var(--shadow-accent)] hover:-translate-y-px hover:bg-[rgb(var(--ui-accent-strong))]',
 };
 

@@ -58,7 +58,7 @@ export const AdminOrdersView = ({
             loading={workflow.isRefreshingOrders}
             createAction={
               onCreateOrder ? (
-                <Button action="create" variant="secondary" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>
+                <Button action="create" showActionIcon size="md" className="!h-9 !px-3 !text-xs" onClick={onCreateOrder}>
                   سفارش جدید
                 </Button>
               ) : null
