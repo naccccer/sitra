@@ -14,11 +14,13 @@
       "properties": {
         "maxShortSideCm": { "type": "integer", "minimum": 0 },
         "maxLongSideCm": { "type": "integer", "minimum": 0 },
+        "minimumChargeEnabled": { "type": "boolean" },
         "minimumChargeThresholdM2": { "type": "number", "minimum": 0 },
         "minimumBillableAreaM2": { "type": "number", "minimum": 0 }
       },
       "additionalProperties": false
     },
+    "jumboRulesEnabled": { "type": "boolean" },
     "jumboRules": {
       "type": "array",
       "items": {

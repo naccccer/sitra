@@ -1,13 +1,11 @@
 import React, { useRef, useState } from 'react'
 import { Download, Upload } from 'lucide-react'
 import {
-  Badge,
   Button,
   ConfirmDialog,
   FilterRow,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
-import { toPN } from '@/utils/helpers'
 import {
   buildMatrixExportFileName,
   parseMatrixImportText,
@@ -152,28 +150,6 @@ export const MatrixSettingsSection = ({
 
   return (
     <div className="space-y-4">
-      <WorkspaceToolbar
-        summary={(
-          <>
-            <Badge tone="neutral">ردیف: {toPN(draft.glasses.length)}</Badge>
-            <Badge tone="neutral">ضخامت: {toPN(draft.thicknesses.length)}</Badge>
-            <span className="text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">ورودی: CSV / Excel | خروجی: Excel</span>
-          </>
-        )}
-        actions={(
-          <>
-            <Button size="sm" variant="success" onClick={handleExportExcel} leadingIcon={Download}>خروجی Excel</Button>
-            <Button size="sm" variant="secondary" onClick={handleImportTrigger} disabled={isImporting} leadingIcon={Upload}>
-              {isImporting ? 'در حال پردازش...' : 'ایمپورت فایل'}
-            </Button>
-          </>
-        )}
-      >
-        <FilterRow>
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">ماتریس قیمت شیشه</div>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       <input
         ref={fileInputRef}
         type="file"
@@ -195,6 +171,23 @@ export const MatrixSettingsSection = ({
         onRemoveThickness={handleRemoveThickness}
         onRemoveRow={handleRemoveRow}
         onAddThickness={handleAddThickness}
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={(
+              <>
+                <Button size="sm" variant="success" onClick={handleExportExcel} leadingIcon={Download}>خروجی Excel</Button>
+                <Button size="sm" variant="secondary" onClick={handleImportTrigger} disabled={isImporting} leadingIcon={Upload}>
+                  {isImporting ? 'در حال پردازش...' : 'ایمپورت فایل'}
+                </Button>
+              </>
+            )}
+          >
+            <FilterRow>
+              <div className="text-sm font-black text-[rgb(var(--ui-text))]">ماتریس قیمت شیشه</div>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
       />
 
       <Button

@@ -17,7 +17,6 @@ import {
   Select,
   WorkspaceToolbar,
 } from '@/components/shared/ui'
-import { toPN } from '@/utils/helpers'
 import { formatDateTime, roleBadgeClass, roleLabel } from '../hooks/useAdminUsersSettings'
 
 export const UsersListTable = ({
@@ -34,17 +33,20 @@ export const UsersListTable = ({
   onSaveUser,
   onToggleActive,
 }) => (
-  <div className="space-y-3" dir="rtl">
-    <WorkspaceToolbar summary={<Badge tone="neutral">تعداد: {toPN(users.length)}</Badge>}>
-      <FilterRow>
-        <div>
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">لیست کاربران</div>
-          <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">مدیریت نقش، وضعیت و مشخصات پایه کاربران در یک جدول مشترک</div>
-        </div>
-      </FilterRow>
-    </WorkspaceToolbar>
-
-    <DataTable minWidthClass="min-w-[1180px]">
+  <div dir="rtl">
+    <DataTable
+      minWidthClass="min-w-[1180px]"
+      toolbar={(
+        <WorkspaceToolbar embedded>
+          <FilterRow>
+            <div>
+              <div className="text-sm font-black text-[rgb(var(--ui-text))]">لیست کاربران</div>
+              <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">مدیریت نقش، وضعیت و مشخصات پایه کاربران در یک جدول مشترک</div>
+            </div>
+          </FilterRow>
+        </WorkspaceToolbar>
+      )}
+    >
       <DataTableHead>
         <tr>
           <DataTableHeaderCell>نام کاربری</DataTableHeaderCell>

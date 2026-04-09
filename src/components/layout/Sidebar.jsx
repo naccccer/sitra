@@ -41,6 +41,10 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   const textRevealClass = isRailCollapsed
     ? 'max-w-0 -translate-x-1 opacity-0'
     : 'max-w-[12rem] translate-x-0 opacity-100'
+  const railTooltipWrapperClass = 'mx-auto flex w-[var(--shell-rail-item-size)] justify-center'
+  const railNavClass = isRailCollapsed ? 'flex flex-col items-center space-y-4' : 'space-y-4'
+  const railSectionClass = isRailCollapsed ? 'flex w-full flex-col items-center space-y-2' : 'space-y-2'
+  const railGroupClass = isRailCollapsed ? 'flex w-full flex-col items-center space-y-1.5' : 'space-y-1.5'
 
   const isVisibleItem = (item) => {
     if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
@@ -83,9 +87,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
     return currentTab ? currentTab === item.tab : defaultTabByPath[item.to] === item.tab
   }
 
-  const getSectionGroups = (section) => {
-    return [{ id: `${section.id}-default`, label: '', items: section.items }]
-  }
+  const getSectionGroups = (section) => [{ id: `${section.id}-default`, label: '', items: section.items }]
 
   const accordionItems = visibleSections.flatMap((section) => section.items).filter((item) => Array.isArray(item.children) && item.children.length > 0)
   const matchedGroup = accordionItems.find((item) => isTargetActive(item) || item.children.some((child) => isTargetActive(child)))
@@ -95,8 +97,14 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
 
   const wrapWithTooltip = (node, content) => (
     isRailCollapsed
-      ? <Tooltip content={content} side="left" wrapperClassName="mx-auto flex w-[var(--shell-rail-item-size)] justify-center">{node}</Tooltip>
+      ? <Tooltip content={content} side="left" wrapperClassName={railTooltipWrapperClass}>{node}</Tooltip>
       : node
+  )
+
+  const renderItemLabel = (label, className = '') => (
+    <span className={`overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass} ${className}`.trim()}>
+      {label}
+    </span>
   )
 
   const renderLeaf = (item, tone) => wrapWithTooltip(
@@ -109,13 +117,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       className={({ isActive }) => navLinkClass(isActive, isRailCollapsed, tone)}
     >
       <SidebarItemIcon icon={item.icon} />
-      {!isRailCollapsed ? (
-        <span
-          className={`overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}
-        >
-          {item.label}
-        </span>
-      ) : null}
+      {!isRailCollapsed ? renderItemLabel(item.label) : null}
     </NavLink>,
     item.label,
   )
@@ -148,9 +150,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
           aria-label={item.label}
         >
           <SidebarItemIcon icon={item.icon} />
-          <span className={`flex-1 overflow-hidden whitespace-nowrap text-start transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
-            {item.label}
-          </span>
+          {renderItemLabel(item.label, 'flex-1')}
           <span className={`transition-transform duration-[var(--motion-base)] ${isGroupOpen ? 'rotate-0' : '-rotate-90'}`}>
             <ChevronDown size={14} />
           </span>
@@ -190,7 +190,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         <div className={`shell-brand-surface mb-3 rounded-[26px] transition-[padding,border-radius,margin,width] duration-[var(--motion-base)] ${isRailCollapsed ? 'mx-auto w-[var(--shell-rail-item-size)] p-1.5' : 'w-full px-3 py-3'}`}>
           <div className={`flex items-center transition-[gap] duration-[var(--motion-base)] ${isRailCollapsed ? 'justify-center' : 'gap-3'}`}>
             <div className={`shell-brand-mark flex shrink-0 items-center justify-center overflow-hidden text-base font-black text-white transition-[transform,border-radius,width,height] duration-[var(--motion-base)] ${isRailCollapsed ? 'h-10 w-10 rounded-[18px]' : 'h-12 w-12 rounded-[20px]'}`}>
-              {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className={`h-full w-full ${isRailCollapsed ? 'object-contain p-1' : 'object-cover'}`} /> : fallbackLetter}
+              {showLogo ? <img src={logoSrc} alt={normalizedProfile.brandName} onError={() => setFailedLogoSrc(logoSrc)} className="h-full w-full object-cover" /> : fallbackLetter}
             </div>
             {!isRailCollapsed && (
               <div className={`overflow-hidden transition-[max-width,opacity,transform] duration-[var(--motion-base)] ${textRevealClass}`}>
@@ -204,16 +204,16 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       )}
 
       <div className={`shell-scrollbar min-h-0 flex-1 overflow-y-auto ${isRailCollapsed ? 'overflow-x-visible' : ''}`} style={{ scrollbarGutter: isRailCollapsed ? 'auto' : 'stable' }}>
-        <nav className={isRailCollapsed ? 'flex flex-col items-center space-y-4' : 'space-y-4'}>
+        <nav className={railNavClass}>
           {visibleSections.map((section) => (
-            <div key={section.id} className={isRailCollapsed ? 'flex w-full flex-col items-center space-y-2' : 'space-y-2'}>
+            <div key={section.id} className={railSectionClass}>
               {!isRailCollapsed && (
                 <div className="shell-section-label px-1 transition-opacity duration-[var(--motion-base)]">
                   {section.label}
                 </div>
               )}
               {getSectionGroups(section).map((group) => (
-                <div key={group.id} className={isRailCollapsed ? 'flex w-full flex-col items-center space-y-1.5' : 'space-y-1.5'}>
+                <div key={group.id} className={railGroupClass}>
                   {group.items.map((item) => {
                     const tone = section.tone || 'default'
                     const isActive = Array.isArray(item.children) && item.children.length > 0

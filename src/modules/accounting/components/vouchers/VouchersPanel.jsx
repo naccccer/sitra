@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import {
-  Badge,
   Button,
   ConfirmDialog,
   DataTable,
@@ -74,32 +73,33 @@ export function VouchersPanel({ session }) {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>سند جدید</Button> : null}
-        summary={<Badge tone="neutral">نتیجه: {toPN(total)}</Badge>}
-      >
-        <FilterRow>
-          <Select
-            value={status}
-            onChange={(event) => {
-              setStatus(event.target.value)
-              setPage(1)
-            }}
-            size="sm"
-            className="sm:w-44"
-          >
-            <option value="">همه وضعیت‌ها</option>
-            <option value="draft">پیش‌نویس</option>
-            <option value="posted">ثبت‌شده</option>
-            <option value="cancelled">ابطال</option>
-          </Select>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری اسناد">{error}</InlineAlert> : null}
 
       <DataTable
         minWidthClass="min-w-[980px]"
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>سند جدید</Button> : null}
+          >
+            <FilterRow>
+              <Select
+                value={status}
+                onChange={(event) => {
+                  setStatus(event.target.value)
+                  setPage(1)
+                }}
+                size="sm"
+                className="sm:w-44"
+              >
+                <option value="">همه وضعیت‌ها</option>
+                <option value="draft">پیش‌نویس</option>
+                <option value="posted">ثبت‌شده</option>
+                <option value="cancelled">ابطال</option>
+              </Select>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
         footer={vouchers.length > 0 ? (
           <PaginationBar
             page={page}

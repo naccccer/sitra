@@ -240,7 +240,9 @@ export const usePricingCalculator = (dimensions, activeTab, config, catalog) => 
       unitTotal += patUnit === 'qty' ? patternPrice * count : patternPrice;
     }
 
-    const applicableJumbo = findApplicableJumboRule(dimensions, catalog.jumboRules);
+    const applicableJumbo = catalog?.jumboRulesEnabled === false
+      ? null
+      : findApplicableJumboRule(dimensions, catalog.jumboRules);
 
     if (applicableJumbo) {
       const jumboType = applicableJumbo.adjustmentType || 'percentage';

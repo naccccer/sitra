@@ -60,37 +60,39 @@ export function HumanResourcesDirectoryPanel({
 }) {
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        actions={canWriteEmployees && !archiveMode ? (
-          <Button action="create" showActionIcon size="sm" onClick={onNewEmployee} disabled={busyKey !== ''}>ثبت پرسنل جدید</Button>
-        ) : null}
-      >
-      <FilterRow className="justify-between gap-3">
-          <SegmentedTabs tabs={HR_TABS} activeId="personnel" className="w-full md:w-auto" />
-          <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
-            <Input
-              value={query}
-              onChange={(event) => onQueryChange(event.target.value)}
-              placeholder="جست‌وجو..."
-              size="sm"
-              className="w-64 shrink-0 bg-white/90"
-              dir="rtl"
-            />
-            <IconButton
-              action="archive"
-              variant={archiveMode ? 'primary' : 'secondary'}
-              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
-              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
-              onClick={onArchiveModeToggle}
-              disabled={busyKey !== ''}
-            />
-            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading || busyKey !== ''} loading={loading} />
-          </div>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       <DataTable
         minWidthClass="min-w-[860px]"
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={canWriteEmployees && !archiveMode ? (
+              <Button action="create" showActionIcon size="sm" onClick={onNewEmployee} disabled={busyKey !== ''}>ثبت پرسنل جدید</Button>
+            ) : null}
+          >
+            <FilterRow className="justify-between gap-3">
+              <SegmentedTabs tabs={HR_TABS} activeId="personnel" className="w-full md:w-auto" />
+              <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
+                <Input
+                  value={query}
+                  onChange={(event) => onQueryChange(event.target.value)}
+                  placeholder="جست‌وجو..."
+                  size="sm"
+                  className="w-64 shrink-0 bg-white/90"
+                  dir="rtl"
+                />
+                <IconButton
+                  action="archive"
+                  variant={archiveMode ? 'primary' : 'secondary'}
+                  label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
+                  tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
+                  onClick={onArchiveModeToggle}
+                  disabled={busyKey !== ''}
+                />
+                <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading || busyKey !== ''} loading={loading} />
+              </div>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
         footer={employees.length > 0 ? (
           <PaginationBar
             page={page}

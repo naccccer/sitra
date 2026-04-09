@@ -34,6 +34,7 @@ const ensureCatalogDefaults = (source) => {
   if (!Array.isArray(next.thicknesses)) next.thicknesses = [];
   if (!Array.isArray(next.pvbLogic)) next.pvbLogic = [];
   next.jumboRules = normalizeJumboRules(next.jumboRules);
+  next.jumboRulesEnabled = next.jumboRulesEnabled !== false;
   next.factoryLimits = normalizeFactoryLimits(next.factoryLimits);
 
   if (!next.connectors || typeof next.connectors !== 'object') next.connectors = {};

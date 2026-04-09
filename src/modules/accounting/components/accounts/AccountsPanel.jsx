@@ -61,32 +61,30 @@ export function AccountsPanel({ session }) {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
-        summary={(
-          <>
-            <Badge tone="neutral">کل سرفصل‌ها: {accounts.length}</Badge>
-            <Badge tone={includeInactive ? 'warning' : 'accent'}>{includeInactive ? 'غیرفعال‌ها هم نمایش داده می‌شوند' : 'فقط حساب‌های فعال'}</Badge>
-          </>
-        )}
-      >
-        <FilterRow className="justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="w-full md:w-64">
-              <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="جستجو در کد یا نام..." size="sm" />
-            </div>
-            <label className="flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--ui-text-muted))]">
-              <input type="checkbox" checked={includeInactive} onChange={(event) => setIncludeInactive(event.target.checked)} />
-              شامل غیرفعال
-            </label>
-          </div>
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری حساب‌ها">{error}</InlineAlert> : null}
 
-      <DataTable minWidthClass="min-w-[980px]">
+      <DataTable
+        minWidthClass="min-w-[980px]"
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
+          >
+            <FilterRow className="justify-between gap-3">
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="w-full md:w-64">
+                  <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="جستجو در کد یا نام..." size="sm" />
+                </div>
+                <label className="flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--ui-text-muted))]">
+                  <input type="checkbox" checked={includeInactive} onChange={(event) => setIncludeInactive(event.target.checked)} />
+                  شامل غیرفعال
+                </label>
+              </div>
+              <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
+      >
         <DataTableHead>
           <tr>
             <DataTableHeaderCell>کد</DataTableHeaderCell>

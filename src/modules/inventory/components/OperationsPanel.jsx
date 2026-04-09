@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Badge,
   Button,
   ConfirmDialog,
   DataTable,
@@ -133,49 +132,48 @@ export const OperationsPanel = ({ operationType, session, onNew }) => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        summary={<Badge tone="neutral">نتیجه: {toPN(total)}</Badge>}
-      >
-        <FilterRow className="justify-between gap-3">
-          <div className="flex shrink-0 items-center gap-2">
-            <Select
-              value={statusFilter}
-              onChange={(event) => {
-                setStatusFilter(event.target.value)
-                setPage(1)
-              }}
-              size="sm"
-              className="sm:w-44"
-            >
-              <option value="">همه وضعیت ها</option>
-              {Object.entries(STATUS_MAP).map(([value, status]) => (
-                <option key={value} value={value}>{status.label}</option>
-              ))}
-            </Select>
-          </div>
-          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
-            <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
-            <div className="w-full sm:w-64">
-              <Input
-                value={q}
-                onChange={(event) => {
-                  setQ(event.target.value)
-                  setPage(1)
-                }}
-                placeholder="جستجو در شماره عملیات یا کد مرجع"
-                size="sm"
-                dir="rtl"
-              />
-            </div>
-            <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
-          </div>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری عملیات">{error}</InlineAlert> : null}
 
       <DataTable
         minWidthClass="min-w-[1120px]"
+        toolbar={(
+          <WorkspaceToolbar embedded>
+            <FilterRow className="justify-between gap-3">
+              <div className="flex shrink-0 items-center gap-2">
+                <Select
+                  value={statusFilter}
+                  onChange={(event) => {
+                    setStatusFilter(event.target.value)
+                    setPage(1)
+                  }}
+                  size="sm"
+                  className="sm:w-44"
+                >
+                  <option value="">همه وضعیت ها</option>
+                  {Object.entries(STATUS_MAP).map(([value, status]) => (
+                    <option key={value} value={value}>{status.label}</option>
+                  ))}
+                </Select>
+              </div>
+              <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+                <Button action="create" showActionIcon size="sm" onClick={onNew}>عملیات جدید</Button>
+                <div className="w-full sm:w-64">
+                  <Input
+                    value={q}
+                    onChange={(event) => {
+                      setQ(event.target.value)
+                      setPage(1)
+                    }}
+                    placeholder="جستجو در شماره عملیات یا کد مرجع"
+                    size="sm"
+                    dir="rtl"
+                  />
+                </div>
+                <IconButton action="reload" label="بارگذاری مجدد" tooltip="بارگذاری مجدد" onClick={() => void load()} loading={loading} disabled={loading} />
+              </div>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
         footer={rows.length > 0 ? (
           <PaginationBar
             page={page}

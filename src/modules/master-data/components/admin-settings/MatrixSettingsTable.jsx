@@ -50,6 +50,7 @@ export const MatrixSettingsTable = ({
   onRemoveThickness,
   onRemoveRow,
   onAddThickness,
+  toolbar = null,
 }) => {
   const [dragState, setDragState] = useState(null)
 
@@ -88,7 +89,7 @@ export const MatrixSettingsTable = ({
   }
 
   return (
-    <DataTable minWidthClass="min-w-[900px] whitespace-nowrap text-[12px]">
+    <DataTable minWidthClass="min-w-[900px] whitespace-nowrap text-[12px]" toolbar={toolbar}>
       <DataTableHead>
         <tr>
           <DataTableHeaderCell align="center" className="w-8 !px-1 !py-2 text-[11px] leading-tight">

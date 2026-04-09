@@ -63,14 +63,7 @@ export function PayrollEmployeesPanel({ employees, busy, canManage, onSave }) {
 
   return (
     <Card padding="md" className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        summary={(
-          <>
-            <Badge tone="neutral">پرسنل: {formatNumber(filteredEmployees.length)}</Badge>
-            <Badge tone={canManage ? 'accent' : 'neutral'}>{canManage ? 'ویرایش مجاز است' : 'فقط مشاهده'}</Badge>
-          </>
-        )}
-      >
+      <WorkspaceToolbar>
         <FilterRow className="justify-between gap-3">
           <div>
             <div className="text-sm font-black text-[rgb(var(--ui-text))]">پرسنل حقوق</div>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Badge,
   Button,
   ConfirmDialog,
   DataTable,
@@ -21,7 +20,6 @@ import {
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
 import { useInventoryUomOptions } from '@/modules/inventory/hooks/useInventoryUomOptions'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
-import { toPN } from '@/utils/helpers'
 
 const TYPE_LABELS = {
   stockable: 'انبارشونده',
@@ -123,41 +121,37 @@ export const InventoryProductsArchivePanel = ({ session }) => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        summary={(
-          <>
-            <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
-            <Badge tone="neutral">نتیجه: {toPN(rows.length)}</Badge>
-          </>
-        )}
-      >
-        <FilterRow className="justify-between gap-3">
-          <div className="flex shrink-0 items-center gap-2">
-            <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="w-full sm:w-40">
-              <option value="">همه انواع</option>
-              {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-            </Select>
-          </div>
-          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
-            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
-            <div className="w-full sm:w-52">
-              <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" dir="rtl" />
-            </div>
-            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-            <IconButton
-              action="archive"
-              variant={archiveMode ? 'primary' : 'secondary'}
-              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-              onClick={() => setArchiveMode((current) => !current)}
-            />
-          </div>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری محصولات">{error}</InlineAlert> : null}
 
-      <DataTable minWidthClass="min-w-[860px]">
+      <DataTable
+        minWidthClass="min-w-[860px]"
+        toolbar={(
+          <WorkspaceToolbar embedded>
+            <FilterRow className="justify-between gap-3">
+              <div className="flex shrink-0 items-center gap-2">
+                <Select value={typeFilter} onChange={(event) => setTypeFilter(event.target.value)} size="sm" className="w-full sm:w-40">
+                  <option value="">همه انواع</option>
+                  {Object.entries(TYPE_LABELS).map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                </Select>
+              </div>
+              <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+                {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>محصول جدید</Button> : null}
+                <div className="w-full sm:w-52">
+                  <Input type="text" value={query} onChange={(event) => setQuery(event.target.value)} placeholder="جست‌وجو..." size="sm" dir="rtl" />
+                </div>
+                <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+                <IconButton
+                  action="archive"
+                  variant={archiveMode ? 'primary' : 'secondary'}
+                  label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                  tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                  onClick={() => setArchiveMode((current) => !current)}
+                />
+              </div>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
+      >
         <DataTableHead>
           <tr>
             <DataTableHeaderCell>نام محصول</DataTableHeaderCell>

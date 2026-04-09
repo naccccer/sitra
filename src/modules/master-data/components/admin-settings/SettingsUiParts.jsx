@@ -69,14 +69,14 @@ export const InputShell = ({ children, className = '' }) => (
 export const CompactTextInput = ({ className = '', ...props }) => (
   <input
     {...props}
-    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-700 outline-none transition focus:border-slate-400 ${className}`}
+    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-center text-sm font-black text-slate-700 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${className}`}
   />
 );
 
 export const CompactSelect = ({ className = '', children, ...props }) => (
   <select
     {...props}
-    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 outline-none transition focus:border-slate-400 ${className}`}
+    className={`h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-black text-slate-700 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400 ${className}`}
   >
     {children}
   </select>
@@ -89,13 +89,13 @@ export const SettingsInlineGroup = ({ children, className = '' }) => (
 export const DangerIconButton = ({ children, className = '', ...props }) => (
   <button
     {...props}
-    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 ${className}`}
+    className={`inline-flex h-10 w-10 items-center justify-center rounded-xl border border-red-100 bg-white text-red-400 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 ${className}`}
   >
     {children}
   </button>
 );
 
-export const DashedActionButton = ({ onClick, children, tone = 'blue', className = '' }) => {
+export const DashedActionButton = ({ onClick, children, tone = 'blue', className = '', disabled = false }) => {
   const toneClass = tone === 'indigo'
     ? 'border-slate-300 text-slate-700 hover:bg-slate-50'
     : 'border-slate-300 text-slate-700 hover:bg-slate-50';
@@ -103,7 +103,8 @@ export const DashedActionButton = ({ onClick, children, tone = 'blue', className
   return (
     <button
       onClick={onClick}
-      className={`inline-flex h-10 items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 text-xs font-black transition ${toneClass} ${className}`}
+      disabled={disabled}
+      className={`inline-flex h-10 items-center justify-center gap-1 rounded-xl border-2 border-dashed px-4 text-xs font-black transition ${toneClass} disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-300 ${className}`}
     >
       {children}
     </button>

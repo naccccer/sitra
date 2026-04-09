@@ -3,6 +3,7 @@ export const initialCatalog = {
   factoryLimits: {
     maxShortSideCm: 321,
     maxLongSideCm: 600,
+    minimumChargeEnabled: true,
     minimumChargeThresholdM2: 1,
     minimumBillableAreaM2: 1,
   },
@@ -40,6 +41,7 @@ export const initialCatalog = {
     { id: 'pvbL1', minTotalThickness: 0, maxTotalThickness: 10, defaultInterlayerId: 'pvb038' },
     { id: 'pvbL2', minTotalThickness: 11, maxTotalThickness: 20, defaultInterlayerId: 'pvb076' }
   ],
+  jumboRulesEnabled: true,
   jumboRules: [
     {
       id: 'j1',

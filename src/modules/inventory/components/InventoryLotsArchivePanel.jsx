@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
 import {
-  Badge,
   Button,
   ConfirmDialog,
   DataTable,
@@ -129,38 +128,34 @@ export const InventoryLotsArchivePanel = ({ session }) => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        summary={(
-          <>
-            <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
-            <Badge tone="neutral">نتیجه: {toPN(rows.length)}</Badge>
-          </>
-        )}
-      >
-        <FilterRow className="justify-between gap-3">
-          <div className="flex shrink-0 items-center gap-2">
-            <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="w-full sm:w-48">
-              <option value="">همه محصولات</option>
-              {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
-            </Select>
-          </div>
-          <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
-            {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
-            <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-            <IconButton
-              action="archive"
-              variant={archiveMode ? 'primary' : 'secondary'}
-              label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-              tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-              onClick={() => setArchiveMode((current) => !current)}
-            />
-          </div>
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری سری‌ها">{error}</InlineAlert> : null}
 
-      <DataTable minWidthClass="min-w-[760px]">
+      <DataTable
+        minWidthClass="min-w-[760px]"
+        toolbar={(
+          <WorkspaceToolbar embedded>
+            <FilterRow className="justify-between gap-3">
+              <div className="flex shrink-0 items-center gap-2">
+                <Select value={productFilter} onChange={(event) => setProductFilter(event.target.value)} size="sm" className="w-full sm:w-48">
+                  <option value="">همه محصولات</option>
+                  {products.map((product) => <option key={product.id} value={product.id}>{product.name}</option>)}
+                </Select>
+              </div>
+              <div className="flex flex-1 flex-wrap items-center gap-2" dir="ltr">
+                {canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, productId: productFilter }) }}>سری جدید</Button> : null}
+                <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+                <IconButton
+                  action="archive"
+                  variant={archiveMode ? 'primary' : 'secondary'}
+                  label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                  tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                  onClick={() => setArchiveMode((current) => !current)}
+                />
+              </div>
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
+      >
         <DataTableHead>
           <tr>
             <DataTableHeaderCell align="center">کد سری</DataTableHeaderCell>

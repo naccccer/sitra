@@ -22,7 +22,6 @@ import {
 } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
-import { toPN } from '@/utils/helpers'
 
 const USAGE_LABELS = {
   internal: 'داخلی',
@@ -130,36 +129,34 @@ export const InventoryLocationsArchivePanel = ({ session }) => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, warehouseId: warehouseFilter }) }}>مکان جدید</Button> : null}
-        summary={(
-          <>
-            <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
-            <Badge tone="neutral">نتیجه: {toPN(rows.length)}</Badge>
-          </>
-        )}
-      >
-        <FilterRow className="gap-3">
-          <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
-            <Select value={warehouseFilter} onChange={(event) => setWarehouseFilter(event.target.value)} size="sm" className="sm:w-48">
-              <option value="">همه انبارها</option>
-              {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
-            </Select>
-          </div>
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری مکان‌ها">{error}</InlineAlert> : null}
 
-      <DataTable minWidthClass="min-w-[960px]">
+      <DataTable
+        minWidthClass="min-w-[960px]"
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM, warehouseId: warehouseFilter }) }}>مکان جدید</Button> : null}
+          >
+            <FilterRow className="gap-3">
+              <div className="me-auto flex flex-1 flex-wrap items-center gap-2">
+                <Select value={warehouseFilter} onChange={(event) => setWarehouseFilter(event.target.value)} size="sm" className="sm:w-48">
+                  <option value="">همه انبارها</option>
+                  {warehouses.map((warehouse) => <option key={warehouse.id} value={warehouse.id}>{warehouse.name}</option>)}
+                </Select>
+              </div>
+              <IconButton
+                action="archive"
+                variant={archiveMode ? 'primary' : 'secondary'}
+                label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                onClick={() => setArchiveMode((current) => !current)}
+              />
+              <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
+      >
         <DataTableHead>
           <tr>
             <DataTableHeaderCell>نام مکان</DataTableHeaderCell>

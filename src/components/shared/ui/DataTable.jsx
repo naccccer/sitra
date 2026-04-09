@@ -14,15 +14,17 @@ const ROW_TONE_CLASSNAMES = {
 export const DataTable = ({ children, className = '', minWidthClass = 'min-w-full', toolbar = null, footer = null }) => (
   <Card className={cn('overflow-hidden bg-white', className)} padding="none">
     {toolbar ? (
-      <div>
+      <div className="px-4 py-4">
         {toolbar}
       </div>
     ) : null}
-    <div className="overflow-x-auto">
-      <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
+    <div className="px-4">
+      <div className="overflow-x-auto">
+        <table className={cn('w-full border-separate border-spacing-0 text-sm', minWidthClass)}>{children}</table>
+      </div>
     </div>
     {footer ? (
-      <div className="rounded-b-[var(--radius-xl)] border-t border-[rgb(var(--ui-border-soft))] bg-[linear-gradient(180deg,rgba(247,247,248,0.99),rgba(240,240,242,0.96))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_-8px_24px_rgba(18,33,74,0.08)]">
+      <div className="rounded-b-[var(--radius-xl)] border-t border-[rgb(var(--ui-border-soft))] bg-[linear-gradient(180deg,rgba(247,247,248,0.99),rgba(240,240,242,0.96))] px-4 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.82),0_-8px_24px_rgba(18,33,74,0.08)]">
         {footer}
       </div>
     ) : null}

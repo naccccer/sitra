@@ -18,7 +18,6 @@ import {
 } from '@/components/shared/ui'
 import { InventoryEntityDialog } from '@/modules/inventory/components/InventoryEntityDialog'
 import { inventoryApi } from '@/modules/inventory/services/inventoryApi'
-import { toPN } from '@/utils/helpers'
 
 const EMPTY_FORM = { id: null, warehouseKey: '', name: '', notes: '' }
 
@@ -104,30 +103,28 @@ export const InventoryWarehousesArchivePanel = ({ session }) => {
 
   return (
     <div className="space-y-4" dir="rtl">
-      <WorkspaceToolbar
-        actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>انبار جدید</Button> : null}
-        summary={(
-          <>
-            <Badge tone={archiveMode ? 'neutral' : 'accent'}>{archiveMode ? 'حالت: بایگانی' : 'حالت: فعال'}</Badge>
-            <Badge tone="neutral">نتیجه: {toPN(rows.length)}</Badge>
-          </>
-        )}
-      >
-        <FilterRow className="justify-end gap-2">
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
-            onClick={() => setArchiveMode((current) => !current)}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
-        </FilterRow>
-      </WorkspaceToolbar>
-
       {error ? <InlineAlert tone="danger" title="خطا در بارگذاری انبارها">{error}</InlineAlert> : null}
 
-      <DataTable minWidthClass="min-w-[760px]">
+      <DataTable
+        minWidthClass="min-w-[760px]"
+        toolbar={(
+          <WorkspaceToolbar
+            embedded
+            actions={canWrite && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={() => { setFormError(''); setModal({ ...EMPTY_FORM }) }}>انبار جدید</Button> : null}
+          >
+            <FilterRow className="justify-end gap-2">
+              <IconButton
+                action="archive"
+                variant={archiveMode ? 'primary' : 'secondary'}
+                label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش بایگانی'}
+                onClick={() => setArchiveMode((current) => !current)}
+              />
+              <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={() => void load()} disabled={loading} loading={loading} />
+            </FilterRow>
+          </WorkspaceToolbar>
+        )}
+      >
         <DataTableHead>
           <tr>
             <DataTableHeaderCell>نام انبار</DataTableHeaderCell>

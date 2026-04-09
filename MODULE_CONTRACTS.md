@@ -31,6 +31,7 @@ This file defines **stable cross-module contracts** at a compact level.
 
 `master_data.catalog_save.v1` preserves ordered catalog arrays such as `thicknesses` and `glasses` as provided by the frontend.
 It also carries pricing rules for `factoryLimits` and ordered `jumboRules` used by the sales pricing runtime.
+Additive compatibility fields `factoryLimits.minimumChargeEnabled` and `jumboRulesEnabled` toggle minimum billable area logic and jumbo surcharges without changing existing payload shape.
 
 ### Sales
 - `sales.order_create.v1`

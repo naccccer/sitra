@@ -19,6 +19,7 @@ const toNonNegativeInt = (value, fallback = 0) => {
 export const DEFAULT_FACTORY_LIMITS = Object.freeze({
   maxShortSideCm: 0,
   maxLongSideCm: 0,
+  minimumChargeEnabled: true,
   minimumChargeThresholdM2: 1,
   minimumBillableAreaM2: 1,
 });
@@ -32,6 +33,7 @@ export const normalizeFactoryLimits = (factoryLimits = {}) => ({
     factoryLimits?.maxLongSideCm ?? factoryLimits?.maxHeight,
     DEFAULT_FACTORY_LIMITS.maxLongSideCm,
   ),
+  minimumChargeEnabled: factoryLimits?.minimumChargeEnabled !== false,
   minimumChargeThresholdM2: toPositiveNumber(
     factoryLimits?.minimumChargeThresholdM2,
     DEFAULT_FACTORY_LIMITS.minimumChargeThresholdM2,
@@ -93,6 +95,8 @@ export const resolvePricingDimensions = (dimensions = {}, factoryLimits = null) 
 
   const normalizedLimits = normalizeFactoryLimits(factoryLimits || {});
   const shouldApplyMinimumCharge = (
+    normalizedLimits.minimumChargeEnabled
+    &&
     actualAreaM2 > 0
     && normalizedLimits.minimumChargeThresholdM2 > 0
     && normalizedLimits.minimumBillableAreaM2 > 0

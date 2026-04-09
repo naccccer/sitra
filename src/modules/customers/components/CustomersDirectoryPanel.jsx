@@ -38,33 +38,35 @@ export const CustomersDirectoryPanel = ({
   totalPages,
 }) => (
   <div className="space-y-4" dir="rtl">
-    <WorkspaceToolbar
-      actions={canWriteCustomers && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={onCreateCustomer}>مشتری جدید</Button> : null}
-    >
-      <FilterRow className="justify-end gap-3">
-        <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
-          <Input
-            value={query}
-            onChange={(event) => onQueryChange(event.target.value)}
-            placeholder="جست‌وجو..."
-            size="sm"
-            className="w-64 shrink-0 bg-white/90"
-            dir="rtl"
-          />
-          <IconButton
-            action="archive"
-            variant={archiveMode ? 'primary' : 'secondary'}
-            label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
-            tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
-            onClick={onArchiveModeToggle}
-          />
-          <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading} loading={loading} />
-        </div>
-      </FilterRow>
-    </WorkspaceToolbar>
-
     <DataTable
       minWidthClass="min-w-[920px]"
+      toolbar={(
+        <WorkspaceToolbar
+          embedded
+          actions={canWriteCustomers && !archiveMode ? <Button action="create" showActionIcon size="sm" onClick={onCreateCustomer}>مشتری جدید</Button> : null}
+        >
+          <FilterRow className="justify-end gap-3">
+            <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
+              <Input
+                value={query}
+                onChange={(event) => onQueryChange(event.target.value)}
+                placeholder="جست‌وجو..."
+                size="sm"
+                className="w-64 shrink-0 bg-white/90"
+                dir="rtl"
+              />
+              <IconButton
+                action="archive"
+                variant={archiveMode ? 'primary' : 'secondary'}
+                label={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
+                tooltip={archiveMode ? 'بازگشت به لیست اصلی' : 'نمایش آرشیو'}
+                onClick={onArchiveModeToggle}
+              />
+              <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={onReload} disabled={loading} loading={loading} />
+            </div>
+          </FilterRow>
+        </WorkspaceToolbar>
+      )}
       footer={customers.length > 0 ? (
         <PaginationBar
           page={page}
