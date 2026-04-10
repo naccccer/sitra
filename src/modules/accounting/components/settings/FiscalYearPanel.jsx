@@ -11,6 +11,7 @@ import {
   DataTableHead,
   DataTableHeaderCell,
   DataTableRow,
+  IconButton,
   Input,
   Select,
 } from '@/components/shared/ui'
@@ -126,8 +127,7 @@ export function FiscalYearPanel({ session }) {
       <Card padding="md" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">سال‌های مالی</div>
-            <div className="text-xs font-bold text-slate-500">مدیریت بازه‌های مالی، سال پیش‌فرض و وضعیت باز/بسته.</div>
+            <div className="text-sm font-black text-[rgb(var(--ui-text))]">سال‌های مالی</div>
           </div>
           <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
         </div>
@@ -162,11 +162,11 @@ export function FiscalYearPanel({ session }) {
                         {!fy.isDefault && fy.status === 'open' && (
                           <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
                         )}
-                        <Button size="sm" variant="ghost" onClick={() => handleStartEdit(fy)}>ویرایش</Button>
+                        <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
                         {fy.status === 'open' && (
                           <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
                         )}
-                        <Button size="sm" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)}>حذف</Button>
+                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)} />
                       </DataTableActions>
                     </DataTableCell>
                   )}
@@ -217,10 +217,7 @@ export function FiscalYearPanel({ session }) {
       {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
         <div>
-          <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">تب‌های فعال</div>
-          <div className="text-xs font-bold text-slate-500">
-            تب‌های غیرفعال در منوی بالای صفحه نمایش داده نمی‌شوند.
-          </div>
+          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تب‌های فعال</div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           {CONFIGURABLE_TABS.map((tab) => {
@@ -250,10 +247,7 @@ export function FiscalYearPanel({ session }) {
       {/* Bridge account map */}
       {canWrite && (
         <Card padding="md" className="space-y-3">
-          <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">تنظیم حساب‌های پل فروش</div>
-          <div className="text-xs font-bold text-slate-500">
-            این حساب‌ها هنگام همگام‌سازی پرداخت‌های فروش استفاده می‌شوند.
-          </div>
+          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تنظیم حساب‌های پل فروش</div>
           <div className="flex flex-wrap items-end gap-3">
             {[
               { label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
