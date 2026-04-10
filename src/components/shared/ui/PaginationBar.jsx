@@ -14,7 +14,7 @@ export const PaginationBar = ({
   continuation = null,
   className = '',
 }) => (
-  <div className={cn('flex flex-col gap-2 rounded-b-[var(--radius-xl)] px-2 py-1', className)}>
+  <div className={cn('flex w-full flex-col gap-2 py-1', className)}>
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between">
       <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">
         صفحه {page} از {Math.max(1, totalPages)} - {totalCount} نتیجه
