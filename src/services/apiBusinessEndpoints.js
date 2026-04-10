@@ -45,8 +45,14 @@ export function buildApiBusinessEndpoints(request) {
         body: JSON.stringify({ id }),
       })
     },
-    async fetchUsers() {
-      return request('/api/users.php', { method: 'GET' })
+    async fetchUsers(filters = {}) {
+      const params = new URLSearchParams()
+      if (filters?.view) params.set('view', String(filters.view))
+      if (typeof filters?.isActive === 'boolean') params.set('isActive', String(filters.isActive))
+      if (typeof filters?.includeArchived === 'boolean') params.set('includeArchived', String(filters.includeArchived))
+      if (typeof filters?.includeInactive === 'boolean') params.set('includeInactive', String(filters.includeInactive))
+      const query = params.toString()
+      return request(query ? `/api/users.php?${query}` : '/api/users.php', { method: 'GET' })
     },
     async createUser(payload) {
       return request('/api/users.php', {
@@ -60,10 +66,10 @@ export function buildApiBusinessEndpoints(request) {
         body: JSON.stringify(payload),
       })
     },
-    async setUserActive(id, isActive) {
+    async setUserLifecycle(id, action) {
       return request('/api/users.php', {
         method: 'PATCH',
-        body: JSON.stringify({ id, isActive }),
+        body: JSON.stringify({ id, action }),
       })
     },
     async fetchRolePermissions() {

@@ -58,7 +58,8 @@ if ($username === '' || $password === '') {
 
 $activeSelect = $hasIsActive ? ', is_active' : ', 1 AS is_active';
 $identitySelect = $hasIdentityColumns ? ', full_name, job_title' : ', username AS full_name, NULL AS job_title';
-$stmt = $pdo->prepare('SELECT id, username, password, role' . $identitySelect . $activeSelect . ' FROM users WHERE username = :username LIMIT 1');
+$deletedSelect = app_users_has_deleted_at_column($pdo) ? ', deleted_at' : ', NULL AS deleted_at';
+$stmt = $pdo->prepare('SELECT id, username, password, role' . $identitySelect . $activeSelect . $deletedSelect . ' FROM users WHERE username = :username LIMIT 1');
 $stmt->execute(['username' => $username]);
 $user = $stmt->fetch();
 
@@ -100,7 +101,7 @@ if (!$user || !$validCredentials) {
     ], 401);
 }
 
-if (((int)($user['is_active'] ?? 1)) !== 1) {
+if (((int)($user['is_active'] ?? 1)) !== 1 || !empty($user['deleted_at'])) {
     app_audit_log($pdo, 'auth.login.failed', 'session', null, [
         'ip' => $clientIp,
         'username' => $username,

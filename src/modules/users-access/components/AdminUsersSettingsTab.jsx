@@ -28,7 +28,9 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
     availableRoleOptions,
     handleCreateUser,
     handleUpdateUser,
-    handleToggleActive,
+    view,
+    setView,
+    handleLifecycleAction,
     handleSaveMatrix,
     handleResetMatrix,
     setModuleEnabled,
@@ -79,7 +81,9 @@ export const AdminUsersSettingsTab = ({ session, onRefreshSession }) => {
         onStartEditing={startEditing}
         onCancelEditing={cancelEditing}
         onSaveUser={handleUpdateUser}
-        onToggleActive={handleToggleActive}
+        view={view}
+        onChangeView={setView}
+        onLifecycleAction={handleLifecycleAction}
       />
     </div>
   );

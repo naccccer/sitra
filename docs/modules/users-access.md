@@ -5,7 +5,7 @@
 - Access policy persistence and enforcement inputs.
 
 ## Owns
-- User records and activation state.
+- User records and lifecycle state (`active`, `archived`, `deleted` via `deleted_at`).
 - Role mapping for runtime authorization.
 
 ## Public Services
@@ -23,3 +23,10 @@
 - `admin` role is Owner-only governance scope (System Owner/Support), not factory operations.
 - Non-owner actors cannot assign, demote, or deactivate `admin` users.
 - Users list/admin table surfaces should use shared workspace/table primitives and keep numeric/date scan consistency via Persian numerals plus explicit `dir="ltr"` only on mixed-direction fields (e.g., usernames and timestamps).
+
+
+## Lifecycle Contract Notes
+- `GET /api/users.php` supports `view=active|archived|all`; deleted rows are excluded from list views.
+- `PATCH /api/users.php` supports `action=archive|restore|delete`; delete is soft-delete and allowed only from archived state.
+- Legacy mutation payload `{ isActive: boolean }` remains supported as an alias for restore/archive.
+- Auth session revalidation rejects archived/deleted users server-side.

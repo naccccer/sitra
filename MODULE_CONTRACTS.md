@@ -80,6 +80,11 @@ Additive compatibility fields `factoryLimits.minimumChargeEnabled` and `jumboRul
 - `users_access.users_list_write.v1`
 - `users_access.role_permissions.v1`
 
+`users_access.users_list_write.v1` lifecycle compatibility:
+- List filters accept additive `view=active|archived|all`; legacy query aliases remain supported (`isActive`, `includeArchived`, `includeInactive`).
+- PATCH accepts additive `{ id, action: 'archive'|'restore'|'delete' }`; legacy `{ id, isActive: boolean }` remains supported as alias.
+- `delete` is retained soft-delete (`deleted_at`) and returns `success`, `deletedId`, `deletedAt`.
+
 ## Locked Runtime Enums (Compatibility)
 These values are externally relied on and must remain stable unless versioned migration is planned:
 

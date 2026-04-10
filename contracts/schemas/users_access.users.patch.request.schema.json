@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://sitra.local/contracts/schemas/users_access.users.patch.request.schema.json",
+  "title": "Users Access lifecycle patch request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["id"],
+  "properties": {
+    "id": { "type": ["integer", "string"], "minLength": 1 },
+    "action": { "type": "string", "enum": ["archive", "restore", "delete"] },
+    "isActive": { "type": "boolean", "description": "Legacy alias: false=>archive, true=>restore" }
+  },
+  "anyOf": [
+    { "required": ["action"] },
+    { "required": ["isActive"] }
+  ]
+}

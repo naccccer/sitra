@@ -105,3 +105,7 @@ export const __type_OrdersStatusPatchRequest = null
  * @typedef { id: string | number, customerName: string, phone: string, date: string, status?: "pending" | "processing" | "delivered" | "archived", items: Array<Record<string, any>>, expectedUpdatedAt?: string, clientRequestId?: string } OrdersUpdateRequest
  */
 export const __type_OrdersUpdateRequest = null
+/**
+ * @typedef { id: number | string, action?: "archive" | "restore" | "delete", isActive?: boolean } UsersAccesslifecyclepatchrequest
+ */
+export const __type_UsersAccesslifecyclepatchrequest = null

@@ -52,13 +52,28 @@ function app_current_user(): ?array
         return null;
     }
 
-    return [
+    $sessionUser = [
         'id' => (string)$_SESSION['user_id'],
         'role' => (string)($_SESSION['role'] ?? ''),
         'username' => (string)($_SESSION['username'] ?? ''),
         'fullName' => (string)($_SESSION['full_name'] ?? ''),
         'jobTitle' => (string)($_SESSION['job_title'] ?? ''),
     ];
+
+    $pdo = $GLOBALS['pdo'] ?? null;
+    if ($pdo instanceof PDO && function_exists('app_users_is_session_user_active')) {
+        if (!app_users_is_session_user_active($pdo, $sessionUser['id'])) {
+            $_SESSION = [];
+            if (ini_get('session.use_cookies')) {
+                $params = session_get_cookie_params();
+                setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
+            }
+            session_destroy();
+            return null;
+        }
+    }
+
+    return $sessionUser;
 }
 
 function app_require_auth(?array $roles = null): array

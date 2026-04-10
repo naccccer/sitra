@@ -32,6 +32,7 @@ export const useAdminUsersSettings = ({ session, onRefreshSession }) => {
   const [users, setUsers] = useState([]);
   const [isCreating, setIsCreating] = useState(false);
   const [busyUserId, setBusyUserId] = useState('');
+  const [view, setView] = useState('active');
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
@@ -67,7 +68,7 @@ export const useAdminUsersSettings = ({ session, onRefreshSession }) => {
     setIsLoading(true);
     setErrorMsg('');
     try {
-      const usersResponse = await usersAccessApi.fetchUsers();
+      const usersResponse = await usersAccessApi.fetchUsers({ view });
       setUsers(Array.isArray(usersResponse?.users) ? usersResponse.users.slice().sort(userSort) : []);
       await loadMatrix();
     } catch (error) {
@@ -75,7 +76,7 @@ export const useAdminUsersSettings = ({ session, onRefreshSession }) => {
     } finally {
       setIsLoading(false);
     }
-  }, [loadMatrix, setIsLoading]);
+  }, [loadMatrix, setIsLoading, view]);
 
   useEffect(() => {
     loadData();
@@ -151,25 +152,24 @@ export const useAdminUsersSettings = ({ session, onRefreshSession }) => {
     }
   };
 
-  const handleToggleActive = async (user) => {
-    const nextActive = !user.isActive;
-    const title = nextActive ? 'فعال‌سازی کاربر' : 'غیرفعال‌سازی کاربر';
-    const confirmed = window.confirm(`آیا از ${title} حساب "${user.username}" مطمئن هستید؟`);
+  const handleLifecycleAction = async (user, action) => {
+    const titleMap = { archive: 'بایگانی کاربر', restore: 'بازگردانی کاربر', delete: 'حذف کاربر' };
+    const confirmed = window.confirm(`آیا از ${titleMap[action] || 'تغییر وضعیت'} حساب "${user.username}" مطمئن هستید؟`);
     if (!confirmed) return;
 
     setBusyUserId(String(user.id));
     setErrorMsg('');
     setSuccessMsg('');
     try {
-      const response = await usersAccessApi.setUserActive(Number(user.id), nextActive);
-      if (response?.user) {
-        setUsers((prev) => prev.map((item) => (String(item.id) === String(user.id) ? response.user : item)).sort(userSort));
-      } else {
+      const response = await usersAccessApi.setUserLifecycle(Number(user.id), action);
+      if (action === 'delete' || !response?.user) {
         await loadData();
+      } else {
+        setUsers((prev) => prev.map((item) => (String(item.id) === String(user.id) ? response.user : item)).sort(userSort));
       }
-      setSuccessMsg(nextActive ? 'کاربر فعال شد.' : 'کاربر غیرفعال شد.');
+      setSuccessMsg(action === 'archive' ? 'کاربر بایگانی شد.' : action === 'restore' ? 'کاربر بازگردانی شد.' : 'کاربر حذف شد.');
     } catch (error) {
-      setErrorMsg(error?.message || 'تغییر وضعیت کاربر ناموفق بود.');
+      setErrorMsg(error?.message || 'اجرای عملیات کاربر ناموفق بود.');
     } finally {
       setBusyUserId('');
     }
@@ -214,7 +214,9 @@ export const useAdminUsersSettings = ({ session, onRefreshSession }) => {
     session,
     handleCreateUser,
     handleUpdateUser,
-    handleToggleActive,
+    view,
+    setView,
+    handleLifecycleAction,
     handleSaveMatrix,
     handleResetMatrix,
     setModuleEnabled,

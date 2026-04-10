@@ -16,6 +16,7 @@ function app_ensure_users_table(PDO $pdo): void
             password VARCHAR(255) NOT NULL,
             role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
+            deleted_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             PRIMARY KEY (id),
@@ -61,6 +62,17 @@ function app_ensure_users_table(PDO $pdo): void
              END
              WHERE job_title IS NULL OR TRIM(job_title) = ''"
         );
+    } catch (Throwable $e) {
+        // Preserve runtime compatibility even if alter is not permitted.
+    }
+
+
+
+    try {
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'deleted_at'");
+        if (!$stmt || !$stmt->fetch()) {
+            $pdo->exec("ALTER TABLE users ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL AFTER is_active");
+        }
     } catch (Throwable $e) {
         // Preserve runtime compatibility even if alter is not permitted.
     }
@@ -197,4 +209,46 @@ function app_save_profile(PDO $pdo, array $profile): array
     ]);
 
     return $normalized;
+}
+
+
+function app_users_has_deleted_at_column(PDO $pdo): bool
+{
+    static $detected = null;
+    if ($detected !== null) {
+        return $detected;
+    }
+
+    try {
+        app_ensure_users_table($pdo);
+        $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'deleted_at'");
+        if ($stmt && $stmt->fetch()) {
+            $detected = true;
+            return $detected;
+        }
+    } catch (Throwable $e) {
+        // Fall through to queryable check.
+    }
+
+    $detected = app_column_is_queryable($pdo, 'users', 'deleted_at');
+    return $detected;
+}
+
+function app_users_is_session_user_active(PDO $pdo, string $userId): bool
+{
+    $hasDeletedAt = app_users_has_deleted_at_column($pdo);
+    $deletedSelect = $hasDeletedAt ? 'deleted_at' : 'NULL AS deleted_at';
+    $stmt = $pdo->prepare('SELECT id, is_active, ' . $deletedSelect . ' FROM users WHERE id = :id LIMIT 1');
+    $stmt->execute(['id' => $userId]);
+    $row = $stmt->fetch();
+
+    if (!$row) {
+        return false;
+    }
+
+    if (((int)($row['is_active'] ?? 1)) !== 1) {
+        return false;
+    }
+
+    return empty($row['deleted_at']);
 }

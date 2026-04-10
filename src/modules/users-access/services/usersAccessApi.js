@@ -19,8 +19,8 @@ export const usersAccessApi = {
   /**
    * @returns {Promise<any>}
    */
-  async fetchUsers() {
-    return api.fetchUsers()
+  async fetchUsers(filters = {}) {
+    return api.fetchUsers(filters)
   },
 
   /**
@@ -44,8 +44,8 @@ export const usersAccessApi = {
    * @param {boolean} isActive
    * @returns {Promise<any>}
    */
-  async setUserActive(id, isActive) {
-    return api.setUserActive(id, isActive)
+  async setUserLifecycle(id, action) {
+    return api.setUserLifecycle(id, action)
   },
 
   /**

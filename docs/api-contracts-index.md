@@ -52,6 +52,9 @@ Compact navigation index for runtime API contracts.
   - `POST /api/master_data_operation_icon_upload.php`
 - Users and control plane:
   - `GET|POST|PUT|PATCH /api/users.php`
+  - Lifecycle additive query: `view=active|archived|all` (legacy aliases: `isActive`, `includeArchived`, `includeInactive`).
+  - Lifecycle PATCH action: `{ id, action: 'archive'|'restore'|'delete' }` with legacy alias `{ id, isActive: boolean }`.
+  - Delete is retained soft-delete (`deleted_at`) and returns `{ success, deletedId, deletedAt }`.
   - `GET|POST /api/role_permissions.php`
   - `GET|PATCH /api/module_registry.php`
   - `GET /api/audit_logs.php`

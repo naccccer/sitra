@@ -31,7 +31,9 @@ export const UsersListTable = ({
   onStartEditing,
   onCancelEditing,
   onSaveUser,
-  onToggleActive,
+  view,
+  onChangeView,
+  onLifecycleAction,
 }) => (
   <div dir="rtl">
     <DataTable
@@ -42,6 +44,10 @@ export const UsersListTable = ({
             <div>
               <div className="text-sm font-black text-[rgb(var(--ui-text))]">لیست کاربران</div>
               <div className="text-xs font-bold text-[rgb(var(--ui-text-muted))]">مدیریت نقش، وضعیت و مشخصات پایه کاربران در یک جدول مشترک</div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button size="sm" variant={view === 'active' ? 'primary' : 'secondary'} onClick={() => onChangeView('active')}>فعال</Button>
+              <Button size="sm" variant={view === 'archived' ? 'primary' : 'secondary'} onClick={() => onChangeView('archived')}>بایگانی</Button>
             </div>
           </FilterRow>
         </WorkspaceToolbar>
@@ -128,7 +134,7 @@ export const UsersListTable = ({
                 )}
               </DataTableCell>
               <DataTableCell align="center">
-                <Badge tone={user.isActive ? 'success' : 'danger'}>{user.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                <Badge tone={user.isActive ? 'success' : 'neutral'}>{user.isActive ? 'فعال' : 'بایگانی‌شده'}</Badge>
               </DataTableCell>
               <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatDateTime(user.createdAt)}</DataTableCell>
               <DataTableCell align="center" className="tabular-nums" dir="ltr">{formatDateTime(user.updatedAt)}</DataTableCell>
@@ -166,15 +172,36 @@ export const UsersListTable = ({
                 ) : (
                   <DataTableActions>
                     <IconButton action="edit" label="ویرایش کاربر" tooltip="ویرایش کاربر" onClick={() => onStartEditing(user)} />
-                    <IconButton
-                      action={user.isActive ? 'delete' : 'restore'}
-                      label={user.isActive ? 'غیرفعال‌کردن کاربر' : 'فعال‌سازی کاربر'}
-                      tooltip={user.isActive ? 'غیرفعال‌کردن کاربر' : 'فعال‌سازی کاربر'}
-                      onClick={() => onToggleActive(user)}
-                      disabled={isBusy || (isCurrentUser && user.isActive)}
-                    >
-                      {isBusy ? <Loader2 size={14} className="animate-spin" /> : null}
-                    </IconButton>
+                    {view === 'active' ? (
+                      <IconButton
+                        action="archive"
+                        label="بایگانی کاربر"
+                        tooltip="بایگانی کاربر"
+                        onClick={() => onLifecycleAction(user, 'archive')}
+                        disabled={isBusy || isCurrentUser}
+                      >
+                        {isBusy ? <Loader2 size={14} className="animate-spin" /> : null}
+                      </IconButton>
+                    ) : (
+                      <>
+                        <IconButton
+                          action="restore"
+                          label="بازگردانی کاربر"
+                          tooltip="بازگردانی کاربر"
+                          onClick={() => onLifecycleAction(user, 'restore')}
+                          disabled={isBusy}
+                        />
+                        <IconButton
+                          action="delete"
+                          label="حذف کاربر"
+                          tooltip="حذف کاربر"
+                          onClick={() => onLifecycleAction(user, 'delete')}
+                          disabled={isBusy}
+                        >
+                          {isBusy ? <Loader2 size={14} className="animate-spin" /> : null}
+                        </IconButton>
+                      </>
+                    )}
                   </DataTableActions>
                 )}
               </DataTableCell>
