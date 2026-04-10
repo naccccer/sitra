@@ -52,6 +52,9 @@ export const Button = forwardRef(({
 }, ref) => {
   const preset = getActionPreset(action);
   const resolvedVariant = variant || preset?.variant || 'secondary';
+  const resolvedSurface = surface === 'table' && ['danger', 'destructive', 'success', 'primary', 'accent', 'forest'].includes(resolvedVariant)
+    ? 'default'
+    : surface;
   const resolvedContent = children ?? preset?.label ?? null;
   const ResolvedLeadingIcon = LeadingIcon || (showActionIcon ? preset?.icon || null : null);
   const iconSize = size === 'sm' ? 14 : (size === 'iconSm' ? 14 : 16);
@@ -65,8 +68,8 @@ export const Button = forwardRef(({
         'focus-ring inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-md)] border font-black transition duration-[var(--motion-fast)] disabled:cursor-not-allowed disabled:border-[rgb(var(--ui-border-soft))] disabled:bg-[rgb(var(--ui-surface-muted))] disabled:text-[rgb(var(--ui-text-muted))] disabled:opacity-100',
         VARIANT_CLASSNAMES[resolvedVariant] || VARIANT_CLASSNAMES.secondary,
         SIZE_CLASSNAMES[size] || SIZE_CLASSNAMES.md,
-        SURFACE_CLASSNAMES[surface] || SURFACE_CLASSNAMES.default,
-        selected ? SELECTED_SURFACE_CLASSNAMES[surface] || '' : '',
+        SURFACE_CLASSNAMES[resolvedSurface] || SURFACE_CLASSNAMES.default,
+        selected ? SELECTED_SURFACE_CLASSNAMES[resolvedSurface] || '' : '',
         className,
       )}
       {...props}

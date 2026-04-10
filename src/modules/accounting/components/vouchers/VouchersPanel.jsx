@@ -114,8 +114,8 @@ export function VouchersPanel({ session }) {
       >
         <DataTableHead>
           <tr>
-            <DataTableHeaderCell>شماره</DataTableHeaderCell>
-            <DataTableHeaderCell>تاریخ</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">شماره</DataTableHeaderCell>
+            <DataTableHeaderCell align="center">تاریخ</DataTableHeaderCell>
             <DataTableHeaderCell>شرح</DataTableHeaderCell>
             <DataTableHeaderCell align="center">مبلغ بدهکار</DataTableHeaderCell>
             <DataTableHeaderCell>منبع</DataTableHeaderCell>
@@ -132,8 +132,8 @@ export function VouchersPanel({ session }) {
             const debitTotal = v.lines?.reduce((s, l) => s + l.debitAmount, 0) ?? 0
             return (
               <DataTableRow key={v.id}>
-                <DataTableCell tone="emphasis" className="font-mono tabular-nums" dir="ltr">{toPN(v.voucherNo)}</DataTableCell>
-                <DataTableCell className="tabular-nums text-[rgb(var(--ui-text-muted))]" dir="ltr">{toShamsiDisplay(v.voucherDate)}</DataTableCell>
+                <DataTableCell align="center" tone="emphasis" className="tabular-nums">{toPN(v.voucherNo)}</DataTableCell>
+                <DataTableCell align="center" className="tabular-nums text-[rgb(var(--ui-text-muted))]">{toShamsiDisplay(v.voucherDate)}</DataTableCell>
                 <DataTableCell className="max-w-[220px] truncate">{v.description || '-'}</DataTableCell>
                 <DataTableCell align="center" tone="emphasis" className="tabular-nums">{fmtAmount(debitTotal)}</DataTableCell>
                 <DataTableCell className="text-[rgb(var(--ui-text-muted))]">{v.sourceCode ?? v.sourceType ?? '-'}</DataTableCell>

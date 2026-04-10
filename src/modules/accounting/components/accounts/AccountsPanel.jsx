@@ -66,12 +66,10 @@ export function AccountsPanel({ session }) {
       <DataTable
         minWidthClass="min-w-[980px]"
         toolbar={(
-          <WorkspaceToolbar
-            embedded
-            actions={canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
-          >
-            <FilterRow className="justify-between gap-3">
-              <div className="flex flex-wrap items-center gap-3">
+          <WorkspaceToolbar embedded>
+            <FilterRow className="justify-start gap-3">
+              <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
+                {canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
                 <div className="w-full md:w-64">
                   <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="جستجو در کد یا نام..." size="sm" />
                 </div>
@@ -82,8 +80,8 @@ export function AccountsPanel({ session }) {
                   tooltip={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'}
                   onClick={() => setView((prev) => (prev === 'archived' ? 'active' : 'archived'))}
                 />
+                <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
               </div>
-              <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
             </FilterRow>
           </WorkspaceToolbar>
         )}
