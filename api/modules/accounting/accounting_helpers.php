@@ -85,6 +85,8 @@ function acc_account_from_row(array $row): array
         'isPostable'    => ((int)($row['is_postable'] ?? 0)) === 1,
         'isSystem'      => ((int)($row['is_system'] ?? 0)) === 1,
         'isActive'      => ((int)($row['is_active'] ?? 0)) === 1,
+        'isArchived'    => ((int)($row['is_active'] ?? 0)) !== 1 && empty($row['deleted_at']),
+        'deletedAt'     => isset($row['deleted_at']) && $row['deleted_at'] !== '' ? (string)$row['deleted_at'] : null,
         'notes'         => $row['notes'] ?? null,
         'createdAt'     => (string)($row['created_at'] ?? ''),
     ];

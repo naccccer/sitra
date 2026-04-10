@@ -50,6 +50,7 @@ function app_ensure_accounting_schema(PDO $pdo): void
             is_postable     TINYINT(1)   NOT NULL DEFAULT 0,
             is_system       TINYINT(1)   NOT NULL DEFAULT 0,
             is_active       TINYINT(1)   NOT NULL DEFAULT 1,
+            deleted_at      TIMESTAMP    NULL DEFAULT NULL,
             notes           TEXT         NULL,
             created_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
             updated_at      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -59,10 +60,30 @@ function app_ensure_accounting_schema(PDO $pdo): void
             KEY idx_acc_accounts_level    (level),
             KEY idx_acc_accounts_type     (account_type),
             KEY idx_acc_accounts_postable (is_postable, is_active),
+            KEY idx_acc_accounts_lifecycle (deleted_at, is_active),
             CONSTRAINT fk_acc_accounts_parent FOREIGN KEY (parent_id)
                 REFERENCES acc_accounts (id) ON UPDATE CASCADE ON DELETE RESTRICT
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
     );
+
+
+    try {
+        $deletedAtColumn = $pdo->query("SHOW COLUMNS FROM acc_accounts LIKE 'deleted_at'");
+        if (!$deletedAtColumn || !$deletedAtColumn->fetch()) {
+            $pdo->exec("ALTER TABLE acc_accounts ADD COLUMN deleted_at TIMESTAMP NULL DEFAULT NULL AFTER is_active");
+        }
+    } catch (Throwable $e) {
+        // runtime compatibility
+    }
+
+    try {
+        $lifecycleIndex = $pdo->query("SHOW INDEX FROM acc_accounts WHERE Key_name = 'idx_acc_accounts_lifecycle'");
+        if (!$lifecycleIndex || !$lifecycleIndex->fetch()) {
+            $pdo->exec("CREATE INDEX idx_acc_accounts_lifecycle ON acc_accounts (deleted_at, is_active)");
+        }
+    } catch (Throwable $e) {
+        // runtime compatibility
+    }
 
     // ── Vouchers / Journal Entries (اسناد حسابداری) ──────────────────
     $pdo->exec(

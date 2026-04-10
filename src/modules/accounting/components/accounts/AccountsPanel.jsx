@@ -35,15 +35,15 @@ export function AccountsPanel({ session }) {
   const canWrite = permissions.includes('accounting.accounts.write')
 
   const [q, setQ] = useState('')
-  const [includeInactive, setIncludeInactive] = useState(false)
+  const [view, setView] = useState('active')
   const [createModal, setCreateModal] = useState(false)
   const [editTarget, setEditTarget] = useState(null)
 
-  const { accounts, loading, error, reload } = useAccounts({ q, includeInactive })
+  const { accounts, loading, error, reload } = useAccounts({ q, view })
 
-  const handleToggleActive = async (acc) => {
+  const handleLifecycleAction = async (acc, action) => {
     try {
-      await accountingApi.patchAccount({ id: acc.id, action: 'toggle_active', isActive: !acc.isActive })
+      await accountingApi.patchAccount({ id: acc.id, action })
       reload()
     } catch (e) {
       alert(e.message)
@@ -75,10 +75,13 @@ export function AccountsPanel({ session }) {
                 <div className="w-full md:w-64">
                   <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="جستجو در کد یا نام..." size="sm" />
                 </div>
-                <label className="flex items-center gap-1.5 text-xs font-bold text-[rgb(var(--ui-text-muted))]">
-                  <input type="checkbox" checked={includeInactive} onChange={(event) => setIncludeInactive(event.target.checked)} />
-                  شامل غیرفعال
-                </label>
+                <IconButton
+                  action="archive"
+                  selected={view === 'archived'}
+                  label={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'}
+                  tooltip={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'}
+                  onClick={() => setView((prev) => (prev === 'archived' ? 'active' : 'archived'))}
+                />
               </div>
               <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
             </FilterRow>
@@ -115,7 +118,7 @@ export function AccountsPanel({ session }) {
                 <Badge tone={acc.isPostable ? 'success' : 'neutral'}>{acc.isPostable ? 'بله' : 'خیر'}</Badge>
               </DataTableCell>
               <DataTableCell align="center">
-                <Badge tone={acc.isActive ? 'info' : 'danger'}>{acc.isActive ? 'فعال' : 'غیرفعال'}</Badge>
+                <Badge tone={acc.isActive ? 'info' : 'neutral'}>{acc.isActive ? 'فعال' : 'بایگانی‌شده'}</Badge>
               </DataTableCell>
               {canWrite ? (
                 <DataTableCell align="center">
@@ -126,12 +129,29 @@ export function AccountsPanel({ session }) {
                         <Button size="sm" variant="secondary" onClick={() => handleTogglePostable(acc)}>
                           {acc.isPostable ? 'غیرقابل‌ثبت' : 'قابل‌ثبت'}
                         </Button>
-                        <IconButton
-                          action={acc.isActive ? 'delete' : 'restore'}
-                          label={acc.isActive ? 'غیرفعال‌کردن حساب' : 'فعال‌کردن حساب'}
-                          tooltip={acc.isActive ? 'غیرفعال‌کردن حساب' : 'فعال‌کردن حساب'}
-                          onClick={() => handleToggleActive(acc)}
-                        />
+                        {view === 'active' ? (
+                          <IconButton
+                            action="archive"
+                            label="بایگانی حساب"
+                            tooltip="بایگانی حساب"
+                            onClick={() => handleLifecycleAction(acc, 'archive')}
+                          />
+                        ) : (
+                          <>
+                            <IconButton
+                              action="restore"
+                              label="بازگردانی حساب"
+                              tooltip="بازگردانی حساب"
+                              onClick={() => handleLifecycleAction(acc, 'restore')}
+                            />
+                            <IconButton
+                              action="delete"
+                              label="حذف حساب"
+                              tooltip="حذف حساب"
+                              onClick={() => handleLifecycleAction(acc, 'delete')}
+                            />
+                          </>
+                        )}
                       </>
                     ) : null}
                   </DataTableActions>

@@ -47,7 +47,7 @@ export const UsersListTable = ({
             </div>
             <div className="flex items-center gap-2">
               <Button size="sm" variant={view === 'active' ? 'primary' : 'secondary'} onClick={() => onChangeView('active')}>فعال</Button>
-              <Button size="sm" variant={view === 'archived' ? 'primary' : 'secondary'} onClick={() => onChangeView('archived')}>بایگانی</Button>
+              <IconButton action="archive" selected={view === 'archived'} label={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'} tooltip={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'} onClick={() => onChangeView(view === 'archived' ? 'active' : 'archived')} />
             </div>
           </FilterRow>
         </WorkspaceToolbar>
