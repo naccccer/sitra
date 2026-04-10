@@ -126,7 +126,7 @@ export function FiscalYearPanel({ session }) {
       <Card padding="md" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="text-sm font-black text-slate-900">سال‌های مالی</div>
+            <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">سال‌های مالی</div>
             <div className="text-xs font-bold text-slate-500">مدیریت بازه‌های مالی، سال پیش‌فرض و وضعیت باز/بسته.</div>
           </div>
           <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
@@ -217,7 +217,7 @@ export function FiscalYearPanel({ session }) {
       {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
         <div>
-          <div className="text-sm font-black text-slate-900">تب‌های فعال</div>
+          <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">تب‌های فعال</div>
           <div className="text-xs font-bold text-slate-500">
             تب‌های غیرفعال در منوی بالای صفحه نمایش داده نمی‌شوند.
           </div>
@@ -227,7 +227,7 @@ export function FiscalYearPanel({ session }) {
             const enabled = visibility === null ? true : (visibility[tab.id] !== false)
             return (
               <label key={tab.id}
-                className={`flex min-w-[170px] flex-none cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors
+                className={`flex min-w-[132px] flex-none cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-bold transition-colors
                   ${enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                 <input
                   type="checkbox"
@@ -250,7 +250,7 @@ export function FiscalYearPanel({ session }) {
       {/* Bridge account map */}
       {canWrite && (
         <Card padding="md" className="space-y-3">
-          <div className="text-sm font-black text-slate-900">تنظیم حساب‌های پل فروش</div>
+          <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">تنظیم حساب‌های پل فروش</div>
           <div className="text-xs font-bold text-slate-500">
             این حساب‌ها هنگام همگام‌سازی پرداخت‌های فروش استفاده می‌شوند.
           </div>
