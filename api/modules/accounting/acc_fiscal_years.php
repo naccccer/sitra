@@ -85,7 +85,7 @@ if ($method === 'POST') {
     app_json(['success' => true, 'fiscalYear' => $row ? acc_fiscal_year_from_row($row) : null], 201);
 }
 
-// ─── PATCH (set_default / close) ──────────────────────────────────────────────
+// ─── PATCH (set_default / close / update / delete) ───────────────────────────
 $id     = acc_parse_id($payload['id'] ?? null);
 $action = acc_normalize_text($payload['action'] ?? '');
 
@@ -112,8 +112,46 @@ if ($action === 'set_default') {
         'UPDATE acc_fiscal_years SET status = :s, closed_by_user_id = :uid, closed_at = CURRENT_TIMESTAMP WHERE id = :id'
     )->execute(['s' => 'closed', 'uid' => $actor['id'], 'id' => $id]);
     app_audit_log($pdo, 'accounting.fiscal_year.closed', 'acc_fiscal_years', (string)$id, [], $actor);
+} elseif ($action === 'update') {
+    $title     = acc_normalize_text($payload['title'] ?? '');
+    $startDate = acc_parse_date(acc_normalize_text($payload['startDate'] ?? ''));
+    $endDate   = acc_parse_date(acc_normalize_text($payload['endDate'] ?? ''));
+    if ($title === '' || $startDate === null || $endDate === null) {
+        app_json(['success' => false, 'error' => 'title, startDate and endDate are required.'], 400);
+    }
+    if ($startDate >= $endDate) {
+        app_json(['success' => false, 'error' => 'startDate must be before endDate.'], 400);
+    }
+    $pdo->prepare(
+        'UPDATE acc_fiscal_years SET title = :title, start_date = :start, end_date = :end WHERE id = :id'
+    )->execute([
+        'title' => $title,
+        'start' => $startDate,
+        'end' => $endDate,
+        'id' => $id,
+    ]);
+    app_audit_log($pdo, 'accounting.fiscal_year.updated', 'acc_fiscal_years', (string)$id, ['title' => $title], $actor);
+} elseif ($action === 'delete') {
+    $voucherCountStmt = $pdo->prepare('SELECT COUNT(*) AS cnt FROM acc_vouchers WHERE fiscal_year_id = :id');
+    $voucherCountStmt->execute(['id' => $id]);
+    $voucherCount = (int)($voucherCountStmt->fetch()['cnt'] ?? 0);
+    if ($voucherCount > 0) {
+        app_json(['success' => false, 'error' => 'Fiscal year has vouchers and cannot be deleted.'], 400);
+    }
+    $wasDefault = (int)($current['is_default'] ?? 0) === 1;
+    $pdo->prepare('DELETE FROM acc_fiscal_years WHERE id = :id')->execute(['id' => $id]);
+    if ($wasDefault) {
+        $fallbackStmt = $pdo->query("SELECT id FROM acc_fiscal_years WHERE status = 'open' ORDER BY start_date DESC, id DESC LIMIT 1");
+        $fallbackId = (int)($fallbackStmt ? ($fallbackStmt->fetch()['id'] ?? 0) : 0);
+        if ($fallbackId > 0) {
+            $pdo->exec('UPDATE acc_fiscal_years SET is_default = 0');
+            $pdo->prepare('UPDATE acc_fiscal_years SET is_default = 1 WHERE id = :id')->execute(['id' => $fallbackId]);
+        }
+    }
+    app_audit_log($pdo, 'accounting.fiscal_year.deleted', 'acc_fiscal_years', (string)$id, ['wasDefault' => $wasDefault], $actor);
+    app_json(['success' => true, 'deletedId' => (string)$id]);
 } else {
-    app_json(['success' => false, 'error' => 'Unknown action. Use set_default or close.'], 400);
+    app_json(['success' => false, 'error' => 'Unknown action. Use set_default, close, update or delete.'], 400);
 }
 
 $fetch->execute(['id' => $id]);

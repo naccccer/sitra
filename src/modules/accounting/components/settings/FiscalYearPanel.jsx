@@ -29,14 +29,12 @@ export function FiscalYearPanel({ session }) {
   const { fiscalYears, loading, error, reload } = useFiscalYears()
   const { accounts: postableAccounts } = useAccounts({ postableOnly: true })
 
-  // New fiscal year form
   const [title, setTitle] = useState('')
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [saving, setSaving] = useState(false)
   const [formError, setFormError] = useState(null)
 
-  // Bridge account map
   const [cashAccountId, setCashAccountId] = useState('')
   const [bankAccountId, setBankAccountId] = useState('')
   const [checkAccountId, setCheckAccountId] = useState('')
@@ -44,14 +42,28 @@ export function FiscalYearPanel({ session }) {
   const [mapSaving, setMapSaving] = useState(false)
   const [mapSaved, setMapSaved] = useState(false)
   const [closeCandidate, setCloseCandidate] = useState(null)
+  const [deleteCandidate, setDeleteCandidate] = useState(null)
+  const [editTarget, setEditTarget] = useState(null)
 
-  const handleCreateFY = async (e) => {
+  const resetFiscalYearForm = () => {
+    setTitle('')
+    setStartDate('')
+    setEndDate('')
+    setEditTarget(null)
+    setFormError(null)
+  }
+
+  const handleUpsertFY = async (e) => {
     e.preventDefault()
     setSaving(true)
     setFormError(null)
     try {
-      await accountingApi.createFiscalYear({ title, startDate, endDate })
-      setTitle(''); setStartDate(''); setEndDate('')
+      if (editTarget) {
+        await accountingApi.patchFiscalYear({ id: editTarget.id, action: 'update', title, startDate, endDate })
+      } else {
+        await accountingApi.createFiscalYear({ title, startDate, endDate })
+      }
+      resetFiscalYearForm()
       reload()
     } catch (e) {
       setFormError(e.message)
@@ -73,6 +85,23 @@ export function FiscalYearPanel({ session }) {
       setCloseCandidate(null)
       reload()
     } catch (e) { alert(e.message) }
+  }
+
+  const handleDelete = async (id) => {
+    try {
+      await accountingApi.patchFiscalYear({ id, action: 'delete' })
+      setDeleteCandidate(null)
+      if (editTarget?.id === id) resetFiscalYearForm()
+      reload()
+    } catch (e) { alert(e.message) }
+  }
+
+  const handleStartEdit = (fy) => {
+    setEditTarget(fy)
+    setTitle(fy.title || '')
+    setStartDate(fy.startDate || '')
+    setEndDate(fy.endDate || '')
+    setFormError(null)
   }
 
   const handleSaveAccountMap = async () => {
@@ -104,7 +133,6 @@ export function FiscalYearPanel({ session }) {
         </div>
         {error && <div className="text-xs font-bold text-rose-600">خطا: {error}</div>}
         {loading && <div className="text-xs text-slate-500">در حال بارگذاری...</div>}
-
         {fiscalYears.length > 0 && (
           <DataTable className="border border-[rgb(var(--ui-border-soft))]" minWidthClass="min-w-[720px]">
             <DataTableHead>
@@ -134,9 +162,11 @@ export function FiscalYearPanel({ session }) {
                         {!fy.isDefault && fy.status === 'open' && (
                           <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
                         )}
+                        <Button size="sm" variant="ghost" onClick={() => handleStartEdit(fy)}>ویرایش</Button>
                         {fy.status === 'open' && (
                           <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
                         )}
+                        <Button size="sm" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)}>حذف</Button>
                       </DataTableActions>
                     </DataTableCell>
                   )}
@@ -147,8 +177,8 @@ export function FiscalYearPanel({ session }) {
         )}
 
         {canWrite && (
-          <form onSubmit={handleCreateFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/45 p-3">
-            <div className="text-xs font-black text-slate-700">افزودن سال مالی جدید</div>
+          <form onSubmit={handleUpsertFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/45 p-3">
+            <div className="text-xs font-black text-slate-700">{editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}</div>
             {formError && <div className="text-xs font-bold text-rose-600">{formError}</div>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
@@ -172,9 +202,14 @@ export function FiscalYearPanel({ session }) {
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
               </div>
             </div>
-            <Button type="submit" variant="primary" size="sm" disabled={saving}>
-              {saving ? 'در حال ذخیره...' : 'ایجاد سال مالی'}
-            </Button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button type="submit" variant="primary" size="sm" disabled={saving}>
+                {saving ? 'در حال ذخیره...' : editTarget ? 'ذخیره تغییرات' : 'ایجاد سال مالی'}
+              </Button>
+              {editTarget ? (
+                <Button type="button" variant="ghost" size="sm" onClick={resetFiscalYearForm}>انصراف</Button>
+              ) : null}
+            </div>
           </form>
         )}
       </Card>
@@ -187,12 +222,12 @@ export function FiscalYearPanel({ session }) {
             تب‌های غیرفعال در منوی بالای صفحه نمایش داده نمی‌شوند.
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="flex flex-wrap items-center gap-2">
           {CONFIGURABLE_TABS.map((tab) => {
             const enabled = visibility === null ? true : (visibility[tab.id] !== false)
             return (
               <label key={tab.id}
-                className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors
+                className={`flex min-w-[170px] flex-none cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-xs font-bold transition-colors
                   ${enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
                 <input
                   type="checkbox"
@@ -219,14 +254,14 @@ export function FiscalYearPanel({ session }) {
           <div className="text-xs font-bold text-slate-500">
             این حساب‌ها هنگام همگام‌سازی پرداخت‌های فروش استفاده می‌شوند.
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className="flex flex-wrap items-end gap-3">
             {[
               { label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
               { label: 'حساب بانک (کارت/انتقال)', value: bankAccountId, setter: setBankAccountId },
               { label: 'حساب اسناد دریافتنی (چک)', value: checkAccountId, setter: setCheckAccountId },
               { label: 'حساب دریافتنی تجاری (AR)', value: arAccountId, setter: setArAccountId },
             ].map(({ label, value, setter }) => (
-              <div key={label}>
+              <div key={label} className="min-w-[220px] flex-1 sm:max-w-[280px]">
                 <label className="block text-xs font-black text-slate-600 mb-1">{label}</label>
                 <Select size="sm" value={value} onChange={(e) => setter(e.target.value)}>
                   <option value="">-- انتخاب حساب --</option>
@@ -250,6 +285,14 @@ export function FiscalYearPanel({ session }) {
         confirmLabel="بستن سال"
         onCancel={() => setCloseCandidate(null)}
         onConfirm={() => closeCandidate ? handleClose(closeCandidate) : undefined}
+      />
+      <ConfirmDialog
+        isOpen={Boolean(deleteCandidate)}
+        title="حذف سال مالی"
+        description="این سال مالی حذف شود؟ این عمل فقط برای سال‌هایی که سند ندارند مجاز است."
+        confirmLabel="حذف سال"
+        onCancel={() => setDeleteCandidate(null)}
+        onConfirm={() => deleteCandidate ? handleDelete(deleteCandidate) : undefined}
       />
     </div>
   )

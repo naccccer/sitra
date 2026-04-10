@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Search } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -70,12 +71,19 @@ export function AccountsPanel({ session }) {
             <FilterRow className="justify-start gap-3">
               <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
                 {canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
-                <div className="w-full md:w-64">
-                  <Input value={q} onChange={(event) => setQ(event.target.value)} placeholder="جستجو در کد یا نام..." size="sm" />
+                <div className="relative w-64 shrink-0">
+                  <Search size={14} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[rgb(var(--ui-text-muted))]" />
+                  <Input
+                    value={q}
+                    onChange={(event) => setQ(event.target.value)}
+                    placeholder="جستجو در کد یا نام..."
+                    size="sm"
+                    className="bg-white/90 pr-9 text-[12px]"
+                  />
                 </div>
                 <IconButton
                   action="archive"
-                  selected={view === 'archived'}
+                  variant={view === 'archived' ? 'primary' : 'secondary'}
                   label={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'}
                   tooltip={view === 'archived' ? 'بازگشت به فعال‌ها' : 'نمایش بایگانی'}
                   onClick={() => setView((prev) => (prev === 'archived' ? 'active' : 'archived'))}

@@ -28,6 +28,9 @@ export function ShamsiDateInput({ value, onChange, className, placeholder = 'Ø§Ù
       onChange={handleChange}
       calendar={persian}
       locale={persianFa}
+      portal
+      zIndex={1200}
+      fixMainPosition
       calendarPosition="bottom-right"
       format="YYYY/MM/DD"
       editable={false}

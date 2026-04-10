@@ -76,6 +76,8 @@ Additive compatibility fields `factoryLimits.minimumChargeEnabled` and `jumboRul
 - `accounting.reports.v1`
 - `accounting.sales_bridge.v1`
 
+`accounting.fiscal_years.v1` PATCH supports additive lifecycle actions `set_default`, `close`, `update`, and `delete`. Delete is guarded and rejected when vouchers exist for that fiscal year.
+
 ### Users Access
 - `users_access.users_list_write.v1`
 - `users_access.role_permissions.v1`
