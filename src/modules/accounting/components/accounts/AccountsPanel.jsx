@@ -11,7 +11,6 @@ import {
   DataTableHeaderCell,
   DataTableRow,
   DataTableState,
-  FilterRow,
   IconButton,
   InlineAlert,
   Input,
@@ -67,8 +66,9 @@ export function AccountsPanel({ session }) {
       <DataTable
         minWidthClass="min-w-[980px]"
         toolbar={(
-          <WorkspaceToolbar embedded>
-            <FilterRow className="justify-start gap-3" dir="ltr">
+          <WorkspaceToolbar
+            embedded
+            actions={(
               <div className="flex w-fit shrink-0 flex-nowrap items-center gap-2" dir="ltr">
                 {canWrite ? <Button action="create" showActionIcon size="sm" onClick={() => setCreateModal(true)}>افزودن حساب</Button> : null}
                 <div className="relative w-64 shrink-0">
@@ -90,8 +90,8 @@ export function AccountsPanel({ session }) {
                 />
                 <IconButton action="reload" label="بازخوانی" tooltip="بازخوانی" onClick={reload} disabled={loading} loading={loading} />
               </div>
-            </FilterRow>
-          </WorkspaceToolbar>
+            )}
+          />
         )}
       >
         <DataTableHead>

@@ -126,7 +126,7 @@ export function FiscalYearPanel({ session }) {
       <Card padding="md" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">سال‌های مالی</div>
+            <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">سال‌های مالی</div>
             <div className="text-xs font-bold text-slate-500">مدیریت بازه‌های مالی، سال پیش‌فرض و وضعیت باز/بسته.</div>
           </div>
           <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
@@ -217,7 +217,7 @@ export function FiscalYearPanel({ session }) {
       {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
         <div>
-          <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">تب‌های فعال</div>
+          <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">تب‌های فعال</div>
           <div className="text-xs font-bold text-slate-500">
             تب‌های غیرفعال در منوی بالای صفحه نمایش داده نمی‌شوند.
           </div>
@@ -250,7 +250,7 @@ export function FiscalYearPanel({ session }) {
       {/* Bridge account map */}
       {canWrite && (
         <Card padding="md" className="space-y-3">
-          <div className="inline-flex rounded-full bg-[rgb(var(--ui-primary))] px-3 py-1 text-sm font-black text-white">تنظیم حساب‌های پل فروش</div>
+          <div className="rounded-[var(--radius-lg)] bg-[linear-gradient(180deg,rgba(16,20,30,0.98),rgba(8,12,24,0.96))] px-3 py-2 text-sm font-black text-white shadow-[inset_0_-1px_0_rgba(255,255,255,0.08),0_8px_20px_rgba(18,33,74,0.18)]">تنظیم حساب‌های پل فروش</div>
           <div className="text-xs font-bold text-slate-500">
             این حساب‌ها هنگام همگام‌سازی پرداخت‌های فروش استفاده می‌شوند.
           </div>
