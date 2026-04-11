@@ -12,6 +12,7 @@ import {
   DataTableHeaderCell,
   DataTableRow,
   IconButton,
+  SectionHeader,
   Input,
   Select,
 } from '@/components/shared/ui'
@@ -45,6 +46,13 @@ export function FiscalYearPanel({ session }) {
   const [closeCandidate, setCloseCandidate] = useState(null)
   const [deleteCandidate, setDeleteCandidate] = useState(null)
   const [editTarget, setEditTarget] = useState(null)
+
+  const bridgeAccountFields = [
+    { label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
+    { label: 'حساب بانک (کارت/انتقال)', value: bankAccountId, setter: setBankAccountId },
+    { label: 'حساب اسناد دریافتنی (چک)', value: checkAccountId, setter: setCheckAccountId },
+    { label: 'حساب دریافتنی تجاری (AR)', value: arAccountId, setter: setArAccountId },
+  ]
 
   const resetFiscalYearForm = () => {
     setTitle('')
@@ -124,13 +132,12 @@ export function FiscalYearPanel({ session }) {
   return (
     <div className="space-y-4">
       {/* Fiscal years list */}
-      <Card padding="md" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-black text-[rgb(var(--ui-text))]">سال‌های مالی</div>
-          </div>
-          <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
-        </div>
+      <Card padding="md" className="space-y-4">
+        <SectionHeader
+          title="سال‌های مالی"
+          description="تعریف، ویرایش و وضعیت سال‌های مالی در یک نمای یکپارچه."
+          action={<Button size="sm" variant="tertiary" onClick={reload} disabled={loading}>بازخوانی</Button>}
+        />
         {error && <div className="text-xs font-bold text-rose-600">خطا: {error}</div>}
         {loading && <div className="text-xs text-slate-500">در حال بارگذاری...</div>}
         {fiscalYears.length > 0 && (
@@ -160,13 +167,13 @@ export function FiscalYearPanel({ session }) {
                     <DataTableCell align="center">
                       <DataTableActions>
                         {!fy.isDefault && fy.status === 'open' && (
-                          <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
+                          <Button size="sm" variant="tertiary" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
                         )}
-                        <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
+                        <IconButton action="edit" size="iconSm" surface="table" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
                         {fy.status === 'open' && (
-                          <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
+                          <Button size="sm" variant="destructive" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
                         )}
-                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)} />
+                        <IconButton action="delete" size="iconSm" surface="table" label="حذف سال مالی" tooltip="حذف سال مالی" onClick={() => setDeleteCandidate(fy.id)} />
                       </DataTableActions>
                     </DataTableCell>
                   )}
@@ -177,8 +184,8 @@ export function FiscalYearPanel({ session }) {
         )}
 
         {canWrite && (
-          <form onSubmit={handleUpsertFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/45 p-3">
-            <div className="text-xs font-black text-slate-700">{editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}</div>
+          <form onSubmit={handleUpsertFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))]/40 p-3">
+            <div className="text-xs font-black text-[rgb(var(--ui-text))]">{editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}</div>
             {formError && <div className="text-xs font-bold text-rose-600">{formError}</div>}
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div>
@@ -207,7 +214,7 @@ export function FiscalYearPanel({ session }) {
                 {saving ? 'در حال ذخیره...' : editTarget ? 'ذخیره تغییرات' : 'ایجاد سال مالی'}
               </Button>
               {editTarget ? (
-                <Button type="button" variant="ghost" size="sm" onClick={resetFiscalYearForm}>انصراف</Button>
+                <Button type="button" variant="tertiary" size="sm" onClick={resetFiscalYearForm}>انصراف</Button>
               ) : null}
             </div>
           </form>
@@ -216,9 +223,7 @@ export function FiscalYearPanel({ session }) {
 
       {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
-        <div>
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تب‌های فعال</div>
-        </div>
+        <SectionHeader title="تب‌های فعال" description="کنترل نمایش تب‌های حسابداری برای کاربران." />
         <div className="flex flex-wrap items-center gap-2">
           {CONFIGURABLE_TABS.map((tab) => {
             const enabled = visibility === null ? true : (visibility[tab.id] !== false)
@@ -247,14 +252,9 @@ export function FiscalYearPanel({ session }) {
       {/* Bridge account map */}
       {canWrite && (
         <Card padding="md" className="space-y-3">
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تنظیم حساب‌های پل فروش</div>
+          <SectionHeader title="تنظیم حساب‌های پل فروش" description="اتصال جریان‌های فروش به حساب‌های حسابداری استاندارد." />
           <div className="flex flex-wrap items-end gap-3">
-            {[
-              { label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
-              { label: 'حساب بانک (کارت/انتقال)', value: bankAccountId, setter: setBankAccountId },
-              { label: 'حساب اسناد دریافتنی (چک)', value: checkAccountId, setter: setCheckAccountId },
-              { label: 'حساب دریافتنی تجاری (AR)', value: arAccountId, setter: setArAccountId },
-            ].map(({ label, value, setter }) => (
+            {bridgeAccountFields.map(({ label, value, setter }) => (
               <div key={label} className="min-w-[220px] flex-1 sm:max-w-[280px]">
                 <label className="block text-xs font-black text-slate-600 mb-1">{label}</label>
                 <Select size="sm" value={value} onChange={(e) => setter(e.target.value)}>
