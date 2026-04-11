@@ -159,19 +159,19 @@ export function FiscalYearPanel({ session }) {
                   </DataTableCell>
                   {canWrite && (
                     <DataTableCell align="center">
-                      <DataTableActions className="grid grid-cols-4 gap-0.5">
+                      <DataTableActions className="grid grid-cols-4 gap-0">
                         {!fy.isDefault && fy.status === 'open' ? (
-                          <Button size="icon" variant="ghost" onClick={() => handleSetDefault(fy.id)} title="انتخاب سال پیش‌فرض" aria-label="انتخاب سال پیش‌فرض" className="text-amber-600 hover:bg-amber-50">
-                            <Star className="h-4 w-4" />
+                          <Button size="iconSm" variant="ghost" onClick={() => handleSetDefault(fy.id)} title="انتخاب سال پیش‌فرض" aria-label="انتخاب سال پیش‌فرض" className="text-amber-600 hover:bg-amber-50">
+                            <Star className="h-3.5 w-3.5" />
                           </Button>
-                        ) : <span aria-hidden="true" className="inline-block h-9 w-9 shrink-0" />}
+                        ) : <span aria-hidden="true" className="inline-block h-8 w-8 shrink-0" />}
                         {fy.status === 'open' ? (
-                          <Button size="icon" variant="ghost" onClick={() => setCloseCandidate(fy.id)} title="بستن سال مالی" aria-label="بستن سال مالی" className="text-slate-600 hover:bg-slate-100">
-                            <Lock className="h-4 w-4" />
+                          <Button size="iconSm" variant="ghost" onClick={() => setCloseCandidate(fy.id)} title="بستن سال مالی" aria-label="بستن سال مالی" className="text-slate-600 hover:bg-slate-100">
+                            <Lock className="h-3.5 w-3.5" />
                           </Button>
-                        ) : <span aria-hidden="true" className="inline-block h-9 w-9 shrink-0" />}
-                        <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
-                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" onClick={() => setDeleteCandidate(fy.id)} />
+                        ) : <span aria-hidden="true" className="inline-block h-8 w-8 shrink-0" />}
+                        <IconButton action="edit" size="iconSm" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
+                        <IconButton action="delete" size="iconSm" label="حذف سال مالی" tooltip="حذف سال مالی" variant="tertiary" className="!border-red-200 !text-red-600 hover:!bg-red-50 hover:!text-red-700" onClick={() => setDeleteCandidate(fy.id)} />
                       </DataTableActions>
                     </DataTableCell>
                   )}
@@ -185,26 +185,28 @@ export function FiscalYearPanel({ session }) {
           <form onSubmit={handleUpsertFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/45 p-3">
             <div className="text-xs font-black text-slate-700">{editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}</div>
             {formError && <div className="text-xs font-bold text-rose-600">{formError}</div>}
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-2">
               <div>
                 <label className="block text-xs font-black text-slate-600 mb-1">عنوان</label>
                 <Input
                   size="sm"
                   value={title}
-                  onChange={(e) => setTitle(e.target.value)}
+                  onChange={(e) => setTitle(toPN(e.target.value))}
                   placeholder="مثال: سال مالی ۱۴۰۳"
                   required
                 />
               </div>
-              <div>
-                <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
-                <ShamsiDateInput value={startDate} onChange={setStartDate}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
-                <ShamsiDateInput value={endDate} onChange={setEndDate}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
+              <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                <div>
+                  <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
+                  <ShamsiDateInput value={startDate} onChange={setStartDate}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
+                  <ShamsiDateInput value={endDate} onChange={setEndDate}
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
+                </div>
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-2">
