@@ -158,7 +158,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
         <div
           id={`${item.id}-submenu`}
           aria-hidden={!isGroupOpen}
-          className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${isGroupOpen ? 'mt-1 max-h-64 opacity-100' : 'mt-0 max-h-0 opacity-0'}`}
+          className={`overflow-hidden transition-[max-height,opacity,margin] duration-300 ease-out ${isGroupOpen ? 'mt-1 max-h-[70vh] opacity-100' : 'mt-0 max-h-0 opacity-0'}`}
         >
           <div
             className={`relative ms-4 space-y-1.5 ps-4 transition-[transform,opacity] duration-300 ease-out before:absolute before:bottom-4 before:right-0 before:top-3 before:w-px before:bg-[linear-gradient(180deg,rgba(20,20,24,0.45),rgba(20,20,24,0.18)_82%,transparent)] before:content-[''] ${isGroupOpen ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'}`}
@@ -177,7 +177,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   return (
     <aside
       style={{ '--sidebar-shell-width': desktopSidebarWidth }}
-      className={`app-shell-nav print-hide fixed inset-y-0 left-0 z-40 flex w-[17.75rem] shrink-0 flex-col overflow-hidden border-r border-white/72 px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:static lg:z-auto lg:h-full lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[30px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+      className={`app-shell-nav print-hide fixed inset-y-0 left-0 z-40 flex w-[17.75rem] shrink-0 flex-col overflow-hidden border-r border-white/72 px-3 py-3 shadow-[var(--shadow-overlay)] backdrop-blur-[26px] transition-[width,min-width,flex-basis,padding,transform,border-radius,box-shadow] duration-300 ease-out lg:sticky lg:top-3 lg:z-auto lg:h-[calc(100vh-1.5rem)] lg:w-[var(--sidebar-shell-width)] lg:min-w-[var(--sidebar-shell-width)] lg:basis-[var(--sidebar-shell-width)] lg:translate-x-0 lg:rounded-[30px] lg:border lg:border-white/72 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
       dir="rtl"
     >
       <button type="button" onClick={onCloseMobile} title="بستن منو" className="shell-mobile-dismiss focus-ring mb-2 inline-flex h-10 w-10 items-center justify-center self-end rounded-[var(--radius-lg)] text-slate-700 lg:hidden">
@@ -235,7 +235,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
             type="button"
             onClick={onLogout}
             aria-label="خروج"
-            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-[rgb(var(--ui-text-muted))] transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-[rgb(var(--ui-border-soft))] hover:bg-[rgb(var(--ui-surface-muted))]/76 hover:text-[rgb(var(--ui-primary))] ${isRailCollapsed ? 'h-[var(--shell-rail-item-size)] w-[var(--shell-rail-item-size)] justify-center px-0' : 'gap-2'}`}
+            className={`focus-ring flex h-11 w-full items-center rounded-[var(--radius-xl)] border border-transparent bg-transparent px-3 text-[13px] font-black text-red-600 transition duration-[var(--motion-fast)] hover:-translate-y-px hover:border-red-200 hover:bg-red-50 hover:text-red-700 ${isRailCollapsed ? 'h-[var(--shell-rail-item-size)] w-[var(--shell-rail-item-size)] justify-center px-0' : 'gap-2'}`}
           >
             <SidebarItemIcon icon={LogOut} size={16} />
             <span
