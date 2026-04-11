@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { Lock, Star } from 'lucide-react'
 import {
   Badge,
   Button,
@@ -15,6 +16,7 @@ import {
   Input,
   Select,
 } from '@/components/shared/ui'
+import { toPN } from '@/utils/helpers'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
 import { useAccounts } from '../../hooks/useAccounts'
 import { accountingApi } from '../../services/accountingApi'
@@ -121,14 +123,13 @@ export function FiscalYearPanel({ session }) {
     finally { setMapSaving(false) }
   }
 
+  const renderAccountOptionLabel = (account) => `${toPN(account.code)} - ${account.name}`
+
   return (
     <div className="space-y-4">
-      {/* Fiscal years list */}
       <Card padding="md" className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-black text-[rgb(var(--ui-text))]">سال‌های مالی</div>
-          </div>
+          <div className="text-sm font-black text-[rgb(var(--ui-text))]">سال‌های مالی</div>
           <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
         </div>
         {error && <div className="text-xs font-bold text-rose-600">خطا: {error}</div>}
@@ -160,13 +161,17 @@ export function FiscalYearPanel({ session }) {
                     <DataTableCell align="center">
                       <DataTableActions>
                         {!fy.isDefault && fy.status === 'open' && (
-                          <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
+                          <Button size="icon" variant="ghost" onClick={() => handleSetDefault(fy.id)} title="انتخاب سال پیش‌فرض" aria-label="انتخاب سال پیش‌فرض" className="text-amber-600 hover:bg-amber-50">
+                            <Star className="h-4 w-4" />
+                          </Button>
                         )}
                         <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
                         {fy.status === 'open' && (
-                          <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
+                          <Button size="icon" variant="ghost" onClick={() => setCloseCandidate(fy.id)} title="بستن سال مالی" aria-label="بستن سال مالی" className="text-slate-600 hover:bg-slate-100">
+                            <Lock className="h-4 w-4" />
+                          </Button>
                         )}
-                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)} />
+                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" onClick={() => setDeleteCandidate(fy.id)} />
                       </DataTableActions>
                     </DataTableCell>
                   )}
@@ -214,11 +219,8 @@ export function FiscalYearPanel({ session }) {
         )}
       </Card>
 
-      {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
-        <div>
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تب‌های فعال</div>
-        </div>
+        <div className="text-sm font-black text-[rgb(var(--ui-text))]">تب‌های فعال</div>
         <div className="flex flex-wrap items-center gap-2">
           {CONFIGURABLE_TABS.map((tab) => {
             const enabled = visibility === null ? true : (visibility[tab.id] !== false)
@@ -244,7 +246,6 @@ export function FiscalYearPanel({ session }) {
         {savingTabs && <div className="text-xs font-bold text-slate-500">در حال ذخیره...</div>}
       </Card>
 
-      {/* Bridge account map */}
       {canWrite && (
         <Card padding="md" className="space-y-3">
           <div className="text-sm font-black text-[rgb(var(--ui-text))]">تنظیم حساب‌های پل فروش</div>
@@ -259,7 +260,7 @@ export function FiscalYearPanel({ session }) {
                 <label className="block text-xs font-black text-slate-600 mb-1">{label}</label>
                 <Select size="sm" value={value} onChange={(e) => setter(e.target.value)}>
                   <option value="">-- انتخاب حساب --</option>
-                  {postableAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                  {postableAccounts.map((a) => <option key={a.id} value={a.id}>{renderAccountOptionLabel(a)}</option>)}
                 </Select>
               </div>
             ))}
