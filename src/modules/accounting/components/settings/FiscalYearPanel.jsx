@@ -11,8 +11,12 @@ import {
   DataTableHead,
   DataTableHeaderCell,
   DataTableRow,
+  DataTableState,
+  FormField,
   IconButton,
+  InlineAlert,
   Input,
+  SectionHeader,
   Select,
 } from '@/components/shared/ui'
 import { useFiscalYears } from '../../hooks/useFiscalYears'
@@ -54,8 +58,8 @@ export function FiscalYearPanel({ session }) {
     setFormError(null)
   }
 
-  const handleUpsertFY = async (e) => {
-    e.preventDefault()
+  const handleUpsertFY = async (event) => {
+    event.preventDefault()
     setSaving(true)
     setFormError(null)
     try {
@@ -66,8 +70,8 @@ export function FiscalYearPanel({ session }) {
       }
       resetFiscalYearForm()
       reload()
-    } catch (e) {
-      setFormError(e.message)
+    } catch (nextError) {
+      setFormError(nextError.message)
     } finally {
       setSaving(false)
     }
@@ -77,7 +81,9 @@ export function FiscalYearPanel({ session }) {
     try {
       await accountingApi.patchFiscalYear({ id, action: 'set_default' })
       reload()
-    } catch (e) { alert(e.message) }
+    } catch (nextError) {
+      alert(nextError.message)
+    }
   }
 
   const handleClose = async (id) => {
@@ -85,7 +91,9 @@ export function FiscalYearPanel({ session }) {
       await accountingApi.patchFiscalYear({ id, action: 'close' })
       setCloseCandidate(null)
       reload()
-    } catch (e) { alert(e.message) }
+    } catch (nextError) {
+      alert(nextError.message)
+    }
   }
 
   const handleDelete = async (id) => {
@@ -94,7 +102,9 @@ export function FiscalYearPanel({ session }) {
       setDeleteCandidate(null)
       if (editTarget?.id === id) resetFiscalYearForm()
       reload()
-    } catch (e) { alert(e.message) }
+    } catch (nextError) {
+      alert(nextError.message)
+    }
   }
 
   const handleStartEdit = (fy) => {
@@ -108,177 +118,157 @@ export function FiscalYearPanel({ session }) {
   const handleSaveAccountMap = async () => {
     setMapSaving(true)
     try {
-      const map = {
+      await accountingApi.saveBridgeAccountMap({
         cash_account_id: cashAccountId || null,
         bank_account_id: bankAccountId || null,
         check_account_id: checkAccountId || null,
         ar_account_id: arAccountId || null,
-      }
-      await accountingApi.saveBridgeAccountMap(map)
+      })
       setMapSaved(true)
       setTimeout(() => setMapSaved(false), 3000)
-    } catch (e) { alert(e.message) }
-    finally { setMapSaving(false) }
+    } catch (nextError) {
+      alert(nextError.message)
+    } finally {
+      setMapSaving(false)
+    }
   }
 
   return (
     <div className="space-y-4">
-      {/* Fiscal years list */}
-      <Card padding="md" className="space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <div className="text-sm font-black text-[rgb(var(--ui-text))]">سال‌های مالی</div>
-          </div>
-          <Button size="sm" variant="ghost" onClick={reload} disabled={loading}>بازخوانی</Button>
-        </div>
-        {error && <div className="text-xs font-bold text-rose-600">خطا: {error}</div>}
-        {loading && <div className="text-xs text-slate-500">در حال بارگذاری...</div>}
-        {fiscalYears.length > 0 && (
-          <DataTable className="border border-[rgb(var(--ui-border-soft))]" minWidthClass="min-w-[720px]">
-            <DataTableHead>
-              <tr>
-                <DataTableHeaderCell>عنوان</DataTableHeaderCell>
-                <DataTableHeaderCell align="center">از تاریخ</DataTableHeaderCell>
-                <DataTableHeaderCell align="center">تا تاریخ</DataTableHeaderCell>
-                <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
-                {canWrite ? <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell> : null}
-              </tr>
-            </DataTableHead>
-            <DataTableBody>
-              {fiscalYears.map((fy) => (
-                <DataTableRow key={fy.id}>
-                  <DataTableCell tone="emphasis">
-                    {fy.title}
-                    {fy.isDefault && <span className="mr-1 rounded bg-blue-100 px-1.5 text-[10px] font-black text-blue-700">پیش‌فرض</span>}
-                  </DataTableCell>
-                  <DataTableCell align="center" className="tabular-nums">{toShamsiDisplay(fy.startDate)}</DataTableCell>
-                  <DataTableCell align="center" className="tabular-nums">{toShamsiDisplay(fy.endDate)}</DataTableCell>
-                  <DataTableCell align="center">
-                    <Badge tone={fy.status === 'open' ? 'success' : 'neutral'}>{fy.status === 'open' ? 'باز' : 'بسته'}</Badge>
-                  </DataTableCell>
-                  {canWrite && (
-                    <DataTableCell align="center">
-                      <DataTableActions>
-                        {!fy.isDefault && fy.status === 'open' && (
-                          <Button size="sm" variant="ghost" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button>
-                        )}
-                        <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
-                        {fy.status === 'open' && (
-                          <Button size="sm" variant="danger" onClick={() => setCloseCandidate(fy.id)}>بستن</Button>
-                        )}
-                        <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" surface="table" onClick={() => setDeleteCandidate(fy.id)} />
-                      </DataTableActions>
-                    </DataTableCell>
-                  )}
-                </DataTableRow>
-              ))}
-            </DataTableBody>
-          </DataTable>
-        )}
+      <Card padding="md" className="space-y-4">
+        <SectionHeader
+          title="سال‌های مالی"
+          description="تعریف، ویرایش و بستن سال‌های مالی فعال در یک جدول استاندارد."
+          actions={<Button action="reload" size="sm" onClick={reload} disabled={loading} />}
+        />
 
-        {canWrite && (
-          <form onSubmit={handleUpsertFY} className="mt-4 space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/45 p-3">
-            <div className="text-xs font-black text-slate-700">{editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}</div>
-            {formError && <div className="text-xs font-bold text-rose-600">{formError}</div>}
+        {error ? <InlineAlert tone="danger">خطا: {error}</InlineAlert> : null}
+
+        <DataTable className="border border-[rgb(var(--ui-border-soft))]" minWidthClass="min-w-[760px]">
+          <DataTableHead>
+            <tr>
+              <DataTableHeaderCell>عنوان</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">از تاریخ</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">تا تاریخ</DataTableHeaderCell>
+              <DataTableHeaderCell align="center">وضعیت</DataTableHeaderCell>
+              {canWrite ? <DataTableHeaderCell align="center">عملیات</DataTableHeaderCell> : null}
+            </tr>
+          </DataTableHead>
+          <DataTableBody>
+            {loading ? <DataTableState colSpan={canWrite ? 5 : 4} state="loading" title="در حال بارگذاری سال‌های مالی..." /> : null}
+            {!loading && fiscalYears.length === 0 ? <DataTableState colSpan={canWrite ? 5 : 4} title="سال مالی ثبت نشده است." /> : null}
+            {!loading && fiscalYears.map((fy) => (
+              <DataTableRow key={fy.id}>
+                <DataTableCell tone="emphasis">
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span>{fy.title}</span>
+                    {fy.isDefault ? <Badge tone="info">پیش‌فرض</Badge> : null}
+                  </div>
+                </DataTableCell>
+                <DataTableCell align="center" className="tabular-nums">{toShamsiDisplay(fy.startDate)}</DataTableCell>
+                <DataTableCell align="center" className="tabular-nums">{toShamsiDisplay(fy.endDate)}</DataTableCell>
+                <DataTableCell align="center">
+                  <Badge tone={fy.status === 'open' ? 'success' : 'neutral'}>{fy.status === 'open' ? 'باز' : 'بسته'}</Badge>
+                </DataTableCell>
+                {canWrite ? (
+                  <DataTableCell align="center">
+                    <DataTableActions>
+                      {!fy.isDefault && fy.status === 'open' ? <Button size="sm" variant="secondary" onClick={() => handleSetDefault(fy.id)}>پیش‌فرض</Button> : null}
+                      <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" surface="table" onClick={() => handleStartEdit(fy)} />
+                      {fy.status === 'open' ? <Button size="sm" variant="destructive" onClick={() => setCloseCandidate(fy.id)}>بستن</Button> : null}
+                      <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" surface="table" onClick={() => setDeleteCandidate(fy.id)} />
+                    </DataTableActions>
+                  </DataTableCell>
+                ) : null}
+              </DataTableRow>
+            ))}
+          </DataTableBody>
+        </DataTable>
+
+        {canWrite ? (
+          <form onSubmit={handleUpsertFY} className="space-y-3 rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-[rgb(var(--ui-surface-muted))]/40 p-3">
+            <SectionHeader
+              title={editTarget ? 'ویرایش سال مالی' : 'افزودن سال مالی جدید'}
+              description="برای حفظ دقت گزارش‌ها، بازه تاریخ را بدون همپوشانی تعریف کنید."
+              actions={editTarget ? <Button action="cancel" size="sm" onClick={resetFiscalYearForm} /> : null}
+            />
+            {formError ? <InlineAlert tone="danger">{formError}</InlineAlert> : null}
+
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              <div>
-                <label className="block text-xs font-black text-slate-600 mb-1">عنوان</label>
-                <Input
-                  size="sm"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  placeholder="مثال: سال مالی ۱۴۰۳"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-600 mb-1">از تاریخ</label>
-                <ShamsiDateInput value={startDate} onChange={setStartDate}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
-              </div>
-              <div>
-                <label className="block text-xs font-black text-slate-600 mb-1">تا تاریخ</label>
-                <ShamsiDateInput value={endDate} onChange={setEndDate}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold text-slate-900 cursor-pointer" />
-              </div>
+              <FormField label="عنوان" required>
+                <Input size="sm" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="مثال: سال مالی ۱۴۰۵" required />
+              </FormField>
+              <FormField label="از تاریخ" required>
+                <ShamsiDateInput value={startDate} onChange={setStartDate} className="w-full cursor-pointer rounded-lg border border-[rgb(var(--ui-border-soft))] bg-white px-3 py-2 text-xs font-bold text-[rgb(var(--ui-text))]" />
+              </FormField>
+              <FormField label="تا تاریخ" required>
+                <ShamsiDateInput value={endDate} onChange={setEndDate} className="w-full cursor-pointer rounded-lg border border-[rgb(var(--ui-border-soft))] bg-white px-3 py-2 text-xs font-bold text-[rgb(var(--ui-text))]" />
+              </FormField>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button type="submit" variant="primary" size="sm" disabled={saving}>
-                {saving ? 'در حال ذخیره...' : editTarget ? 'ذخیره تغییرات' : 'ایجاد سال مالی'}
-              </Button>
-              {editTarget ? (
-                <Button type="button" variant="ghost" size="sm" onClick={resetFiscalYearForm}>انصراف</Button>
-              ) : null}
-            </div>
+
+            <Button type="submit" action="save" size="sm" loading={saving}>
+              {saving ? 'در حال ذخیره...' : editTarget ? 'ذخیره تغییرات' : 'ایجاد سال مالی'}
+            </Button>
           </form>
-        )}
+        ) : null}
       </Card>
 
-      {/* Tab visibility */}
       <Card padding="md" className="space-y-3">
-        <div>
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تب‌های فعال</div>
-        </div>
+        <SectionHeader title="تب‌های فعال" description="نمایش تب‌ها را متناسب با فرآیند تیم مالی تنظیم کنید." />
         <div className="flex flex-wrap items-center gap-2">
           {CONFIGURABLE_TABS.map((tab) => {
-            const enabled = visibility === null ? true : (visibility[tab.id] !== false)
+            const enabled = visibility === null ? true : visibility[tab.id] !== false
             return (
-              <label key={tab.id}
-                className={`flex min-w-[132px] flex-none cursor-pointer items-center gap-2 rounded-lg border px-2.5 py-2 text-xs font-bold transition-colors
-                  ${enabled ? 'border-emerald-200 bg-emerald-50 text-emerald-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}>
-                <input
-                  type="checkbox"
-                  className="accent-emerald-600"
-                  checked={enabled}
-                  onChange={(e) => {
-                    const next = { ...(visibility ?? {}), [tab.id]: e.target.checked }
-                    saveTabSettings(next)
-                  }}
-                  disabled={savingTabs}
-                />
+              <Button
+                key={tab.id}
+                size="sm"
+                variant={enabled ? 'secondary' : 'tertiary'}
+                selected={enabled}
+                onClick={() => saveTabSettings({ ...(visibility ?? {}), [tab.id]: !enabled })}
+                disabled={savingTabs}
+              >
                 {tab.label}
-              </label>
+              </Button>
             )
           })}
         </div>
-        {savingTabs && <div className="text-xs font-bold text-slate-500">در حال ذخیره...</div>}
+        {savingTabs ? <InlineAlert tone="neutral">در حال ذخیره تنظیمات تب‌ها...</InlineAlert> : null}
       </Card>
 
-      {/* Bridge account map */}
-      {canWrite && (
+      {canWrite ? (
         <Card padding="md" className="space-y-3">
-          <div className="text-sm font-black text-[rgb(var(--ui-text))]">تنظیم حساب‌های پل فروش</div>
-          <div className="flex flex-wrap items-end gap-3">
+          <SectionHeader title="تنظیم حساب‌های پل فروش" description="نگاشت حساب‌های مقصد برای اسناد فروش خودکار." />
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
             {[
-              { label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
-              { label: 'حساب بانک (کارت/انتقال)', value: bankAccountId, setter: setBankAccountId },
-              { label: 'حساب اسناد دریافتنی (چک)', value: checkAccountId, setter: setCheckAccountId },
-              { label: 'حساب دریافتنی تجاری (AR)', value: arAccountId, setter: setArAccountId },
-            ].map(({ label, value, setter }) => (
-              <div key={label} className="min-w-[220px] flex-1 sm:max-w-[280px]">
-                <label className="block text-xs font-black text-slate-600 mb-1">{label}</label>
-                <Select size="sm" value={value} onChange={(e) => setter(e.target.value)}>
+              { key: 'cash', label: 'حساب صندوق (نقد)', value: cashAccountId, setter: setCashAccountId },
+              { key: 'bank', label: 'حساب بانک (کارت/انتقال)', value: bankAccountId, setter: setBankAccountId },
+              { key: 'check', label: 'حساب اسناد دریافتنی (چک)', value: checkAccountId, setter: setCheckAccountId },
+              { key: 'ar', label: 'حساب دریافتنی تجاری (AR)', value: arAccountId, setter: setArAccountId },
+            ].map(({ key, label, value, setter }) => (
+              <FormField key={key} label={label}>
+                <Select size="sm" value={value} onChange={(event) => setter(event.target.value)}>
                   <option value="">-- انتخاب حساب --</option>
-                  {postableAccounts.map((a) => <option key={a.id} value={a.id}>{a.code} - {a.name}</option>)}
+                  {postableAccounts.map((account) => <option key={account.id} value={account.id}>{account.code} - {account.name}</option>)}
                 </Select>
-              </div>
+              </FormField>
             ))}
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="primary" size="sm" onClick={handleSaveAccountMap} disabled={mapSaving}>
+            <Button action="save" size="sm" loading={mapSaving} onClick={handleSaveAccountMap}>
               {mapSaving ? 'در حال ذخیره...' : 'ذخیره تنظیمات'}
             </Button>
-            {mapSaved && <span className="text-xs font-bold text-emerald-700">ذخیره شد ✓</span>}
+            {mapSaved ? <Badge tone="success">ذخیره شد</Badge> : null}
           </div>
         </Card>
-      )}
+      ) : null}
+
       <ConfirmDialog
         isOpen={Boolean(closeCandidate)}
         title="بستن سال مالی"
         description="آیا مطمئنید؟ بستن سال مالی غیرقابل بازگشت است."
         confirmLabel="بستن سال"
         onCancel={() => setCloseCandidate(null)}
-        onConfirm={() => closeCandidate ? handleClose(closeCandidate) : undefined}
+        onConfirm={() => (closeCandidate ? handleClose(closeCandidate) : undefined)}
       />
       <ConfirmDialog
         isOpen={Boolean(deleteCandidate)}
@@ -286,7 +276,7 @@ export function FiscalYearPanel({ session }) {
         description="این سال مالی حذف شود؟ این عمل فقط برای سال‌هایی که سند ندارند مجاز است."
         confirmLabel="حذف سال"
         onCancel={() => setDeleteCandidate(null)}
-        onConfirm={() => deleteCandidate ? handleDelete(deleteCandidate) : undefined}
+        onConfirm={() => (deleteCandidate ? handleDelete(deleteCandidate) : undefined)}
       />
     </div>
   )
