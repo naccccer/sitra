@@ -159,18 +159,18 @@ export function FiscalYearPanel({ session }) {
                   </DataTableCell>
                   {canWrite && (
                     <DataTableCell align="center">
-                      <DataTableActions>
-                        {!fy.isDefault && fy.status === 'open' && (
+                      <DataTableActions className="grid grid-cols-4 gap-1.5">
+                        {!fy.isDefault && fy.status === 'open' ? (
                           <Button size="icon" variant="ghost" onClick={() => handleSetDefault(fy.id)} title="انتخاب سال پیش‌فرض" aria-label="انتخاب سال پیش‌فرض" className="text-amber-600 hover:bg-amber-50">
                             <Star className="h-4 w-4" />
                           </Button>
-                        )}
+                        ) : <span aria-hidden="true" className="h-9 w-9" />}
                         <IconButton action="edit" label="ویرایش سال مالی" tooltip="ویرایش سال مالی" onClick={() => handleStartEdit(fy)} />
-                        {fy.status === 'open' && (
+                        {fy.status === 'open' ? (
                           <Button size="icon" variant="ghost" onClick={() => setCloseCandidate(fy.id)} title="بستن سال مالی" aria-label="بستن سال مالی" className="text-slate-600 hover:bg-slate-100">
                             <Lock className="h-4 w-4" />
                           </Button>
-                        )}
+                        ) : <span aria-hidden="true" className="h-9 w-9" />}
                         <IconButton action="delete" label="حذف سال مالی" tooltip="حذف سال مالی" variant="danger" onClick={() => setDeleteCandidate(fy.id)} />
                       </DataTableActions>
                     </DataTableCell>
