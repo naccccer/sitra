@@ -36,16 +36,18 @@ export const ModalShell = ({
     return <Button onClick={onClose} action="cancel" size="sm">بستن</Button>;
   };
 
-  const closeControl = renderCloseControl();
-  const header = (
-    <div
-      className={cn(
-        headerClassName
-          ? 'rounded-t-3xl border-b px-4 py-3'
-          : 'rounded-t-3xl border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3',
-        headerClassName,
-      )}
-    >
+    const eyebrowNode = eyebrow ? <div className="section-kicker">{eyebrow}</div> : null;
+    const descriptionNode = description ? <p className="mt-1 text-xs font-bold text-current/75">{description}</p> : null;
+            {eyebrowNode}
+            {descriptionNode}
+          {eyebrowNode}
+          {descriptionNode}
+  const renderFooter = () => {
+    if (!footer) return null;
+    return <div className={cn('rounded-b-3xl border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div>;
+  };
+          {renderFooter()}
+        {renderFooter()}
       {centerTitle ? (
         <div className="relative flex min-h-11 items-center justify-center">
           <div className="min-w-0 text-center">
