@@ -21,6 +21,7 @@ export const ModalShell = ({
   headerClassName = '',
   overlayClassName = '',
   contentClassName = '',
+  centerTitle = false,
 }) => {
   if (!isOpen) return null;
 
@@ -35,24 +36,44 @@ export const ModalShell = ({
             headerClassName,
           )}
         >
-          <div className="flex items-center justify-between gap-3">
-            <div className="min-w-0">
-              {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
-              <h3 className="text-sm font-black text-current">{title}</h3>
-              {description ? <p className="mt-1 text-xs font-bold text-current/75">{description}</p> : null}
+          {centerTitle ? (
+            <div className="relative flex min-h-11 items-center justify-center">
+              <div className="min-w-0 text-center">
+                {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
+                <h3 className="text-sm font-black text-current">{title}</h3>
+                {description ? <p className="mt-1 text-xs font-bold text-current/75">{description}</p> : null}
+              </div>
+              <div className="absolute inset-y-0 end-0 flex items-center gap-2">
+                {headerAction}
+                {closeButtonMode === 'icon' ? (
+                  <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
+                    <X size={16} />
+                  </IconButton>
+                ) : (
+                  <Button onClick={onClose} action="cancel" size="sm">بستن</Button>
+                )}
+              </div>
             </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                {eyebrow ? <div className="section-kicker">{eyebrow}</div> : null}
+                <h3 className="text-sm font-black text-current">{title}</h3>
+                {description ? <p className="mt-1 text-xs font-bold text-current/75">{description}</p> : null}
+              </div>
 
-            <div className="flex shrink-0 items-center gap-2">
-              {headerAction}
-              {closeButtonMode === 'icon' ? (
-                <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
-                  <X size={16} />
-                </IconButton>
-              ) : (
-                <Button onClick={onClose} action="cancel" size="sm">بستن</Button>
-              )}
+              <div className="flex shrink-0 items-center gap-2">
+                {headerAction}
+                {closeButtonMode === 'icon' ? (
+                  <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
+                    <X size={16} />
+                  </IconButton>
+                ) : (
+                  <Button onClick={onClose} action="cancel" size="sm">بستن</Button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>

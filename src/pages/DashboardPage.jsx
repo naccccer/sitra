@@ -199,20 +199,16 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
                 <Button variant="tertiary" size="sm" onClick={() => navigate('/orders')}>
                   مشاهده سفارشات
                 </Button>
+                <IconButton
+                  size="iconSm"
+                  variant="tertiary"
+                  label="شخصی سازی دسترسی سریع"
+                  tooltip="شخصی سازی دسترسی سریع"
+                  onClick={openShortcutCustomizer}
+                >
+                  <Settings2 size={14} />
+                </IconButton>
               </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="text-xs font-black text-[rgb(var(--ui-text-muted))]">دسترسی سریع</div>
-              <IconButton
-                size="iconSm"
-                variant="tertiary"
-                label="شخصی سازی دسترسی سریع"
-                tooltip="شخصی سازی دسترسی سریع"
-                onClick={openShortcutCustomizer}
-              >
-                <Settings2 size={14} />
-              </IconButton>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -255,9 +251,10 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
         isOpen={isShortcutCustomizerOpen}
         onClose={closeShortcutCustomizer}
         closeButtonMode="icon"
+        centerTitle
         title="شخصی سازی دسترسی سریع"
-        description="دکمه های صفحه خانه را از منوی کناری انتخاب کنید."
         maxWidthClass="max-w-2xl"
+        headerClassName="rounded-t-3xl border-b border-slate-800 bg-slate-900 px-4 py-3 text-white"
         footer={(
           <div className="flex items-center justify-start gap-2" dir="ltr">
             <Button type="button" variant="secondary" onClick={closeShortcutCustomizer}>انصراف</Button>
