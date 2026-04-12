@@ -1,18 +1,18 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
-  BookOpen,
-  Clock3,
-  ContactRound,
-  Database,
-  Package,
-  PackageCheck,
-  ShieldCheck,
-  SlidersHorizontal,
-  UsersRound,
-} from 'lucide-react';
-import { Button, Card, WorkspaceShellTemplate } from '@/components/shared/ui';
+import { BookOpen, Check, Clock3, PackageCheck, Settings2 } from 'lucide-react';
+import { Button, Card, IconButton, ModalShell, WorkspaceShellTemplate } from '@/components/shared/ui';
 import { isModuleEnabled } from '@/kernel/moduleRegistry';
+import { getVisibleAccountingTabs } from '@/modules/accounting/navigation';
+import { useTabSettings } from '@/modules/accounting/hooks/useTabSettings';
+import { getVisibleInventoryTabs } from '@/modules/inventory/navigation';
+import {
+  buildAvailableShortcuts,
+  getDefaultShortcutIds,
+  getShortcutStorageKey,
+  readStoredShortcutIds,
+  toVisibleShortcuts,
+} from '@/pages/dashboardShortcuts';
 import { toPN } from '@/utils/helpers';
 
 const toPersianDate = (date) => {
@@ -38,17 +38,6 @@ const toPersianTime = (date) => new Intl.DateTimeFormat('fa-IR-u-ca-persian', {
   second: '2-digit',
   hour12: false,
 }).format(date);
-
-const HOME_SHORTCUTS = [
-  { id: 'orders', label: 'سفارشات', path: '/orders', icon: BookOpen, capability: 'canManageOrders', moduleId: 'sales' },
-  { id: 'customers', label: 'مشتریان', path: '/customers', icon: ContactRound, capability: 'canManageCustomers', moduleId: 'customers' },
-  { id: 'inventory', label: 'انبار', path: '/inventory', icon: Package, capability: 'canAccessInventory', moduleId: 'inventory' },
-  { id: 'accounting', label: 'حسابداری', path: '/accounting', icon: Database, capability: 'canAccessAccounting', moduleId: 'accounting' },
-  { id: 'human-resources', label: 'منابع انسانی', path: '/human-resources', icon: UsersRound, capability: 'canAccessHumanResources', moduleId: 'human-resources' },
-  { id: 'users-access', label: 'کاربران', path: '/users-access', icon: ShieldCheck, capability: 'canManageUsers', moduleId: 'users-access' },
-  { id: 'security-access', label: 'امنیت و دسترسی', path: '/management/audit', icon: SlidersHorizontal, capability: 'canViewAuditLogs' },
-  { id: 'master-data', label: 'اطلاعات پایه', path: '/master-data', icon: Database, capability: 'canManageProfile', moduleId: 'master-data' },
-];
 
 const SummaryChip = ({ label, value, icon }) => {
   const Icon = icon;
@@ -77,7 +66,6 @@ const ShortcutCard = ({ icon, label, path, onNavigate }) => {
     >
       <div className="min-w-0">
         <div className="text-sm font-black text-[rgb(var(--ui-text))]">{label}</div>
-        <div className="mt-1 text-[11px] font-bold text-[rgb(var(--ui-text-muted))]">ورود سریع به میزکار</div>
       </div>
       <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]">
         <ShortcutIcon size={16} />
@@ -89,8 +77,16 @@ const ShortcutCard = ({ icon, label, path, onNavigate }) => {
 export const DashboardPage = ({ orders = [], session = {} }) => {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
-  const capabilities = session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {};
-  const modules = Array.isArray(session?.modules) ? session.modules : [];
+  const [isShortcutCustomizerOpen, setIsShortcutCustomizerOpen] = useState(false);
+  const [draftShortcutIds, setDraftShortcutIds] = useState([]);
+  const [shortcutSelectionVersion, setShortcutSelectionVersion] = useState(0);
+  const capabilities = useMemo(
+    () => (session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}),
+    [session],
+  );
+  const modules = useMemo(() => (Array.isArray(session?.modules) ? session.modules : []), [session]);
+  const permissions = useMemo(() => (Array.isArray(session?.permissions) ? session.permissions : []), [session]);
+  const { isVisible } = useTabSettings();
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(new Date()), 1000);
@@ -107,12 +103,60 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
   }, [orders]);
 
   const canSeeOrders = Boolean(capabilities.canManageOrders) && isModuleEnabled(modules, 'sales');
-  const visibleShortcuts = HOME_SHORTCUTS.filter((shortcut) => {
-    if (!capabilities?.[shortcut.capability]) return false;
-    if (!shortcut.moduleId) return true;
-    return isModuleEnabled(modules, shortcut.moduleId);
-  }).slice(0, 8);
+
+  const availableShortcuts = useMemo(() => buildAvailableShortcuts({
+    capabilities,
+    modules,
+    inventoryTabs: getVisibleInventoryTabs(permissions),
+    accountingTabs: getVisibleAccountingTabs(permissions, isVisible),
+  }), [capabilities, isVisible, modules, permissions]);
+
+  const shortcutStorageKey = useMemo(() => getShortcutStorageKey(session), [session]);
+
+  const selectedShortcutIds = useMemo(() => {
+    void shortcutSelectionVersion;
+    const availableIds = new Set(availableShortcuts.map((item) => item.id));
+    const savedIds = readStoredShortcutIds(shortcutStorageKey) || [];
+    const nextSelected = savedIds.filter((id) => availableIds.has(id));
+    return nextSelected.length > 0 ? nextSelected : getDefaultShortcutIds(availableShortcuts);
+  }, [availableShortcuts, shortcutSelectionVersion, shortcutStorageKey]);
+
+  const visibleShortcuts = useMemo(
+    () => toVisibleShortcuts(availableShortcuts, selectedShortcutIds),
+    [availableShortcuts, selectedShortcutIds],
+  );
+
   const activeOrders = summary.pending + summary.processing;
+
+  const openShortcutCustomizer = () => {
+    setDraftShortcutIds(selectedShortcutIds);
+    setIsShortcutCustomizerOpen(true);
+  };
+
+  const closeShortcutCustomizer = () => {
+    setIsShortcutCustomizerOpen(false);
+    setDraftShortcutIds([]);
+  };
+
+  const toggleShortcutDraft = (shortcutId) => {
+    setDraftShortcutIds((prev) => (
+      prev.includes(shortcutId)
+        ? prev.filter((id) => id !== shortcutId)
+        : [...prev, shortcutId]
+    ));
+  };
+
+  const confirmShortcutCustomizer = () => {
+    const nextSelected = draftShortcutIds.length > 0 ? draftShortcutIds : getDefaultShortcutIds(availableShortcuts);
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(shortcutStorageKey, JSON.stringify(nextSelected));
+      setShortcutSelectionVersion((prev) => prev + 1);
+      closeShortcutCustomizer();
+    } catch {
+      // Ignore storage failures and keep homepage shortcuts interactive.
+    }
+  };
 
   return (
     <WorkspaceShellTemplate
@@ -155,6 +199,15 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
                 <Button variant="tertiary" size="sm" onClick={() => navigate('/orders')}>
                   مشاهده سفارشات
                 </Button>
+                <IconButton
+                  size="iconSm"
+                  variant="tertiary"
+                  label="شخصی سازی دسترسی سریع"
+                  tooltip="شخصی سازی دسترسی سریع"
+                  onClick={openShortcutCustomizer}
+                >
+                  <Settings2 size={14} />
+                </IconButton>
               </div>
             </div>
 
@@ -193,6 +246,42 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
           </div>
         </Card>
       </div>
+
+      <ModalShell
+        isOpen={isShortcutCustomizerOpen}
+        onClose={closeShortcutCustomizer}
+        closeButtonMode="icon"
+        title="شخصی سازی دسترسی سریع"
+        maxWidthClass="max-w-2xl"
+        overlayClassName="bg-slate-950/60 backdrop-blur-lg"
+        headerClassName="rounded-t-3xl border-b border-slate-800 bg-slate-900 px-4 py-3 text-white"
+        overlayClassName="bg-transparent backdrop-blur-0"
+        footer={(
+          <div className="flex items-center justify-start gap-2" dir="ltr">
+            <Button type="button" variant="secondary" onClick={closeShortcutCustomizer}>انصراف</Button>
+            <Button type="button" action="save" onClick={confirmShortcutCustomizer}>تأیید</Button>
+          </div>
+        )}
+      >
+        <div className="grid max-h-[54vh] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+          {availableShortcuts.map((shortcut) => {
+            const checked = draftShortcutIds.includes(shortcut.id);
+            return (
+              <button
+                key={shortcut.id}
+                type="button"
+                onClick={() => toggleShortcutDraft(shortcut.id)}
+                className={`focus-ring flex items-center justify-between gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-right text-xs font-bold transition ${checked ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' : 'border-[rgb(var(--ui-border-soft))] bg-white text-[rgb(var(--ui-text-muted))]'}`}
+              >
+                <span className="truncate">{shortcut.label}</span>
+                <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${checked ? 'bg-[rgb(var(--ui-accent-strong))] text-white' : 'bg-[rgb(var(--ui-surface-muted))] text-transparent'}`}>
+                  <Check size={11} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </ModalShell>
     </WorkspaceShellTemplate>
   );
 };

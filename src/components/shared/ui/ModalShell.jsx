@@ -21,7 +21,6 @@ export const ModalShell = ({
   headerClassName = '',
   overlayClassName = '',
   contentClassName = '',
-}) => {
   if (!isOpen) return null;
 
   return (
@@ -52,13 +51,5 @@ export const ModalShell = ({
                 <Button onClick={onClose} action="cancel" size="sm">بستن</Button>
               )}
             </div>
-          </div>
-        </div>
-
-        <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>
 
         {footer ? <div className={cn('rounded-b-3xl border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null}
-      </Card>
-    </div>
-  );
-};
