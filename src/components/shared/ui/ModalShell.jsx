@@ -25,13 +25,6 @@ export const ModalShell = ({
 }) => {
   if (!isOpen) return null;
 
-  const headerClasses = cn(
-    headerClassName
-      ? 'rounded-t-3xl border-b px-4 py-3'
-      : 'rounded-t-3xl border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3',
-    headerClassName,
-  );
-  const closeControl = closeButtonMode === 'icon'
     ? (
       <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
         <X size={16} />
@@ -39,8 +32,15 @@ export const ModalShell = ({
     )
     : <Button onClick={onClose} action="cancel" size="sm">بستن</Button>;
 
-  const renderHeader = () => (
-    <div className={headerClasses}>
+  const header = (
+    <div
+      className={cn(
+        headerClassName
+          ? 'rounded-t-3xl border-b px-4 py-3'
+          : 'rounded-t-3xl border-b border-[rgb(var(--ui-border))] bg-[linear-gradient(180deg,rgba(255,255,255,0.98),rgba(238,242,255,0.92))] px-4 py-3',
+        headerClassName,
+      )}
+    >
       {centerTitle ? (
         <div className="relative flex min-h-11 items-center justify-center">
           <div className="min-w-0 text-center">
@@ -65,17 +65,24 @@ export const ModalShell = ({
       )}
     </div>
   );
-  const content = (
-    <>
-      {renderHeader()}
-      <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>
-      {footer ? <div className={cn('rounded-b-3xl border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null}
-    </>
-  );
+  const body = <div className={cn('max-h-[80vh] overflow-y-auto p-4', bodyClassName)}>{children}</div>;
+  const footerNode = footer ? <div className={cn('rounded-b-3xl border-t border-[rgb(var(--ui-border))] bg-white px-4 py-3', footerClassName)}>{footer}</div> : null;
+
+  if (plainContainer) {
+    return (
+      <div className={cn('fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm print-hide', overlayClassName)}>
+        <div className={cn('w-full overflow-hidden rounded-3xl', maxWidthClass, contentClassName)}>
+          {header}
+          {body}
+          {footerNode}
+        </div>
+      </div>
+    );
+  }
   return (
     <div className={cn('fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/45 p-4 backdrop-blur-sm print-hide', overlayClassName)}>
-      {plainContainer ? (
-        <div className={cn('w-full overflow-hidden rounded-3xl', maxWidthClass, contentClassName)}>{content}</div>
-      ) : (
-        <Card className={cn('w-full overflow-hidden rounded-3xl shadow-[var(--shadow-overlay)]', maxWidthClass, contentClassName)} padding="none">
-          {content}
+      <Card className={cn('w-full overflow-hidden rounded-3xl shadow-[var(--shadow-overlay)]', maxWidthClass, contentClassName)} padding="none">
+        {header}
+        {body}
+        {footerNode}
+      </Card>
