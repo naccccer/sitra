@@ -25,14 +25,18 @@ export const ModalShell = ({
 }) => {
   if (!isOpen) return null;
 
-  let closeControl = <Button onClick={onClose} action="cancel" size="sm">بستن</Button>;
-  if (closeButtonMode === 'icon') {
-    closeControl = (
-        <X size={16} />
-      </IconButton>
-    );
-  }
+  const renderCloseControl = () => {
+    if (closeButtonMode === 'icon') {
+      return (
+        <IconButton onClick={onClose} variant="ghost" label="بستن" tooltip="بستن">
+          <X size={16} />
+        </IconButton>
+      );
+    }
+    return <Button onClick={onClose} action="cancel" size="sm">بستن</Button>;
+  };
 
+  const closeControl = renderCloseControl();
   const header = (
     <div
       className={cn(
