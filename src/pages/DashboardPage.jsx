@@ -197,12 +197,12 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2">
-                  <Button variant="tertiary" size="sm" onClick={() => navigate('/orders')}>
-                    مشاهده سفارشات
-                  </Button>
                   <IconButton size="iconSm" label="شخصی سازی دسترسی سریع" tooltip="شخصی سازی دسترسی سریع" onClick={openCustomizeModal}>
                     <Settings2 size={15} />
                   </IconButton>
+                  <Button variant="tertiary" size="sm" onClick={() => navigate('/orders')}>
+                    مشاهده سفارشات
+                  </Button>
                   {canSeeOrders ? (
                     <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
                       ثبت سفارش جدید
