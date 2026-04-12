@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Check, Clock3, PackageCheck, Settings2 } from 'lucide-react';
-import { Button, Card, WorkspaceShellTemplate } from '@/components/shared/ui';
+import { Button, Card, IconButton, ModalShell, WorkspaceShellTemplate } from '@/components/shared/ui';
 import { isModuleEnabled } from '@/kernel/moduleRegistry';
 import { getVisibleAccountingTabs } from '@/modules/accounting/navigation';
 import { useTabSettings } from '@/modules/accounting/hooks/useTabSettings';
@@ -78,6 +78,7 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
   const navigate = useNavigate();
   const [now, setNow] = useState(() => new Date());
   const [isShortcutCustomizerOpen, setIsShortcutCustomizerOpen] = useState(false);
+  const [draftShortcutIds, setDraftShortcutIds] = useState([]);
   const [shortcutSelectionVersion, setShortcutSelectionVersion] = useState(0);
   const capabilities = useMemo(
     () => (session?.capabilities && typeof session.capabilities === 'object' ? session.capabilities : {}),
@@ -127,14 +128,31 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
 
   const activeOrders = summary.pending + summary.processing;
 
-  const toggleShortcut = (shortcutId) => {
-    const nextSelected = selectedShortcutIds.includes(shortcutId)
-      ? selectedShortcutIds.filter((id) => id !== shortcutId)
-      : [...selectedShortcutIds, shortcutId];
+  const openShortcutCustomizer = () => {
+    setDraftShortcutIds(selectedShortcutIds);
+    setIsShortcutCustomizerOpen(true);
+  };
+
+  const closeShortcutCustomizer = () => {
+    setIsShortcutCustomizerOpen(false);
+    setDraftShortcutIds([]);
+  };
+
+  const toggleShortcutDraft = (shortcutId) => {
+    setDraftShortcutIds((prev) => (
+      prev.includes(shortcutId)
+        ? prev.filter((id) => id !== shortcutId)
+        : [...prev, shortcutId]
+    ));
+  };
+
+  const confirmShortcutCustomizer = () => {
+    const nextSelected = draftShortcutIds.length > 0 ? draftShortcutIds : getDefaultShortcutIds(availableShortcuts);
     if (typeof window === 'undefined') return;
     try {
       window.localStorage.setItem(shortcutStorageKey, JSON.stringify(nextSelected));
       setShortcutSelectionVersion((prev) => prev + 1);
+      closeShortcutCustomizer();
     } catch {
       // Ignore storage failures and keep homepage shortcuts interactive.
     }
@@ -173,9 +191,6 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <Button variant="tertiary" size="sm" leadingIcon={Settings2} onClick={() => setIsShortcutCustomizerOpen((prev) => !prev)}>
-                  شخصی سازی دسترسی سریع
-                </Button>
                 {canSeeOrders ? (
                   <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
                     ثبت سفارش جدید
@@ -187,29 +202,18 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
               </div>
             </div>
 
-            {isShortcutCustomizerOpen ? (
-              <div className="rounded-[var(--radius-xl)] border border-[rgb(var(--ui-border-soft))] bg-white/70 p-4">
-                <div className="mb-2 text-xs font-black text-[rgb(var(--ui-text-muted))]">انتخاب دکمه های صفحه خانه از منوی کناری</div>
-                <div className="grid max-h-44 grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
-                  {availableShortcuts.map((shortcut) => {
-                    const checked = selectedShortcutIds.includes(shortcut.id);
-                    return (
-                      <button
-                        key={shortcut.id}
-                        type="button"
-                        onClick={() => toggleShortcut(shortcut.id)}
-                        className={`focus-ring flex items-center justify-between gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-right text-xs font-bold transition ${checked ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' : 'border-[rgb(var(--ui-border-soft))] bg-white text-[rgb(var(--ui-text-muted))]'}`}
-                      >
-                        <span className="truncate">{shortcut.label}</span>
-                        <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${checked ? 'bg-[rgb(var(--ui-accent-strong))] text-white' : 'bg-[rgb(var(--ui-surface-muted))] text-transparent'}`}>
-                          <Check size={11} />
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            ) : null}
+            <div className="flex items-center justify-between">
+              <div className="text-xs font-black text-[rgb(var(--ui-text-muted))]">دسترسی سریع</div>
+              <IconButton
+                size="iconSm"
+                variant="tertiary"
+                label="شخصی سازی دسترسی سریع"
+                tooltip="شخصی سازی دسترسی سریع"
+                onClick={openShortcutCustomizer}
+              >
+                <Settings2 size={14} />
+              </IconButton>
+            </div>
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               {visibleShortcuts.map((shortcut) => (
@@ -246,6 +250,40 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
           </div>
         </Card>
       </div>
+
+      <ModalShell
+        isOpen={isShortcutCustomizerOpen}
+        onClose={closeShortcutCustomizer}
+        closeButtonMode="icon"
+        title="شخصی سازی دسترسی سریع"
+        description="دکمه های صفحه خانه را از منوی کناری انتخاب کنید."
+        maxWidthClass="max-w-2xl"
+        footer={(
+          <div className="flex items-center justify-start gap-2" dir="ltr">
+            <Button type="button" variant="secondary" onClick={closeShortcutCustomizer}>انصراف</Button>
+            <Button type="button" action="save" onClick={confirmShortcutCustomizer}>تأیید</Button>
+          </div>
+        )}
+      >
+        <div className="grid max-h-[54vh] grid-cols-1 gap-2 overflow-y-auto sm:grid-cols-2">
+          {availableShortcuts.map((shortcut) => {
+            const checked = draftShortcutIds.includes(shortcut.id);
+            return (
+              <button
+                key={shortcut.id}
+                type="button"
+                onClick={() => toggleShortcutDraft(shortcut.id)}
+                className={`focus-ring flex items-center justify-between gap-2 rounded-[var(--radius-md)] border px-3 py-2 text-right text-xs font-bold transition ${checked ? 'border-[rgb(var(--ui-accent-border))] bg-[rgb(var(--ui-accent-muted))] text-[rgb(var(--ui-accent-strong))]' : 'border-[rgb(var(--ui-border-soft))] bg-white text-[rgb(var(--ui-text-muted))]'}`}
+              >
+                <span className="truncate">{shortcut.label}</span>
+                <span className={`inline-flex h-4 w-4 items-center justify-center rounded-full ${checked ? 'bg-[rgb(var(--ui-accent-strong))] text-white' : 'bg-[rgb(var(--ui-surface-muted))] text-transparent'}`}>
+                  <Check size={11} />
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      </ModalShell>
     </WorkspaceShellTemplate>
   );
 };
