@@ -119,6 +119,81 @@ export const getNavSections = ({ inventoryTabs, accountingTabs }) => [
   },
 ]
 
+export const isNavItemVisible = ({ item, capabilities, modules }) => {
+  if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
+  if (item.capability && !capabilities[item.capability]) return false
+  if (item.moduleId && !isModuleEnabled(modules, item.moduleId)) return false
+  return true
+}
+
+export const getVisibleNavSections = ({
+  inventoryTabs,
+  accountingTabs,
+  capabilities,
+  modules,
+}) => (
+  getNavSections({ inventoryTabs, accountingTabs })
+    .map((section) => ({
+      ...section,
+      items: section.items.reduce((result, item) => {
+        if (!isNavItemVisible({ item, capabilities, modules })) return result
+        if (!Array.isArray(item.children) || item.children.length === 0) {
+          result.push(item)
+          return result
+        }
+        const visibleChildren = item.children.filter((child) => isNavItemVisible({ item: child, capabilities, modules }))
+        if (visibleChildren.length > 0) result.push({ ...item, children: visibleChildren })
+        return result
+      }, []),
+    }))
+    .filter((section) => section.items.length > 0)
+)
+
+export const getNavItemPrimaryTarget = (item) => {
+  if (!Array.isArray(item.children) || item.children.length === 0) return toNavTarget(item)
+  if (item.dynamicToFirstVisibleChild) return toNavTarget(item.children[0])
+  const firstTabbedChild = item.children.find((child) => child.to === item.to && child.tab)
+  return toNavTarget(firstTabbedChild || item)
+}
+
+export const getSidebarShortcutItems = ({
+  inventoryTabs,
+  accountingTabs,
+  capabilities,
+  modules,
+}) => {
+  const sections = getVisibleNavSections({
+    inventoryTabs,
+    accountingTabs,
+    capabilities,
+    modules,
+  })
+
+  return sections.flatMap((section) => (
+    section.items.flatMap((item) => {
+      const parentEntry = {
+        id: `item:${item.id || item.to}`,
+        label: item.label,
+        icon: item.icon,
+        target: getNavItemPrimaryTarget(item),
+        sectionLabel: section.label,
+      }
+
+      if (!Array.isArray(item.children) || item.children.length === 0) return [parentEntry]
+
+      const childrenEntries = item.children.map((child) => ({
+        id: `child:${item.id || item.to}:${child.to}:${child.tab || 'root'}`,
+        label: `${item.label} · ${child.label}`,
+        icon: item.icon,
+        target: toNavTarget(child),
+        sectionLabel: section.label,
+      }))
+
+      return [parentEntry, ...childrenEntries]
+    })
+  ))
+}
+
 export const getQueryTab = (search) => String(new URLSearchParams(search).get('tab') || '').trim()
 
 export const toNavTarget = (item) => (
