@@ -253,6 +253,7 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
         closeButtonMode="icon"
         title="شخصی سازی دسترسی سریع"
         maxWidthClass="max-w-2xl"
+        contentClassName="[direction:rtl]"
         headerClassName="rounded-t-3xl border-b border-slate-800 bg-slate-900 px-4 py-3 text-white"
         overlayClassName="bg-transparent backdrop-blur-0"
         footer={(
