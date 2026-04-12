@@ -198,16 +198,23 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
 
                 <div className="flex flex-wrap items-center gap-2">
                   {canSeeOrders ? (
-                    <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
-                      ثبت سفارش جدید
-                    </Button>
+                    <>
+                      <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
+                        ثبت سفارش جدید
+                      </Button>
+                      <IconButton size="iconSm" label="شخصی سازی دسترسی سریع" tooltip="شخصی سازی دسترسی سریع" onClick={openCustomizeModal}>
+                        <Settings2 size={15} />
+                      </IconButton>
+                    </>
                   ) : null}
-                  <IconButton size="iconSm" label="شخصی سازی دسترسی سریع" tooltip="شخصی سازی دسترسی سریع" onClick={openCustomizeModal}>
-                    <Settings2 size={15} />
-                  </IconButton>
                   <Button variant="tertiary" size="sm" onClick={() => navigate('/orders')}>
                     مشاهده سفارشات
                   </Button>
+                  {!canSeeOrders ? (
+                    <IconButton size="iconSm" label="شخصی سازی دسترسی سریع" tooltip="شخصی سازی دسترسی سریع" onClick={openCustomizeModal}>
+                      <Settings2 size={15} />
+                    </IconButton>
+                  ) : null}
                 </div>
               </div>
 
@@ -251,9 +258,10 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
       <ModalShell
         isOpen={isCustomizeOpen}
         title="شخصی سازی دکمه های دسترسی سریع"
-        description="دکمه ها و زیر دکمه های سایدبار را برای نمایش در صفحه خانه انتخاب کنید."
         onClose={() => setIsCustomizeOpen(false)}
         footer={modalFooter}
+        closeButtonMode="icon"
+        headerClassName="rounded-t-3xl border-b border-slate-800 bg-slate-900 px-4 py-3 text-white"
       >
         <div className="grid gap-2 sm:grid-cols-2">
           {availableShortcuts.map((shortcut) => {
