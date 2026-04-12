@@ -251,10 +251,10 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
         isOpen={isShortcutCustomizerOpen}
         onClose={closeShortcutCustomizer}
         closeButtonMode="icon"
-        centerTitle
         title="شخصی سازی دسترسی سریع"
         maxWidthClass="max-w-2xl"
         headerClassName="rounded-t-3xl border-b border-slate-800 bg-slate-900 px-4 py-3 text-white"
+        overlayClassName="bg-transparent backdrop-blur-0"
         footer={(
           <div className="flex items-center justify-start gap-2" dir="ltr">
             <Button type="button" variant="secondary" onClick={closeShortcutCustomizer}>انصراف</Button>
