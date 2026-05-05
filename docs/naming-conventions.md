@@ -1,5 +1,7 @@
 # Naming Conventions
 
+This file is the sole naming source of truth for the repo. Naming decisions are maintained here directly rather than through a separate ADR log.
+
 ## Cross-Layer Module Naming Map
 
 Use these exact forms consistently:

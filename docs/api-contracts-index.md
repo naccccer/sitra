@@ -33,7 +33,7 @@ Compact navigation index for runtime API contracts.
   - `GET /api/inventory_v2_reports.php`
   - Notes:
     - The current UI groups inventory into four workspaces: `کالاها`, `عملیات`, `موجودی و گزارش‌ها`, `تنظیمات`.
-    - `inventory_v2_operations.php` supports `production_consume` and `production_output`; legacy-compatible `production_move` remains accepted but is hidden from the main UI.
+    - `inventory_v2_operations.php` supports `production_consume` and `production_output`; the compatibility-only hidden type `production_move` remains accepted but is not shown in the main UI.
     - `inventory_v2_reservations.php` remains a contract anchor, but manual reservation management is currently treated as an internal/support workflow rather than a general-user screen.
 - Accounting:
   - `GET|POST|PUT|PATCH|DELETE /api/acc_payroll.php`
@@ -52,8 +52,8 @@ Compact navigation index for runtime API contracts.
   - `POST /api/master_data_operation_icon_upload.php`
 - Users and control plane:
   - `GET|POST|PUT|PATCH /api/users.php`
-  - Lifecycle additive query: `view=active|archived|all` (legacy aliases: `isActive`, `includeArchived`, `includeInactive`).
-  - Lifecycle PATCH action: `{ id, action: 'archive'|'restore'|'delete' }` with legacy alias `{ id, isActive: boolean }`.
+  - Lifecycle additive query: `view=active|archived|all` (compatibility aliases: `isActive`, `includeArchived`, `includeInactive`).
+  - Lifecycle PATCH action: `{ id, action: 'archive'|'restore'|'delete' }` with compatibility alias `{ id, isActive: boolean }`.
   - Delete is retained soft-delete (`deleted_at`) and returns `{ success, deletedId, deletedAt }`.
   - `GET|POST /api/role_permissions.php`
   - `GET|PATCH /api/module_registry.php`

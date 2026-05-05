@@ -8,7 +8,7 @@
 - [ ] Token compliance: no hardcoded values where tokens exist.
 - [ ] Universal state grammar applied where relevant (loading/empty/error/success/archived).
 - [ ] Permission-action clarity preserved (read-only vs write actions explicit).
-- [ ] Docs synchronized for phase-affecting changes (`docs/real-ui-ux/real-ui_ux-redesign-roadmap.md`, active phase prompt, and any affected design-system docs).
+- [ ] Docs synchronized for roadmap-affecting changes (`docs/ROADMAP.md` and any affected design-system docs).
 - [ ] Visual evidence included for perceptible UI change (screenshot/snapshot) or reason documented.
 
 ## Visual Regression

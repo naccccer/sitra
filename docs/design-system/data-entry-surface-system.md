@@ -1,6 +1,5 @@
-# Shared Data-Entry and Data-Surface System (Phase 3)
+# Shared Data-Entry and Data-Surface System
 
-Updated: 2026-04-08
 Scope: shared tables, forms, modals, and confirmation behavior
 
 ## Purpose
@@ -38,14 +37,14 @@ It extends the shell/state rules in `foundation-shell-system.md` and the benchma
   - `max-w-md` for confirmation and simple forms.
   - `max-w-lg`/`max-w-2xl` for multi-field or tabbed content.
 
-## 4) Deprecated patterns (Phase 3)
+## 4) Deprecated patterns
 - Browser-native `window.confirm` on shared operational surfaces is deprecated.
 - Unstructured modal form bodies with repeated local label/input styling are deprecated in favor of `FormSection` + `FormField`.
 
-## 5) Representative adoption in this phase
+## 5) Representative adoption anchors
 - Inventory archive panels (locations, lots) now use shared form grouping + shared confirmation modal.
 - Human resources archive/delete actions now use shared confirmation modal.
 
-## 6) Remaining migration debt
+## 6) Current exceptions
 - Some inventory and accounting workflows still use bespoke overlays and local form markup.
-- Program-wide `window.confirm` replacement is complete for active operational modules; remaining consistency debt is now table/form/modal wrapper normalization for Phase 5 consolidation.
+- Program-wide `window.confirm` replacement is complete for active operational modules; remaining consistency work is table/form/modal wrapper normalization when those surfaces are touched.

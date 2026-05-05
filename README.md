@@ -11,8 +11,9 @@ Read in this order:
 4. `docs/guardrails.md`
 5. `AGENTS.md`
 6. `docs/ai-playbook.md`
+7. `docs/ROADMAP.md`
 
-`docs/ROADMAP.md` is forward-looking only. It is not the source of truth for the current module map.
+`docs/ROADMAP.md` is the active execution roadmap. It does not override architecture, contracts, or module ownership docs.
 
 ## Current Active Modules
 - `sales`
@@ -72,3 +73,4 @@ Inactive scaffolds:
 - `docs/naming-conventions.md`
 - `docs/api-contracts-index.md`
 - `docs/golden-paths.md`
+- `docs/ROADMAP.md`

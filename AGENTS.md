@@ -8,7 +8,7 @@ Guidance for coding agents in this repository.
 3. `docs/code-map.md` (active module ownership + canonical edit paths)
 4. `docs/guardrails.md` (guardrail severity + enforcement)
 5. `README.md` and `docs/ai-playbook.md` (workflow)
-6. `docs/ROADMAP.md` (future-only; never architecture truth)
+6. `docs/ROADMAP.md` (active execution roadmap; never architecture truth)
 
 If docs conflict, follow higher-priority docs and update stale docs in the same change.
 

@@ -1,8 +1,7 @@
-# Foundation And Shell System
+# Foundation and Shell System
 
-Updated: 2026-04-08
 Owner: Shared UI runtime
-Scope: Phase 1 shared shell, tokens, action hierarchy, icon language, and universal states
+Scope: shared shell, tokens, action hierarchy, icon language, and universal states
 
 ## Runtime contract anchors
 - Shared tokens and shell overrides: `src/kernel/styles/ui-foundation.css`
@@ -42,7 +41,7 @@ Principles:
 ## Token usage
 - Colors, borders, radii, elevation, motion, and shell sizing come from `ui-foundation.css`.
 - Prefer shared tokens before introducing hardcoded values in shared surfaces.
-- Legacy values that still exist in untouched module internals are migration debt, not precedent.
+- Older hardcoded values that still exist in untouched module internals are debt, not precedent.
 
 ## Action hierarchy
 - `primary`
@@ -59,8 +58,8 @@ Principles:
   - Use `IconButton` with a tooltip and accessible label. Reserve for dense chrome or clearly understood controls.
 
 Compatibility note:
-- Legacy variants such as `ghost`, `danger`, and `forest` remain temporarily available for migration safety.
-- New shared surfaces should use the Phase 1 hierarchy names.
+- Compatibility variants such as `ghost`, `danger`, and `forest` remain temporarily available where the runtime still depends on them.
+- New shared surfaces should use the hierarchy names above.
 
 ## Icon language
 - Use `lucide-react` as the single icon set for shared shell and shared primitives.
@@ -90,8 +89,7 @@ Rules:
 - Prefer `InlineAlert` for inline status or recoverable local issues.
 - Avoid inventing one-off state blocks on top-level entry surfaces.
 
-## Phase 1 debt intentionally deferred
+## Current exceptions to preserve intentionally
 - `/orders/new` still supports an unauthenticated path outside the authenticated shared shell.
-- Sales benchmark customer/project linking and final confirmation now belong to the Phase 2 workflow contract; remaining sales-specific overlays and repo-wide confirm cleanup remain later-phase debt.
-- Module-heavy inner workflows still contain legacy local action ordering that should be normalized during later adoption phases.
-- Header alignment and spacing should be treated as visual polish debt if any page still shows minor shell-geometry drift after the shared fixups.
+- Some module-heavy inner workflows still use older local action ordering; those surfaces should converge on the shared hierarchy when touched.
+- Minor shell alignment polish should be treated as standard cleanup work, not as a reason to fork the shell contract.

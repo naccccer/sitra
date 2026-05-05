@@ -1,8 +1,7 @@
 # Benchmark Workflow System
 
-Updated: 2026-04-08
 Owner: Shared workflow runtime
-Scope: Phase 2 benchmark workflow for sales order entry plus customer/project intake
+Scope: benchmark workflow for sales order entry plus customer/project intake
 
 ## Runtime contract anchors
 - Order-entry customer context surface: `src/modules/sales/components/customer/order-form/OrderCustomerContextPanel.jsx`
@@ -44,7 +43,7 @@ Scope: Phase 2 benchmark workflow for sales order entry plus customer/project in
 - Do not add extra wrapper cards around summary rows when a single workflow surface is already clear.
 - Avoid decorative badges in top workflow toolbars; prefer compact plain-language status text.
 
-## Phase 2 debt intentionally deferred
-- Configuration-specific sales overlays outside customer/project linking still need broader shared-modal adoption.
-- Repo-wide replacement of remaining `window.confirm` usage stays Phase 3 work.
-- Benchmark workflow rules should be generalized into reusable form/modal/table standards during Phase 3 before wider module rollout.
+## Current boundaries
+- Configuration-specific sales overlays outside customer/project linking should move toward shared modal patterns when touched.
+- Repo-wide confirmation behavior should continue using the shared confirmation contract rather than browser-native dialogs.
+- Reusable table, form, and modal standards remain the shared contract for broader module adoption.

@@ -1,6 +1,5 @@
-# Design System Governance Policy (Post-Program)
+# Design System Governance Policy
 
-Updated: 2026-04-08
 Owner: Design-system governance owner
 
 ## 1) Enforcement policy for token/component compliance
@@ -10,7 +9,7 @@ Owner: Design-system governance owner
    - New bespoke page shell/template outside shared contracts.
    - New bespoke primitive when an existing shared primitive can be extended.
    - Hardcoded visual values where token exists (color/spacing/radius/shadow/motion/z-index/state).
-2. **Warning (must be resolved before phase close)**
+2. **Warning (must be resolved before the next release)**
    - Temporary module-local wrapper introduced with documented sunset path.
    - Partial conformance in transitional migration PRs.
 3. **Informational**
@@ -24,7 +23,7 @@ Owner: Design-system governance owner
 - Use shared UI primitives from `src/components/shared/ui/*` before adding new primitives.
 - Keep module internals module-owned, but rendering grammar must compose from shared contracts.
 - Every new component variant must document usage, states, and migration impact.
-- Treat `docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` as the canonical historical redesign record.
+- Treat `docs/ROADMAP.md` as the active execution sequence for shared-system follow-on work.
 
 ### Maintenance thresholds and rewrite triggers
 - Track and review monthly:
@@ -47,7 +46,7 @@ Use `.github/PULL_REQUEST_TEMPLATE.md` checklist in every PR:
 - Primitive reuse compliance
 - Universal state grammar compliance
 - Permission/action clarity check
-- Docs sync check (`docs/real-ui-ux/real-ui_ux-redesign-roadmap.md` + relevant design-system contract docs)
+- Docs sync check (`docs/ROADMAP.md` + relevant design-system contract docs)
 - Screenshot/visual evidence for perceptible UI changes
 
 Any unchecked blocker item means PR is not merge-ready.
@@ -61,7 +60,7 @@ Any unchecked blocker item means PR is not merge-ready.
 - Baseline state set per screen: default, loading, empty, error, success/archived (where applicable), permission-restricted.
 
 ### Process
-1. Capture baseline snapshots at phase close.
+1. Capture baseline snapshots for the affected release scope.
 2. For UI PRs, compare changed screens against baseline.
 3. If diff is intentional, attach rationale + updated snapshot.
 4. If diff is unintentional, block merge and revert/fix.
@@ -74,7 +73,7 @@ Any unchecked blocker item means PR is not merge-ready.
 ### Ownership
 - PR author: first-pass diff triage.
 - Reviewer/agent owner: policy conformance decision.
-- Release owner: final baseline approval at phase close.
+- Release owner: final baseline approval for the release.
 
 ---
 

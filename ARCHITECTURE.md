@@ -6,7 +6,7 @@ This file is the non-negotiable architecture source of truth.
 Supporting hierarchy:
 - `MODULE_CONTRACTS.md` (public contracts/compatibility)
 - `docs/code-map.md` (current ownership and paths)
-- `docs/ROADMAP.md` (future-only)
+- `docs/ROADMAP.md` (execution sequencing only; never architecture truth)
 
 ## 2) Core Decisions
 - Architecture: **Modular Monolith**
