@@ -2,12 +2,19 @@ import React, { useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import { ChevronDown, LogOut, X } from 'lucide-react'
 import { Tooltip } from '@/components/shared/ui'
-import { isModuleEnabled } from '@/kernel/moduleRegistry'
 import { getVisibleAccountingTabs } from '@/modules/accounting/navigation'
 import { useTabSettings } from '@/modules/accounting/hooks/useTabSettings'
 import { getVisibleInventoryTabs } from '@/modules/inventory/navigation'
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '@/utils/profile'
-import { getNavSections, getQueryTab, navChildLinkClass, navLinkClass, pathMatches, toNavTarget } from '@/components/layout/sidebarNav'
+import {
+  getNavItemPrimaryTarget,
+  getQueryTab,
+  getVisibleNavSections,
+  navChildLinkClass,
+  navLinkClass,
+  pathMatches,
+  toNavTarget,
+} from '@/components/layout/sidebarNav'
 
 // UI copy anchors: عملیات روزانه | پیکربندی | اطلاعات پایه | ممیزی فعالیت‌ها
 const EMPTY_PERMISSIONS = Object.freeze([])
@@ -16,13 +23,6 @@ const SidebarItemIcon = ({ icon, size = 17 }) => (
     {icon ? React.createElement(icon, { size, className: 'absolute left-1/2 top-1/2 block -translate-x-1/2 -translate-y-1/2' }) : null}
   </span>
 )
-
-const getItemPrimaryTarget = (item) => {
-  if (!Array.isArray(item.children) || item.children.length === 0) return toNavTarget(item)
-  if (item.dynamicToFirstVisibleChild) return toNavTarget(item.children[0])
-  const firstTabbedChild = item.children.find((child) => child.to === item.to && child.tab)
-  return toNavTarget(firstTabbedChild || item)
-}
 
 export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = false, isOpen = false, onCloseMobile = () => {}, onNavigate = () => {} }) => {
   const location = useLocation()
@@ -46,31 +46,12 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
   const railSectionClass = isRailCollapsed ? 'flex w-full flex-col items-center space-y-2' : 'space-y-2'
   const railGroupClass = isRailCollapsed ? 'flex w-full flex-col items-center space-y-1.5' : 'space-y-1.5'
 
-  const isVisibleItem = (item) => {
-    if (typeof item.when === 'function' && !item.when(capabilities, modules)) return false
-    if (item.capability && !capabilities[item.capability]) return false
-    if (item.moduleId && !isModuleEnabled(modules, item.moduleId)) return false
-    return true
-  }
-
-  const visibleSections = getNavSections({
+  const visibleSections = getVisibleNavSections({
     inventoryTabs: getVisibleInventoryTabs(permissions),
     accountingTabs: getVisibleAccountingTabs(permissions, isVisible),
+    capabilities,
+    modules,
   })
-    .map((section) => ({
-      ...section,
-      items: section.items.reduce((result, item) => {
-        if (!isVisibleItem(item)) return result
-        if (!Array.isArray(item.children) || item.children.length === 0) {
-          result.push(item)
-          return result
-        }
-        const visibleChildren = item.children.filter(isVisibleItem)
-        if (visibleChildren.length > 0) result.push({ ...item, children: visibleChildren })
-        return result
-      }, []),
-    }))
-    .filter((section) => section.items.length > 0)
 
   const defaultTabByPath = {}
   visibleSections.forEach((section) => {
@@ -127,7 +108,7 @@ export const Sidebar = ({ profile, session, onLogout = () => {}, isCollapsed = f
       return wrapWithTooltip(
         <NavLink
           key={item.id || item.to}
-          to={getItemPrimaryTarget(item)}
+          to={getNavItemPrimaryTarget(item)}
           onClick={onNavigate}
           aria-label={item.label}
           className={() => navLinkClass(isActive, true, tone)}
