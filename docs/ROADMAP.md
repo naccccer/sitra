@@ -32,7 +32,7 @@ Read first:
 
 Validation:
 - repo-wide reference search for deleted history folders and ADR paths
-- `rg "Ø|Ù|Û" docs *.md`
+- repo-wide mojibake search across markdown docs
 
 Acceptance criteria:
 - No surviving docs point to deleted history folders or ADR paths.
