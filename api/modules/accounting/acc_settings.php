@@ -10,7 +10,7 @@ $method = app_require_method(['GET', 'POST']);
 app_require_module_enabled($pdo, 'accounting');
 app_ensure_accounting_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'demo']);
 
 function acc_settings_permission_for_key(string $key, string $method): string
 {

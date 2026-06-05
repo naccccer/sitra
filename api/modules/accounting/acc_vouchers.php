@@ -12,7 +12,7 @@ $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH']);
 app_require_module_enabled($pdo, 'accounting');
 app_ensure_accounting_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'demo']);
 if ($method === 'GET') {
     acc_require_permission($actor, 'accounting.vouchers.read', $pdo);
 } elseif ($method === 'PATCH') {

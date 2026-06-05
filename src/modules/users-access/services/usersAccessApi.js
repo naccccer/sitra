@@ -7,7 +7,7 @@ import { api } from '../../../services/api'
  * @property {string} [fullName]
  * @property {string|null} [jobTitle]
  * @property {string} [password]
- * @property {'admin'|'manager'|'sales'} [role]
+ * @property {'admin'|'manager'|'sales'|'demo'} [role]
  */
 
 /** @typedef {Record<string, Array<string>>} RolePermissionsMatrix */

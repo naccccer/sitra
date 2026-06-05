@@ -106,7 +106,7 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
     };
   }, [orders]);
 
-  const canSeeOrders = Boolean(capabilities.canManageOrders) && isModuleEnabled(modules, 'sales');
+  const canCreateOrders = Boolean(capabilities.canCreateOrders) && isModuleEnabled(modules, 'sales');
   const visibleShortcuts = HOME_SHORTCUTS.filter((shortcut) => {
     if (!capabilities?.[shortcut.capability]) return false;
     if (!shortcut.moduleId) return true;
@@ -147,7 +147,7 @@ export const DashboardPage = ({ orders = [], session = {} }) => {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {canSeeOrders ? (
+                {canCreateOrders ? (
                   <Button action="create" showActionIcon size="sm" onClick={() => navigate('/orders/new')}>
                     ثبت سفارش جدید
                   </Button>

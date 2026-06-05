@@ -4,6 +4,7 @@ export const ROLE_LABELS = {
   admin: '\u0627\u062f\u0645\u06cc\u0646',
   manager: '\u0645\u062f\u06cc\u0631',
   sales: '\u0641\u0631\u0648\u0634',
+  demo: '\u062f\u0645\u0648',
 }
 
 const DEFAULT_USER_LABEL = '\u06a9\u0627\u0631\u0628\u0631'

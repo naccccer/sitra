@@ -14,7 +14,7 @@ function app_ensure_users_table(PDO $pdo): void
             id INT UNSIGNED NOT NULL AUTO_INCREMENT,
             username VARCHAR(64) NOT NULL,
             password VARCHAR(255) NOT NULL,
-            role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager',
+            role ENUM('admin','manager','sales','demo') NOT NULL DEFAULT 'manager',
             is_active TINYINT(1) NOT NULL DEFAULT 1,
             deleted_at TIMESTAMP NULL DEFAULT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -81,10 +81,10 @@ function app_ensure_users_table(PDO $pdo): void
         $stmt = $pdo->query("SHOW COLUMNS FROM users LIKE 'role'");
         $row = $stmt ? $stmt->fetch() : null;
         $type = strtolower((string)($row['Type'] ?? ''));
-        $targetType = "enum('admin','manager','sales')";
+        $targetType = "enum('admin','manager','sales','demo')";
         if ($type !== '' && $type !== $targetType) {
-            $pdo->exec("UPDATE users SET role = 'sales' WHERE role NOT IN ('admin', 'manager', 'sales')");
-            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager'");
+            $pdo->exec("UPDATE users SET role = 'sales' WHERE role NOT IN ('admin', 'manager', 'sales', 'demo')");
+            $pdo->exec("ALTER TABLE users MODIFY COLUMN role ENUM('admin','manager','sales','demo') NOT NULL DEFAULT 'manager'");
         }
     } catch (Throwable $e) {
         // Preserve runtime compatibility even if alter is not permitted.

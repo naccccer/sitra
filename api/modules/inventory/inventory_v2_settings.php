@@ -10,7 +10,7 @@ app_require_module_enabled($pdo, 'inventory');
 app_ensure_system_settings_table($pdo);
 
 $actor = $method === 'GET'
-    ? app_require_auth(['admin', 'manager', 'sales'])
+    ? app_require_auth(['admin', 'manager', 'sales', 'demo'])
     : app_require_auth(['admin', 'manager']);
 
 $allowedKeys = ['uom_options'];

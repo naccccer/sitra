@@ -8,6 +8,7 @@ export const OWNER_ROLE_OPTIONS = [
 export const FACTORY_ROLE_OPTIONS = [
   { value: 'manager', label: 'مدیر' },
   { value: 'sales', label: 'فروش' },
+  { value: 'demo', label: 'دمو' },
 ];
 
 export const ALL_ROLE_OPTIONS = [...OWNER_ROLE_OPTIONS, ...FACTORY_ROLE_OPTIONS];

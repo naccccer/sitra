@@ -10,7 +10,7 @@ app_require_method(['GET']);
 app_require_module_enabled($pdo, 'accounting');
 app_ensure_accounting_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'demo']);
 acc_require_permission($actor, 'accounting.reports.read', $pdo);
 
 $report       = acc_normalize_text($_GET['report'] ?? '');

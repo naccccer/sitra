@@ -6,10 +6,10 @@ SET FOREIGN_KEY_CHECKS = 0;
 
 UPDATE users
 SET role = 'sales'
-WHERE role NOT IN ('admin', 'manager', 'sales');
+WHERE role NOT IN ('admin', 'manager', 'sales', 'demo');
 
 ALTER TABLE users
-MODIFY COLUMN role ENUM('admin','manager','sales') NOT NULL DEFAULT 'manager';
+MODIFY COLUMN role ENUM('admin','manager','sales','demo') NOT NULL DEFAULT 'manager';
 
 DELETE FROM module_registry
 WHERE module_key NOT IN ('auth', 'users-access', 'sales', 'customers', 'master-data');

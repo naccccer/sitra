@@ -16,6 +16,9 @@ function app_sales_orders_handle_post(PDO $pdo): void
 {
     $payload = app_read_json_body();
     $currentUser = app_current_user();
+    if ($currentUser !== null && !app_user_has_permission($currentUser, 'sales.orders.create', $pdo)) {
+        app_json(['success' => false, 'error' => 'Access denied.'], 403);
+    }
     $result = app_sales_orders_post_response($pdo, $payload, $currentUser);
     app_json($result['payload'], (int)$result['statusCode']);
 }

@@ -11,7 +11,7 @@ app_ensure_human_resources_schema($pdo);
 
 require_once __DIR__ . '/../../common/human_resources_documents.php';
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'demo']);
 
 if ($method === 'GET') {
     if (!app_user_has_permission($actor, 'human_resources.employees.read', $pdo)) {

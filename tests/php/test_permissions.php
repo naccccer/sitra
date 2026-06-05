@@ -65,9 +65,10 @@ test_assert_contains('sales.orders.read', $catalog, 'includes sales.orders.read'
 test_suite('app_default_role_permissions_matrix');
 
 $matrix = app_default_role_permissions_matrix();
-test_assert(isset($matrix['admin'], $matrix['manager'], $matrix['sales']), 'has admin, manager, sales');
+test_assert(isset($matrix['admin'], $matrix['manager'], $matrix['sales'], $matrix['demo']), 'has admin, manager, sales, demo');
 test_assert(is_array($matrix['admin']), 'admin permissions is array');
 test_assert(is_array($matrix['sales']), 'sales permissions is array');
+test_assert(is_array($matrix['demo']), 'demo permissions is array');
 
 // Admin should have all permissions
 $allPerms = app_permission_catalog();
@@ -106,6 +107,23 @@ test_assert(
 test_assert(
     !in_array('accounting.payroll.record_payment', $matrix['sales'], true),
     'sales role does not have accounting.payroll.record_payment'
+);
+test_assert_contains('sales.orders.read', $matrix['demo'], 'demo has sales.orders.read');
+test_assert_contains('customers.read', $matrix['demo'], 'demo has customers.read');
+test_assert_contains('inventory.v2_operations.read', $matrix['demo'], 'demo has inventory.v2_operations.read');
+test_assert_contains('accounting.payroll.read', $matrix['demo'], 'demo has accounting.payroll.read');
+test_assert_contains('human_resources.employees.read', $matrix['demo'], 'demo has human_resources.employees.read');
+test_assert(
+    !in_array('sales.orders.create', $matrix['demo'], true),
+    'demo role does not have sales.orders.create'
+);
+test_assert(
+    !in_array('customers.write', $matrix['demo'], true),
+    'demo role does not have customers.write'
+);
+test_assert(
+    !in_array('inventory.v2_operations.write', $matrix['demo'], true),
+    'demo role does not have inventory.v2_operations.write'
 );
 
 // ------------------------------------------------------------------
@@ -159,6 +177,10 @@ test_assert(count($adminPerms) > 0, 'admin has permissions');
 $salesPerms = app_role_permissions('sales');
 test_assert_contains('sales.orders.read', $salesPerms, 'sales has sales.orders.read');
 
+$demoPerms = app_role_permissions('demo');
+test_assert_contains('sales.orders.read', $demoPerms, 'demo has sales.orders.read');
+test_assert(!in_array('sales.orders.create', $demoPerms, true), 'demo does not have sales.orders.create');
+
 $invalidPerms = app_role_permissions('nonexistent-role');
 test_assert_equals([], $invalidPerms, 'invalid role returns empty array');
 
@@ -173,6 +195,7 @@ test_suite('app_user_has_permission');
 
 $adminUser = ['id' => '1', 'role' => 'admin', 'username' => 'admin'];
 $salesUser = ['id' => '2', 'role' => 'sales', 'username' => 'alice'];
+$demoUser = ['id' => '3', 'role' => 'demo', 'username' => 'preview'];
 
 test_assert_true(
     app_user_has_permission($adminUser, 'sales.orders.read'),
@@ -193,6 +216,14 @@ test_assert_true(
 test_assert_true(
     app_user_has_permission($salesUser, 'master_data.catalog.write'),
     'sales user has master_data.catalog.write'
+);
+test_assert_true(
+    app_user_has_permission($demoUser, 'sales.orders.read'),
+    'demo user has sales.orders.read'
+);
+test_assert_false(
+    app_user_has_permission($demoUser, 'sales.orders.create'),
+    'demo user cannot create orders'
 );
 test_assert_false(
     app_user_has_permission(null, 'sales.orders.read'),
@@ -243,11 +274,25 @@ test_assert_false($caps['canManageSystemSettings'], 'canManageSystemSettings alw
 
 $salesCaps = app_module_capabilities('sales');
 test_assert_true($salesCaps['canManageOrders'], 'sales canManageOrders');
+test_assert_true($salesCaps['canCreateOrders'], 'sales canCreateOrders');
 test_assert_true($salesCaps['canManageCustomers'], 'sales canManageCustomers');
 test_assert_true($salesCaps['canAccessInventory'], 'sales canAccessInventory');
 test_assert_true($salesCaps['canManageCatalog'], 'sales can manage catalog');
 test_assert_false($salesCaps['canManageUsers'], 'sales cannot manage users');
 test_assert_false($salesCaps['canManageInventory'], 'sales cannot manage inventory');
+
+$demoCaps = app_module_capabilities('demo');
+test_assert_true($demoCaps['canAccessDashboard'], 'demo canAccessDashboard');
+test_assert_true($demoCaps['canManageOrders'], 'demo canManageOrders');
+test_assert_false($demoCaps['canCreateOrders'], 'demo cannot create orders');
+test_assert_true($demoCaps['canManageCustomers'], 'demo canManageCustomers');
+test_assert_true($demoCaps['canAccessInventory'], 'demo canAccessInventory');
+test_assert_false($demoCaps['canManageInventory'], 'demo cannot manage inventory');
+test_assert_true($demoCaps['canAccessAccounting'], 'demo canAccessAccounting');
+test_assert_true($demoCaps['canAccessHumanResources'], 'demo canAccessHumanResources');
+test_assert_false($demoCaps['canManageCatalog'], 'demo cannot manage catalog');
+test_assert_false($demoCaps['canManageProfile'], 'demo cannot manage profile');
+test_assert_false($demoCaps['canManageUsers'], 'demo cannot manage users');
 
 $unknownCaps = app_module_capabilities('nonexistent');
 test_assert_false($unknownCaps['canAccessDashboard'], 'unknown role has no capabilities');

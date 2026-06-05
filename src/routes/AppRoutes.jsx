@@ -51,7 +51,7 @@ export const AppRoutes = ({
         path="/orders/new"
         element={(
           session?.authenticated ? (
-            <CapabilityRouteGuard session={session} capability="canManageOrders">
+            <CapabilityRouteGuard session={session} capability="canCreateOrders">
               <ModuleRouteGuard session={session} moduleId="sales">
                 <MainLayout onLogout={onLogout} profile={profile} session={session}>
                   <OrderCreatePage catalog={catalog} orders={orders} setOrders={setOrders} session={session} profile={profile} />

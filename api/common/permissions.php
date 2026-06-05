@@ -56,6 +56,13 @@ function app_permission_catalog(): array
 function app_default_role_permissions_matrix(): array
 {
     $all = app_permission_catalog();
+    $demoReadPermissions = array_merge([
+        'sales.orders.read',
+        'customers.read',
+        'master_data.catalog.read',
+        'profile.read',
+    ], app_inventory_v2_read_permissions(), app_accounting_read_permissions(), app_human_resources_read_permissions());
+
     return [
         'admin' => $all,
         'manager' => array_merge([
@@ -84,6 +91,7 @@ function app_default_role_permissions_matrix(): array
             'master_data.catalog.write',
             'profile.read',
         ], app_inventory_v2_sales_default_permissions()),
+        'demo' => $demoReadPermissions,
     ];
 }
 function app_normalize_role_permissions_matrix($input): array
@@ -227,6 +235,7 @@ function app_module_capabilities(?string $role, ?array $modules = null, ?PDO $pd
     $capabilities = [
         'canAccessDashboard' => in_array('sales.orders.read', $permissions, true),
         'canManageOrders' => in_array('sales.orders.read', $permissions, true),
+        'canCreateOrders' => in_array('sales.orders.create', $permissions, true),
         'canManageCustomers' => in_array('customers.read', $permissions, true),
         'canManageCatalog' => in_array('master_data.catalog.write', $permissions, true),
         'canManageUsers' => in_array('users_access.users.write', $permissions, true),

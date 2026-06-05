@@ -66,7 +66,7 @@ Inactive scaffolds:
 - Bootstrap entrypoint: `GET /api/bootstrap.php`
 - Auth model: cookie-based session + CSRF
 - Valid order statuses: `pending`, `processing`, `delivered`, `archived`
-- Valid roles: `admin`, `manager`, `sales`
+- Valid roles: `admin`, `manager`, `sales`, `demo`
 
 ## Additional Docs
 - `docs/modules/README.md`

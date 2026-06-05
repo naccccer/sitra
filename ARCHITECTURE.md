@@ -64,8 +64,9 @@ Forbidden:
 
 ## 8) Security and Access
 - Authorization is server-side.
-- Valid roles are exactly: `admin`, `manager`, `sales`.
+- Valid roles are exactly: `admin`, `manager`, `sales`, `demo`.
 - `admin` reserved for owner/support.
+- `demo` is read-only by default and intended for app preview access.
 - `module_registry` is owner-only (`admin` + `APP_OWNER_UID`).
 
 ## 9) Structural Constraints

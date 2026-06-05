@@ -9,7 +9,7 @@ $method = app_require_method(['GET', 'POST', 'PUT', 'PATCH', 'DELETE']);
 app_require_module_enabled($pdo, 'human-resources');
 app_ensure_human_resources_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager']);
+$actor = app_require_auth(['admin', 'manager', 'demo']);
 if ($method === 'GET') {
     if (!app_user_has_permission($actor, 'human_resources.employees.read', $pdo)) {
         app_json(['success' => false, 'error' => 'Access denied.'], 403);

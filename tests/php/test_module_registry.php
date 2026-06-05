@@ -21,6 +21,7 @@ test_assert(is_array($roles), 'returns array');
 test_assert_contains('admin', $roles, 'includes admin');
 test_assert_contains('manager', $roles, 'includes manager');
 test_assert_contains('sales', $roles, 'includes sales');
+test_assert_contains('demo', $roles, 'includes demo');
 
 // ------------------------------------------------------------------
 // app_is_valid_user_role
@@ -31,6 +32,7 @@ test_suite('app_is_valid_user_role');
 test_assert_true(app_is_valid_user_role('admin'), 'admin is valid');
 test_assert_true(app_is_valid_user_role('manager'), 'manager is valid');
 test_assert_true(app_is_valid_user_role('sales'), 'sales is valid');
+test_assert_true(app_is_valid_user_role('demo'), 'demo is valid');
 test_assert_false(app_is_valid_user_role('superadmin'), 'superadmin is not valid');
 test_assert_false(app_is_valid_user_role(''), 'empty string is not valid');
 test_assert_false(app_is_valid_user_role('Admin'), 'role check is case-sensitive');

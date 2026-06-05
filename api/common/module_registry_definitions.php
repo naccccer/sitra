@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 function app_user_roles(): array
 {
-    return ['admin', 'manager', 'sales'];
+    return ['admin', 'manager', 'sales', 'demo'];
 }
 
 function app_is_valid_user_role(string $role): bool

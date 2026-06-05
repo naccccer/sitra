@@ -9,7 +9,7 @@ $method = app_require_method(['GET', 'POST', 'PATCH']);
 app_require_module_enabled($pdo, 'inventory');
 app_ensure_inventory_v2_schema($pdo);
 
-$actor = app_require_auth(['admin', 'manager', 'sales']);
+$actor = app_require_auth(['admin', 'manager', 'sales', 'demo']);
 if ($method === 'GET') {
     app_inventory_v2_require_permission($actor, 'inventory.v2_operations.read', $pdo);
 } else {

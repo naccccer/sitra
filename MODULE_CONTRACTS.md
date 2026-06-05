@@ -91,7 +91,7 @@ Additive compatibility fields `factoryLimits.minimumChargeEnabled` and `jumboRul
 These values are externally relied on and must remain stable unless versioned migration is planned:
 
 - Sales order status: `pending`, `processing`, `delivered`, `archived`
-- Roles: `admin`, `manager`, `sales`
+- Roles: `admin`, `manager`, `sales`, `demo`
 - Inventory operation lifecycle: `draft`, `submitted`, `approved`, `posted`, `cancelled`
 - Inventory reservation lifecycle: `active`, `fulfilled`, `released`
 
