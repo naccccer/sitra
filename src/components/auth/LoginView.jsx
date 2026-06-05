@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { ArrowRight, Loader2, Lock } from 'lucide-react';
+import { ArrowRight, Eye, EyeOff, Loader2, Lock, User } from 'lucide-react';
+import loginGlassOperationsImage from '@/assets/auth/login-glass-operations.webp';
 import { api } from '@/services/api';
 import { normalizeProfile, profileBrandInitial, profileLogoSrc } from '@/utils/profile';
 import { Button, Card, InlineAlert, Input } from '@/components/shared/ui';
@@ -7,6 +8,7 @@ import { Button, Card, InlineAlert, Input } from '@/components/shared/ui';
 export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [failedLogoSrc, setFailedLogoSrc] = useState('');
@@ -70,26 +72,43 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-xs font-bold text-[rgb(var(--ui-text-muted))]">نام کاربری</label>
-                  <Input
-                    type="text"
-                    value={username}
-                    onChange={(event) => setUsername(event.target.value)}
-                    className="bg-white/95"
-                    autoComplete="username"
-                    dir="ltr"
-                  />
+                  <div className="relative">
+                    <Input
+                      type="text"
+                      value={username}
+                      onChange={(event) => setUsername(event.target.value)}
+                      className="bg-white/95 pl-11"
+                      autoComplete="username"
+                      dir="ltr"
+                    />
+                    <span className="pointer-events-none absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center text-[rgb(var(--ui-text-muted))]">
+                      <User size={17} aria-hidden="true" />
+                    </span>
+                  </div>
                 </div>
 
                 <div>
                   <label className="mb-1.5 block text-xs font-bold text-[rgb(var(--ui-text-muted))]">رمز عبور</label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    className="bg-white/95"
-                    autoComplete="current-password"
-                    dir="ltr"
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? 'text' : 'password'}
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="bg-white/95 pl-11"
+                      autoComplete="current-password"
+                      dir="ltr"
+                    />
+                    <button
+                      type="button"
+                      className="focus-ring absolute left-2 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-[var(--radius-sm)] text-[rgb(var(--ui-text-muted))] transition hover:bg-[rgb(var(--ui-accent-muted))]/45 hover:text-[rgb(var(--ui-text))]"
+                      onClick={() => setShowPassword((current) => !current)}
+                      aria-label={showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'}
+                      aria-pressed={showPassword}
+                      title={showPassword ? 'مخفی کردن رمز عبور' : 'نمایش رمز عبور'}
+                    >
+                      {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                    </button>
+                  </div>
                 </div>
 
                 {errorMsg ? (
@@ -112,11 +131,8 @@ export const LoginView = ({ profile, onLogin, onGoToCustomer }) => {
 
             <div className="auth-entry-brand-panel order-2 hidden min-h-full lg:flex">
               <div className="auth-entry-art-panel m-4 flex flex-1 overflow-hidden rounded-[28px]" aria-hidden="true">
-                <div className="auth-entry-art-column auth-entry-art-column-one" />
-                <div className="auth-entry-art-column auth-entry-art-column-two" />
-                <div className="auth-entry-art-column auth-entry-art-column-three" />
-                <div className="auth-entry-art-column auth-entry-art-column-four" />
-                <div className="auth-entry-art-flare" />
+                <img src={loginGlassOperationsImage} alt="" className="auth-entry-art-image" />
+                <div className="auth-entry-art-sheen" />
                 <div className="auth-entry-art-mist" />
               </div>
             </div>
