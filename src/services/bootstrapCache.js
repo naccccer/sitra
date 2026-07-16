@@ -1,4 +1,4 @@
-const BOOTSTRAP_CACHE_KEY = 'sitra:bootstrap-cache:v1'
+const BOOTSTRAP_CACHE_KEY = 'glass-design:bootstrap-cache:v1'
 const BOOTSTRAP_CACHE_TTL_MS = 24 * 60 * 60 * 1000
 
 function supportsStorage() {

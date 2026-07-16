@@ -1,6 +1,6 @@
-# Sitra ERP
+# گلس‌دیزاین ERP
 
-Sitra is an RTL-first modular ERP covering sales, customers, inventory, HR, accounting, master data, and access control workflows.
+گلس‌دیزاین یک ERP ماژولار RTL-first برای فروش، مشتریان، انبار، منابع انسانی، حسابداری، داده‌های پایه و کنترل دسترسی است.
 
 ## Start Here
 Read in this order:

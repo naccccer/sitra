@@ -1,4 +1,4 @@
-const STORAGE_KEY = 'sitra:sales:order-create-draft:v1';
+const STORAGE_KEY = 'glass-design:sales:order-create-draft:v1';
 
 export const readOrderCreateDraft = () => {
   try {

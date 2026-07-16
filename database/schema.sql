@@ -1,4 +1,4 @@
-﻿-- Sitra backend schema for XAMPP MySQL/MariaDB
+-- گلس‌دیزاین backend schema for XAMPP MySQL/MariaDB
 -- Import this file in phpMyAdmin after creating the database.
 CREATE TABLE IF NOT EXISTS users (
     id INT UNSIGNED NOT NULL AUTO_INCREMENT,
@@ -541,7 +541,7 @@ INSERT INTO module_registry (module_key, label, phase, is_enabled, is_protected,
     ('human-resources', 'منابع انسانی', 'active', 1, 0, 45), ('accounting', 'Accounting', 'active', 1, 0, 50)
 ON DUPLICATE KEY UPDATE label = VALUES(label), phase = VALUES(phase), is_protected = VALUES(is_protected), sort_order = VALUES(sort_order);
 INSERT INTO inventory_warehouses (warehouse_key, name, flow_type, is_active) VALUES
-    ('raw-input', 'Ø§Ù†Ø¨Ø§Ø± ÙˆØ±ÙˆØ¯ÛŒ Ø¬Ø§Ù…', 'raw_input', 1), ('finished-output', 'Ø§Ù†Ø¨Ø§Ø± Ø®Ø±ÙˆØ¬ÛŒ Ù…Ø­ØµÙˆÙ„', 'finished_output', 1)
+    ('raw-input', 'انبار ورودی جام', 'raw_input', 1), ('finished-output', 'انبار خروجی محصول', 'finished_output', 1)
 ON DUPLICATE KEY UPDATE name = VALUES(name), flow_type = VALUES(flow_type), is_active = VALUES(is_active);
 INSERT INTO inventory_v2_warehouses (warehouse_key, name, notes, is_active) VALUES
     ('v2-raw-input', 'انبار ورودی مواد', 'Seeded by Inventory V2 foundation', 1),

@@ -40,7 +40,7 @@ import { api } from '../../src/services/api'
 // Helpers
 // ---------------------------------------------------------------------------
 
-const DB_NAME = 'sitra-offline'
+const DB_NAME = 'glass-design-offline'
 const STORE_NAME = 'sales_offline_ops'
 
 /** Read all raw ops from the IDB store. */

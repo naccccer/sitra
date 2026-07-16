@@ -11,39 +11,7 @@ app_ensure_users_table($pdo);
 $hasIsActive = app_users_is_active_column($pdo);
 $hasIdentityColumns = app_users_has_identity_columns($pdo);
 
-// Rate limiting: max 5 failed attempts per IP in a 15-minute window
 $clientIp = (string)($_SERVER['REMOTE_ADDR'] ?? '0.0.0.0');
-$rateLimitMax = 5;
-$rateLimitWindowSec = 900;
-$rateLimitCutoff = date('Y-m-d H:i:s', time() - $rateLimitWindowSec);
-try {
-    $pdo->exec(
-        "CREATE TABLE IF NOT EXISTS login_attempts (
-            id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
-            ip VARCHAR(45) NOT NULL,
-            attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-            PRIMARY KEY (id),
-            KEY idx_ip_time (ip, attempted_at)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4"
-    );
-    $pdo->prepare('DELETE FROM login_attempts WHERE attempted_at < :cutoff')
-        ->execute(['cutoff' => $rateLimitCutoff]);
-    $countStmt = $pdo->prepare('SELECT COUNT(*) FROM login_attempts WHERE ip = :ip AND attempted_at > :cutoff');
-    $countStmt->execute(['ip' => $clientIp, 'cutoff' => $rateLimitCutoff]);
-    if ((int)$countStmt->fetchColumn() >= $rateLimitMax) {
-        app_audit_log($pdo, 'auth.login.rate_limited', 'session', null, [
-            'ip' => $clientIp,
-            'windowSeconds' => $rateLimitWindowSec,
-            'maxAttempts' => $rateLimitMax,
-        ]);
-        app_json([
-            'success' => false,
-            'error' => 'Too many failed login attempts. Please try again in 15 minutes.',
-        ], 429);
-    }
-} catch (Throwable $e) {
-    // If rate-limit table is unavailable, proceed without blocking
-}
 
 $data = app_read_json_body();
 $username = trim((string)($data['username'] ?? ''));
@@ -85,12 +53,6 @@ if ($user) {
 }
 
 if (!$user || !$validCredentials) {
-    try {
-        $pdo->prepare('INSERT INTO login_attempts (ip) VALUES (:ip)')
-            ->execute(['ip' => $clientIp]);
-    } catch (Throwable $e) {
-        // Ignore if table unavailable
-    }
     app_audit_log($pdo, 'auth.login.failed', 'session', null, [
         'ip' => $clientIp,
         'username' => $username,

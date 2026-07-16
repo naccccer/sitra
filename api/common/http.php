@@ -12,7 +12,7 @@ function app_install_exception_handler(): void
     set_exception_handler(static function (Throwable $e): void {
         $isDebug = app_env_get('APP_DEBUG', '0') === '1';
         error_log(sprintf(
-            '[sitra] Uncaught exception: %s: %s in %s:%d',
+            '[glass-design] Uncaught exception: %s: %s in %s:%d',
             get_class($e),
             $e->getMessage(),
             $e->getFile(),

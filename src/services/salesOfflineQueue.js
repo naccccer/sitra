@@ -1,7 +1,7 @@
 import { api } from './api'
 import { generateUUIDv4 } from '../utils/uuid'
 
-const DB_NAME = 'sitra-offline'
+const DB_NAME = 'glass-design-offline'
 const DB_VERSION = 1
 const STORE_NAME = 'sales_offline_ops'
 

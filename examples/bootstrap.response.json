@@ -1,4 +1,4 @@
-﻿{
+{
   "session": {
     "authenticated": true,
     "role": "admin",
@@ -40,7 +40,7 @@
     "roundStep": 1000
   },
   "profile": {
-    "brandName": "Sitra",
+    "brandName": "گلس‌دیزاین",
     "address": "",
     "phone": "",
     "logoPath": ""

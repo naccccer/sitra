@@ -4,7 +4,7 @@ const API_BASE = RAW_API_BASE ? RAW_API_BASE.replace(/\/+$/, '') : ''
 
 /**
  * Resolve an API file path to a runtime-safe URL.
- * Handles sub-path deployments (e.g. /sitra) and external API base URLs.
+ * Handles sub-path deployments (e.g. /glass-design) and external API base URLs.
  * @param {string} path
  * @returns {string}
  */

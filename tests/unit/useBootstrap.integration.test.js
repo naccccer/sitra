@@ -31,7 +31,7 @@ vi.mock('../../src/services/salesOfflineQueue', () => ({
 const authenticatedBootstrap = {
   session: { authenticated: true, role: 'manager', username: 'manager' },
   catalog: { glasses: [], operations: [], connectors: { interlayers: [], spacers: [] }, fees: {} },
-  profile: { brandName: 'Sitra' },
+  profile: { brandName: 'گلس‌دیزاین' },
   orders: { items: [], hasMore: false, nextCursor: null },
   csrfToken: 'csrf-auth-1',
   permissions: ['sales.orders.read'],

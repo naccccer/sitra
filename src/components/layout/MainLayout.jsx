@@ -3,7 +3,7 @@ import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 
-const SHELL_COLLAPSE_STORAGE_KEY = 'sitra.shell.sidebar-collapsed';
+const SHELL_COLLAPSE_STORAGE_KEY = 'glass-design.shell.sidebar-collapsed';
 
 const isDesktopViewport = () => (
   typeof window !== 'undefined'

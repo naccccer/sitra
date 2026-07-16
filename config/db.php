@@ -78,7 +78,7 @@ $connectTimeoutRaw = app_env_first(['DB_CONNECT_TIMEOUT', 'MYSQL_CONNECT_TIMEOUT
 
 $host = $host ?? (($parsedUrl['host'] ?? '') !== '' ? (string)$parsedUrl['host'] : '127.0.0.1');
 $portRaw = $portRaw ?? (($parsedUrl['port'] ?? '') !== '' ? (string)$parsedUrl['port'] : '3306');
-$db = $db ?? (($parsedUrl['name'] ?? '') !== '' ? (string)$parsedUrl['name'] : 'sitra');
+$db = $db ?? (($parsedUrl['name'] ?? '') !== '' ? (string)$parsedUrl['name'] : 'glass_design');
 $user = $user ?? (($parsedUrl['user'] ?? '') !== '' ? (string)$parsedUrl['user'] : 'root');
 $pass = $pass ?? (($parsedUrl['pass'] ?? '') !== '' ? (string)$parsedUrl['pass'] : '');
 $charset = $charset ?? (($parsedUrl['charset'] ?? '') !== '' ? (string)$parsedUrl['charset'] : 'utf8mb4');
@@ -134,7 +134,7 @@ try {
 if ($pdo === null) {
     $isDebug = app_env_get('APP_DEBUG', '0') === '1';
     $details = implode(' | ', $connectionErrors);
-    error_log('[sitra] Database connection failed. ' . $details);
+    error_log('[glass-design] Database connection failed. ' . $details);
 
     if (!headers_sent()) {
         header('Content-Type: application/json; charset=UTF-8');

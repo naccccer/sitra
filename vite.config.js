@@ -29,9 +29,9 @@ export default defineConfig(({ mode }) => {
         ],
         manifest: {
           id: normalizedBase,
-          name: 'سیستم سفارشات سیترا',
-          short_name: 'Sitra ERP',
-          description: 'سامانه یکپارچه مدیریت سفارشات و عملیات سیترا',
+          name: 'سیستم سفارشات گلس‌دیزاین',
+          short_name: 'گلس‌دیزاین ERP',
+          description: 'سامانه یکپارچه مدیریت سفارشات و عملیات گلس‌دیزاین',
           theme_color: '#0f172a',
           background_color: '#f8fafc',
           display: 'standalone',
@@ -75,7 +75,7 @@ export default defineConfig(({ mode }) => {
                 && /\/api\/catalog\.php($|\?)/.test(url.pathname),
               handler: 'NetworkFirst',
               options: {
-                cacheName: 'sitra-api-catalog-cache',
+                cacheName: 'glass-design-api-catalog-cache',
                 networkTimeoutSeconds: 8,
                 expiration: {
                   maxEntries: 40,
@@ -90,7 +90,7 @@ export default defineConfig(({ mode }) => {
               urlPattern: ({ request }) => request.destination === 'font',
               handler: 'CacheFirst',
               options: {
-                cacheName: 'sitra-font-cache',
+                cacheName: 'glass-design-font-cache',
                 expiration: {
                   maxEntries: 20,
                   maxAgeSeconds: 30 * 24 * 60 * 60,

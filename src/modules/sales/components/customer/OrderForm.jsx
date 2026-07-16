@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Menu, User } from 'lucide-react';
 import { SettingsModal } from '@/modules/sales/components/customer/SettingsModal';
 import { PrintInvoice } from '@/components/shared/PrintInvoice';
@@ -88,9 +88,9 @@ export const OrderForm = ({
       {!editingOrder && !staffMode && (
         <header className="print-hide mx-auto mb-6 flex items-center justify-between rounded-2xl border border-slate-800 bg-slate-900 p-4 text-white shadow-md">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black">S</div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/20 bg-white/10 text-xl font-black">گ</div>
             <div>
-              <h1 className="text-lg font-black tracking-tight">گلس دیزاین | Sitra</h1>
+              <h1 className="text-lg font-black tracking-tight">گلس‌دیزاین</h1>
               <p className="mt-0.5 text-[10px] font-bold text-slate-400">سیستم یکپارچه سفارش آنلاین</p>
             </div>
           </div>

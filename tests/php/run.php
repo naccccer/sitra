@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 /**
- * PHP test runner for Sitra.
+ * PHP test runner for گلس‌دیزاین.
  *
  * A lightweight, dependency-free test runner that executes each test file
  * in isolation by spawning a child PHP process. This prevents functions
@@ -28,7 +28,7 @@ $totalFailed = 0;
 $suiteErrors = [];
 $startTime = microtime(true);
 
-echo "\n\033[1mSitra PHP Tests\033[0m\n";
+echo "\n\033[1mگلس‌دیزاین PHP Tests\033[0m\n";
 echo str_repeat('─', 50) . "\n";
 
 foreach ($testFiles as $file) {

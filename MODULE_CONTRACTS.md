@@ -1,4 +1,4 @@
-# Sitra ERP Module Contracts
+# گلس‌دیزاین ERP Module Contracts
 
 ## Purpose
 This file defines **stable cross-module contracts** at a compact level.
@@ -21,6 +21,8 @@ This file defines **stable cross-module contracts** at a compact level.
 - `kernel.permission_check.v1`
 - `kernel.audit_log.v1`
 - `kernel.module_registry.v1`
+
+`POST /api/login.php` validates credentials without a temporary IP lockout window; failed credentials return the standard invalid-credentials response and are audited.
 
 ### Master Data
 - `master_data.catalog_get.v1`

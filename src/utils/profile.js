@@ -2,7 +2,7 @@ import { FACTORY_ADDRESS, FACTORY_PHONES } from './helpers';
 import { resolveApiFileUrl } from '@/utils/url';
 
 export const defaultProfile = {
-  brandName: 'Sitra',
+  brandName: 'گلس‌دیزاین',
   panelSubtitle: 'پنل مدیریت سفارش',
   invoiceTitleCustomer: 'پیش‌فاکتور رسمی سفارش',
   invoiceTitleFactory: 'برگه سفارش کارگاهی',
@@ -47,6 +47,6 @@ export const profileLogoSrc = (logoPath = '') => {
 export const profileBrandInitial = (profile) => {
   const normalized = normalizeProfile(profile);
   const first = toSafeText(normalized.brandName).charAt(0);
-  if (!first) return 'S';
+  if (!first) return 'گ';
   return first.toUpperCase();
 };

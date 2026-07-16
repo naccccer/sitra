@@ -137,7 +137,7 @@ function app_users_has_identity_columns(PDO $pdo): bool
 function app_profile_defaults(): array
 {
     return [
-        'brandName' => 'Sitra',
+        'brandName' => 'گلس‌دیزاین',
         'panelSubtitle' => 'پنل مدیریت سفارش',
         'invoiceTitleCustomer' => 'پیش‌فاکتور رسمی سفارش',
         'invoiceTitleFactory' => 'برگه سفارش کارگاهی',

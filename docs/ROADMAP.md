@@ -1,4 +1,4 @@
-# Sitra ERP Roadmap
+# گلس‌دیزاین ERP Roadmap
 
 This file is the active execution roadmap for follow-on work. It does not override `ARCHITECTURE.md`, `MODULE_CONTRACTS.md`, or `docs/code-map.md`.
 

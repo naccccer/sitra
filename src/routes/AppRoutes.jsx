@@ -11,7 +11,6 @@ import { HumanResourcesPage } from '../modules/human-resources'
 import { InventoryV2Page } from '../modules/inventory'
 import { AccountingPage } from '../modules/accounting'
 import { MasterDataPage, PricingPage, ProfilePage } from '../modules/master-data'
-import { DashboardPage } from '../pages/DashboardPage'
 import { LoginPage } from '../pages/LoginPage'
 import { UsersPage } from '../modules/users-access'
 import { CapabilityRouteGuard, ModuleRouteGuard, OwnerRouteGuard, ProtectedRoute } from './RouteGuards'
@@ -46,6 +45,7 @@ export const AppRoutes = ({
 
   return (
     <Routes>
+      <Route index element={<Navigate to="/orders/new" replace />} />
       <Route path="/login" element={<LoginPage session={session} onLogin={onLogin} profile={profile} />} />
       <Route
         path="/orders/new"
@@ -68,7 +68,6 @@ export const AppRoutes = ({
 
       <Route element={<ProtectedRoute isAuthenticated={Boolean(session?.authenticated)} />}>
         <Route element={<MainLayout onLogout={onLogout} profile={profile} session={session} />}>
-          <Route index element={<DashboardPage orders={orders} session={session} />} />
           <Route path="orders" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrdersPage orders={orders} ordersHasMore={ordersHasMore} setOrders={setOrders} onLoadMoreOrders={onLoadMoreOrders} onReloadOrders={onReloadOrders} catalog={catalog} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="orders/:id" element={<CapabilityRouteGuard session={session} capability="canManageOrders"><ModuleRouteGuard session={session} moduleId="sales"><OrderDetailPage catalog={catalog} orders={orders} setOrders={setOrders} profile={profile} /></ModuleRouteGuard></CapabilityRouteGuard>} />
           <Route path="customers" element={<CapabilityRouteGuard session={session} capability="canManageCustomers"><ModuleRouteGuard session={session} moduleId="customers"><CustomersPage session={session} /></ModuleRouteGuard></CapabilityRouteGuard>} />
@@ -127,7 +126,7 @@ export const AppRoutes = ({
         </Route>
       </Route>
 
-      <Route path="*" element={<Navigate to={session?.authenticated ? '/' : '/orders/new'} replace />} />
+      <Route path="*" element={<Navigate to="/orders/new" replace />} />
     </Routes>
   )
 }

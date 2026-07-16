@@ -1,4 +1,4 @@
-# Sitra ERP Architecture Rulebook
+# گلس‌دیزاین ERP Architecture Rulebook
 
 ## 1) Authority
 This file is the non-negotiable architecture source of truth.
